@@ -12,28 +12,36 @@ create extension if not exists citext;
 
 create or replace function public.is_super_admin()
 returns boolean
-language sql stable security definer set search_path = public
+language plpgsql stable security definer set search_path = public
 as $$
-  select coalesce((select is_super_admin from public.profiles where id = auth.uid()), false);
+declare v boolean;
+begin
+  select is_super_admin into v from public.profiles where id = auth.uid();
+  return coalesce(v, false);
+end;
 $$;
 
 create or replace function public.is_member(p_tenant uuid, p_role text default null)
 returns boolean
-language sql stable security definer set search_path = public
+language plpgsql stable security definer set search_path = public
 as $$
+declare v boolean;
+begin
   select exists (
     select 1 from public.memberships m
     where m.user_id = auth.uid()
       and m.tenant_id = p_tenant
       and m.status = 'active'
       and (p_role is null or m.role = p_role)
-  );
+  ) into v;
+  return v;
+end;
 $$;
 
 create or replace function public.is_tenant_owner(p_tenant uuid)
 returns boolean
-language sql stable
-as $$ select public.is_member(p_tenant, 'owner'); $$;
+language plpgsql stable
+as $$ begin return public.is_member(p_tenant, 'owner'); end; $$;
 
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
@@ -290,7 +298,10 @@ create table public.affiliate_clicks (
   referer text,
   created_at timestamptz not null default now()
 );
-create unique index idx_aff_click_dedupe on public.affiliate_clicks(affiliate_link_id, visitor_hash, (date_trunc('day', created_at)));
+-- visitor_hash already incorporates the day (sha256(ip+ua+YYYY-MM-DD)), so the
+-- unique index on (link, hash) is enough — same visitor on the same day collides,
+-- next day produces a new hash.
+create unique index idx_aff_click_dedupe on public.affiliate_clicks(affiliate_link_id, visitor_hash);
 
 create table public.affiliate_attributions (
   id uuid primary key default gen_random_uuid(),
