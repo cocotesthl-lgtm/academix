@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { CourseEditor, type Course, type Module, type Lesson } from "@/components/owner/courses/CourseEditor";
+import { GrantEnrollmentForm } from "@/components/owner/courses/GrantEnrollmentForm";
 import { deleteCourseAction } from "@/lib/courses/actions";
 
 export const dynamic = "force-dynamic";
@@ -79,6 +80,15 @@ export default async function CourseEditPage({
       </div>
 
       <CourseEditor course={course} modules={modules} />
+
+      <section className="max-w-3xl pt-8 border-t border-white/10">
+        <h2 className="text-lg font-semibold mb-1">Conceder acceso manual</h2>
+        <p className="text-sm text-white/60 mb-4">
+          Usalo para regalar el curso, dar acceso a beta testers o procesar ventas hechas
+          por fuera de la plataforma.
+        </p>
+        <GrantEnrollmentForm courseId={course.id} />
+      </section>
     </div>
   );
 }
