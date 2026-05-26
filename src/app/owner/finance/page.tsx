@@ -1,6 +1,7 @@
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { getOwnerBalance } from "@/lib/debt/accrue";
+import { payDebtAction } from "@/lib/debt/payment";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,18 @@ export default async function OwnerFinance() {
         <Stat label="Ventas (últimas 10)" value={salesRows.length.toString()} />
         <Stat label="Movimientos de ledger" value={ledgerRows.length.toString()} />
       </div>
+
+      {balance > 0 && (
+        <form action={payDebtAction}>
+          <button className="rounded-md bg-white text-black px-5 py-2.5 font-semibold hover:bg-white/90">
+            Pagar saldo ({ars(balance)})
+          </button>
+          <p className="text-xs text-white/40 mt-2">
+            Te redirige a MercadoPago para pagar la comisión acumulada. Una vez confirmado el pago,
+            tu storefront se reactiva automáticamente si estaba suspendido.
+          </p>
+        </form>
+      )}
 
       <section>
         <h2 className="text-lg font-semibold mb-3">Últimos movimientos</h2>
