@@ -1,20 +1,29 @@
 import { requireOwner } from "@/lib/auth/guards";
+import { SignoutButton } from "@/components/auth/SignoutButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function OwnerLayout({ children }: { children: React.ReactNode }) {
-  await requireOwner();
+  const { tenant } = await requireOwner();
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-60 border-r p-4 space-y-2">
-        <h2 className="font-bold mb-4">Tu academia</h2>
-        <a className="block" href="/dashboard">Dashboard</a>
-        <a className="block" href="/branding">Branding</a>
-        <a className="block" href="/integrations">Integraciones</a>
-        <a className="block" href="/courses">Cursos</a>
-        <a className="block" href="/finance">Finanzas</a>
-        <a className="block" href="/affiliates">Afiliados</a>
-        <a className="block" href="/tickets">Soporte</a>
+    <div className="min-h-screen flex bg-[#0a0a0a] text-white">
+      <aside className="w-64 border-r border-white/10 p-4 flex flex-col">
+        <div className="mb-6">
+          <h2 className="font-bold text-lg">{tenant.name}</h2>
+          <p className="text-xs text-white/40">{tenant.slug}.curplat.com</p>
+        </div>
+        <nav className="flex flex-col gap-1 text-sm">
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/dashboard">Dashboard</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/branding">Branding</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/integrations">Integraciones</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/courses">Cursos</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/finance">Finanzas</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/affiliates">Afiliados</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tickets">Soporte</a>
+        </nav>
+        <div className="mt-auto pt-4 border-t border-white/10">
+          <SignoutButton />
+        </div>
       </aside>
       <main className="flex-1 p-8">{children}</main>
     </div>

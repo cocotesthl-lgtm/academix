@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 import { resolveTenantIdBySlug } from '@/lib/tenant/resolve';
+import { env } from '@/lib/env';
 
 export const config = {
   matcher: ['/((?!_next/|favicon.ico|.*\\..*).*)']
@@ -33,56 +35,89 @@ function extractSubdomain(host: string): { kind: 'apex' | 'sub'; slug?: string }
   return { kind: 'apex' };
 }
 
-export async function proxy(req: NextRequest) {
+function buildResponse(req: NextRequest): { response: NextResponse; portal: string; tenantId?: string; tenantSlug?: string } {
   const host = req.headers.get('host') ?? '';
   const url = req.nextUrl.clone();
   const pathname = url.pathname;
 
   if (pathname.startsWith('/api/')) {
-    return NextResponse.next();
+    return { response: NextResponse.next({ request: req }), portal: 'api' };
   }
 
   const parsed = extractSubdomain(host);
 
   if (parsed.kind === 'apex') {
-    const res = NextResponse.next();
-    res.headers.set('x-portal', 'marketing');
-    return res;
+    return { response: NextResponse.next({ request: req }), portal: 'marketing' };
   }
 
   const slug = parsed.slug!;
 
-  // Auth pages serve from (auth) group at apex paths — pass through on any subdomain.
   if (isAuthPath(pathname)) {
-    const res = NextResponse.next();
-    res.headers.set('x-portal', slug === 'admin' ? 'founder' : slug === 'app' ? 'owner' : 'storefront');
-    return res;
+    const portal = slug === 'admin' ? 'founder' : slug === 'app' ? 'owner' : 'storefront';
+    return { response: NextResponse.next({ request: req }), portal };
   }
 
   if (slug === 'admin') {
     url.pathname = `/founder${pathname === '/' ? '/dashboard' : pathname}`;
-    const res = NextResponse.rewrite(url);
-    res.headers.set('x-portal', 'founder');
-    return res;
+    return { response: NextResponse.rewrite(url, { request: req }), portal: 'founder' };
   }
 
   if (slug === 'app') {
     url.pathname = `/owner${pathname === '/' ? '/dashboard' : pathname}`;
-    const res = NextResponse.rewrite(url);
-    res.headers.set('x-portal', 'owner');
-    return res;
+    return { response: NextResponse.rewrite(url, { request: req }), portal: 'owner' };
   }
 
-  const tenantId = await resolveTenantIdBySlug(slug);
-  if (!tenantId) {
-    url.pathname = '/not-found';
-    return NextResponse.rewrite(url);
+  // tenant subdomain
+  return { response: NextResponse.next({ request: req }), portal: 'storefront-pending', tenantSlug: slug };
+}
+
+export async function proxy(req: NextRequest) {
+  const host = req.headers.get('host') ?? '';
+  const url = req.nextUrl.clone();
+  const pathname = url.pathname;
+
+  let { response, portal, tenantSlug } = buildResponse(req);
+
+  // Resolve tenant subdomain (deferred so we can rewrite to /not-found if missing)
+  if (portal === 'storefront-pending' && tenantSlug) {
+    const tenantId = await resolveTenantIdBySlug(tenantSlug);
+    if (!tenantId) {
+      url.pathname = '/not-found';
+      response = NextResponse.rewrite(url, { request: req });
+      portal = 'not-found';
+    } else {
+      url.pathname = `/storefront/${tenantId}${pathname === '/' ? '' : pathname}`;
+      response = NextResponse.rewrite(url, { request: req });
+      response.headers.set('x-tenant-id', tenantId);
+      response.headers.set('x-tenant-slug', tenantSlug);
+      portal = 'storefront';
+    }
   }
 
-  url.pathname = `/storefront/${tenantId}${pathname === '/' ? '' : pathname}`;
-  const res = NextResponse.rewrite(url);
-  res.headers.set('x-portal', 'storefront');
-  res.headers.set('x-tenant-id', tenantId);
-  res.headers.set('x-tenant-slug', slug);
-  return res;
+  response.headers.set('x-portal', portal);
+
+  // Refresh Supabase session (rotates access_token via refresh_token if needed)
+  try {
+    const supabase = createServerClient(env.supabase.url(), env.supabase.anonKey(), {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(toSet: Array<{ name: string; value: string; options: Record<string, unknown> }>) {
+          for (const { name, value, options } of toSet) {
+            response.cookies.set({
+              name,
+              value,
+              ...options
+            });
+          }
+        }
+      }
+    });
+    await supabase.auth.getUser();
+  } catch {
+    // Env not configured or transient error — skip refresh, request still proceeds.
+  }
+
+  return response;
 }

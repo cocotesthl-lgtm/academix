@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getServiceClient } from '@/lib/supabase/service';
 
 export async function getCurrentUser() {
   const supabase = await createSupabaseServerClient();
@@ -20,21 +21,27 @@ export async function requireSuperAdmin() {
     .from('profiles')
     .select('is_super_admin')
     .eq('id', user.id)
-    .single();
+    .maybeSingle<{ is_super_admin: boolean }>();
   if (!data?.is_super_admin) redirect('/');
   return user;
 }
 
-export async function requireOwner() {
+export type OwnerContext = {
+  userId: string;
+  tenant: { id: string; slug: string; name: string };
+};
+
+export async function requireOwner(): Promise<OwnerContext> {
   const user = await requireUser();
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const svc = getServiceClient();
+  const { data } = await svc
     .from('memberships')
-    .select('tenant_id')
+    .select('tenant_id, tenants ( id, slug, name )')
     .eq('user_id', user.id)
     .eq('role', 'owner')
     .eq('status', 'active')
-    .limit(1);
-  if (!data || data.length === 0) redirect('/onboarding');
-  return { user, tenantId: data[0].tenant_id as string };
+    .limit(1)
+    .maybeSingle<{ tenant_id: string; tenants: { id: string; slug: string; name: string } | null }>();
+  if (!data?.tenants) redirect('/onboarding');
+  return { userId: user.id, tenant: data.tenants };
 }

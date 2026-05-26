@@ -69,12 +69,25 @@ Copy-Item .env.example .env.local
 # editar .env.local con valores reales
 ```
 
-### 6. Levantar dev server
+### 6. Configurar Supabase Auth (importante)
+
+En el dashboard de Supabase:
+
+1. **Authentication → URL Configuration**:
+   - **Site URL**: `http://localhost:3000`
+   - **Redirect URLs**: agregar `http://localhost:3000/api/auth/callback`
+   - (En prod después agregás `https://curplat.com` y `https://curplat.com/api/auth/callback`)
+
+2. **Authentication → Providers → Email**:
+   - Para dev rápido, **desactivar "Confirm email"** (los signups crean sesión instantánea, sin tener que ir al inbox).
+   - En prod lo reactivás.
+
+### 7. Levantar dev server
 ```powershell
 npm run dev
 ```
 
-### 7. Probar subdominios en local
+### 8. Probar subdominios en local
 Acceder a:
 - `http://localhost:3000` → marketing
 - `http://admin.localhost:3000` → founder (requiere super_admin)
@@ -119,11 +132,20 @@ Después de signup vía `/signup`, en Supabase SQL editor:
 update profiles set is_super_admin = true where email = 'tu@email.com';
 ```
 
+## Flujo de prueba end-to-end (semana 2)
+
+1. `http://localhost:3000/signup` → crear cuenta con email + password.
+2. Si tenés "Confirm email" prendido, abrí el link del inbox → te lleva a `/onboarding`. Si lo desactivaste, vas directo.
+3. En `/onboarding` elegís slug (`miacademia`), nombre y color → click "Crear academia".
+4. Te redirige a `http://app.localhost:3000/dashboard` — tu panel de owner.
+5. `http://miacademia.localhost:3000` → tu storefront público (vacío por ahora).
+6. Para entrar al panel del fundador, primero ejecutá el SQL de super_admin (paso 5 de abajo) con tu email, después abrí `http://admin.localhost:3000`.
+
 ## Roadmap
 
 Ver plan completo. Semanas:
-1. ✅ Scaffold + middleware + clients + schema (esta)
-2. Signup → onboarding (slug único, reservados)
+1. ✅ Scaffold + proxy + clients + schema
+2. ✅ Signup → onboarding (slug único, reservados, creación de tenant)
 3. Owner dashboard + branding + founder shell
 4. Cursos/módulos/lessons + Google Drive OAuth
 5. Enrollments + lesson progress + affiliate links
