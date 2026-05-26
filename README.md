@@ -132,6 +132,28 @@ Después de signup vía `/signup`, en Supabase SQL editor:
 update profiles set is_super_admin = true where email = 'tu@email.com';
 ```
 
+## Configurar MercadoPago (semana 6)
+
+Para que los owners puedan conectar su MP y aceptar pagos:
+
+1. Crear una app en https://www.mercadopago.com.ar/developers/panel/app → "Crear aplicación".
+2. En "Credenciales", copiar `CLIENT_ID` y `CLIENT_SECRET` al `.env.local`:
+   ```
+   MERCADOPAGO_CLIENT_ID=...
+   MERCADOPAGO_CLIENT_SECRET=...
+   MERCADOPAGO_REDIRECT_URI=http://localhost:3000/api/oauth/mercadopago/callback
+   ```
+3. En la configuración de la app, agregar el redirect URI exacto (`/api/oauth/mercadopago/callback`).
+4. En dev, si la firma del webhook no llega, podés desactivar la verificación temporalmente:
+   ```
+   MP_SKIP_SIG_CHECK=1
+   ```
+5. Para testear webhooks localmente sin exponer el puerto, usá `ngrok http 3000` y pegá la URL ngrok como base en `MERCADOPAGO_REDIRECT_URI` y en el webhook del owner.
+
+Una vez en el dashboard del owner (`app.localhost:3000/integrations`):
+1. Click "Conectar" en MercadoPago → completa OAuth.
+2. Copiar la URL de webhook mostrada y pegarla en MP → Webhooks → "Notificación de pagos".
+
 ## Flujo de prueba end-to-end (semana 2)
 
 1. `http://localhost:3000/signup` → crear cuenta con email + password.

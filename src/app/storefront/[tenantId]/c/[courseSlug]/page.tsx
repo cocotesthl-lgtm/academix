@@ -151,14 +151,25 @@ export default async function CourseDetailPage({
               </div>
               <p className="text-xs text-black/50 mt-1">Pago único · Acceso permanente</p>
             </div>
-            <button
-              className="w-full rounded-md py-3 font-semibold text-white"
-              style={{ background: primary }}
-            >
-              Comprar curso
-            </button>
+            {course.price_cents > 0 ? (
+              <form action={`/api/checkout/${course.id}`} method="post">
+                <button
+                  className="w-full rounded-md py-3 font-semibold text-white"
+                  style={{ background: primary }}
+                >
+                  Comprar curso
+                </button>
+              </form>
+            ) : (
+              <button
+                className="w-full rounded-md py-3 font-semibold text-white"
+                style={{ background: primary }}
+              >
+                Inscribirme gratis
+              </button>
+            )}
             <p className="text-xs text-center text-black/40">
-              (Checkout activable cuando se conecte MercadoPago o Shopify del owner)
+              Pago seguro vía MercadoPago
             </p>
           </div>
         </aside>
