@@ -3,6 +3,7 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { verifyMercadoPagoSignature } from '@/lib/payments/signatures';
 import { getPayment } from '@/lib/payments/mercadopago';
 import { accrueCommissionForSale } from '@/lib/debt/accrue';
+import { accrueAffiliateCommissionsForSale } from '@/lib/affiliates/commission';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -159,10 +160,14 @@ export async function POST(
     await (svc.from('enrollments') as any).insert(enrollPayload);
   }
 
-  // Accrue commission as owner debt (only on paid sales)
+  // Accrue commission as owner debt + affiliate commissions (only on paid sales)
   if (payment.status === 'approved' && saleRow) {
     const saleId = (saleRow as { id?: string }).id;
-    if (saleId) await accrueCommissionForSale(saleId);
+    if (saleId) {
+      await accrueCommissionForSale(saleId);
+      const affLinkId = (payment.metadata?.affiliate_link_id as string | null | undefined) ?? null;
+      await accrueAffiliateCommissionsForSale({ saleId, linkId: affLinkId });
+    }
   }
 
   return NextResponse.json({ ok: true });

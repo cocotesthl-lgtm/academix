@@ -1,6 +1,9 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { trackClick } from "@/lib/affiliates/tracking";
 
 export const dynamic = "force-dynamic";
 
@@ -29,11 +32,14 @@ type ModuleWithLessons = {
 };
 
 export default async function CourseDetailPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ tenantId: string; courseSlug: string }>;
+  searchParams: Promise<{ ref?: string }>;
 }) {
   const { tenantId, courseSlug } = await params;
+  const { ref } = await searchParams;
   const tenant = await getTenantById(tenantId);
   const primary = tenant?.brand?.primary_color ?? '#0a0a0a';
 
@@ -46,6 +52,27 @@ export default async function CourseDetailPage({
     .maybeSingle<CourseDetail>();
 
   if (!course || course.status !== 'published') notFound();
+
+  // Affiliate click tracking + cookie set on first ?ref= visit
+  if (ref) {
+    const h = await headers();
+    const ip =
+      (h.get('x-forwarded-for')?.split(',')[0].trim()) ||
+      h.get('x-real-ip') ||
+      '0.0.0.0';
+    const ua = h.get('user-agent') ?? '';
+    const referer = h.get('referer') ?? '';
+    const supabaseAuth = await createSupabaseServerClient();
+    const { data: { user } } = await supabaseAuth.auth.getUser();
+    await trackClick({
+      code: ref,
+      tenantId,
+      ip,
+      userAgent: ua,
+      referer,
+      currentUserId: user?.id ?? null
+    });
+  }
 
   const { data: modulesRaw } = await svc
     .from("modules")

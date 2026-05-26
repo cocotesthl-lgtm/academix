@@ -3,6 +3,7 @@ import { headers, cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { createPreference } from '@/lib/payments/mercadopago';
+import { verifyAffiliateCookie, cookieName } from '@/lib/affiliates/cookie';
 import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
@@ -62,9 +63,12 @@ export async function POST(
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Affiliate ref code from cookie or query (set when visiting ?ref=)
+  // Affiliate cookie (set on click via trackClick); HMAC-verified
   const cookieStore = await cookies();
-  const refCode = cookieStore.get(`cp_aff_${course.tenant_id}`)?.value ?? null;
+  const rawCookie = cookieStore.get(cookieName(course.tenant_id))?.value ?? null;
+  const affPayload = rawCookie ? verifyAffiliateCookie(rawCookie) : null;
+  // Only honour attribution if the cookie was set for THIS course
+  const affLinkId = affPayload && affPayload.courseId === course.id ? affPayload.linkId : null;
 
   // Build URLs (use the storefront origin from the request)
   const h = await headers();
@@ -82,7 +86,7 @@ export async function POST(
       unitPriceCents: course.price_cents,
       currency: course.currency,
       buyerEmail: user?.email ?? undefined,
-      externalReference: `${course.id}::${user?.id ?? 'anon'}::${refCode ?? ''}`,
+      externalReference: `${course.id}::${user?.id ?? 'anon'}::${affLinkId ?? ''}`,
       notificationUrl: `${platformOrigin}/api/webhooks/mercadopago/${course.tenant_id}`,
       successUrl: `${origin}/learn`,
       failureUrl: `${origin}/c/${course.slug}?checkout=failed`,
@@ -91,7 +95,7 @@ export async function POST(
         course_id: course.id,
         tenant_id: course.tenant_id,
         buyer_user_id: user?.id ?? null,
-        ref_code: refCode
+        affiliate_link_id: affLinkId
       }
     });
 

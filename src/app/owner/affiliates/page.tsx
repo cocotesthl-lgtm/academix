@@ -27,16 +27,24 @@ export default async function OwnerAffiliates() {
   // Click counts per link
   const linkIds = rows.map((r) => r.id);
   let clicksByLink = new Map<string, number>();
+  const commByAffiliate = new Map<string, number>();
   if (linkIds.length > 0) {
-    const { data: clicks } = await svc
-      .from("affiliate_clicks")
-      .select("affiliate_link_id")
-      .in("affiliate_link_id", linkIds);
-    const arr = (clicks ?? []) as Array<{ affiliate_link_id: string }>;
-    clicksByLink = arr.reduce((acc, c) => {
+    const [{ data: clicks }, { data: comms }] = await Promise.all([
+      svc.from("affiliate_clicks").select("affiliate_link_id").in("affiliate_link_id", linkIds),
+      svc.from("affiliate_commissions")
+        .select("user_id, amount_cents")
+        .eq("tenant_id", tenant.id)
+    ]);
+    const clickArr = (clicks ?? []) as Array<{ affiliate_link_id: string }>;
+    clicksByLink = clickArr.reduce((acc, c) => {
       acc.set(c.affiliate_link_id, (acc.get(c.affiliate_link_id) ?? 0) + 1);
       return acc;
     }, new Map<string, number>());
+
+    const commArr = (comms ?? []) as Array<{ user_id: string; amount_cents: number }>;
+    for (const c of commArr) {
+      commByAffiliate.set(c.user_id, (commByAffiliate.get(c.user_id) ?? 0) + Number(c.amount_cents));
+    }
   }
 
   return (
@@ -60,7 +68,8 @@ export default async function OwnerAffiliates() {
                 <th className="text-left px-4 py-2.5">Afiliado</th>
                 <th className="text-left px-4 py-2.5">Curso</th>
                 <th className="text-left px-4 py-2.5">Código</th>
-                <th className="text-left px-4 py-2.5">Clicks</th>
+                <th className="text-right px-4 py-2.5">Clicks</th>
+                <th className="text-right px-4 py-2.5">Comisiones</th>
                 <th className="text-left px-4 py-2.5">Alta</th>
               </tr>
             </thead>
@@ -72,7 +81,10 @@ export default async function OwnerAffiliates() {
                   </td>
                   <td className="px-4 py-3 text-white/80">{r.courses?.title ?? '—'}</td>
                   <td className="px-4 py-3 font-mono text-xs">{r.code}</td>
-                  <td className="px-4 py-3">{clicksByLink.get(r.id) ?? 0}</td>
+                  <td className="px-4 py-3 text-right">{clicksByLink.get(r.id) ?? 0}</td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    {((commByAffiliate.get(r.affiliate_user_id) ?? 0) / 100).toLocaleString('es-AR')}
+                  </td>
                   <td className="px-4 py-3 text-white/50">
                     {new Date(r.created_at).toLocaleDateString('es-AR')}
                   </td>
@@ -84,7 +96,7 @@ export default async function OwnerAffiliates() {
       </div>
 
       <p className="text-xs text-white/40">
-        El sistema de comisiones y attribution se activa en la integración de pagos (semana 8).
+        Clicks y comisiones se acumulan automáticamente cuando se completan ventas con el link de cada afiliado.
       </p>
     </div>
   );
