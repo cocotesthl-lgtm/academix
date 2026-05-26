@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { verifyMercadoPagoSignature } from '@/lib/payments/signatures';
 import { getPayment } from '@/lib/payments/mercadopago';
+import { accrueCommissionForSale } from '@/lib/debt/accrue';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -156,6 +157,12 @@ export async function POST(
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('enrollments') as any).insert(enrollPayload);
+  }
+
+  // Accrue commission as owner debt (only on paid sales)
+  if (payment.status === 'approved' && saleRow) {
+    const saleId = (saleRow as { id?: string }).id;
+    if (saleId) await accrueCommissionForSale(saleId);
   }
 
   return NextResponse.json({ ok: true });
