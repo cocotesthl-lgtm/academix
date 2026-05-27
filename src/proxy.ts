@@ -105,10 +105,14 @@ export async function proxy(req: NextRequest) {
         },
         setAll(toSet: Array<{ name: string; value: string; options: Record<string, unknown> }>) {
           for (const { name, value, options } of toSet) {
+            const opts: Record<string, unknown> = { ...options };
+            if (env.cookieDomain && !('domain' in opts)) {
+              opts.domain = env.cookieDomain;
+            }
             response.cookies.set({
               name,
               value,
-              ...options
+              ...opts
             });
           }
         }

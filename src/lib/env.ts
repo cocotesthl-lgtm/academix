@@ -9,9 +9,25 @@ function optional(name: string): string | null {
   return v && v.length > 0 ? v : null;
 }
 
+/**
+ * Cookie domain for cross-subdomain session sharing.
+ * In prod: returns ".bzseguridad.store" (or whatever rootDomain is) so
+ * Supabase auth cookies set on app.* are visible on admin.*, <slug>.*, apex.
+ * In dev (localhost): returns undefined → host-only cookie (browser default).
+ */
+function computeCookieDomain(): string | undefined {
+  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN;
+  if (!root) return undefined;
+  if (root === 'localhost' || root.endsWith('.localhost') || root.includes(':')) return undefined;
+  // Strip any leading dot the user accidentally typed
+  const clean = root.replace(/^\.+/, '');
+  return `.${clean}`;
+}
+
 export const env = {
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
   rootDomain: process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com',
+  cookieDomain: computeCookieDomain(),
 
   supabase: {
     url: () => required('NEXT_PUBLIC_SUPABASE_URL'),

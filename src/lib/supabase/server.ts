@@ -12,10 +12,14 @@ export async function createSupabaseServerClient() {
       setAll(toSet: Array<{ name: string; value: string; options: Record<string, unknown> }>) {
         try {
           for (const { name, value, options } of toSet) {
-            cookieStore.set(name, value, options);
+            const opts = { ...options };
+            if (env.cookieDomain && !('domain' in opts)) {
+              opts.domain = env.cookieDomain;
+            }
+            cookieStore.set(name, value, opts);
           }
         } catch {
-          // Called from a Server Component — ignore; refresh happens via middleware.
+          // Called from a Server Component — ignore; refresh happens via middleware/proxy.
         }
       }
     }
