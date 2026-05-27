@@ -16,7 +16,9 @@ export default function MarketingHome() {
             <a href="#precio" className="hover:text-white transition">Precio</a>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-white/80 hover:text-white">Iniciar sesión</Link>
+            <Link href="/buscar" className="text-sm text-white/80 hover:text-white">
+              🔍 Buscar mi academia
+            </Link>
             <Link
               href="/signup"
               className="text-sm rounded-md bg-white text-black px-4 py-2 font-medium hover:bg-white/90 transition"
