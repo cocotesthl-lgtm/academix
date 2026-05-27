@@ -1,19 +1,18 @@
 'use client';
 
 import { useActionState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signupAction, type ActionResult } from '@/lib/auth/actions';
 
 export function SignupForm() {
-  const router = useRouter();
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(signupAction, null);
 
   useEffect(() => {
     if (state?.ok && state.redirectTo) {
-      router.push(state.redirectTo);
+      // window.location.href para soportar URLs absolutas a otros subdominios
+      window.location.href = state.redirectTo;
     }
-  }, [state, router]);
+  }, [state]);
 
   if (state?.ok && state.message === 'check_email') {
     return (

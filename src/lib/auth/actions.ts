@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getServiceClient } from '@/lib/supabase/service';
 import { env } from '@/lib/env';
 
 export type ActionResult =
@@ -11,6 +12,45 @@ export type ActionResult =
 
 function callbackUrl(next: string = '/onboarding') {
   return `${env.appUrl}/api/auth/callback?next=${encodeURIComponent(next)}`;
+}
+
+function subdomainUrl(sub: 'admin' | 'app', path: string): string {
+  const appUrl = new URL(env.appUrl);
+  const isLocal = appUrl.hostname === 'localhost' || appUrl.hostname.endsWith('.localhost');
+  const host = isLocal
+    ? `${sub}.localhost${appUrl.port ? ':' + appUrl.port : ''}`
+    : `${sub}.${env.rootDomain}`;
+  return `${appUrl.protocol}//${host}${path}`;
+}
+
+/**
+ * Decide where to land a user post-auth based on their roles:
+ *  - super_admin → admin.<root>/dashboard
+ *  - owner of a tenant → app.<root>/dashboard
+ *  - neither → /onboarding (apex) to create their first academia
+ */
+async function postAuthRedirect(userId: string): Promise<string> {
+  const svc = getServiceClient();
+  const { data: profile } = await svc
+    .from('profiles')
+    .select('is_super_admin')
+    .eq('id', userId)
+    .maybeSingle<{ is_super_admin: boolean }>();
+  if (profile?.is_super_admin) {
+    return subdomainUrl('admin', '/dashboard');
+  }
+  const { data: ownership } = await svc
+    .from('memberships')
+    .select('tenant_id')
+    .eq('user_id', userId)
+    .eq('role', 'owner')
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle();
+  if (ownership) {
+    return subdomainUrl('app', '/dashboard');
+  }
+  return '/onboarding';
 }
 
 export async function signupAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
@@ -37,12 +77,10 @@ export async function signupAction(_prev: ActionResult | null, formData: FormDat
 
   if (error) return { ok: false, error: error.message };
 
-  // If email confirmation is OFF in Supabase, signUp returns a session immediately.
-  if (data.session) {
-    return { ok: true, redirectTo: '/onboarding' };
+  if (data.session && data.user) {
+    return { ok: true, redirectTo: await postAuthRedirect(data.user.id) };
   }
 
-  // Email confirmation required — user must click the link in their inbox.
   return { ok: true, message: 'check_email' };
 }
 
@@ -55,10 +93,13 @@ export async function loginAction(_prev: ActionResult | null, formData: FormData
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { ok: false, error: error.message };
 
-  return { ok: true, redirectTo: '/onboarding' };
+  const userId = data.user?.id;
+  if (!userId) return { ok: true, redirectTo: '/onboarding' };
+
+  return { ok: true, redirectTo: await postAuthRedirect(userId) };
 }
 
 export async function signoutAction(): Promise<void> {

@@ -1,12 +1,11 @@
 'use client';
 
 import { useActionState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { loginAction, type ActionResult } from '@/lib/auth/actions';
 
 export function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(loginAction, null);
 
@@ -15,9 +14,11 @@ export function LoginForm() {
 
   useEffect(() => {
     if (state?.ok) {
-      router.push(next || state.redirectTo || '/onboarding');
+      // Use window.location.href so absolute cross-subdomain URLs work
+      // (router.push won't navigate cross-origin).
+      window.location.href = next || state.redirectTo || '/onboarding';
     }
-  }, [state, next, router]);
+  }, [state, next]);
 
   return (
     <form action={formAction} className="space-y-4">

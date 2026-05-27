@@ -7,13 +7,33 @@ import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
+function subdomainUrl(sub: 'admin' | 'app', path: string): string {
+  const appUrl = new URL(env.appUrl);
+  const isLocal = appUrl.hostname === "localhost" || appUrl.hostname.endsWith(".localhost");
+  const host = isLocal
+    ? `${sub}.localhost${appUrl.port ? ":" + appUrl.port : ""}`
+    : `${sub}.${env.rootDomain}`;
+  return `${appUrl.protocol}//${host}${path}`;
+}
+
 export default async function OnboardingPage() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/onboarding");
 
-  // If user already owns a tenant, send them straight to the dashboard.
   const svc = getServiceClient();
+
+  // Super admins go to the founder panel, not onboarding.
+  const { data: profile } = await svc
+    .from('profiles')
+    .select('is_super_admin')
+    .eq('id', user.id)
+    .maybeSingle<{ is_super_admin: boolean }>();
+  if (profile?.is_super_admin) {
+    redirect(subdomainUrl('admin', '/dashboard'));
+  }
+
+  // If user already owns a tenant, send them straight to the owner dashboard.
   const { data: existing } = await svc
     .from("memberships")
     .select("tenant_id, tenants ( slug )")
@@ -24,10 +44,7 @@ export default async function OnboardingPage() {
     .maybeSingle<{ tenant_id: string; tenants: { slug: string } | null }>();
 
   if (existing) {
-    const appUrl = new URL(env.appUrl);
-    const isLocal = appUrl.hostname === "localhost" || appUrl.hostname.endsWith(".localhost");
-    const ownerHost = isLocal ? `app.localhost${appUrl.port ? ":" + appUrl.port : ""}` : `app.${env.rootDomain}`;
-    redirect(`${appUrl.protocol}//${ownerHost}/dashboard`);
+    redirect(subdomainUrl('app', '/dashboard'));
   }
 
   return (
