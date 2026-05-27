@@ -12,8 +12,12 @@ import {
   type TestimonialItem,
   type FaqItem,
   type StatItem,
+  type LearnItem,
+  type FeatureItem,
+  type LogoItem,
   type NavLink,
-  type SocialLink
+  type SocialLink,
+  type HeroLayout
 } from '@/lib/site/types';
 
 async function loadConfig(tenantId: string): Promise<SiteConfig> {
@@ -34,7 +38,7 @@ async function saveConfig(tenantId: string, cfg: SiteConfig) {
     .eq('id', tenantId);
 }
 
-/* ===== Section enable / order ===== */
+/* ===== Toggle / reorder / bg color ===== */
 
 export async function toggleSectionAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
@@ -52,7 +56,6 @@ export async function moveSectionAction(formData: FormData): Promise<void> {
   const dir = String(formData.get('dir') ?? '');
   if (!(key in DEFAULT_SITE_CONFIG.sections)) return;
   if (dir !== 'up' && dir !== 'down') return;
-
   const cfg = await loadConfig(tenant.id);
   const idx = cfg.order.indexOf(key);
   if (idx === -1) return;
@@ -65,7 +68,18 @@ export async function moveSectionAction(formData: FormData): Promise<void> {
   revalidatePath('/site');
 }
 
-/* ===== Generic field updates ===== */
+export async function setSectionBgColorAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const key = String(formData.get('section') ?? '') as SectionKey;
+  const color = String(formData.get('bg_color') ?? '').trim();
+  if (!(key in DEFAULT_SITE_CONFIG.sections)) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections[key].bg_color = color === '' || color.toLowerCase() === 'null' ? null : color;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Generic fields ===== */
 
 export async function updateSectionFieldsAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
@@ -74,14 +88,13 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   const cfg = await loadConfig(tenant.id);
   const section = cfg.sections[key] as Record<string, unknown>;
 
-  for (const f of ['title', 'subtitle', 'body', 'cta_label', 'cta_href', 'name', 'bio', 'credentials']) {
-    if (formData.has(f)) {
-      section[f] = String(formData.get(f) ?? '');
-    }
+  for (const f of ['title', 'subtitle', 'body', 'cta_label', 'cta_href', 'name', 'bio', 'credentials', 'ends_at',
+                   'before_label', 'after_label', 'before_body', 'after_body']) {
+    if (formData.has(f)) section[f] = String(formData.get(f) ?? '');
   }
-  if (formData.has('show_filters')) {
-    section.show_filters = formData.get('show_filters') === 'on';
-  }
+  if (formData.has('show_filters')) section.show_filters = formData.get('show_filters') === 'on';
+  if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
+  if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
 
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
@@ -91,8 +104,11 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
 
 async function uploadImage(tenantId: string, prefix: string, file: File): Promise<string | null> {
   if (file.size > 4 * 1024 * 1024) return null;
-  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) return null;
-  const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+  if (!['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'].includes(file.type)) return null;
+  const ext = file.type === 'image/png' ? 'png'
+    : file.type === 'image/webp' ? 'webp'
+    : file.type === 'image/svg+xml' ? 'svg'
+    : 'jpg';
   const path = `${tenantId}/${prefix}-${Date.now()}.${ext}`;
   const svc = getServiceClient();
   const buf = new Uint8Array(await file.arrayBuffer());
@@ -125,16 +141,53 @@ export async function uploadInstructorPhotoAction(formData: FormData): Promise<v
   revalidatePath('/site');
 }
 
-/* ===== Testimonials CRUD ===== */
+export async function uploadHeroImageAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const file = formData.get('image') as File | null;
+  if (!file || file.size === 0) return;
+  const url = await uploadImage(tenant.id, 'hero', file);
+  if (!url) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.hero.image_url = url;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function uploadBeforeAfterImageAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const which = String(formData.get('which') ?? '');
+  if (which !== 'before' && which !== 'after') return;
+  const file = formData.get('image') as File | null;
+  if (!file || file.size === 0) return;
+  const url = await uploadImage(tenant.id, `ba-${which}`, file);
+  if (!url) return;
+  const cfg = await loadConfig(tenant.id);
+  if (which === 'before') cfg.sections.before_after.before_image_url = url;
+  else cfg.sections.before_after.after_image_url = url;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Testimonials CRUD (enhanced) ===== */
 
 export async function addTestimonialAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const name = String(formData.get('name') ?? '').trim();
   const text = String(formData.get('text') ?? '').trim();
   const role = String(formData.get('role') ?? '').trim() || undefined;
+  const ratingRaw = String(formData.get('rating') ?? '5');
+  const rating = Math.min(5, Math.max(1, parseInt(ratingRaw, 10) || 5));
   if (!name || !text) return;
+
+  // Optional photo
+  let photo_url: string | null = null;
+  const photo = formData.get('photo') as File | null;
+  if (photo && photo.size > 0) {
+    photo_url = await uploadImage(tenant.id, 'testimonial', photo);
+  }
+
   const cfg = await loadConfig(tenant.id);
-  const item: TestimonialItem = { id: randomUUID(), name, text, role };
+  const item: TestimonialItem = { id: randomUUID(), name, text, role, rating, photo_url };
   cfg.sections.testimonials.items.push(item);
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
@@ -157,8 +210,7 @@ export async function addFaqAction(formData: FormData): Promise<void> {
   const a = String(formData.get('a') ?? '').trim();
   if (!q || !a) return;
   const cfg = await loadConfig(tenant.id);
-  const item: FaqItem = { id: randomUUID(), q, a };
-  cfg.sections.faq.items.push(item);
+  cfg.sections.faq.items.push({ id: randomUUID(), q, a });
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }
@@ -180,8 +232,7 @@ export async function addStatAction(formData: FormData): Promise<void> {
   const label = String(formData.get('label') ?? '').trim();
   if (!number || !label) return;
   const cfg = await loadConfig(tenant.id);
-  const item: StatItem = { id: randomUUID(), number, label };
-  cfg.sections.stats.items.push(item);
+  cfg.sections.stats.items.push({ id: randomUUID(), number, label });
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }
@@ -195,7 +246,80 @@ export async function deleteStatAction(formData: FormData): Promise<void> {
   revalidatePath('/site');
 }
 
-/* ===== Nav links ===== */
+/* ===== Learn points CRUD ===== */
+
+export async function addLearnPointAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const text = String(formData.get('text') ?? '').trim();
+  if (!text) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.learn_points.items.push({ id: randomUUID(), text });
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function deleteLearnPointAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.learn_points.items = cfg.sections.learn_points.items.filter((t) => t.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Features (3 cards) CRUD ===== */
+
+export async function addFeatureAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const icon = String(formData.get('icon') ?? '⭐').trim() || '⭐';
+  const title = String(formData.get('title') ?? '').trim();
+  const body = String(formData.get('body') ?? '').trim();
+  if (!title || !body) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.features.items.push({ id: randomUUID(), icon, title, body });
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function deleteFeatureAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.features.items = cfg.sections.features.items.filter((t) => t.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Trusted-by logos CRUD ===== */
+
+export async function addLogoAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const name = String(formData.get('name') ?? '').trim();
+  const href = String(formData.get('href') ?? '').trim() || null;
+  if (!name) return;
+
+  let logo_url: string | null = null;
+  const file = formData.get('logo') as File | null;
+  if (file && file.size > 0) {
+    logo_url = await uploadImage(tenant.id, 'logo', file);
+  }
+
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.trusted_by.items.push({ id: randomUUID(), name, logo_url, href });
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function deleteLogoAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.trusted_by.items = cfg.sections.trusted_by.items.filter((t) => t.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Nav ===== */
 
 export async function addNavLinkAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
@@ -203,8 +327,7 @@ export async function addNavLinkAction(formData: FormData): Promise<void> {
   const href = String(formData.get('href') ?? '').trim();
   if (!label || !href) return;
   const cfg = await loadConfig(tenant.id);
-  const item: NavLink = { id: randomUUID(), label, href };
-  cfg.nav.links.push(item);
+  cfg.nav.links.push({ id: randomUUID(), label, href });
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }
@@ -277,3 +400,6 @@ export async function deleteSocialLinkAction(formData: FormData): Promise<void> 
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }
+
+// Re-export types for convenience (these are types only)
+export type { HeroLayout, FeatureItem, LearnItem, LogoItem };

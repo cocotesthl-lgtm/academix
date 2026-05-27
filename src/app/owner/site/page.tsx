@@ -2,16 +2,21 @@ import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { mergeConfig, type SectionKey } from "@/lib/site/types";
-import { toggleSectionAction, moveSectionAction } from "@/lib/site/actions";
+import { toggleSectionAction, moveSectionAction, setSectionBgColorAction } from "@/lib/site/actions";
 import {
   HeroEditor,
+  TrustedByEditor,
   AboutEditor,
   InstructorEditor,
   StatsEditor,
+  LearnPointsEditor,
+  FeaturesEditor,
   FeaturedEditor,
   CatalogEditor,
   TestimonialsEditor,
+  BeforeAfterEditor,
   FaqEditor,
+  OfferEditor,
   NewsletterEditor,
   CtaFinalEditor,
   NavEditor,
@@ -21,16 +26,21 @@ import {
 export const dynamic = "force-dynamic";
 
 const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
-  hero:         { title: "🏆 Hero", desc: "Primera impresión arriba del todo. Título grande + subtítulo + botón principal." },
+  hero:         { title: "🏆 Hero", desc: "Primera impresión. Plantilla centrada, dividida o galería." },
+  trusted_by:   { title: "🤝 Confían en nosotros", desc: "Logos de clientes/marcas, con filtro grayscale opcional." },
   about:        { title: "🪪 Sobre nosotros", desc: "Quién sos, qué te diferencia, por qué eligen tu academia." },
   instructor:   { title: "👤 Instructor", desc: "Quién va a enseñar. Foto, biografía, credenciales." },
-  stats:        { title: "📊 Estadísticas", desc: "Números fuertes: alumnos formados, años de experiencia, satisfacción." },
-  featured:     { title: "⭐ Cursos destacados", desc: "Aparecen arriba del catálogo. Marcalos como destacados desde cada curso." },
-  catalog:      { title: "📚 Catálogo completo", desc: "Todos los cursos publicados, con filtros opcionales por categoría." },
-  testimonials: { title: "💬 Testimonios", desc: "Prueba social. Comentarios de tus alumnos." },
-  faq:          { title: "❓ Preguntas frecuentes", desc: "Responde objeciones comunes antes de la compra." },
+  stats:        { title: "📊 Estadísticas", desc: "Números fuertes: alumnos formados, años, satisfacción." },
+  learn_points: { title: "✅ Qué vas a aprender", desc: "Lista de puntos con check marks. Lo que se llevan." },
+  features:     { title: "🎴 Features (3 tarjetas)", desc: "Beneficios o diferenciales con icono + título + texto." },
+  featured:     { title: "⭐ Cursos destacados", desc: "Cursos marcados como destacados desde su editor." },
+  catalog:      { title: "📚 Catálogo completo", desc: "Todos los cursos publicados con filtros por categoría." },
+  testimonials: { title: "💬 Testimonios", desc: "Estilo Google: estrellas, foto, rol, comentario." },
+  before_after: { title: "🔄 Antes / Después", desc: "Comparativa visual con imágenes y textos descriptivos." },
+  faq:          { title: "❓ Preguntas frecuentes", desc: "Acordeón clásico para responder objeciones." },
+  offer:        { title: "⏰ Oferta limitada", desc: "Banner con contador regresivo hasta una fecha." },
   newsletter:   { title: "📧 Newsletter", desc: "Capturá emails con un formulario simple." },
-  cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página, después del catálogo." }
+  cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
 
 export default async function SiteBuilderPage() {
@@ -57,8 +67,8 @@ export default async function SiteBuilderPage() {
         <div>
           <h1 className="text-2xl font-bold">Editor de sitio</h1>
           <p className="text-white/60 text-sm mt-1">
-            Personalizá las secciones de tu academia pública. El preview de la derecha se actualiza en vivo.
-            Reordená las secciones con las flechas ↑↓.
+            15 secciones + nav + footer. Cada cambio se ve en vivo en el preview.
+            Reordená con ▲▼, cambiá colores por sección, activá lo que necesites.
           </p>
         </div>
         <a
@@ -82,6 +92,7 @@ export default async function SiteBuilderPage() {
             title={meta.title}
             desc={meta.desc}
             enabled={cfg.sections[key].enabled}
+            bgColor={cfg.sections[key].bg_color ?? null}
             isFirst={isFirst}
             isLast={isLast}
             position={idx + 1}
@@ -97,6 +108,15 @@ export default async function SiteBuilderPage() {
                 }}
                 fallbackTitle={tenant.name}
                 primary={primary}
+                layout={cfg.sections.hero.layout}
+                imageUrl={cfg.sections.hero.image_url}
+              />
+            )}
+            {key === 'trusted_by' && (
+              <TrustedByEditor
+                initialTitle={cfg.sections.trusted_by.title}
+                items={cfg.sections.trusted_by.items}
+                grayscale={cfg.sections.trusted_by.grayscale}
               />
             )}
             {key === 'about' && (
@@ -125,6 +145,21 @@ export default async function SiteBuilderPage() {
                 primary={primary}
               />
             )}
+            {key === 'learn_points' && (
+              <LearnPointsEditor
+                initialTitle={cfg.sections.learn_points.title}
+                initialSubtitle={cfg.sections.learn_points.subtitle}
+                items={cfg.sections.learn_points.items}
+                primary={primary}
+              />
+            )}
+            {key === 'features' && (
+              <FeaturesEditor
+                initialTitle={cfg.sections.features.title}
+                items={cfg.sections.features.items}
+                primary={primary}
+              />
+            )}
             {key === 'featured' && (
               <FeaturedEditor initialTitle={cfg.sections.featured.title} primary={primary} />
             )}
@@ -142,8 +177,34 @@ export default async function SiteBuilderPage() {
                 primary={primary}
               />
             )}
+            {key === 'before_after' && (
+              <BeforeAfterEditor
+                initial={{
+                  title: cfg.sections.before_after.title,
+                  before_label: cfg.sections.before_after.before_label,
+                  after_label: cfg.sections.before_after.after_label,
+                  before_body: cfg.sections.before_after.before_body,
+                  after_body: cfg.sections.before_after.after_body
+                }}
+                beforeUrl={cfg.sections.before_after.before_image_url}
+                afterUrl={cfg.sections.before_after.after_image_url}
+                primary={primary}
+              />
+            )}
             {key === 'faq' && (
               <FaqEditor initialTitle={cfg.sections.faq.title} items={cfg.sections.faq.items} />
+            )}
+            {key === 'offer' && (
+              <OfferEditor
+                initial={{
+                  title: cfg.sections.offer.title,
+                  subtitle: cfg.sections.offer.subtitle,
+                  ends_at: cfg.sections.offer.ends_at ?? '',
+                  cta_label: cfg.sections.offer.cta_label,
+                  cta_href: cfg.sections.offer.cta_href
+                }}
+                primary={primary}
+              />
             )}
             {key === 'newsletter' && (
               <NewsletterEditor
@@ -172,7 +233,6 @@ export default async function SiteBuilderPage() {
 
       <div className="pt-6 border-t border-white/10">
         <h2 className="text-xl font-bold mb-2">Cabecera (nav)</h2>
-        <p className="text-white/60 text-sm mb-4">Personalizá los links del menú superior de tu storefront.</p>
         <div className="rounded-xl border border-white/15 bg-white/[0.02] p-5">
           <NavEditor
             links={cfg.nav.links}
@@ -185,7 +245,6 @@ export default async function SiteBuilderPage() {
 
       <div className="pt-6">
         <h2 className="text-xl font-bold mb-2">Pie de página (footer)</h2>
-        <p className="text-white/60 text-sm mb-4">Texto, links legales y redes sociales que aparecen abajo del todo.</p>
         <div className="rounded-xl border border-white/15 bg-white/[0.02] p-5">
           <FooterEditor
             initialText={cfg.footer.text}
@@ -200,14 +259,14 @@ export default async function SiteBuilderPage() {
 }
 
 function Section({
-  title, desc, enabled, sectionKey, children, isFirst, isLast, position, total
+  title, desc, enabled, sectionKey, bgColor, children, isFirst, isLast, position, total
 }: {
-  title: string; desc: string; enabled: boolean; sectionKey: string;
+  title: string; desc: string; enabled: boolean; sectionKey: string; bgColor: string | null;
   children: React.ReactNode; isFirst: boolean; isLast: boolean; position: number; total: number;
 }) {
   return (
     <div className={`rounded-xl border ${enabled ? 'border-white/15 bg-white/[0.02]' : 'border-white/10 bg-white/[0.01] opacity-70'}`}>
-      <div className="p-5 flex items-start justify-between gap-3 border-b border-white/5">
+      <div className="p-5 flex items-start justify-between gap-3 border-b border-white/5 flex-wrap">
         <div className="flex items-start gap-3">
           <div className="flex flex-col gap-1 pt-1">
             <form action={moveSectionAction}>
@@ -229,15 +288,36 @@ function Section({
             <p className="text-xs text-white/50 mt-0.5">{desc}</p>
           </div>
         </div>
-        <form action={toggleSectionAction}>
-          <input type="hidden" name="section" value={sectionKey} />
-          <button
-            type="submit"
-            className={`text-xs px-2.5 py-1 rounded border whitespace-nowrap ${enabled ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-white/15 text-white/50'}`}
-          >
-            {enabled ? '✓ activa' : 'desactivada'}
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          {/* Color picker per section */}
+          <form action={setSectionBgColorAction} className="flex items-center gap-1">
+            <input type="hidden" name="section" value={sectionKey} />
+            <label className="text-xs text-white/50">Fondo:</label>
+            <input
+              name="bg_color"
+              type="color"
+              defaultValue={bgColor ?? '#ffffff'}
+              className="w-7 h-7 rounded bg-transparent border border-white/15 cursor-pointer"
+            />
+            <button className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5">Aplicar</button>
+          </form>
+          {bgColor && (
+            <form action={setSectionBgColorAction}>
+              <input type="hidden" name="section" value={sectionKey} />
+              <input type="hidden" name="bg_color" value="" />
+              <button className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5 text-white/50">Reset</button>
+            </form>
+          )}
+          <form action={toggleSectionAction}>
+            <input type="hidden" name="section" value={sectionKey} />
+            <button
+              type="submit"
+              className={`text-xs px-2.5 py-1 rounded border whitespace-nowrap ${enabled ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-white/15 text-white/50'}`}
+            >
+              {enabled ? '✓ activa' : 'desactivada'}
+            </button>
+          </form>
+        </div>
       </div>
       {enabled && <div className="p-5">{children}</div>}
     </div>

@@ -1,16 +1,24 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import {
   updateSectionFieldsAction,
   uploadAboutImageAction,
   uploadInstructorPhotoAction,
+  uploadHeroImageAction,
+  uploadBeforeAfterImageAction,
   addTestimonialAction,
   deleteTestimonialAction,
   addFaqAction,
   deleteFaqAction,
   addStatAction,
   deleteStatAction,
+  addLearnPointAction,
+  deleteLearnPointAction,
+  addFeatureAction,
+  deleteFeatureAction,
+  addLogoAction,
+  deleteLogoAction,
   addNavLinkAction,
   deleteNavLinkAction,
   toggleNavLoginAction,
@@ -20,19 +28,23 @@ import {
   addSocialLinkAction,
   deleteSocialLinkAction
 } from '@/lib/site/actions';
-import type { TestimonialItem, FaqItem, StatItem, NavLink, SocialLink } from '@/lib/site/types';
+import type {
+  TestimonialItem, FaqItem, StatItem, LearnItem, FeatureItem, LogoItem,
+  NavLink, SocialLink, HeroLayout
+} from '@/lib/site/types';
 
 /* =====================================================================
- * Generic save button + helpers
+ * Shared helpers
  * ===================================================================== */
 
-function Field({ label, value, onChange, placeholder }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+function Field({ label, value, onChange, placeholder, type = 'text' }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
 }) {
   return (
     <div>
       <label className="block text-xs text-white/60 mb-1">{label}</label>
       <input
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -61,12 +73,8 @@ function Textarea({ label, value, onChange, rows = 3 }: {
 function SaveBar({ pending, saved, onSave }: { pending: boolean; saved: boolean; onSave: () => void }) {
   return (
     <div className="flex items-center gap-3 pt-1">
-      <button
-        type="button"
-        onClick={onSave}
-        disabled={pending}
-        className="rounded bg-white text-black px-4 py-1.5 text-sm font-medium hover:bg-white/90 disabled:opacity-50"
-      >
+      <button type="button" onClick={onSave} disabled={pending}
+        className="rounded bg-white text-black px-4 py-1.5 text-sm font-medium hover:bg-white/90 disabled:opacity-50">
         {pending ? 'Guardando…' : 'Guardar'}
       </button>
       {saved && <span className="text-xs text-emerald-300">✓ Guardado</span>}
@@ -77,12 +85,8 @@ function SaveBar({ pending, saved, onSave }: { pending: boolean; saved: boolean;
 function PreviewFrame({ children, label }: { children: React.ReactNode; label?: string }) {
   return (
     <div>
-      <div className="text-xs text-white/40 uppercase tracking-wider mb-2">
-        {label ?? 'Preview en vivo'}
-      </div>
-      <div className="rounded-xl border border-white/10 bg-white text-black overflow-hidden">
-        {children}
-      </div>
+      <div className="text-xs text-white/40 uppercase tracking-wider mb-2">{label ?? 'Preview en vivo'}</div>
+      <div className="rounded-xl border border-white/10 bg-white text-black overflow-hidden">{children}</div>
     </div>
   );
 }
@@ -96,11 +100,8 @@ function useSave(section: string) {
       const fd = new FormData();
       fd.set('section', section);
       for (const [k, v] of Object.entries(fields)) {
-        if (typeof v === 'boolean') {
-          if (v) fd.set(k, 'on');
-        } else {
-          fd.set(k, v);
-        }
+        if (typeof v === 'boolean') { if (v) fd.set(k, 'on'); }
+        else fd.set(k, v);
       }
       await updateSectionFieldsAction(fd);
       setSaved(true);
@@ -111,37 +112,195 @@ function useSave(section: string) {
 }
 
 /* =====================================================================
- * Hero
+ * HERO with layout variants + image upload
  * ===================================================================== */
 
 type HeroValues = { title: string; subtitle: string; cta_label: string; cta_href: string };
 
-export function HeroEditor({ initial, fallbackTitle, primary }: {
-  initial: HeroValues; fallbackTitle: string; primary: string;
+export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }: {
+  initial: HeroValues; fallbackTitle: string; primary: string; layout: HeroLayout; imageUrl: string | null;
 }) {
   const [v, setV] = useState(initial);
+  const [layoutSel, setLayoutSel] = useState<HeroLayout>(layout);
   const { pending, saved, fire } = useSave('hero');
+  const [uploadPending, startUpload] = useTransition();
   const displayTitle = v.title || fallbackTitle;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs text-white/60 mb-2">Plantilla del Hero</label>
+        <div className="grid grid-cols-3 gap-2">
+          {(['centered', 'split', 'gallery'] as HeroLayout[]).map((l) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => { setLayoutSel(l); fire({ ...v, layout: l }); }}
+              className={`text-xs px-3 py-2 rounded border ${layoutSel === l ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'}`}
+            >
+              {l === 'centered' ? 'Centrado' : l === 'split' ? 'Dividido (texto + imagen)' : 'Galería'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <Field label="Título (vacío = nombre de la academia)" value={v.title} onChange={(x) => setV({ ...v, title: x })} placeholder={fallbackTitle} />
+          <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Texto del botón" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
+            <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
+          </div>
+          <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, layout: layoutSel })} />
+
+          {(layoutSel === 'split' || layoutSel === 'gallery') && (
+            <div className="pt-3 mt-3 border-t border-white/5">
+              <label className="block text-xs text-white/60 mb-2">Imagen del Hero</label>
+              <form action={(fd) => startUpload(async () => { await uploadHeroImageAction(fd); })} className="flex items-center gap-3">
+                <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
+                  className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
+                <button className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium hover:bg-white/90" disabled={uploadPending}>
+                  {uploadPending ? 'Subiendo…' : 'Subir'}
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
+
+        <PreviewFrame>
+          {layoutSel === 'centered' && (
+            <div className="p-6 text-center" style={{ background: `linear-gradient(180deg, ${primary}15 0%, transparent 100%)` }}>
+              <h1 className="text-2xl font-bold tracking-tight">{displayTitle}</h1>
+              {v.subtitle && <p className="mt-2 text-sm text-black/60">{v.subtitle}</p>}
+              {v.cta_label && <span className="mt-4 inline-block rounded-md px-4 py-2 text-sm font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
+            </div>
+          )}
+          {layoutSel === 'split' && (
+            <div className="p-5 grid grid-cols-2 gap-4 items-center" style={{ background: `linear-gradient(180deg, ${primary}10 0%, transparent 100%)` }}>
+              <div>
+                <h1 className="text-lg font-bold tracking-tight">{displayTitle}</h1>
+                {v.subtitle && <p className="mt-1.5 text-xs text-black/60">{v.subtitle}</p>}
+                {v.cta_label && <span className="mt-3 inline-block rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
+              </div>
+              {imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={imageUrl} alt="" className="rounded w-full h-28 object-cover" />
+              ) : (
+                <div className="rounded w-full h-28 flex items-center justify-center text-2xl" style={{ background: `${primary}20` }}>🖼️</div>
+              )}
+            </div>
+          )}
+          {layoutSel === 'gallery' && (
+            <div className="p-5" style={{ background: `linear-gradient(180deg, ${primary}10 0%, transparent 100%)` }}>
+              {imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={imageUrl} alt="" className="rounded w-full h-32 object-cover mb-3" />
+              ) : (
+                <div className="rounded w-full h-32 flex items-center justify-center text-2xl mb-3" style={{ background: `${primary}20` }}>🖼️</div>
+              )}
+              <h1 className="text-lg font-bold text-center">{displayTitle}</h1>
+              {v.subtitle && <p className="mt-1.5 text-xs text-black/60 text-center">{v.subtitle}</p>}
+              {v.cta_label && <div className="text-center mt-3"><span className="inline-block rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span></div>}
+            </div>
+          )}
+        </PreviewFrame>
+      </div>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * TRUSTED BY
+ * ===================================================================== */
+
+export function TrustedByEditor({ initialTitle, items, grayscale }: {
+  initialTitle: string; items: LogoItem[]; grayscale: boolean;
+}) {
+  const [title, setTitle] = useState(initialTitle);
+  const [gs, setGs] = useState(grayscale);
+  const { pending, saved, fire } = useSave('trusted_by');
+  const [addPending, startAdd] = useTransition();
+  const [delPending, startDel] = useTransition();
+  const [name, setName] = useState('');
+  const [href, setHref] = useState('');
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título (vacío = nombre de la academia)" value={v.title} onChange={(x) => setV({ ...v, title: x })} placeholder={fallbackTitle} />
-        <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Texto del botón" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
-          <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
+        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={gs} onChange={(e) => setGs(e.target.checked)} />
+          Aplicar filtro grayscale a los logos
+        </label>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, grayscale: gs })} />
+
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">Agregar logo</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre (ej. Acme Corp)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="Link (opcional)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <form
+            action={(fd) => {
+              fd.set('name', name); fd.set('href', href);
+              startAdd(async () => {
+                await addLogoAction(fd);
+                setName(''); setHref('');
+              });
+            }}
+            className="flex items-center gap-2"
+            encType="multipart/form-data"
+          >
+            <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              className="flex-1 text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
+            <button disabled={addPending || !name} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Agregando…' : '+ Agregar'}
+            </button>
+          </form>
         </div>
-        <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
+
+        {items.length > 0 && (
+          <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
+            {items.map((l) => (
+              <li key={l.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  {l.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.logo_url} alt="" className="w-8 h-8 object-contain" />
+                  ) : (
+                    <div className="w-8 h-8 rounded bg-white/10" />
+                  )}
+                  <span className="font-medium">{l.name}</span>
+                </div>
+                <button type="button" disabled={delPending} onClick={() => {
+                  startDel(async () => {
+                    const fd = new FormData(); fd.set('id', l.id);
+                    await deleteLogoAction(fd);
+                  });
+                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
+
       <PreviewFrame>
-        <div className="p-6 text-center" style={{ background: `linear-gradient(180deg, ${primary}15 0%, transparent 100%)` }}>
-          <h1 className="text-2xl font-bold tracking-tight">{displayTitle}</h1>
-          {v.subtitle && <p className="mt-2 text-sm text-black/60">{v.subtitle}</p>}
-          {v.cta_label && (
-            <span className="mt-4 inline-block rounded-md px-4 py-2 text-sm font-semibold text-white" style={{ background: primary }}>
-              {v.cta_label}
-            </span>
+        <div className="p-5">
+          <p className="text-xs text-center text-black/40 uppercase tracking-widest mb-3">{title || '—'}</p>
+          {items.length === 0 ? (
+            <div className="text-center text-xs text-black/40 py-4">Agregá logos para verlos acá.</div>
+          ) : (
+            <div className="flex flex-wrap justify-center items-center gap-4">
+              {items.map((l) => (
+                <div key={l.id} className={`flex items-center justify-center ${gs ? 'grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition' : ''}`}>
+                  {l.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.logo_url} alt={l.name} className="h-8 object-contain" />
+                  ) : (
+                    <span className="text-xs font-semibold text-black/60">{l.name}</span>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </PreviewFrame>
@@ -150,7 +309,7 @@ export function HeroEditor({ initial, fallbackTitle, primary }: {
 }
 
 /* =====================================================================
- * About
+ * ABOUT
  * ===================================================================== */
 
 type AboutValues = { title: string; body: string };
@@ -171,10 +330,7 @@ export function AboutEditor({ initial, imageUrl, primary }: {
 
         <div className="pt-3 mt-3 border-t border-white/5">
           <label className="block text-xs text-white/60 mb-2">Foto (opcional)</label>
-          <form
-            action={(fd) => startUpload(async () => { await uploadAboutImageAction(fd); })}
-            className="flex items-center gap-3"
-          >
+          <form action={(fd) => startUpload(async () => { await uploadAboutImageAction(fd); })} className="flex items-center gap-3">
             <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
               className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
             <button className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium hover:bg-white/90" disabled={uploadPending}>
@@ -202,13 +358,296 @@ export function AboutEditor({ initial, imageUrl, primary }: {
 }
 
 /* =====================================================================
- * Featured (just title)
+ * INSTRUCTOR
+ * ===================================================================== */
+
+type InstructorValues = { title: string; name: string; bio: string; credentials: string };
+
+export function InstructorEditor({ initial, photoUrl, primary }: {
+  initial: InstructorValues; photoUrl: string | null; primary: string;
+}) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('instructor');
+  const [uploadPending, startUpload] = useTransition();
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <Field label="Nombre del instructor" value={v.name} onChange={(x) => setV({ ...v, name: x })} />
+        <Field label="Credenciales" value={v.credentials} onChange={(x) => setV({ ...v, credentials: x })} />
+        <Textarea label="Biografía" value={v.bio} onChange={(x) => setV({ ...v, bio: x })} rows={5} />
+        <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
+
+        <div className="pt-3 mt-3 border-t border-white/5">
+          <label className="block text-xs text-white/60 mb-2">Foto del instructor</label>
+          <form action={(fd) => startUpload(async () => { await uploadInstructorPhotoAction(fd); })} className="flex items-center gap-3">
+            <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
+              className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
+            <button className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium hover:bg-white/90" disabled={uploadPending}>
+              {uploadPending ? 'Subiendo…' : 'Subir'}
+            </button>
+          </form>
+        </div>
+      </div>
+      <PreviewFrame>
+        <div className="p-5 text-center">
+          <h2 className="text-lg font-bold mb-3">{v.title || '—'}</h2>
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoUrl} alt="" className="w-20 h-20 rounded-full mx-auto object-cover" />
+          ) : (
+            <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-2xl font-bold text-white" style={{ background: primary }}>
+              {v.name.slice(0, 1).toUpperCase() || '?'}
+            </div>
+          )}
+          <div className="mt-2 font-semibold">{v.name || 'Nombre del instructor'}</div>
+          {v.credentials && <div className="text-xs text-black/50">{v.credentials}</div>}
+          {v.bio && <p className="text-xs text-black/70 mt-2 line-clamp-3">{v.bio}</p>}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * STATS
+ * ===================================================================== */
+
+export function StatsEditor({ initialTitle, items, primary }: {
+  initialTitle: string; items: StatItem[]; primary: string;
+}) {
+  const [title, setTitle] = useState(initialTitle);
+  const { pending, saved, fire } = useSave('stats');
+  const [addPending, startAdd] = useTransition();
+  const [delPending, startDel] = useTransition();
+  const [num, setNum] = useState('');
+  const [lbl, setLbl] = useState('');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
+
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">Agregar estadística</label>
+          <div className="grid grid-cols-2 gap-2">
+            <input value={num} onChange={(e) => setNum(e.target.value)} placeholder="+2.400" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <input value={lbl} onChange={(e) => setLbl(e.target.value)} placeholder="alumnos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </div>
+          <button type="button" disabled={addPending || !num || !lbl}
+            onClick={() => {
+              startAdd(async () => {
+                const fd = new FormData(); fd.set('number', num); fd.set('label', lbl);
+                await addStatAction(fd); setNum(''); setLbl('');
+              });
+            }}
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+            {addPending ? 'Agregando…' : '+ Agregar'}
+          </button>
+        </div>
+
+        {items.length > 0 && (
+          <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
+            {items.map((s) => (
+              <li key={s.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+                <div><span className="font-bold">{s.number}</span> <span className="text-white/60">{s.label}</span></div>
+                <button type="button" disabled={delPending} onClick={() => {
+                  startDel(async () => {
+                    const fd = new FormData(); fd.set('id', s.id);
+                    await deleteStatAction(fd);
+                  });
+                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <PreviewFrame>
+        <div className="p-5">
+          <h2 className="text-lg font-bold mb-3 text-center">{title || '—'}</h2>
+          {items.length === 0 ? (
+            <div className="text-center text-xs text-black/40 py-4">Agregá estadísticas para verlas acá.</div>
+          ) : (
+            <div className={`grid gap-2 ${items.length === 1 ? 'grid-cols-1' : items.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              {items.slice(0, 6).map((s) => (
+                <div key={s.id} className="text-center p-3 rounded border border-black/10">
+                  <div className="text-xl font-bold" style={{ color: primary }}>{s.number}</div>
+                  <div className="text-[10px] text-black/60">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * LEARN POINTS (Qué vas a aprender)
+ * ===================================================================== */
+
+export function LearnPointsEditor({ initialTitle, initialSubtitle, items, primary }: {
+  initialTitle: string; initialSubtitle: string; items: LearnItem[]; primary: string;
+}) {
+  const [title, setTitle] = useState(initialTitle);
+  const [subtitle, setSubtitle] = useState(initialSubtitle);
+  const { pending, saved, fire } = useSave('learn_points');
+  const [addPending, startAdd] = useTransition();
+  const [delPending, startDel] = useTransition();
+  const [text, setText] = useState('');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título" value={title} onChange={setTitle} />
+        <Field label="Subtítulo (opcional)" value={subtitle} onChange={setSubtitle} />
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, subtitle })} />
+
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">Agregar punto de aprendizaje</label>
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Diseñar wireframes con Figma" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <button type="button" disabled={addPending || !text}
+            onClick={() => {
+              startAdd(async () => {
+                const fd = new FormData(); fd.set('text', text);
+                await addLearnPointAction(fd); setText('');
+              });
+            }}
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+            {addPending ? 'Agregando…' : '+ Agregar'}
+          </button>
+        </div>
+
+        {items.length > 0 && (
+          <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
+            {items.map((p) => (
+              <li key={p.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+                <span>✓ {p.text}</span>
+                <button type="button" disabled={delPending} onClick={() => {
+                  startDel(async () => {
+                    const fd = new FormData(); fd.set('id', p.id);
+                    await deleteLearnPointAction(fd);
+                  });
+                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <PreviewFrame>
+        <div className="p-5">
+          <h2 className="text-lg font-bold text-center">{title || '—'}</h2>
+          {subtitle && <p className="text-center text-xs text-black/60 mt-1">{subtitle}</p>}
+          {items.length === 0 ? (
+            <div className="text-center text-xs text-black/40 py-4">Agregá puntos para verlos acá.</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              {items.slice(0, 8).map((p) => (
+                <div key={p.id} className="flex items-start gap-2 text-xs">
+                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] shrink-0 mt-0.5" style={{ background: primary }}>✓</span>
+                  <span className="text-black/80">{p.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * FEATURES (3-card)
+ * ===================================================================== */
+
+export function FeaturesEditor({ initialTitle, items, primary }: {
+  initialTitle: string; items: FeatureItem[]; primary: string;
+}) {
+  const [title, setTitle] = useState(initialTitle);
+  const { pending, saved, fire } = useSave('features');
+  const [addPending, startAdd] = useTransition();
+  const [delPending, startDel] = useTransition();
+  const [icon, setIcon] = useState('⭐');
+  const [t, setT] = useState('');
+  const [b, setB] = useState('');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
+
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">Agregar feature (icono emoji + título + texto)</label>
+          <div className="grid grid-cols-4 gap-2">
+            <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="⭐" maxLength={3} className="col-span-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm text-center" />
+            <input value={t} onChange={(e) => setT(e.target.value)} placeholder="Título" className="col-span-3 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </div>
+          <textarea value={b} onChange={(e) => setB(e.target.value)} rows={2} placeholder="Descripción corta" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <button type="button" disabled={addPending || !t || !b}
+            onClick={() => {
+              startAdd(async () => {
+                const fd = new FormData(); fd.set('icon', icon); fd.set('title', t); fd.set('body', b);
+                await addFeatureAction(fd);
+                setT(''); setB(''); setIcon('⭐');
+              });
+            }}
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+            {addPending ? 'Agregando…' : '+ Agregar'}
+          </button>
+        </div>
+
+        {items.length > 0 && (
+          <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
+            {items.map((f) => (
+              <li key={f.id} className="rounded border border-white/10 p-2 flex items-start justify-between gap-3 text-sm">
+                <div>
+                  <div className="font-medium">{f.icon} {f.title}</div>
+                  <div className="text-xs text-white/60 mt-0.5">{f.body}</div>
+                </div>
+                <button type="button" disabled={delPending} onClick={() => {
+                  startDel(async () => {
+                    const fd = new FormData(); fd.set('id', f.id);
+                    await deleteFeatureAction(fd);
+                  });
+                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <PreviewFrame>
+        <div className="p-5">
+          <h2 className="text-lg font-bold text-center mb-3">{title || '—'}</h2>
+          {items.length === 0 ? (
+            <div className="text-center text-xs text-black/40 py-4">Agregá features para verlas acá.</div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {items.slice(0, 3).map((f) => (
+                <div key={f.id} className="text-center p-3 rounded border border-black/10">
+                  <div className="text-2xl mb-1">{f.icon}</div>
+                  <div className="text-[10px] font-semibold" style={{ color: primary }}>{f.title}</div>
+                  <div className="text-[9px] text-black/60 mt-1 line-clamp-2">{f.body}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * FEATURED (just title)
  * ===================================================================== */
 
 export function FeaturedEditor({ initialTitle, primary }: { initialTitle: string; primary: string }) {
   const [title, setTitle] = useState(initialTitle);
   const { pending, saved, fire } = useSave('featured');
-
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
@@ -236,7 +675,7 @@ export function FeaturedEditor({ initialTitle, primary }: { initialTitle: string
 }
 
 /* =====================================================================
- * Catalog
+ * CATALOG
  * ===================================================================== */
 
 export function CatalogEditor({ initialTitle, initialShowFilters, primary }: {
@@ -245,7 +684,6 @@ export function CatalogEditor({ initialTitle, initialShowFilters, primary }: {
   const [title, setTitle] = useState(initialTitle);
   const [showFilters, setShowFilters] = useState(initialShowFilters);
   const { pending, saved, fire } = useSave('catalog');
-
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
@@ -281,7 +719,7 @@ export function CatalogEditor({ initialTitle, initialShowFilters, primary }: {
 }
 
 /* =====================================================================
- * Testimonials
+ * TESTIMONIALS (enhanced — photo + stars + role)
  * ===================================================================== */
 
 export function TestimonialsEditor({ initialTitle, items, primary }: {
@@ -294,6 +732,7 @@ export function TestimonialsEditor({ initialTitle, items, primary }: {
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [text, setText] = useState('');
+  const [rating, setRating] = useState(5);
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -305,48 +744,60 @@ export function TestimonialsEditor({ initialTitle, items, primary }: {
           <label className="text-xs text-white/60 block mb-1">Agregar testimonio</label>
           <div className="grid grid-cols-2 gap-2">
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Rol (opcional)" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Rol o ciudad (opcional)" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </div>
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Lo que dijo" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <button
-            type="button"
-            disabled={addPending || !name || !text}
-            onClick={() => {
+          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} placeholder="Lo que dijo" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-xs text-white/60">Rating:</span>
+            {[1, 2, 3, 4, 5].map((r) => (
+              <button key={r} type="button" onClick={() => setRating(r)} className={`text-base ${r <= rating ? 'text-yellow-400' : 'text-white/20'}`}>★</button>
+            ))}
+            <span className="text-xs text-white/40">({rating})</span>
+          </div>
+          <form
+            action={(fd) => {
+              fd.set('name', name); fd.set('role', role); fd.set('text', text); fd.set('rating', String(rating));
               startAdd(async () => {
-                const fd = new FormData();
-                fd.set('name', name); fd.set('role', role); fd.set('text', text);
                 await addTestimonialAction(fd);
-                setName(''); setRole(''); setText('');
+                setName(''); setRole(''); setText(''); setRating(5);
               });
             }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+            className="flex items-center gap-2"
+            encType="multipart/form-data"
           >
-            {addPending ? 'Agregando…' : '+ Agregar'}
-          </button>
+            <input type="file" name="photo" accept="image/png,image/jpeg,image/webp"
+              className="flex-1 text-xs text-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-white file:text-black file:px-2 file:py-1 file:font-medium" />
+            <button disabled={addPending || !name || !text} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Agregando…' : '+ Agregar'}
+            </button>
+          </form>
         </div>
 
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((t) => (
               <li key={t.id} className="rounded border border-white/10 p-2 flex items-start justify-between gap-3 text-sm">
-                <div>
-                  <div className="font-medium">{t.name}{t.role && <span className="text-white/40"> · {t.role}</span>}</div>
-                  <div className="text-white/60 text-xs mt-0.5">{t.text}</div>
+                <div className="flex gap-2">
+                  {t.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={t.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: primary }}>
+                      {t.name.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-medium">{t.name}{t.role && <span className="text-white/40"> · {t.role}</span>}</div>
+                    <div className="text-yellow-400 text-xs">{'★'.repeat(t.rating ?? 5)}</div>
+                    <div className="text-white/60 text-xs mt-0.5">{t.text}</div>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  disabled={delPending}
-                  onClick={() => {
-                    startDel(async () => {
-                      const fd = new FormData();
-                      fd.set('id', t.id);
-                      await deleteTestimonialAction(fd);
-                    });
-                  }}
-                  className="text-xs text-red-300 hover:text-red-200"
-                >
-                  ✕
-                </button>
+                <button type="button" disabled={delPending} onClick={() => {
+                  startDel(async () => {
+                    const fd = new FormData(); fd.set('id', t.id);
+                    await deleteTestimonialAction(fd);
+                  });
+                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
               </li>
             ))}
           </ul>
@@ -361,12 +812,21 @@ export function TestimonialsEditor({ initialTitle, items, primary }: {
             <div className="grid grid-cols-2 gap-2">
               {items.slice(0, 4).map((t) => (
                 <div key={t.id} className="rounded bg-white border border-black/10 p-2.5">
+                  <div className="text-yellow-500 text-[10px] mb-1">{'★'.repeat(t.rating ?? 5)}</div>
                   <p className="text-[10px] text-black/80 italic line-clamp-2">"{t.text}"</p>
                   <div className="mt-1.5 flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-semibold" style={{ background: primary }}>
-                      {t.name.slice(0, 1).toUpperCase()}
+                    {t.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={t.photo_url} alt="" className="w-5 h-5 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-semibold" style={{ background: primary }}>
+                        {t.name.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="text-[9px]">
+                      <div className="font-medium">{t.name}</div>
+                      {t.role && <div className="text-black/40">{t.role}</div>}
                     </div>
-                    <div className="text-[9px] font-medium">{t.name}</div>
                   </div>
                 </div>
               ))}
@@ -400,19 +860,14 @@ export function FaqEditor({ initialTitle, items }: { initialTitle: string; items
           <label className="text-xs text-white/60 block mb-1">Agregar pregunta</label>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pregunta" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           <textarea value={a} onChange={(e) => setA(e.target.value)} rows={2} placeholder="Respuesta" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <button
-            type="button"
-            disabled={addPending || !q || !a}
+          <button type="button" disabled={addPending || !q || !a}
             onClick={() => {
               startAdd(async () => {
-                const fd = new FormData();
-                fd.set('q', q); fd.set('a', a);
-                await addFaqAction(fd);
-                setQ(''); setA('');
+                const fd = new FormData(); fd.set('q', q); fd.set('a', a);
+                await addFaqAction(fd); setQ(''); setA('');
               });
             }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
-          >
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
             {addPending ? 'Agregando…' : '+ Agregar'}
           </button>
         </div>
@@ -425,20 +880,12 @@ export function FaqEditor({ initialTitle, items }: { initialTitle: string; items
                   <div className="font-medium">{f.q}</div>
                   <div className="text-white/60 text-xs mt-0.5 whitespace-pre-line">{f.a}</div>
                 </div>
-                <button
-                  type="button"
-                  disabled={delPending}
-                  onClick={() => {
-                    startDel(async () => {
-                      const fd = new FormData();
-                      fd.set('id', f.id);
-                      await deleteFaqAction(fd);
-                    });
-                  }}
-                  className="text-xs text-red-300 hover:text-red-200"
-                >
-                  ✕
-                </button>
+                <button type="button" disabled={delPending} onClick={() => {
+                  startDel(async () => {
+                    const fd = new FormData(); fd.set('id', f.id);
+                    await deleteFaqAction(fd);
+                  });
+                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
               </li>
             ))}
           </ul>
@@ -465,20 +912,40 @@ export function FaqEditor({ initialTitle, items }: { initialTitle: string; items
 }
 
 /* =====================================================================
- * CTA final
+ * OFFER (countdown)
  * ===================================================================== */
 
-type CtaValues = { title: string; body: string; cta_label: string; cta_href: string };
+type OfferValues = { title: string; subtitle: string; ends_at: string; cta_label: string; cta_href: string };
 
-export function CtaFinalEditor({ initial, primary }: { initial: CtaValues; primary: string }) {
+export function OfferEditor({ initial, primary }: { initial: OfferValues; primary: string }) {
   const [v, setV] = useState(initial);
-  const { pending, saved, fire } = useSave('cta_final');
+  const { pending, saved, fire } = useSave('offer');
+
+  // Live countdown in preview
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const endsMs = v.ends_at ? new Date(v.ends_at).getTime() : 0;
+  const diff = Math.max(0, endsMs - now);
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
         <Field label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
-        <Textarea label="Texto" value={v.body} onChange={(x) => setV({ ...v, body: x })} rows={3} />
+        <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+        <Field
+          label="Termina el (datetime local)"
+          value={v.ends_at}
+          onChange={(x) => setV({ ...v, ends_at: x })}
+          placeholder="2026-12-31T23:59"
+          type="datetime-local"
+        />
         <div className="grid grid-cols-2 gap-3">
           <Field label="Texto del botón" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
           <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
@@ -486,154 +953,23 @@ export function CtaFinalEditor({ initial, primary }: { initial: CtaValues; prima
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
       </div>
       <PreviewFrame>
-        <div className="p-6 text-center" style={{ background: `linear-gradient(0deg, ${primary}15 0%, transparent 100%)` }}>
+        <div className="p-5 text-center text-white" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}cc)` }}>
           <h2 className="text-lg font-bold">{v.title || '—'}</h2>
-          {v.body && <p className="text-xs text-black/60 mt-1.5">{v.body}</p>}
-          {v.cta_label && (
-            <span className="mt-3 inline-block rounded-md px-4 py-2 text-xs font-semibold text-white" style={{ background: primary }}>
-              {v.cta_label}
-            </span>
-          )}
-        </div>
-      </PreviewFrame>
-    </div>
-  );
-}
-
-/* =====================================================================
- * Instructor
- * ===================================================================== */
-
-type InstructorValues = { title: string; name: string; bio: string; credentials: string };
-
-export function InstructorEditor({ initial, photoUrl, primary }: {
-  initial: InstructorValues; photoUrl: string | null; primary: string;
-}) {
-  const [v, setV] = useState(initial);
-  const { pending, saved, fire } = useSave('instructor');
-  const [uploadPending, startUpload] = useTransition();
-
-  return (
-    <div className="grid md:grid-cols-2 gap-6">
-      <div className="space-y-3">
-        <Field label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
-        <Field label="Nombre del instructor" value={v.name} onChange={(x) => setV({ ...v, name: x })} />
-        <Field label="Credenciales (ej. '10 años en UX')" value={v.credentials} onChange={(x) => setV({ ...v, credentials: x })} />
-        <Textarea label="Biografía" value={v.bio} onChange={(x) => setV({ ...v, bio: x })} rows={5} />
-        <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
-
-        <div className="pt-3 mt-3 border-t border-white/5">
-          <label className="block text-xs text-white/60 mb-2">Foto del instructor</label>
-          <form
-            action={(fd) => startUpload(async () => { await uploadInstructorPhotoAction(fd); })}
-            className="flex items-center gap-3"
-          >
-            <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-              className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
-            <button className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium hover:bg-white/90" disabled={uploadPending}>
-              {uploadPending ? 'Subiendo…' : 'Subir'}
-            </button>
-          </form>
-        </div>
-      </div>
-      <PreviewFrame>
-        <div className="p-5 text-center">
-          <h2 className="text-lg font-bold mb-3">{v.title || '—'}</h2>
-          {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoUrl} alt="" className="w-20 h-20 rounded-full mx-auto object-cover" />
-          ) : (
-            <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-2xl font-bold text-white" style={{ background: primary }}>
-              {v.name.slice(0, 1).toUpperCase() || '?'}
-            </div>
-          )}
-          <div className="mt-2 font-semibold">{v.name || 'Nombre del instructor'}</div>
-          {v.credentials && <div className="text-xs text-black/50">{v.credentials}</div>}
-          {v.bio && <p className="text-xs text-black/70 mt-2 line-clamp-3">{v.bio}</p>}
-        </div>
-      </PreviewFrame>
-    </div>
-  );
-}
-
-/* =====================================================================
- * Stats
- * ===================================================================== */
-
-export function StatsEditor({ initialTitle, items, primary }: {
-  initialTitle: string; items: StatItem[]; primary: string;
-}) {
-  const [title, setTitle] = useState(initialTitle);
-  const { pending, saved, fire } = useSave('stats');
-  const [addPending, startAdd] = useTransition();
-  const [delPending, startDel] = useTransition();
-  const [num, setNum] = useState('');
-  const [lbl, setLbl] = useState('');
-
-  return (
-    <div className="grid md:grid-cols-2 gap-6">
-      <div className="space-y-3">
-        <Field label="Título de la sección" value={title} onChange={setTitle} />
-        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
-
-        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar estadística</label>
-          <div className="grid grid-cols-2 gap-2">
-            <input value={num} onChange={(e) => setNum(e.target.value)} placeholder="+2.400" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <input value={lbl} onChange={(e) => setLbl(e.target.value)} placeholder="alumnos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          </div>
-          <button
-            type="button"
-            disabled={addPending || !num || !lbl}
-            onClick={() => {
-              startAdd(async () => {
-                const fd = new FormData();
-                fd.set('number', num); fd.set('label', lbl);
-                await addStatAction(fd);
-                setNum(''); setLbl('');
-              });
-            }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
-          >
-            {addPending ? 'Agregando…' : '+ Agregar'}
-          </button>
-        </div>
-
-        {items.length > 0 && (
-          <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
-            {items.map((s) => (
-              <li key={s.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
-                <div><span className="font-bold">{s.number}</span> <span className="text-white/60">{s.label}</span></div>
-                <button
-                  type="button"
-                  disabled={delPending}
-                  onClick={() => {
-                    startDel(async () => {
-                      const fd = new FormData(); fd.set('id', s.id);
-                      await deleteStatAction(fd);
-                    });
-                  }}
-                  className="text-xs text-red-300 hover:text-red-200"
-                >✕</button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      <PreviewFrame>
-        <div className="p-5">
-          <h2 className="text-lg font-bold mb-3 text-center">{title || '—'}</h2>
-          {items.length === 0 ? (
-            <div className="text-center text-xs text-black/40 py-4">Agregá estadísticas para verlas acá.</div>
-          ) : (
-            <div className={`grid gap-2 ${items.length === 1 ? 'grid-cols-1' : items.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-              {items.slice(0, 6).map((s) => (
-                <div key={s.id} className="text-center p-3 rounded border border-black/10">
-                  <div className="text-xl font-bold" style={{ color: primary }}>{s.number}</div>
-                  <div className="text-[10px] text-black/60">{s.label}</div>
+          {v.subtitle && <p className="text-xs opacity-90 mt-1">{v.subtitle}</p>}
+          {v.ends_at ? (
+            <div className="flex justify-center gap-2 my-3">
+              {[{ n: d, l: 'd' }, { n: h, l: 'h' }, { n: m, l: 'm' }, { n: s, l: 's' }].map((b, i) => (
+                <div key={i} className="bg-white/15 rounded px-2 py-1.5 min-w-[40px]">
+                  <div className="text-lg font-bold leading-none">{String(b.n).padStart(2, '0')}</div>
+                  <div className="text-[9px] opacity-70">{b.l}</div>
                 </div>
               ))}
             </div>
+          ) : (
+            <p className="text-xs opacity-70 mt-2">Cargá la fecha de fin →</p>
+          )}
+          {v.cta_label && (
+            <span className="mt-2 inline-block rounded px-4 py-2 text-xs font-semibold bg-white text-black">{v.cta_label}</span>
           )}
         </div>
       </PreviewFrame>
@@ -642,7 +978,7 @@ export function StatsEditor({ initialTitle, items, primary }: {
 }
 
 /* =====================================================================
- * Newsletter
+ * NEWSLETTER
  * ===================================================================== */
 
 type NewsletterValues = { title: string; subtitle: string; cta_label: string };
@@ -650,7 +986,6 @@ type NewsletterValues = { title: string; subtitle: string; cta_label: string };
 export function NewsletterEditor({ initial, primary }: { initial: NewsletterValues; primary: string }) {
   const [v, setV] = useState(initial);
   const { pending, saved, fire } = useSave('newsletter');
-
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
@@ -674,7 +1009,126 @@ export function NewsletterEditor({ initial, primary }: { initial: NewsletterValu
 }
 
 /* =====================================================================
- * Nav editor
+ * CTA FINAL
+ * ===================================================================== */
+
+type CtaValues = { title: string; body: string; cta_label: string; cta_href: string };
+
+export function CtaFinalEditor({ initial, primary }: { initial: CtaValues; primary: string }) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('cta_final');
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <Textarea label="Texto" value={v.body} onChange={(x) => setV({ ...v, body: x })} rows={3} />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Texto del botón" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
+          <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
+        </div>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
+      </div>
+      <PreviewFrame>
+        <div className="p-6 text-center" style={{ background: `linear-gradient(0deg, ${primary}15 0%, transparent 100%)` }}>
+          <h2 className="text-lg font-bold">{v.title || '—'}</h2>
+          {v.body && <p className="text-xs text-black/60 mt-1.5">{v.body}</p>}
+          {v.cta_label && <span className="mt-3 inline-block rounded-md px-4 py-2 text-xs font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * BEFORE / AFTER
+ * ===================================================================== */
+
+type BAValues = { title: string; before_label: string; after_label: string; before_body: string; after_body: string };
+
+export function BeforeAfterEditor({ initial, beforeUrl, afterUrl, primary }: {
+  initial: BAValues; beforeUrl: string | null; afterUrl: string | null; primary: string;
+}) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('before_after');
+  const [bPending, startB] = useTransition();
+  const [aPending, startA] = useTransition();
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Label izquierda" value={v.before_label} onChange={(x) => setV({ ...v, before_label: x })} />
+          <Field label="Label derecha" value={v.after_label} onChange={(x) => setV({ ...v, after_label: x })} />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Textarea label="Texto Antes" value={v.before_body} onChange={(x) => setV({ ...v, before_body: x })} rows={3} />
+          <Textarea label="Texto Después" value={v.after_body} onChange={(x) => setV({ ...v, after_body: x })} rows={3} />
+        </div>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
+
+        <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-white/5">
+          <div>
+            <label className="block text-xs text-white/60 mb-1">Imagen Antes</label>
+            <form
+              action={(fd) => { fd.set('which', 'before'); startB(async () => { await uploadBeforeAfterImageAction(fd); }); }}
+              className="flex flex-col gap-2"
+            >
+              <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
+                className="text-xs text-white/70 file:mr-2 file:rounded file:border-0 file:bg-white file:text-black file:px-2 file:py-1 file:font-medium" />
+              <button disabled={bPending} className="rounded bg-white text-black px-3 py-1 text-xs font-medium disabled:opacity-50">
+                {bPending ? 'Subiendo…' : 'Subir Antes'}
+              </button>
+            </form>
+          </div>
+          <div>
+            <label className="block text-xs text-white/60 mb-1">Imagen Después</label>
+            <form
+              action={(fd) => { fd.set('which', 'after'); startA(async () => { await uploadBeforeAfterImageAction(fd); }); }}
+              className="flex flex-col gap-2"
+            >
+              <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
+                className="text-xs text-white/70 file:mr-2 file:rounded file:border-0 file:bg-white file:text-black file:px-2 file:py-1 file:font-medium" />
+              <button disabled={aPending} className="rounded bg-white text-black px-3 py-1 text-xs font-medium disabled:opacity-50">
+                {aPending ? 'Subiendo…' : 'Subir Después'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <PreviewFrame>
+        <div className="p-5">
+          <h2 className="text-lg font-bold text-center mb-3">{v.title || '—'}</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <div className="text-[10px] text-center font-semibold py-1 rounded-t text-white" style={{ background: `${primary}aa` }}>{v.before_label || 'Antes'}</div>
+              {beforeUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={beforeUrl} alt="" className="w-full h-28 object-cover rounded-b" />
+              ) : (
+                <div className="w-full h-28 rounded-b flex items-center justify-center text-2xl bg-black/5">🖼️</div>
+              )}
+              {v.before_body && <p className="text-[10px] text-black/70 mt-2 line-clamp-3">{v.before_body}</p>}
+            </div>
+            <div>
+              <div className="text-[10px] text-center font-semibold py-1 rounded-t text-white" style={{ background: primary }}>{v.after_label || 'Después'}</div>
+              {afterUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={afterUrl} alt="" className="w-full h-28 object-cover rounded-b" />
+              ) : (
+                <div className="w-full h-28 rounded-b flex items-center justify-center text-2xl bg-black/5">🖼️</div>
+              )}
+              {v.after_body && <p className="text-[10px] text-black/70 mt-2 line-clamp-3">{v.after_body}</p>}
+            </div>
+          </div>
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * NAV EDITOR
  * ===================================================================== */
 
 export function NavEditor({ links, showLogin, primary, tenantName }: {
@@ -690,12 +1144,8 @@ export function NavEditor({ links, showLogin, primary, tenantName }: {
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
         <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={showLogin}
-            disabled={togglePending}
-            onChange={() => startToggle(async () => { await toggleNavLoginAction(); })}
-          />
+          <input type="checkbox" checked={showLogin} disabled={togglePending}
+            onChange={() => startToggle(async () => { await toggleNavLoginAction(); })} />
           Mostrar botón "Iniciar sesión" en el nav
         </label>
 
@@ -705,19 +1155,14 @@ export function NavEditor({ links, showLogin, primary, tenantName }: {
             <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Cursos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="#cursos o /algo" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </div>
-          <button
-            type="button"
-            disabled={addPending || !label || !href}
+          <button type="button" disabled={addPending || !label || !href}
             onClick={() => {
               startAdd(async () => {
-                const fd = new FormData();
-                fd.set('label', label); fd.set('href', href);
-                await addNavLinkAction(fd);
-                setLabel(''); setHref('');
+                const fd = new FormData(); fd.set('label', label); fd.set('href', href);
+                await addNavLinkAction(fd); setLabel(''); setHref('');
               });
             }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
-          >
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
             {addPending ? 'Agregando…' : '+ Agregar link'}
           </button>
         </div>
@@ -727,17 +1172,12 @@ export function NavEditor({ links, showLogin, primary, tenantName }: {
             {links.map((l) => (
               <li key={l.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
                 <div><span className="font-medium">{l.label}</span> <span className="text-white/40 text-xs">{l.href}</span></div>
-                <button
-                  type="button"
-                  disabled={delPending}
-                  onClick={() => {
-                    startDel(async () => {
-                      const fd = new FormData(); fd.set('id', l.id);
-                      await deleteNavLinkAction(fd);
-                    });
-                  }}
-                  className="text-xs text-red-300 hover:text-red-200"
-                >✕</button>
+                <button type="button" disabled={delPending} onClick={() => {
+                  startDel(async () => {
+                    const fd = new FormData(); fd.set('id', l.id);
+                    await deleteNavLinkAction(fd);
+                  });
+                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
               </li>
             ))}
           </ul>
@@ -755,9 +1195,7 @@ export function NavEditor({ links, showLogin, primary, tenantName }: {
             {links.length === 0 && <span className="text-black/30">Sin links custom</span>}
             {links.map((l) => <span key={l.id}>{l.label}</span>)}
           </nav>
-          {showLogin && (
-            <span className="rounded bg-black text-white px-2.5 py-1 text-[10px] font-medium">Iniciar sesión</span>
-          )}
+          {showLogin && <span className="rounded bg-black text-white px-2.5 py-1 text-[10px] font-medium">Iniciar sesión</span>}
         </div>
       </PreviewFrame>
     </div>
@@ -765,7 +1203,7 @@ export function NavEditor({ links, showLogin, primary, tenantName }: {
 }
 
 /* =====================================================================
- * Footer editor
+ * FOOTER EDITOR
  * ===================================================================== */
 
 const SOCIAL_OPTIONS: SocialLink['network'][] = ['instagram', 'youtube', 'linkedin', 'twitter', 'tiktok', 'facebook', 'web'];
@@ -793,17 +1231,12 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
         <Textarea label="Texto principal del footer" value={text} onChange={setText} rows={2} />
-        <button
-          type="button"
-          disabled={textPending}
-          onClick={() => {
-            startText(async () => {
-              const fd = new FormData(); fd.set('text', text);
-              await updateFooterTextAction(fd);
-            });
-          }}
-          className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
-        >
+        <button type="button" disabled={textPending} onClick={() => {
+          startText(async () => {
+            const fd = new FormData(); fd.set('text', text);
+            await updateFooterTextAction(fd);
+          });
+        }} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
           {textPending ? 'Guardando…' : 'Guardar texto'}
         </button>
 
@@ -813,19 +1246,14 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
             <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Términos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="/terminos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </div>
-          <button
-            type="button"
-            disabled={linkPending || !label || !href}
+          <button type="button" disabled={linkPending || !label || !href}
             onClick={() => {
               startLink(async () => {
-                const fd = new FormData();
-                fd.set('label', label); fd.set('href', href);
-                await addFooterLinkAction(fd);
-                setLabel(''); setHref('');
+                const fd = new FormData(); fd.set('label', label); fd.set('href', href);
+                await addFooterLinkAction(fd); setLabel(''); setHref('');
               });
             }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
-          >
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
             {linkPending ? 'Agregando…' : '+ Agregar link'}
           </button>
           {links.length > 0 && (
@@ -853,19 +1281,14 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
             </select>
             <input value={socHref} onChange={(e) => setSocHref(e.target.value)} placeholder="https://instagram.com/tu" className="col-span-2 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </div>
-          <button
-            type="button"
-            disabled={socialPending || !socHref}
+          <button type="button" disabled={socialPending || !socHref}
             onClick={() => {
               startSocial(async () => {
-                const fd = new FormData();
-                fd.set('network', network); fd.set('href', socHref);
-                await addSocialLinkAction(fd);
-                setSocHref('');
+                const fd = new FormData(); fd.set('network', network); fd.set('href', socHref);
+                await addSocialLinkAction(fd); setSocHref('');
               });
             }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
-          >
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
             {socialPending ? 'Agregando…' : '+ Agregar red'}
           </button>
           {socials.length > 0 && (
