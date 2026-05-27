@@ -87,6 +87,13 @@ export async function createCourseAction(
   return { ok: true, data: { id: (data as { id: string }).id } };
 }
 
+const COVER_MAX_BYTES = 4 * 1024 * 1024; // 4MB
+const COVER_MIME = new Set(['image/png', 'image/jpeg', 'image/webp']);
+
+function extFromMime(mime: string) {
+  return mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+}
+
 export async function updateCourseAction(
   _prev: Result | null,
   formData: FormData
@@ -101,16 +108,44 @@ export async function updateCourseAction(
   const priceRaw = String(formData.get('price') ?? '0').replace(/[^0-9.]/g, '');
   const priceCents = Math.round(parseFloat(priceRaw || '0') * 100);
   const affiliateEnabled = formData.get('affiliate_enabled') === 'on';
+  const isFeatured = formData.get('is_featured') === 'on';
+  const categoryRaw = String(formData.get('category_id') ?? '').trim();
+  const categoryId = categoryRaw === '' ? null : categoryRaw;
+  const cover = formData.get('cover') as File | null;
 
   if (!title) return { ok: false, error: 'El título es obligatorio.' };
 
-  const payload = {
+  // Optional cover upload
+  let coverUrl: string | undefined;
+  if (cover && cover.size > 0) {
+    if (cover.size > COVER_MAX_BYTES) {
+      return { ok: false, error: 'La portada no puede pesar más de 4 MB.' };
+    }
+    if (!COVER_MIME.has(cover.type)) {
+      return { ok: false, error: 'Formato no soportado. PNG, JPG o WebP.' };
+    }
+    const ext = extFromMime(cover.type);
+    const path = `${tenant.id}/courses/${id}-${Date.now()}.${ext}`;
+    const buf = new Uint8Array(await cover.arrayBuffer());
+    const { error: upErr } = await svc.storage.from('branding').upload(path, buf, {
+      contentType: cover.type,
+      upsert: true
+    });
+    if (upErr) return { ok: false, error: `Upload portada falló: ${upErr.message}` };
+    coverUrl = svc.storage.from('branding').getPublicUrl(path).data.publicUrl;
+  }
+
+  const payload: Record<string, unknown> = {
     title,
     description,
     price_cents: priceCents,
     affiliate_enabled: affiliateEnabled,
+    is_featured: isFeatured,
+    category_id: categoryId,
     updated_at: new Date().toISOString()
   };
+  if (coverUrl) payload.cover_url = coverUrl;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (svc.from('courses') as any)
     .update(payload)

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
-import { CourseEditor, type Course, type Module, type Lesson } from "@/components/owner/courses/CourseEditor";
+import { env } from "@/lib/env";
+import { CourseEditor, type Course, type Module, type Lesson, type Category } from "@/components/owner/courses/CourseEditor";
 import { GrantEnrollmentForm } from "@/components/owner/courses/GrantEnrollmentForm";
 import { deleteCourseAction } from "@/lib/courses/actions";
 
@@ -19,12 +20,19 @@ export default async function CourseEditPage({
 
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, price_cents, currency, status, affiliate_enabled")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
     .maybeSingle<Course>();
 
   if (!course) notFound();
+
+  const { data: cats } = await svc
+    .from("course_categories")
+    .select("id, name")
+    .eq("tenant_id", tenant.id)
+    .order("position", { ascending: true });
+  const categories = (cats ?? []) as Category[];
 
   const [{ data: rawModules }, { data: rawLessons }] = await Promise.all([
     svc.from("modules")
@@ -64,7 +72,14 @@ export default async function CourseEditPage({
         <span>/</span>
         <span className="text-white">{course.title}</span>
         <a
-          href={`http://${tenant.slug}.localhost:3000/c/${course.slug}`}
+          href={(() => {
+            const u = new URL(env.appUrl);
+            const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
+            const host = isLocal
+              ? `${tenant.slug}.localhost${u.port ? ':' + u.port : ''}`
+              : `${tenant.slug}.${env.rootDomain}`;
+            return `${u.protocol}//${host}/c/${course.slug}`;
+          })()}
           target="_blank"
           rel="noopener"
           className="ml-auto rounded-md border border-white/15 px-3 py-1 text-xs hover:bg-white/5"
@@ -79,7 +94,7 @@ export default async function CourseEditPage({
         </form>
       </div>
 
-      <CourseEditor course={course} modules={modules} />
+      <CourseEditor course={course} modules={modules} categories={categories} />
 
       <section className="max-w-3xl pt-8 border-t border-white/10">
         <h2 className="text-lg font-semibold mb-1">Conceder acceso manual</h2>

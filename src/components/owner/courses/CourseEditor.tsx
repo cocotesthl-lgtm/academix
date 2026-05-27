@@ -17,11 +17,16 @@ export type Course = {
   slug: string;
   title: string;
   description: string | null;
+  cover_url: string | null;
   price_cents: number;
   currency: string;
   status: string;
   affiliate_enabled: boolean;
+  is_featured: boolean;
+  category_id: string | null;
 };
+
+export type Category = { id: string; name: string };
 
 export type Lesson = {
   id: string;
@@ -39,7 +44,7 @@ export type Module = {
   lessons: Lesson[];
 };
 
-export function CourseEditor({ course, modules }: { course: Course; modules: Module[] }) {
+export function CourseEditor({ course, modules, categories }: { course: Course; modules: Module[]; categories: Category[] }) {
   const [updateState, updateAction, updatePending] = useActionState<Result | null, FormData>(
     updateCourseAction,
     null
@@ -50,7 +55,7 @@ export function CourseEditor({ course, modules }: { course: Course; modules: Mod
       {/* Course metadata */}
       <section>
         <h2 className="text-lg font-semibold mb-4">Información del curso</h2>
-        <form action={updateAction} className="space-y-4">
+        <form action={updateAction} className="space-y-4" encType="multipart/form-data">
           <input type="hidden" name="id" value={course.id} />
           <div>
             <label className="block text-sm mb-1.5 text-white/70">Título</label>
@@ -70,6 +75,28 @@ export function CourseEditor({ course, modules }: { course: Course; modules: Mod
               className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 focus:outline-none focus:border-white/40"
             />
           </div>
+
+          <div>
+            <label className="block text-sm mb-1.5 text-white/70">Portada del curso</label>
+            <div className="flex items-center gap-3">
+              <div className="w-32 h-20 rounded-md bg-white/5 border border-white/15 overflow-hidden flex items-center justify-center">
+                {course.cover_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={course.cover_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs text-white/40">sin portada</span>
+                )}
+              </div>
+              <input
+                type="file"
+                name="cover"
+                accept="image/png,image/jpeg,image/webp"
+                className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium"
+              />
+            </div>
+            <p className="text-xs text-white/40 mt-1">PNG / JPG / WebP, hasta 4 MB.</p>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm mb-1.5 text-white/70">Precio ({course.currency})</label>
@@ -82,13 +109,29 @@ export function CourseEditor({ course, modules }: { course: Course; modules: Mod
                 className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 focus:outline-none focus:border-white/40"
               />
             </div>
-            <label className="flex items-center gap-2 mt-7">
-              <input
-                type="checkbox"
-                name="affiliate_enabled"
-                defaultChecked={course.affiliate_enabled}
-              />
+            <div>
+              <label className="block text-sm mb-1.5 text-white/70">Categoría</label>
+              <select
+                name="category_id"
+                defaultValue={course.category_id ?? ''}
+                className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 focus:outline-none focus:border-white/40"
+              >
+                <option value="">Sin categoría</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-6">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="affiliate_enabled" defaultChecked={course.affiliate_enabled} />
               <span className="text-sm">Permitir afiliados</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="is_featured" defaultChecked={course.is_featured} />
+              <span className="text-sm">Curso destacado (aparece arriba en el storefront)</span>
             </label>
           </div>
 

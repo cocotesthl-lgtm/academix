@@ -14,9 +14,11 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
         </div>
         <nav className="flex flex-col gap-1 text-sm">
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/dashboard">Dashboard</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/site">Editor de sitio</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/branding">Branding</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/integrations">Integraciones</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/courses">Cursos</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/categories">Categorías</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/integrations">Integraciones</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/finance">Finanzas</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/affiliates">Afiliados</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tickets">Soporte</a>
