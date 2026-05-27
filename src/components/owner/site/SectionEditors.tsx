@@ -4,12 +4,23 @@ import { useState, useTransition } from 'react';
 import {
   updateSectionFieldsAction,
   uploadAboutImageAction,
+  uploadInstructorPhotoAction,
   addTestimonialAction,
   deleteTestimonialAction,
   addFaqAction,
-  deleteFaqAction
+  deleteFaqAction,
+  addStatAction,
+  deleteStatAction,
+  addNavLinkAction,
+  deleteNavLinkAction,
+  toggleNavLoginAction,
+  updateFooterTextAction,
+  addFooterLinkAction,
+  deleteFooterLinkAction,
+  addSocialLinkAction,
+  deleteSocialLinkAction
 } from '@/lib/site/actions';
-import type { TestimonialItem, FaqItem } from '@/lib/site/types';
+import type { TestimonialItem, FaqItem, StatItem, NavLink, SocialLink } from '@/lib/site/types';
 
 /* =====================================================================
  * Generic save button + helpers
@@ -482,6 +493,412 @@ export function CtaFinalEditor({ initial, primary }: { initial: CtaValues; prima
             <span className="mt-3 inline-block rounded-md px-4 py-2 text-xs font-semibold text-white" style={{ background: primary }}>
               {v.cta_label}
             </span>
+          )}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * Instructor
+ * ===================================================================== */
+
+type InstructorValues = { title: string; name: string; bio: string; credentials: string };
+
+export function InstructorEditor({ initial, photoUrl, primary }: {
+  initial: InstructorValues; photoUrl: string | null; primary: string;
+}) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('instructor');
+  const [uploadPending, startUpload] = useTransition();
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <Field label="Nombre del instructor" value={v.name} onChange={(x) => setV({ ...v, name: x })} />
+        <Field label="Credenciales (ej. '10 años en UX')" value={v.credentials} onChange={(x) => setV({ ...v, credentials: x })} />
+        <Textarea label="Biografía" value={v.bio} onChange={(x) => setV({ ...v, bio: x })} rows={5} />
+        <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
+
+        <div className="pt-3 mt-3 border-t border-white/5">
+          <label className="block text-xs text-white/60 mb-2">Foto del instructor</label>
+          <form
+            action={(fd) => startUpload(async () => { await uploadInstructorPhotoAction(fd); })}
+            className="flex items-center gap-3"
+          >
+            <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
+              className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
+            <button className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium hover:bg-white/90" disabled={uploadPending}>
+              {uploadPending ? 'Subiendo…' : 'Subir'}
+            </button>
+          </form>
+        </div>
+      </div>
+      <PreviewFrame>
+        <div className="p-5 text-center">
+          <h2 className="text-lg font-bold mb-3">{v.title || '—'}</h2>
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoUrl} alt="" className="w-20 h-20 rounded-full mx-auto object-cover" />
+          ) : (
+            <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-2xl font-bold text-white" style={{ background: primary }}>
+              {v.name.slice(0, 1).toUpperCase() || '?'}
+            </div>
+          )}
+          <div className="mt-2 font-semibold">{v.name || 'Nombre del instructor'}</div>
+          {v.credentials && <div className="text-xs text-black/50">{v.credentials}</div>}
+          {v.bio && <p className="text-xs text-black/70 mt-2 line-clamp-3">{v.bio}</p>}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * Stats
+ * ===================================================================== */
+
+export function StatsEditor({ initialTitle, items, primary }: {
+  initialTitle: string; items: StatItem[]; primary: string;
+}) {
+  const [title, setTitle] = useState(initialTitle);
+  const { pending, saved, fire } = useSave('stats');
+  const [addPending, startAdd] = useTransition();
+  const [delPending, startDel] = useTransition();
+  const [num, setNum] = useState('');
+  const [lbl, setLbl] = useState('');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
+
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">Agregar estadística</label>
+          <div className="grid grid-cols-2 gap-2">
+            <input value={num} onChange={(e) => setNum(e.target.value)} placeholder="+2.400" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <input value={lbl} onChange={(e) => setLbl(e.target.value)} placeholder="alumnos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </div>
+          <button
+            type="button"
+            disabled={addPending || !num || !lbl}
+            onClick={() => {
+              startAdd(async () => {
+                const fd = new FormData();
+                fd.set('number', num); fd.set('label', lbl);
+                await addStatAction(fd);
+                setNum(''); setLbl('');
+              });
+            }}
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+          >
+            {addPending ? 'Agregando…' : '+ Agregar'}
+          </button>
+        </div>
+
+        {items.length > 0 && (
+          <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
+            {items.map((s) => (
+              <li key={s.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+                <div><span className="font-bold">{s.number}</span> <span className="text-white/60">{s.label}</span></div>
+                <button
+                  type="button"
+                  disabled={delPending}
+                  onClick={() => {
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', s.id);
+                      await deleteStatAction(fd);
+                    });
+                  }}
+                  className="text-xs text-red-300 hover:text-red-200"
+                >✕</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <PreviewFrame>
+        <div className="p-5">
+          <h2 className="text-lg font-bold mb-3 text-center">{title || '—'}</h2>
+          {items.length === 0 ? (
+            <div className="text-center text-xs text-black/40 py-4">Agregá estadísticas para verlas acá.</div>
+          ) : (
+            <div className={`grid gap-2 ${items.length === 1 ? 'grid-cols-1' : items.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              {items.slice(0, 6).map((s) => (
+                <div key={s.id} className="text-center p-3 rounded border border-black/10">
+                  <div className="text-xl font-bold" style={{ color: primary }}>{s.number}</div>
+                  <div className="text-[10px] text-black/60">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * Newsletter
+ * ===================================================================== */
+
+type NewsletterValues = { title: string; subtitle: string; cta_label: string };
+
+export function NewsletterEditor({ initial, primary }: { initial: NewsletterValues; primary: string }) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('newsletter');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+        <Field label="Texto del botón" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
+        <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
+      </div>
+      <PreviewFrame>
+        <div className="p-5 text-center" style={{ background: `${primary}10` }}>
+          <h2 className="text-lg font-bold">{v.title || '—'}</h2>
+          {v.subtitle && <p className="text-xs text-black/60 mt-1">{v.subtitle}</p>}
+          <div className="mt-3 flex gap-1 max-w-xs mx-auto">
+            <input disabled placeholder="tu@email.com" className="flex-1 rounded border border-black/15 px-2 py-1.5 text-xs bg-white" />
+            <span className="rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: primary }}>{v.cta_label || '—'}</span>
+          </div>
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * Nav editor
+ * ===================================================================== */
+
+export function NavEditor({ links, showLogin, primary, tenantName }: {
+  links: NavLink[]; showLogin: boolean; primary: string; tenantName: string;
+}) {
+  const [addPending, startAdd] = useTransition();
+  const [delPending, startDel] = useTransition();
+  const [togglePending, startToggle] = useTransition();
+  const [label, setLabel] = useState('');
+  const [href, setHref] = useState('');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={showLogin}
+            disabled={togglePending}
+            onChange={() => startToggle(async () => { await toggleNavLoginAction(); })}
+          />
+          Mostrar botón "Iniciar sesión" en el nav
+        </label>
+
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">Agregar link al nav</label>
+          <div className="grid grid-cols-2 gap-2">
+            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Cursos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="#cursos o /algo" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </div>
+          <button
+            type="button"
+            disabled={addPending || !label || !href}
+            onClick={() => {
+              startAdd(async () => {
+                const fd = new FormData();
+                fd.set('label', label); fd.set('href', href);
+                await addNavLinkAction(fd);
+                setLabel(''); setHref('');
+              });
+            }}
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+          >
+            {addPending ? 'Agregando…' : '+ Agregar link'}
+          </button>
+        </div>
+
+        {links.length > 0 && (
+          <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
+            {links.map((l) => (
+              <li key={l.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+                <div><span className="font-medium">{l.label}</span> <span className="text-white/40 text-xs">{l.href}</span></div>
+                <button
+                  type="button"
+                  disabled={delPending}
+                  onClick={() => {
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', l.id);
+                      await deleteNavLinkAction(fd);
+                    });
+                  }}
+                  className="text-xs text-red-300 hover:text-red-200"
+                >✕</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <PreviewFrame label="Preview del nav del storefront">
+        <div className="px-4 py-3 border-b border-black/10 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] font-bold" style={{ background: primary }}>
+              {tenantName.slice(0, 1).toUpperCase()}
+            </div>
+            <span className="font-bold text-xs">{tenantName}</span>
+          </div>
+          <nav className="flex gap-3 text-xs text-black/70">
+            {links.length === 0 && <span className="text-black/30">Sin links custom</span>}
+            {links.map((l) => <span key={l.id}>{l.label}</span>)}
+          </nav>
+          {showLogin && (
+            <span className="rounded bg-black text-white px-2.5 py-1 text-[10px] font-medium">Iniciar sesión</span>
+          )}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * Footer editor
+ * ===================================================================== */
+
+const SOCIAL_OPTIONS: SocialLink['network'][] = ['instagram', 'youtube', 'linkedin', 'twitter', 'tiktok', 'facebook', 'web'];
+const SOCIAL_LABEL: Record<SocialLink['network'], string> = {
+  instagram: 'Instagram', youtube: 'YouTube', linkedin: 'LinkedIn',
+  twitter: 'Twitter / X', tiktok: 'TikTok', facebook: 'Facebook', web: 'Sitio web'
+};
+
+export function FooterEditor({ initialText, links, socials, tenantName }: {
+  initialText: string; links: NavLink[]; socials: SocialLink[]; tenantName: string;
+}) {
+  const [text, setText] = useState(initialText);
+  const [textPending, startText] = useTransition();
+  const [linkPending, startLink] = useTransition();
+  const [delLinkPending, startDelLink] = useTransition();
+  const [socialPending, startSocial] = useTransition();
+  const [delSocialPending, startDelSocial] = useTransition();
+
+  const [label, setLabel] = useState('');
+  const [href, setHref] = useState('');
+  const [network, setNetwork] = useState<SocialLink['network']>('instagram');
+  const [socHref, setSocHref] = useState('');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Textarea label="Texto principal del footer" value={text} onChange={setText} rows={2} />
+        <button
+          type="button"
+          disabled={textPending}
+          onClick={() => {
+            startText(async () => {
+              const fd = new FormData(); fd.set('text', text);
+              await updateFooterTextAction(fd);
+            });
+          }}
+          className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+        >
+          {textPending ? 'Guardando…' : 'Guardar texto'}
+        </button>
+
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">Agregar link de footer (términos, privacidad, etc.)</label>
+          <div className="grid grid-cols-2 gap-2">
+            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Términos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="/terminos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </div>
+          <button
+            type="button"
+            disabled={linkPending || !label || !href}
+            onClick={() => {
+              startLink(async () => {
+                const fd = new FormData();
+                fd.set('label', label); fd.set('href', href);
+                await addFooterLinkAction(fd);
+                setLabel(''); setHref('');
+              });
+            }}
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+          >
+            {linkPending ? 'Agregando…' : '+ Agregar link'}
+          </button>
+          {links.length > 0 && (
+            <ul className="space-y-1.5 mt-2">
+              {links.map((l) => (
+                <li key={l.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+                  <div><span className="font-medium">{l.label}</span> <span className="text-white/40 text-xs">{l.href}</span></div>
+                  <button type="button" disabled={delLinkPending} onClick={() => {
+                    startDelLink(async () => {
+                      const fd = new FormData(); fd.set('id', l.id);
+                      await deleteFooterLinkAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">Agregar red social</label>
+          <div className="grid grid-cols-3 gap-2">
+            <select value={network} onChange={(e) => setNetwork(e.target.value as SocialLink['network'])} className="col-span-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
+              {SOCIAL_OPTIONS.map((n) => <option key={n} value={n}>{SOCIAL_LABEL[n]}</option>)}
+            </select>
+            <input value={socHref} onChange={(e) => setSocHref(e.target.value)} placeholder="https://instagram.com/tu" className="col-span-2 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </div>
+          <button
+            type="button"
+            disabled={socialPending || !socHref}
+            onClick={() => {
+              startSocial(async () => {
+                const fd = new FormData();
+                fd.set('network', network); fd.set('href', socHref);
+                await addSocialLinkAction(fd);
+                setSocHref('');
+              });
+            }}
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+          >
+            {socialPending ? 'Agregando…' : '+ Agregar red'}
+          </button>
+          {socials.length > 0 && (
+            <ul className="space-y-1.5 mt-2">
+              {socials.map((s) => (
+                <li key={s.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+                  <div><span className="font-medium">{SOCIAL_LABEL[s.network]}</span> <span className="text-white/40 text-xs">{s.href}</span></div>
+                  <button type="button" disabled={delSocialPending} onClick={() => {
+                    startDelSocial(async () => {
+                      const fd = new FormData(); fd.set('id', s.id);
+                      await deleteSocialLinkAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+      <PreviewFrame label="Preview del footer">
+        <div className="px-4 py-5 text-center bg-black/[0.02]">
+          <p className="text-xs text-black/70 mb-3 whitespace-pre-line">{text || `© ${new Date().getFullYear()} ${tenantName}`}</p>
+          {socials.length > 0 && (
+            <div className="flex justify-center gap-2 mb-3">
+              {socials.map((s) => (
+                <span key={s.id} className="text-[10px] px-2 py-0.5 rounded border border-black/15">{SOCIAL_LABEL[s.network]}</span>
+              ))}
+            </div>
+          )}
+          {links.length > 0 && (
+            <div className="flex justify-center gap-3 text-[10px] text-black/60">
+              {links.map((l) => <span key={l.id}>{l.label}</span>)}
+            </div>
           )}
         </div>
       </PreviewFrame>

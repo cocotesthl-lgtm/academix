@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
-import { DEFAULT_SITE_CONFIG, type SiteConfig, type SectionKey } from "@/lib/site/types";
+import { mergeConfig, type SectionKey } from "@/lib/site/types";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +36,7 @@ export default async function StorefrontHome({
 
   const svc = getServiceClient();
   const [{ data: tenantRow }, { data: coursesRaw }, { data: catsRaw }] = await Promise.all([
-    svc.from('tenants').select('site_config').eq('id', tenantId).single<{ site_config: SiteConfig | null }>(),
+    svc.from('tenants').select('site_config').eq('id', tenantId).single<{ site_config: unknown }>(),
     svc.from('courses')
       .select('id, slug, title, description, cover_url, price_cents, currency, is_featured, featured_position, category_id')
       .eq('tenant_id', tenantId)
@@ -48,7 +48,7 @@ export default async function StorefrontHome({
       .order('position', { ascending: true })
   ]);
 
-  const cfg: SiteConfig = tenantRow?.site_config ?? DEFAULT_SITE_CONFIG;
+  const cfg = mergeConfig(tenantRow?.site_config);
   const allCourses = (coursesRaw ?? []) as PublicCourse[];
   const categories = (catsRaw ?? []) as Category[];
   const catById = new Map(categories.map((c) => [c.id, c]));
@@ -110,6 +110,59 @@ export default async function StorefrontHome({
                   <div>
                     <h2 className="text-3xl font-bold mb-4">{cfg.sections.about.title}</h2>
                     <p className="text-black/70 whitespace-pre-line leading-relaxed">{cfg.sections.about.body}</p>
+                  </div>
+                </div>
+              </section>
+            );
+
+          case 'instructor':
+            return (
+              <section key={key} className="px-6 py-16">
+                <div className="max-w-3xl mx-auto text-center">
+                  <h2 className="text-2xl md:text-3xl font-bold mb-8">{cfg.sections.instructor.title}</h2>
+                  {cfg.sections.instructor.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={cfg.sections.instructor.photo_url}
+                      alt={cfg.sections.instructor.name}
+                      className="w-32 h-32 rounded-full mx-auto object-cover mb-4"
+                    />
+                  ) : (
+                    <div
+                      className="w-32 h-32 rounded-full mx-auto flex items-center justify-center text-5xl font-bold text-white mb-4"
+                      style={{ background: primary }}
+                    >
+                      {cfg.sections.instructor.name.slice(0, 1).toUpperCase() || '👤'}
+                    </div>
+                  )}
+                  <h3 className="text-xl font-bold">{cfg.sections.instructor.name || '—'}</h3>
+                  {cfg.sections.instructor.credentials && (
+                    <p className="text-sm text-black/60 mt-1">{cfg.sections.instructor.credentials}</p>
+                  )}
+                  {cfg.sections.instructor.bio && (
+                    <p className="mt-4 text-black/70 whitespace-pre-line leading-relaxed">{cfg.sections.instructor.bio}</p>
+                  )}
+                </div>
+              </section>
+            );
+
+          case 'stats':
+            if (cfg.sections.stats.items.length === 0) return null;
+            return (
+              <section key={key} className="px-6 py-12 bg-black/[0.02]">
+                <div className="max-w-5xl mx-auto">
+                  <h2 className="text-xl md:text-2xl font-bold text-center mb-8">{cfg.sections.stats.title}</h2>
+                  <div className={`grid gap-4 ${
+                    cfg.sections.stats.items.length === 1 ? 'grid-cols-1' :
+                    cfg.sections.stats.items.length === 2 ? 'grid-cols-2' :
+                    'grid-cols-2 md:grid-cols-' + Math.min(cfg.sections.stats.items.length, 4)
+                  }`}>
+                    {cfg.sections.stats.items.map((s) => (
+                      <div key={s.id} className="text-center p-6 rounded-xl border border-black/10 bg-white">
+                        <div className="text-4xl font-bold" style={{ color: primary }}>{s.number}</div>
+                        <div className="text-sm text-black/60 mt-1">{s.label}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </section>
@@ -205,6 +258,42 @@ export default async function StorefrontHome({
                       <div className="px-5 pb-4 text-black/70 whitespace-pre-line">{f.a}</div>
                     </details>
                   ))}
+                </div>
+              </section>
+            );
+
+          case 'newsletter':
+            return (
+              <section
+                key={key}
+                className="px-6 py-16"
+                style={{ background: `${primary}10` }}
+              >
+                <div className="max-w-2xl mx-auto text-center">
+                  <h2 className="text-2xl md:text-3xl font-bold">{cfg.sections.newsletter.title}</h2>
+                  {cfg.sections.newsletter.subtitle && (
+                    <p className="text-black/60 mt-2">{cfg.sections.newsletter.subtitle}</p>
+                  )}
+                  <form
+                    className="mt-6 flex gap-2 max-w-md mx-auto"
+                    action="https://formsubmit.co/disabled"
+                    method="POST"
+                  >
+                    <input
+                      type="email"
+                      required
+                      placeholder="tu@email.com"
+                      className="flex-1 rounded-md border border-black/15 px-4 py-2.5 bg-white"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-md px-5 py-2.5 font-semibold text-white whitespace-nowrap"
+                      style={{ background: primary }}
+                    >
+                      {cfg.sections.newsletter.cta_label || 'Suscribirme'}
+                    </button>
+                  </form>
+                  <p className="text-xs text-black/40 mt-2">Integración real con email marketing próximamente.</p>
                 </div>
               </section>
             );
