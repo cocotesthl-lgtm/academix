@@ -202,24 +202,24 @@ function Section({
   title: string; desc: string; enabled: boolean; sectionKey: string; children: React.ReactNode;
 }) {
   return (
-    <details open={enabled} className={`rounded-xl border ${enabled ? 'border-white/15 bg-white/[0.02]' : 'border-white/10 bg-white/[0.01] opacity-80'}`}>
-      <summary className="cursor-pointer p-5 flex items-center justify-between gap-3">
+    <div className={`rounded-xl border ${enabled ? 'border-white/15 bg-white/[0.02]' : 'border-white/10 bg-white/[0.01] opacity-80'}`}>
+      <div className="p-5 flex items-start justify-between gap-3 border-b border-white/5">
         <div>
           <h3 className="font-semibold">{title}</h3>
           <p className="text-xs text-white/50 mt-0.5">{desc}</p>
         </div>
-        <form action={toggleSectionAction} onClick={(e) => e.stopPropagation()}>
+        <form action={toggleSectionAction}>
           <input type="hidden" name="section" value={sectionKey} />
           <button
             type="submit"
-            className={`text-xs px-2.5 py-1 rounded border ${enabled ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-white/15 text-white/50'}`}
+            className={`text-xs px-2.5 py-1 rounded border whitespace-nowrap ${enabled ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-white/15 text-white/50'}`}
           >
             {enabled ? '✓ activa' : 'desactivada'}
           </button>
         </form>
-      </summary>
-      <div className="px-5 pb-5">{children}</div>
-    </details>
+      </div>
+      {enabled && <div className="p-5">{children}</div>}
+    </div>
   );
 }
 
