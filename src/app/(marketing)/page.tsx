@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default function MarketingHome() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
