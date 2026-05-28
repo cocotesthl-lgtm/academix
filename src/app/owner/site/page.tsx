@@ -155,10 +155,14 @@ export default async function SiteBuilderPage() {
             {key === 'hero' && (
               <HeroEditor
                 initial={{
+                  eyebrow: cfg.sections.hero.eyebrow ?? '',
                   title: cfg.sections.hero.title ?? '',
                   subtitle: cfg.sections.hero.subtitle,
                   cta_label: cfg.sections.hero.cta_label,
-                  cta_href: cfg.sections.hero.cta_href
+                  cta_href: cfg.sections.hero.cta_href,
+                  cta_label_2: cfg.sections.hero.cta_label_2 ?? '',
+                  cta_href_2: cfg.sections.hero.cta_href_2 ?? '',
+                  caption: cfg.sections.hero.caption ?? ''
                 }}
                 fallbackTitle={tenant.name}
                 primary={primary}
