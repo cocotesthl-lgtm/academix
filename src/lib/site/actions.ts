@@ -401,5 +401,3 @@ export async function deleteSocialLinkAction(formData: FormData): Promise<void> 
   revalidatePath('/site');
 }
 
-// Re-export types for convenience (these are types only)
-export type { HeroLayout, FeatureItem, LearnItem, LogoItem };
