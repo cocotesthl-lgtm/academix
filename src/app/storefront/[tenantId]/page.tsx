@@ -80,80 +80,135 @@ export default async function StorefrontHome({
         switch (key) {
           case 'hero': {
             const h = cfg.sections.hero;
-            const heroBg = bg ?? `linear-gradient(180deg, ${primary}15 0%, transparent 100%)`;
+            const heroTitle = h.title || tenant?.name || 'Academia';
+            const cta1 = h.cta_label && (
+              <a href={h.cta_href || '#cursos'}
+                className="inline-block rounded-md px-6 py-3 font-semibold text-white shadow-md hover:shadow-lg transition"
+                style={{ background: primary }}>
+                {h.cta_label}
+              </a>
+            );
+            const cta2 = h.cta_label_2 && (
+              <a href={h.cta_href_2 || '#cursos'}
+                className="inline-block rounded-md px-6 py-3 font-semibold border-2 hover:bg-black/[0.02] transition"
+                style={{ borderColor: primary, color: primary }}>
+                {h.cta_label_2}
+              </a>
+            );
+            const eyebrowPill = h.eyebrow && (
+              <span className="inline-block text-xs font-medium px-3 py-1 rounded-full border" style={{ borderColor: `${primary}55`, color: primary, background: `${primary}10` }}>
+                {h.eyebrow}
+              </span>
+            );
 
             if (h.layout === 'split') {
               return (
-                <section key={key} className="px-6 py-20" style={{ background: heroBg }}>
-                  <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center">
-                    <div>
-                      <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                        {h.title || tenant?.name || 'Academia'}
-                      </h1>
-                      {h.subtitle && <p className="mt-4 text-lg text-black/60">{h.subtitle}</p>}
-                      {h.cta_label && (
-                        <a href={h.cta_href || '#cursos'}
-                          className="mt-8 inline-block rounded-md px-6 py-3 font-semibold text-white"
-                          style={{ background: primary }}>
-                          {h.cta_label}
-                        </a>
-                      )}
-                    </div>
-                    {h.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={h.image_url} alt="" className="rounded-2xl w-full max-h-96 object-cover" />
-                    ) : (
-                      <div className="rounded-2xl w-full h-80 flex items-center justify-center" style={{ background: `${primary}20` }}>
-                        <span className="text-6xl">🖼️</span>
+                <section key={key} className="relative overflow-hidden px-6 pt-16 pb-24" style={{ background: bg ?? `linear-gradient(135deg, ${primary}10 0%, transparent 55%)` }}>
+                  {/* Decorative blob */}
+                  <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-3xl opacity-30 -z-0" style={{ background: `radial-gradient(circle, ${primary} 0%, transparent 70%)` }} />
+
+                  <div className="relative max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+                    <FadeIn>
+                      <div>
+                        {eyebrowPill}
+                        <h1 className="mt-5 text-4xl md:text-6xl font-bold tracking-tight leading-tight">
+                          {heroTitle}
+                        </h1>
+                        {h.subtitle && <p className="mt-5 text-lg text-black/65 leading-relaxed max-w-lg">{h.subtitle}</p>}
+                        <div className="mt-8 flex flex-wrap gap-3">
+                          {cta1}
+                          {cta2}
+                        </div>
+                        {h.caption && <p className="mt-5 text-sm text-black/45">{h.caption}</p>}
                       </div>
-                    )}
+                    </FadeIn>
+
+                    <FadeIn delay={150}>
+                      {h.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={h.image_url} alt="" className="rounded-2xl w-full max-h-[440px] object-cover shadow-2xl" />
+                      ) : (
+                        /* Mockup card cuando no hay imagen */
+                        <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                          {/* Window chrome */}
+                          <div className="px-4 py-2 flex items-center gap-1.5 text-white/80" style={{ background: '#1f2937' }}>
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                            <span className="ml-4 text-xs">{tenant?.slug}.bzseguridad.store</span>
+                          </div>
+                          {/* Card body */}
+                          <div className="p-8 text-white text-center" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}cc)` }}>
+                            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-4xl mx-auto">
+                              ▶
+                            </div>
+                            <div className="mt-4 text-xs font-medium opacity-80 uppercase tracking-widest">Curso destacado</div>
+                            <div className="mt-2 text-2xl font-bold">Tu primer paso al éxito</div>
+                            <div className="mt-1 text-sm opacity-90">12 lecciones · 4 horas</div>
+                            <div className="mt-6 rounded-md bg-white py-3 font-bold" style={{ color: primary }}>
+                              Empezar ahora →
+                            </div>
+                            <div className="mt-4 flex items-center justify-center gap-3 text-xs opacity-90">
+                              <span>⭐ 4.9</span>
+                              <span>·</span>
+                              <span>2.400 alumnos</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </FadeIn>
                   </div>
                 </section>
               );
             }
+
             if (h.layout === 'gallery') {
               return (
-                <section key={key} className="px-6 py-20" style={{ background: heroBg }}>
+                <section key={key} className="px-6 py-20" style={{ background: bg ?? `linear-gradient(180deg, ${primary}10 0%, transparent 100%)` }}>
                   <div className="max-w-5xl mx-auto">
-                    {h.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={h.image_url} alt="" className="rounded-2xl w-full max-h-[420px] object-cover mb-10" />
-                    ) : (
-                      <div className="rounded-2xl w-full h-72 flex items-center justify-center mb-10" style={{ background: `${primary}20` }}>
-                        <span className="text-6xl">🖼️</span>
-                      </div>
-                    )}
-                    <div className="text-center">
-                      <h1 className="text-4xl md:text-6xl font-bold tracking-tight">{h.title || tenant?.name || 'Academia'}</h1>
-                      {h.subtitle && <p className="mt-4 text-lg text-black/60">{h.subtitle}</p>}
-                      {h.cta_label && (
-                        <a href={h.cta_href || '#cursos'}
-                          className="mt-8 inline-block rounded-md px-6 py-3 font-semibold text-white"
-                          style={{ background: primary }}>
-                          {h.cta_label}
-                        </a>
+                    <FadeIn>
+                      {h.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={h.image_url} alt="" className="rounded-2xl w-full max-h-[420px] object-cover mb-10 shadow-xl" />
+                      ) : (
+                        <div className="rounded-2xl w-full h-72 flex items-center justify-center mb-10 shadow-xl" style={{ background: `linear-gradient(135deg, ${primary}30, ${primary}10)` }}>
+                          <span className="text-7xl">🖼️</span>
+                        </div>
                       )}
-                    </div>
+                    </FadeIn>
+                    <FadeIn delay={100}>
+                      <div className="text-center">
+                        {eyebrowPill}
+                        <h1 className="mt-4 text-4xl md:text-6xl font-bold tracking-tight">{heroTitle}</h1>
+                        {h.subtitle && <p className="mt-4 text-lg text-black/65 max-w-2xl mx-auto leading-relaxed">{h.subtitle}</p>}
+                        <div className="mt-8 flex flex-wrap justify-center gap-3">
+                          {cta1}
+                          {cta2}
+                        </div>
+                        {h.caption && <p className="mt-5 text-sm text-black/45">{h.caption}</p>}
+                      </div>
+                    </FadeIn>
                   </div>
                 </section>
               );
             }
+
             // centered
             return (
-              <section key={key} className="px-6 py-20 text-center" style={{ background: heroBg }}>
-                <div className="max-w-3xl mx-auto">
-                  <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-                    {h.title || tenant?.name || 'Academia'}
-                  </h1>
-                  {h.subtitle && <p className="mt-4 text-lg text-black/60">{h.subtitle}</p>}
-                  {h.cta_label && (
-                    <a href={h.cta_href || '#cursos'}
-                      className="mt-8 inline-block rounded-md px-6 py-3 font-semibold text-white"
-                      style={{ background: primary }}>
-                      {h.cta_label}
-                    </a>
-                  )}
-                </div>
+              <section key={key} className="relative overflow-hidden px-6 py-24 text-center" style={{ background: bg ?? `linear-gradient(180deg, ${primary}12 0%, transparent 100%)` }}>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl opacity-20 -z-0" style={{ background: `radial-gradient(circle, ${primary} 0%, transparent 70%)` }} />
+                <FadeIn>
+                  <div className="relative max-w-3xl mx-auto">
+                    {eyebrowPill}
+                    <h1 className="mt-6 text-5xl md:text-7xl font-bold tracking-tight leading-tight">{heroTitle}</h1>
+                    {h.subtitle && <p className="mt-6 text-xl text-black/65 max-w-2xl mx-auto leading-relaxed">{h.subtitle}</p>}
+                    <div className="mt-10 flex flex-wrap justify-center gap-3">
+                      {cta1}
+                      {cta2}
+                    </div>
+                    {h.caption && <p className="mt-6 text-sm text-black/45">{h.caption}</p>}
+                  </div>
+                </FadeIn>
               </section>
             );
           }

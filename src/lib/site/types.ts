@@ -70,7 +70,7 @@ type SectionBase = {
 
 export type SiteConfig = {
   sections: {
-    hero:         SectionBase & { layout: HeroLayout; title: string | null; subtitle: string; cta_label: string; cta_href: string; image_url: string | null; gallery_urls?: string[] };
+    hero:         SectionBase & { layout: HeroLayout; eyebrow: string; title: string | null; subtitle: string; cta_label: string; cta_href: string; cta_label_2: string; cta_href_2: string; caption: string; image_url: string | null; gallery_urls?: string[] };
     trusted_by:   SectionBase & { title: string; items: LogoItem[]; grayscale: boolean };
     about:        SectionBase & { title: string; body: string; image_url: string | null };
     instructor:   SectionBase & { title: string; name: string; bio: string; photo_url: string | null; credentials: string };
@@ -127,18 +127,29 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   sections: {
     hero: {
       enabled: true,
-      layout: 'centered',
+      layout: 'split',
+      eyebrow: '🟢 Beta abierta · Inscripciones online',
       title: null,
-      subtitle: 'Aprendé con cursos prácticos, mentoría directa y una comunidad que te acompaña.',
+      subtitle: 'Aprendé con cursos prácticos, mentoría directa y una comunidad que te acompaña en cada paso del camino.',
       cta_label: 'Ver cursos',
       cta_href: '#cursos',
+      cta_label_2: 'Cómo funciona',
+      cta_href_2: '#features',
+      caption: 'Sin tarjeta · Acceso de por vida · Certificado al finalizar',
       image_url: null
     },
     trusted_by: {
-      enabled: false,
-      title: 'Confían en nosotros',
-      items: [],
-      grayscale: true
+      enabled: true,
+      title: 'Más de 2.400 alumnos confían en nosotros',
+      grayscale: true,
+      items: [
+        { id: '00000000-0000-0000-0000-000000000060', name: 'Acme Corp', logo_url: null, href: null },
+        { id: '00000000-0000-0000-0000-000000000061', name: 'Globex', logo_url: null, href: null },
+        { id: '00000000-0000-0000-0000-000000000062', name: 'Initech', logo_url: null, href: null },
+        { id: '00000000-0000-0000-0000-000000000063', name: 'Umbrella', logo_url: null, href: null },
+        { id: '00000000-0000-0000-0000-000000000064', name: 'Hooli', logo_url: null, href: null },
+        { id: '00000000-0000-0000-0000-000000000065', name: 'Massive', logo_url: null, href: null }
+      ]
     },
     about: {
       enabled: true,
@@ -210,7 +221,43 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       ]
     },
     offer: { enabled: false, title: 'Oferta por tiempo limitado', subtitle: 'Inscribite antes que termine.', ends_at: null, cta_label: 'Aprovecharla', cta_href: '#cursos' },
-    pricing: { enabled: false, title: 'Planes', subtitle: 'Elegí el que se adapta a tu nivel.', tiers: [] },
+    pricing: {
+      enabled: true,
+      title: 'Planes a tu medida',
+      subtitle: 'Elegí el nivel de profundidad. Acceso de por vida en todos.',
+      tiers: [
+        {
+          id: '00000000-0000-0000-0000-000000000070',
+          name: 'Básico',
+          price: 'Gratis',
+          description: 'Para empezar y conocer el método.',
+          features: ['Acceso al curso de bienvenida', 'Comunidad pública', 'Recursos descargables'],
+          cta_label: 'Empezar gratis',
+          cta_href: '#cursos',
+          highlighted: false
+        },
+        {
+          id: '00000000-0000-0000-0000-000000000071',
+          name: 'Pro',
+          price: '$14.900',
+          description: 'El programa completo + comunidad activa.',
+          features: ['Todo lo del Básico', 'Curso completo paso a paso', 'Comunidad privada con instructor', 'Certificado al finalizar', 'Acceso de por vida'],
+          cta_label: 'Quiero el Pro',
+          cta_href: '#cursos',
+          highlighted: true
+        },
+        {
+          id: '00000000-0000-0000-0000-000000000072',
+          name: 'Elite',
+          price: '$29.900',
+          description: 'Mentoría 1 a 1 y workshops avanzados.',
+          features: ['Todo lo del Pro', 'Masterclass intensiva', '4 sesiones 1 a 1 con instructor', 'Acceso prioritario a novedades'],
+          cta_label: 'Sumarme al Elite',
+          cta_href: '#cursos',
+          highlighted: false
+        }
+      ]
+    },
     video: { enabled: false, title: 'Mirá cómo trabajamos', subtitle: '', provider: 'youtube', video_id: '' },
     gallery: { enabled: false, title: 'Galería', subtitle: '', items: [], columns: 3 },
     newsletter: {

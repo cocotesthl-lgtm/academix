@@ -119,7 +119,16 @@ function useSave(section: string) {
  * HERO with layout variants + image upload
  * ===================================================================== */
 
-type HeroValues = { title: string; subtitle: string; cta_label: string; cta_href: string };
+type HeroValues = {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  cta_label: string;
+  cta_href: string;
+  cta_label_2: string;
+  cta_href_2: string;
+  caption: string;
+};
 
 export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }: {
   initial: HeroValues; fallbackTitle: string; primary: string; layout: HeroLayout; imageUrl: string | null;
@@ -142,7 +151,7 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
               onClick={() => { setLayoutSel(l); fire({ ...v, layout: l }); }}
               className={`text-xs px-3 py-2 rounded border ${layoutSel === l ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'}`}
             >
-              {l === 'centered' ? 'Centrado' : l === 'split' ? 'Dividido (texto + imagen)' : 'Galería'}
+              {l === 'centered' ? 'Centrado' : l === 'split' ? 'Dividido (texto + mockup)' : 'Galería'}
             </button>
           ))}
         </div>
@@ -150,12 +159,18 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-3">
+          <Field label="Eyebrow (pill arriba del título, ej. '🟢 Beta abierta')" value={v.eyebrow} onChange={(x) => setV({ ...v, eyebrow: x })} />
           <Field label="Título (vacío = nombre de la academia)" value={v.title} onChange={(x) => setV({ ...v, title: x })} placeholder={fallbackTitle} />
-          <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+          <Textarea label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} rows={3} />
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Texto del botón" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
+            <Field label="Botón principal" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
             <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Botón secundario (opcional)" value={v.cta_label_2} onChange={(x) => setV({ ...v, cta_label_2: x })} />
+            <Field label="Destino (href)" value={v.cta_href_2} onChange={(x) => setV({ ...v, cta_href_2: x })} />
+          </div>
+          <Field label="Caption (texto chico debajo de los CTAs)" value={v.caption} onChange={(x) => setV({ ...v, caption: x })} />
           <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, layout: layoutSel })} />
 
           {(layoutSel === 'split' || layoutSel === 'gallery') && (
@@ -175,23 +190,40 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
         <PreviewFrame>
           {layoutSel === 'centered' && (
             <div className="p-6 text-center" style={{ background: `linear-gradient(180deg, ${primary}15 0%, transparent 100%)` }}>
-              <h1 className="text-2xl font-bold tracking-tight">{displayTitle}</h1>
-              {v.subtitle && <p className="mt-2 text-sm text-black/60">{v.subtitle}</p>}
-              {v.cta_label && <span className="mt-4 inline-block rounded-md px-4 py-2 text-sm font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
+              {v.eyebrow && <span className="inline-block text-[9px] font-medium px-2 py-0.5 rounded-full border" style={{ borderColor: `${primary}50`, color: primary }}>{v.eyebrow}</span>}
+              <h1 className="text-2xl font-bold tracking-tight mt-2">{displayTitle}</h1>
+              {v.subtitle && <p className="mt-2 text-xs text-black/60">{v.subtitle}</p>}
+              <div className="mt-3 flex justify-center gap-2">
+                {v.cta_label && <span className="inline-block rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
+                {v.cta_label_2 && <span className="inline-block rounded px-3 py-1.5 text-xs font-semibold border" style={{ borderColor: primary, color: primary }}>{v.cta_label_2}</span>}
+              </div>
+              {v.caption && <p className="text-[9px] text-black/40 mt-2">{v.caption}</p>}
             </div>
           )}
           {layoutSel === 'split' && (
-            <div className="p-5 grid grid-cols-2 gap-4 items-center" style={{ background: `linear-gradient(180deg, ${primary}10 0%, transparent 100%)` }}>
+            <div className="p-4 grid grid-cols-2 gap-3 items-center" style={{ background: `linear-gradient(135deg, ${primary}12 0%, transparent 60%)` }}>
               <div>
-                <h1 className="text-lg font-bold tracking-tight">{displayTitle}</h1>
-                {v.subtitle && <p className="mt-1.5 text-xs text-black/60">{v.subtitle}</p>}
-                {v.cta_label && <span className="mt-3 inline-block rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
+                {v.eyebrow && <span className="inline-block text-[8px] font-medium px-1.5 py-0.5 rounded-full border" style={{ borderColor: `${primary}50`, color: primary }}>{v.eyebrow}</span>}
+                <h1 className="text-base font-bold tracking-tight mt-1.5">{displayTitle}</h1>
+                {v.subtitle && <p className="mt-1 text-[10px] text-black/60 line-clamp-3">{v.subtitle}</p>}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {v.cta_label && <span className="rounded px-2 py-1 text-[9px] font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
+                  {v.cta_label_2 && <span className="rounded px-2 py-1 text-[9px] font-semibold border" style={{ borderColor: primary, color: primary }}>{v.cta_label_2}</span>}
+                </div>
+                {v.caption && <p className="text-[8px] text-black/40 mt-1.5">{v.caption}</p>}
               </div>
               {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={imageUrl} alt="" className="rounded w-full h-28 object-cover" />
+                <img src={imageUrl} alt="" className="rounded-lg w-full h-28 object-cover shadow" />
               ) : (
-                <div className="rounded w-full h-28 flex items-center justify-center text-2xl" style={{ background: `${primary}20` }}>🖼️</div>
+                <div className="rounded-lg w-full p-3 text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}cc)` }}>
+                  <div className="text-[9px] opacity-80 mb-1">▶ Curso destacado</div>
+                  <div className="text-xs font-bold leading-tight">Tu primer paso al éxito</div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-[9px] opacity-90">12 lecciones · 4hs</span>
+                    <span className="bg-white text-[8px] px-1.5 py-0.5 rounded font-bold" style={{ color: primary }}>Ver →</span>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -203,6 +235,7 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
               ) : (
                 <div className="rounded w-full h-32 flex items-center justify-center text-2xl mb-3" style={{ background: `${primary}20` }}>🖼️</div>
               )}
+              {v.eyebrow && <div className="text-center text-[9px] mb-1" style={{ color: primary }}>{v.eyebrow}</div>}
               <h1 className="text-lg font-bold text-center">{displayTitle}</h1>
               {v.subtitle && <p className="mt-1.5 text-xs text-black/60 text-center">{v.subtitle}</p>}
               {v.cta_label && <div className="text-center mt-3"><span className="inline-block rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span></div>}
