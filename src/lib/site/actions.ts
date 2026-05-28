@@ -19,7 +19,10 @@ import {
   type SocialLink,
   type HeroLayout,
   type PricingTier,
-  type GalleryItem
+  type GalleryItem,
+  type InstructorItem,
+  type InstructorDisplay,
+  type CustomImagePos
 } from '@/lib/site/types';
 
 async function loadConfig(tenantId: string): Promise<SiteConfig> {
@@ -97,8 +100,17 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   }
   if (formData.has('show_filters')) section.show_filters = formData.get('show_filters') === 'on';
   if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
+  if (formData.has('marquee')) section.marquee = formData.get('marquee') === 'on';
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
   if (formData.has('provider')) section.provider = String(formData.get('provider') ?? 'youtube');
+  if (formData.has('display_mode')) section.display_mode = String(formData.get('display_mode') ?? 'single');
+  if (formData.has('image_pos')) section.image_pos = String(formData.get('image_pos') ?? 'right');
+  if (formData.has('email')) section.email = String(formData.get('email') ?? '').trim();
+  if (formData.has('whatsapp')) section.whatsapp = String(formData.get('whatsapp') ?? '').trim();
+  if (formData.has('name_label')) section.name_label = String(formData.get('name_label') ?? 'Nombre');
+  if (formData.has('email_label')) section.email_label = String(formData.get('email_label') ?? 'Email');
+  if (formData.has('message_label')) section.message_label = String(formData.get('message_label') ?? 'Mensaje');
+  if (formData.has('submit_label')) section.submit_label = String(formData.get('submit_label') ?? 'Enviar');
   if (formData.has('columns')) {
     const c = parseInt(String(formData.get('columns') ?? '3'), 10);
     section.columns = (c === 2 || c === 3 || c === 4) ? c : 3;
@@ -145,6 +157,49 @@ export async function uploadInstructorPhotoAction(formData: FormData): Promise<v
   if (!url) return;
   const cfg = await loadConfig(tenant.id);
   cfg.sections.instructor.photo_url = url;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function uploadCustomImageAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const file = formData.get('image') as File | null;
+  if (!file || file.size === 0) return;
+  const url = await uploadImage(tenant.id, 'custom', file);
+  if (!url) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.custom.image_url = url;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Instructor items CRUD ===== */
+
+export async function addInstructorItemAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const name = String(formData.get('name') ?? '').trim();
+  const credentials = String(formData.get('credentials') ?? '').trim() || undefined;
+  const bio = String(formData.get('bio') ?? '').trim() || undefined;
+  if (!name) return;
+
+  let photo_url: string | null = null;
+  const photo = formData.get('photo') as File | null;
+  if (photo && photo.size > 0) {
+    photo_url = await uploadImage(tenant.id, 'instructor-item', photo);
+  }
+
+  const cfg = await loadConfig(tenant.id);
+  const item: InstructorItem = { id: randomUUID(), name, credentials, bio, photo_url };
+  cfg.sections.instructor.items.push(item);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function deleteInstructorItemAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.instructor.items = cfg.sections.instructor.items.filter((i) => i.id !== id);
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }

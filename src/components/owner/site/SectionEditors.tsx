@@ -7,10 +7,13 @@ import {
   uploadInstructorPhotoAction,
   uploadHeroImageAction,
   uploadBeforeAfterImageAction,
+  uploadCustomImageAction,
   addPricingTierAction,
   deletePricingTierAction,
   addGalleryImageAction,
   deleteGalleryImageAction,
+  addInstructorItemAction,
+  deleteInstructorItemAction,
   addTestimonialAction,
   deleteTestimonialAction,
   addFaqAction,
@@ -34,7 +37,8 @@ import {
 } from '@/lib/site/actions';
 import type {
   TestimonialItem, FaqItem, StatItem, LearnItem, FeatureItem, LogoItem,
-  NavLink, SocialLink, HeroLayout, PricingTier, GalleryItem
+  NavLink, SocialLink, HeroLayout, PricingTier, GalleryItem,
+  InstructorItem, InstructorDisplay, CustomImagePos
 } from '@/lib/site/types';
 
 /* =====================================================================
@@ -251,11 +255,12 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
  * TRUSTED BY
  * ===================================================================== */
 
-export function TrustedByEditor({ initialTitle, items, grayscale }: {
-  initialTitle: string; items: LogoItem[]; grayscale: boolean;
+export function TrustedByEditor({ initialTitle, items, grayscale, marquee }: {
+  initialTitle: string; items: LogoItem[]; grayscale: boolean; marquee: boolean;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [gs, setGs] = useState(grayscale);
+  const [mq, setMq] = useState(marquee);
   const { pending, saved, fire } = useSave('trusted_by');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
@@ -270,7 +275,11 @@ export function TrustedByEditor({ initialTitle, items, grayscale }: {
           <input type="checkbox" checked={gs} onChange={(e) => setGs(e.target.checked)} />
           Aplicar filtro grayscale a los logos
         </label>
-        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, grayscale: gs })} />
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={mq} onChange={(e) => setMq(e.target.checked)} />
+          Modo cinta (auto-scroll infinito)
+        </label>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, grayscale: gs, marquee: mq })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
           <label className="text-xs text-white/60 block mb-1">Agregar logo</label>
@@ -398,49 +407,149 @@ export function AboutEditor({ initial, imageUrl, primary }: {
  * INSTRUCTOR
  * ===================================================================== */
 
-type InstructorValues = { title: string; name: string; bio: string; credentials: string };
+type InstructorValues = { title: string; display_mode: InstructorDisplay };
 
-export function InstructorEditor({ initial, photoUrl, primary }: {
-  initial: InstructorValues; photoUrl: string | null; primary: string;
+export function InstructorEditor({ initial, items, primary }: {
+  initial: InstructorValues; items: InstructorItem[]; primary: string;
 }) {
   const [v, setV] = useState(initial);
   const { pending, saved, fire } = useSave('instructor');
-  const [uploadPending, startUpload] = useTransition();
+  const [addPending, startAdd] = useTransition();
+  const [delPending, startDel] = useTransition();
+  const [name, setName] = useState('');
+  const [credentials, setCredentials] = useState('');
+  const [bio, setBio] = useState('');
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
         <Field label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
-        <Field label="Nombre del instructor" value={v.name} onChange={(x) => setV({ ...v, name: x })} />
-        <Field label="Credenciales" value={v.credentials} onChange={(x) => setV({ ...v, credentials: x })} />
-        <Textarea label="Biografía" value={v.bio} onChange={(x) => setV({ ...v, bio: x })} rows={5} />
+        <div>
+          <label className="block text-xs text-white/60 mb-2">Modo de visualización</label>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            {(['single', 'grid', 'carousel'] as InstructorDisplay[]).map((m) => (
+              <button key={m} type="button"
+                onClick={() => setV({ ...v, display_mode: m })}
+                className={`px-3 py-2 rounded border ${v.display_mode === m ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'}`}>
+                {m === 'single' ? '1 solo' : m === 'grid' ? 'Grilla' : 'Carrusel (cinta)'}
+              </button>
+            ))}
+          </div>
+        </div>
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
 
-        <div className="pt-3 mt-3 border-t border-white/5">
-          <label className="block text-xs text-white/60 mb-2">Foto del instructor</label>
-          <form action={(fd) => startUpload(async () => { await uploadInstructorPhotoAction(fd); })} className="flex items-center gap-3">
-            <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-              className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
-            <button className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium hover:bg-white/90" disabled={uploadPending}>
-              {uploadPending ? 'Subiendo…' : 'Subir'}
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">Agregar instructor</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <input value={credentials} onChange={(e) => setCredentials(e.target.value)} placeholder="Credenciales / rol" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={2} placeholder="Bio corta (opcional)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <form
+            action={(fd) => {
+              fd.set('name', name); fd.set('credentials', credentials); fd.set('bio', bio);
+              startAdd(async () => {
+                await addInstructorItemAction(fd);
+                setName(''); setCredentials(''); setBio('');
+              });
+            }}
+            className="flex items-center gap-2"
+            encType="multipart/form-data"
+          >
+            <input type="file" name="photo" accept="image/png,image/jpeg,image/webp"
+              className="flex-1 text-xs text-white/70 file:mr-2 file:rounded file:border-0 file:bg-white file:text-black file:px-2 file:py-1 file:font-medium" />
+            <button disabled={addPending || !name} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Agregando…' : '+ Agregar'}
             </button>
           </form>
         </div>
+
+        {items.length > 0 && (
+          <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
+            {items.map((i) => (
+              <li key={i.id} className="rounded border border-white/10 p-2 flex items-start justify-between gap-3 text-sm">
+                <div className="flex gap-2">
+                  {i.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={i.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: primary }}>
+                      {i.name.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-medium">{i.name}</div>
+                    {i.credentials && <div className="text-white/40 text-xs">{i.credentials}</div>}
+                  </div>
+                </div>
+                <button type="button" disabled={delPending} onClick={() => {
+                  startDel(async () => {
+                    const fd = new FormData(); fd.set('id', i.id);
+                    await deleteInstructorItemAction(fd);
+                  });
+                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <PreviewFrame>
         <div className="p-5 text-center">
           <h2 className="text-lg font-bold mb-3">{v.title || '—'}</h2>
-          {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoUrl} alt="" className="w-20 h-20 rounded-full mx-auto object-cover" />
+          {items.length === 0 ? (
+            <div className="text-xs text-black/40 py-4">Agregá al menos un instructor.</div>
+          ) : v.display_mode === 'single' ? (
+            (() => {
+              const first = items[0];
+              return (
+                <div>
+                  {first.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={first.photo_url} alt="" className="w-20 h-20 rounded-full mx-auto object-cover" />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-2xl font-bold text-white" style={{ background: primary }}>
+                      {first.name.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="mt-2 font-semibold">{first.name}</div>
+                  {first.credentials && <div className="text-xs text-black/50">{first.credentials}</div>}
+                </div>
+              );
+            })()
+          ) : v.display_mode === 'grid' ? (
+            <div className={`grid gap-2 ${items.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              {items.slice(0, 3).map((i) => (
+                <div key={i.id}>
+                  {i.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={i.photo_url} alt="" className="w-12 h-12 rounded-full mx-auto object-cover" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center text-base font-bold text-white" style={{ background: primary }}>
+                      {i.name.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="text-[10px] font-semibold mt-1">{i.name}</div>
+                </div>
+              ))}
+            </div>
           ) : (
-            <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-2xl font-bold text-white" style={{ background: primary }}>
-              {v.name.slice(0, 1).toUpperCase() || '?'}
+            // carousel preview = sliding strip
+            <div className="overflow-hidden">
+              <div className="flex gap-2 animate-[scroll-x_15s_linear_infinite]" style={{ width: 'max-content' }}>
+                {[...items, ...items].map((i, idx) => (
+                  <div key={idx} className="flex-shrink-0 w-16 text-center">
+                    {i.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={i.photo_url} alt="" className="w-12 h-12 rounded-full mx-auto object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center text-base font-bold text-white" style={{ background: primary }}>
+                        {i.name.slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="text-[9px] font-semibold mt-1 truncate">{i.name}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-          <div className="mt-2 font-semibold">{v.name || 'Nombre del instructor'}</div>
-          {v.credentials && <div className="text-xs text-black/50">{v.credentials}</div>}
-          {v.bio && <p className="text-xs text-black/70 mt-2 line-clamp-3">{v.bio}</p>}
         </div>
       </PreviewFrame>
     </div>
@@ -1438,6 +1547,125 @@ export function GalleryEditor({ initialTitle, initialSubtitle, items, columns }:
               ))}
             </div>
           )}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * CONTACT
+ * ===================================================================== */
+
+type ContactValues = {
+  title: string; subtitle: string; email: string; whatsapp: string;
+  name_label: string; email_label: string; message_label: string; submit_label: string;
+};
+
+export function ContactEditor({ initial, primary }: { initial: ContactValues; primary: string }) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('contact');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+        <Field label="Email para recibir consultas" value={v.email} onChange={(x) => setV({ ...v, email: x })} placeholder="contacto@tuacademia.com" type="email" />
+        <Field label="WhatsApp (opcional, ej. 5491112345678)" value={v.whatsapp} onChange={(x) => setV({ ...v, whatsapp: x })} />
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Label Nombre" value={v.name_label} onChange={(x) => setV({ ...v, name_label: x })} />
+          <Field label="Label Email" value={v.email_label} onChange={(x) => setV({ ...v, email_label: x })} />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Label Mensaje" value={v.message_label} onChange={(x) => setV({ ...v, message_label: x })} />
+          <Field label="Label Botón" value={v.submit_label} onChange={(x) => setV({ ...v, submit_label: x })} />
+        </div>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
+      </div>
+      <PreviewFrame>
+        <div className="p-5">
+          <h2 className="text-base font-bold text-center">{v.title || '—'}</h2>
+          {v.subtitle && <p className="text-xs text-black/60 text-center mt-1">{v.subtitle}</p>}
+          <div className="mt-3 space-y-2">
+            <input disabled placeholder={v.name_label || 'Nombre'} className="w-full rounded border border-black/15 px-2 py-1.5 text-xs bg-white" />
+            <input disabled placeholder={v.email_label || 'Email'} className="w-full rounded border border-black/15 px-2 py-1.5 text-xs bg-white" />
+            <textarea disabled rows={2} placeholder={v.message_label || 'Mensaje'} className="w-full rounded border border-black/15 px-2 py-1.5 text-xs bg-white" />
+            <span className="inline-block rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: primary }}>{v.submit_label || 'Enviar'}</span>
+          </div>
+          {v.whatsapp && <p className="text-[10px] text-center text-black/40 mt-2">📱 También por WhatsApp</p>}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * CUSTOM block (comodín)
+ * ===================================================================== */
+
+type CustomValues = { title: string; subtitle: string; body: string; image_pos: CustomImagePos; cta_label: string; cta_href: string };
+
+export function CustomEditor({ initial, imageUrl, primary }: {
+  initial: CustomValues; imageUrl: string | null; primary: string;
+}) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('custom');
+  const [uploadPending, startUpload] = useTransition();
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <Field label="Subtítulo (opcional)" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+        <Textarea label="Texto principal (HTML básico permitido)" value={v.body} onChange={(x) => setV({ ...v, body: x })} rows={6} />
+        <div>
+          <label className="block text-xs text-white/60 mb-2">Posición de la imagen</label>
+          <div className="grid grid-cols-4 gap-2 text-xs">
+            {(['none', 'left', 'right', 'top'] as CustomImagePos[]).map((p) => (
+              <button key={p} type="button"
+                onClick={() => setV({ ...v, image_pos: p })}
+                className={`px-2 py-1.5 rounded border ${v.image_pos === p ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'}`}>
+                {p === 'none' ? 'sin imagen' : p === 'left' ? '← imagen' : p === 'right' ? 'imagen →' : '↑ arriba'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Botón (opcional)" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
+          <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
+        </div>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
+
+        <div className="pt-3 mt-3 border-t border-white/5">
+          <label className="block text-xs text-white/60 mb-2">Imagen del bloque</label>
+          <form action={(fd) => startUpload(async () => { await uploadCustomImageAction(fd); })} className="flex items-center gap-3">
+            <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
+              className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
+            <button className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium hover:bg-white/90" disabled={uploadPending}>
+              {uploadPending ? 'Subiendo…' : 'Subir'}
+            </button>
+          </form>
+        </div>
+      </div>
+      <PreviewFrame>
+        <div className="p-5">
+          {v.image_pos === 'top' && imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl} alt="" className="w-full h-28 object-cover rounded-lg mb-3" />
+          )}
+          <div className={`flex gap-3 items-center ${v.image_pos === 'left' ? 'flex-row' : v.image_pos === 'right' ? 'flex-row-reverse' : 'flex-col'}`}>
+            {(v.image_pos === 'left' || v.image_pos === 'right') && imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={imageUrl} alt="" className="w-24 h-24 object-cover rounded-lg flex-shrink-0" />
+            )}
+            <div className={v.image_pos === 'none' || v.image_pos === 'top' ? 'text-center w-full' : 'flex-1'}>
+              <h2 className="text-base font-bold">{v.title || '—'}</h2>
+              {v.subtitle && <p className="text-xs text-black/60 mt-0.5">{v.subtitle}</p>}
+              {v.body && <p className="text-xs text-black/70 mt-2 line-clamp-3 whitespace-pre-line">{v.body.replace(/<[^>]+>/g, '')}</p>}
+              {v.cta_label && <span className="inline-block mt-2 rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
+            </div>
+          </div>
         </div>
       </PreviewFrame>
     </div>

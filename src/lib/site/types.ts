@@ -37,6 +37,18 @@ export type GalleryItem = {
   caption?: string;
 };
 
+export type InstructorItem = {
+  id: string;
+  name: string;
+  credentials?: string;
+  bio?: string;
+  photo_url: string | null;
+};
+
+export type InstructorDisplay = 'single' | 'grid' | 'carousel';
+
+export type CustomImagePos = 'none' | 'left' | 'right' | 'top';
+
 export type HeroLayout = 'centered' | 'split' | 'gallery';
 
 export type SectionKey =
@@ -57,6 +69,8 @@ export type SectionKey =
   | 'video'
   | 'gallery'
   | 'newsletter'
+  | 'custom'
+  | 'contact'
   | 'cta_final';
 
 /**
@@ -71,9 +85,9 @@ type SectionBase = {
 export type SiteConfig = {
   sections: {
     hero:         SectionBase & { layout: HeroLayout; eyebrow: string; title: string | null; subtitle: string; cta_label: string; cta_href: string; cta_label_2: string; cta_href_2: string; caption: string; image_url: string | null; gallery_urls?: string[] };
-    trusted_by:   SectionBase & { title: string; items: LogoItem[]; grayscale: boolean };
+    trusted_by:   SectionBase & { title: string; items: LogoItem[]; grayscale: boolean; marquee: boolean };
     about:        SectionBase & { title: string; body: string; image_url: string | null };
-    instructor:   SectionBase & { title: string; name: string; bio: string; photo_url: string | null; credentials: string };
+    instructor:   SectionBase & { title: string; display_mode: InstructorDisplay; name: string; bio: string; photo_url: string | null; credentials: string; items: InstructorItem[] };
     stats:        SectionBase & { title: string; items: StatItem[] };
     learn_points: SectionBase & { title: string; subtitle: string; items: LearnItem[] };
     features:     SectionBase & { title: string; items: FeatureItem[] };
@@ -87,6 +101,8 @@ export type SiteConfig = {
     video:        SectionBase & { title: string; subtitle: string; provider: 'drive' | 'youtube'; video_id: string };
     gallery:      SectionBase & { title: string; subtitle: string; items: GalleryItem[]; columns: 2 | 3 | 4 };
     newsletter:   SectionBase & { title: string; subtitle: string; cta_label: string };
+    custom:       SectionBase & { title: string; subtitle: string; body: string; image_url: string | null; image_pos: CustomImagePos; cta_label: string; cta_href: string };
+    contact:      SectionBase & { title: string; subtitle: string; email: string; whatsapp: string; name_label: string; email_label: string; message_label: string; submit_label: string };
     cta_final:    SectionBase & { title: string; body: string; cta_label: string; cta_href: string };
   };
   order: SectionKey[];
@@ -111,6 +127,8 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'testimonials',
   'faq',
   'offer',
+  'custom',
+  'contact',
   'cta_final',
   'newsletter'
 ];
@@ -142,13 +160,16 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       enabled: true,
       title: 'Más de 2.400 alumnos confían en nosotros',
       grayscale: true,
+      marquee: true,
       items: [
         { id: '00000000-0000-0000-0000-000000000060', name: 'Acme Corp', logo_url: null, href: null },
         { id: '00000000-0000-0000-0000-000000000061', name: 'Globex', logo_url: null, href: null },
         { id: '00000000-0000-0000-0000-000000000062', name: 'Initech', logo_url: null, href: null },
         { id: '00000000-0000-0000-0000-000000000063', name: 'Umbrella', logo_url: null, href: null },
         { id: '00000000-0000-0000-0000-000000000064', name: 'Hooli', logo_url: null, href: null },
-        { id: '00000000-0000-0000-0000-000000000065', name: 'Massive', logo_url: null, href: null }
+        { id: '00000000-0000-0000-0000-000000000065', name: 'Massive', logo_url: null, href: null },
+        { id: '00000000-0000-0000-0000-000000000066', name: 'Vandelay', logo_url: null, href: null },
+        { id: '00000000-0000-0000-0000-000000000067', name: 'Pied Piper', logo_url: null, href: null }
       ]
     },
     about: {
@@ -159,11 +180,17 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     },
     instructor: {
       enabled: true,
-      title: 'Conocé a tu instructor',
+      title: 'Conocé a tu equipo',
+      display_mode: 'grid',
       name: 'Tu nombre acá',
       bio: 'Apasionado por enseñar y por ver crecer a cada alumno. Vengo formando personas hace varios años con un método práctico, sin vueltas, orientado a resultados reales.',
       photo_url: null,
-      credentials: '+10 años de experiencia · +1.000 alumnos formados'
+      credentials: '+10 años de experiencia · +1.000 alumnos formados',
+      items: [
+        { id: '00000000-0000-0000-0000-000000000080', name: 'Tu nombre acá', credentials: '+10 años · +1.000 alumnos', bio: 'Apasionado por enseñar y orientado a resultados.', photo_url: null },
+        { id: '00000000-0000-0000-0000-000000000081', name: 'Co-instructor 1', credentials: 'Especialista en UX', bio: 'Aporta la mirada práctica y los casos reales.', photo_url: null },
+        { id: '00000000-0000-0000-0000-000000000082', name: 'Co-instructor 2', credentials: 'Mentoría 1 a 1', bio: 'Acompañamiento personalizado para cada alumno.', photo_url: null }
+      ]
     },
     stats: {
       enabled: true,
@@ -266,6 +293,27 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       subtitle: 'Recibí contenido exclusivo, descuentos y novedades antes que nadie.',
       cta_label: 'Suscribirme'
     },
+    custom: {
+      enabled: false,
+      title: 'Bloque personalizado',
+      subtitle: '',
+      body: 'Usá este bloque para lo que necesites: testimonios largos, anuncios, condiciones especiales, lo que quieras.',
+      image_url: null,
+      image_pos: 'right',
+      cta_label: '',
+      cta_href: '#'
+    },
+    contact: {
+      enabled: true,
+      title: 'Contactanos',
+      subtitle: '¿Querés saber más antes de inscribirte? Escribinos.',
+      email: '',
+      whatsapp: '',
+      name_label: 'Nombre',
+      email_label: 'Email',
+      message_label: 'Mensaje',
+      submit_label: 'Enviar'
+    },
     cta_final: {
       enabled: true,
       title: '¿Listo para empezar?',
@@ -301,6 +349,19 @@ export function mergeConfig(stored: any): SiteConfig {
       if (s && typeof s === 'object') {
         base.sections[key] = { ...base.sections[key], ...s } as never;
       }
+    }
+
+    // Instructor migration: si el tenant viejo tiene name/bio pero items vacio,
+    // migrar a primer item del array (no perder data).
+    const ins = base.sections.instructor;
+    if (ins && (!ins.items || ins.items.length === 0) && (ins.name || ins.bio || ins.photo_url)) {
+      ins.items = [{
+        id: '00000000-0000-0000-0000-000000000099',
+        name: ins.name || 'Instructor',
+        credentials: ins.credentials,
+        bio: ins.bio,
+        photo_url: ins.photo_url
+      }];
     }
   }
   if (Array.isArray(stored.order) && stored.order.length > 0) {

@@ -216,24 +216,45 @@ export default async function StorefrontHome({
           case 'trusted_by': {
             const tb = cfg.sections.trusted_by;
             if (tb.items.length === 0) return null;
+            const items = tb.items;
             return (
-              <section key={key} className="px-6 py-10" style={{ background: bg ?? 'rgba(0,0,0,0.02)' }}>
-                <div className="max-w-5xl mx-auto">
-                  <p className="text-xs text-center text-black/40 uppercase tracking-widest mb-6">{tb.title}</p>
-                  <div className="flex flex-wrap justify-center items-center gap-8">
-                    {tb.items.map((l) => {
+              <section key={key} className="px-0 py-12 overflow-hidden" style={{ background: bg ?? '#fafafa' }}>
+                <div className="max-w-6xl mx-auto px-6">
+                  <p className="text-xs text-center text-black/40 uppercase tracking-widest mb-8">{tb.title}</p>
+                </div>
+                {tb.marquee ? (
+                  <div className="relative">
+                    <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(90deg, ${bg ?? '#fafafa'}, transparent)` }} />
+                    <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(-90deg, ${bg ?? '#fafafa'}, transparent)` }} />
+                    <div className="flex gap-16 animate-marquee items-center" style={{ width: 'max-content' }}>
+                      {[...items, ...items].map((l, idx) => {
+                        const inner = l.logo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={l.logo_url} alt={l.name} className={`h-10 object-contain ${tb.grayscale ? 'grayscale opacity-60' : ''}`} />
+                        ) : (
+                          <span className={`text-xl font-bold whitespace-nowrap ${tb.grayscale ? 'text-black/50' : 'text-black/70'}`}>{l.name}</span>
+                        );
+                        return l.href ? (
+                          <a key={`${l.id}-${idx}`} href={l.href} target="_blank" rel="noopener" className="flex-shrink-0">{inner}</a>
+                        ) : <div key={`${l.id}-${idx}`} className="flex-shrink-0">{inner}</div>;
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="max-w-5xl mx-auto px-6 flex flex-wrap justify-center items-center gap-10">
+                    {items.map((l) => {
                       const inner = l.logo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={l.logo_url} alt={l.name} className={`h-10 object-contain ${tb.grayscale ? 'grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition' : ''}`} />
                       ) : (
-                        <span className="text-sm font-semibold text-black/60">{l.name}</span>
+                        <span className={`text-lg font-bold ${tb.grayscale ? 'text-black/50' : 'text-black/70'}`}>{l.name}</span>
                       );
                       return l.href ? (
                         <a key={l.id} href={l.href} target="_blank" rel="noopener">{inner}</a>
                       ) : <div key={l.id}>{inner}</div>;
                     })}
                   </div>
-                </div>
+                )}
               </section>
             );
           }
@@ -266,26 +287,70 @@ export default async function StorefrontHome({
           }
 
           case 'instructor': {
-            const i = cfg.sections.instructor;
+            const ins = cfg.sections.instructor;
+            const arr = ins.items?.length > 0 ? ins.items : [{
+              id: 'legacy', name: ins.name, credentials: ins.credentials, bio: ins.bio, photo_url: ins.photo_url
+            }];
+            const mode = ins.display_mode ?? 'single';
+
+            const renderCard = (p: { id: string; name: string; credentials?: string; bio?: string; photo_url: string | null }, opts?: { compact?: boolean }) => {
+              const compact = opts?.compact;
+              return (
+                <div className="text-center">
+                  {p.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.photo_url} alt={p.name} className={`${compact ? 'w-24 h-24' : 'w-36 h-36'} rounded-full mx-auto object-cover shadow-xl ring-4 ring-white`} />
+                  ) : (
+                    <div className={`${compact ? 'w-24 h-24 text-3xl' : 'w-36 h-36 text-5xl'} rounded-full mx-auto flex items-center justify-center font-bold text-white shadow-xl ring-4 ring-white`} style={{ background: `linear-gradient(135deg, ${primary}, ${primary}aa)` }}>
+                      {p.name.slice(0, 1).toUpperCase() || '👤'}
+                    </div>
+                  )}
+                  <h3 className={`${compact ? 'text-lg mt-3' : 'text-2xl mt-5'} font-bold`}>{p.name || '—'}</h3>
+                  {p.credentials && <p className="text-sm text-black/60 mt-1.5">{p.credentials}</p>}
+                  {!compact && p.bio && <p className="mt-5 text-black/70 whitespace-pre-line leading-relaxed max-w-xl mx-auto">{p.bio}</p>}
+                  {compact && p.bio && <p className="mt-2 text-xs text-black/60 line-clamp-2 max-w-[200px] mx-auto">{p.bio}</p>}
+                </div>
+              );
+            };
+
             return (
               <section key={key} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
                 <FadeIn>
-                  <div className="max-w-3xl mx-auto text-center">
+                  <div className="text-center mb-12">
                     <div className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: primary }}>Quién enseña</div>
-                    <h2 className="text-2xl md:text-3xl font-bold mb-10">{i.title}</h2>
-                    {i.photo_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={i.photo_url} alt={i.name} className="w-36 h-36 rounded-full mx-auto object-cover mb-5 shadow-xl ring-4 ring-white" />
-                    ) : (
-                      <div className="w-36 h-36 rounded-full mx-auto flex items-center justify-center text-5xl font-bold text-white mb-5 shadow-xl ring-4 ring-white" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}aa)` }}>
-                        {i.name.slice(0, 1).toUpperCase() || '👤'}
-                      </div>
-                    )}
-                    <h3 className="text-2xl font-bold">{i.name || '—'}</h3>
-                    {i.credentials && <p className="text-sm text-black/60 mt-1.5">{i.credentials}</p>}
-                    {i.bio && <p className="mt-5 text-black/70 whitespace-pre-line leading-relaxed max-w-xl mx-auto">{i.bio}</p>}
+                    <h2 className="text-2xl md:text-3xl font-bold">{ins.title}</h2>
                   </div>
                 </FadeIn>
+
+                {mode === 'single' && arr[0] && (
+                  <FadeIn delay={100}><div className="max-w-3xl mx-auto">{renderCard(arr[0])}</div></FadeIn>
+                )}
+
+                {mode === 'grid' && (
+                  <div className={`max-w-5xl mx-auto grid gap-8 ${arr.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+                    {arr.map((p, idx) => (
+                      <FadeIn key={p.id} delay={idx * 120}>
+                        <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition border border-black/5">
+                          {renderCard(p, { compact: true })}
+                        </div>
+                      </FadeIn>
+                    ))}
+                  </div>
+                )}
+
+                {mode === 'carousel' && (
+                  <div className="relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(90deg, ${bg ?? 'white'}, transparent)` }} />
+                    <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(-90deg, ${bg ?? 'white'}, transparent)` }} />
+                    <div className="flex gap-6 animate-marquee-slow items-stretch" style={{ width: 'max-content' }}>
+                      {[...arr, ...arr].map((p, idx) => (
+                        <div key={`${p.id}-${idx}`} className="flex-shrink-0 w-64 bg-white rounded-2xl p-6 shadow-sm border border-black/5">
+                          {renderCard(p, { compact: true })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </section>
             );
           }
@@ -658,6 +723,95 @@ export default async function StorefrontHome({
                   </form>
                   <p className="text-xs text-black/40 mt-2">Integración con email marketing próximamente.</p>
                 </div>
+              </section>
+            );
+          }
+
+          case 'custom': {
+            const cb = cfg.sections.custom;
+            const pos = cb.image_pos ?? 'none';
+            const hasImage = cb.image_url && pos !== 'none';
+            return (
+              <section key={key} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
+                <div className="max-w-5xl mx-auto">
+                  {pos === 'top' && hasImage && (
+                    <FadeIn>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={cb.image_url!} alt="" className="w-full max-h-96 object-cover rounded-2xl shadow-lg mb-10" />
+                    </FadeIn>
+                  )}
+                  <div className={`flex gap-12 items-center ${pos === 'left' ? 'md:flex-row flex-col' : pos === 'right' ? 'md:flex-row-reverse flex-col' : 'flex-col text-center'}`}>
+                    {(pos === 'left' || pos === 'right') && hasImage && (
+                      <FadeIn delay={100}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={cb.image_url!} alt="" className="w-full md:w-1/2 max-h-80 object-cover rounded-2xl shadow-lg" />
+                      </FadeIn>
+                    )}
+                    <FadeIn delay={200}>
+                      <div className={(pos === 'left' || pos === 'right') ? 'md:w-1/2' : 'max-w-2xl mx-auto'}>
+                        <h2 className="text-3xl md:text-4xl font-bold">{cb.title}</h2>
+                        {cb.subtitle && <p className="mt-2 text-lg text-black/60">{cb.subtitle}</p>}
+                        {cb.body && (
+                          <div className="mt-5 text-black/70 whitespace-pre-line leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: cb.body }} />
+                        )}
+                        {cb.cta_label && (
+                          <a href={cb.cta_href || '#'}
+                            className="mt-6 inline-block rounded-md px-6 py-3 font-semibold text-white shadow-md"
+                            style={{ background: primary }}>
+                            {cb.cta_label}
+                          </a>
+                        )}
+                      </div>
+                    </FadeIn>
+                  </div>
+                </div>
+              </section>
+            );
+          }
+
+          case 'contact': {
+            const ct = cfg.sections.contact;
+            const formAction = ct.email ? `mailto:${ct.email}` : undefined;
+            return (
+              <section key={key} id="contacto" className="px-6 py-20" style={{ background: bg ?? '#fafafa' }}>
+                <FadeIn>
+                  <div className="max-w-2xl mx-auto">
+                    <div className="text-center mb-10">
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Contacto</div>
+                      <h2 className="text-3xl md:text-4xl font-bold">{ct.title}</h2>
+                      {ct.subtitle && <p className="mt-3 text-black/60">{ct.subtitle}</p>}
+                    </div>
+                    <form action={formAction} method="POST" encType="text/plain" className="bg-white rounded-2xl p-8 shadow-sm border border-black/5 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">{ct.name_label}</label>
+                        <input name="Nombre" required className="w-full rounded-md border border-black/15 px-4 py-2.5 focus:outline-none focus:border-black/40" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">{ct.email_label}</label>
+                        <input name="Email" type="email" required className="w-full rounded-md border border-black/15 px-4 py-2.5 focus:outline-none focus:border-black/40" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">{ct.message_label}</label>
+                        <textarea name="Mensaje" rows={4} required className="w-full rounded-md border border-black/15 px-4 py-2.5 focus:outline-none focus:border-black/40" />
+                      </div>
+                      <button type="submit"
+                        className="w-full rounded-md py-3 font-semibold text-white shadow-md hover:shadow-lg transition"
+                        style={{ background: primary }}>
+                        {ct.submit_label}
+                      </button>
+                      {!ct.email && <p className="text-xs text-center text-black/40">⚠ Configurá el email destino en el editor.</p>}
+                    </form>
+                    {ct.whatsapp && (
+                      <div className="text-center mt-5">
+                        <a href={`https://wa.me/${ct.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener"
+                          className="inline-flex items-center gap-2 text-sm font-medium text-black/70 hover:text-black">
+                          📱 También por WhatsApp
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </FadeIn>
               </section>
             );
           }

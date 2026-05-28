@@ -27,6 +27,8 @@ import {
   GalleryEditor,
   NewsletterEditor,
   CtaFinalEditor,
+  ContactEditor,
+  CustomEditor,
   NavEditor,
   FooterEditor
 } from "@/components/owner/site/SectionEditors";
@@ -51,6 +53,8 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   video:        { title: "🎬 Video", desc: "Embed de YouTube o Google Drive. Trailer, presentación, lo que quieras." },
   gallery:      { title: "🖼️ Galería", desc: "Grid de imágenes con caption. 2, 3 o 4 columnas." },
   newsletter:   { title: "📧 Newsletter", desc: "Capturá emails con un formulario simple." },
+  custom:       { title: "🎨 Bloque personalizado", desc: "Comodín 100% editable: título + texto + imagen + CTA + posición." },
+  contact:      { title: "✉️ Contacto", desc: "Formulario de contacto con email y WhatsApp opcionales." },
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
 
@@ -175,6 +179,7 @@ export default async function SiteBuilderPage() {
                 initialTitle={cfg.sections.trusted_by.title}
                 items={cfg.sections.trusted_by.items}
                 grayscale={cfg.sections.trusted_by.grayscale}
+                marquee={cfg.sections.trusted_by.marquee}
               />
             )}
             {key === 'about' && (
@@ -188,11 +193,9 @@ export default async function SiteBuilderPage() {
               <InstructorEditor
                 initial={{
                   title: cfg.sections.instructor.title,
-                  name: cfg.sections.instructor.name,
-                  bio: cfg.sections.instructor.bio,
-                  credentials: cfg.sections.instructor.credentials
+                  display_mode: cfg.sections.instructor.display_mode ?? 'single'
                 }}
-                photoUrl={cfg.sections.instructor.photo_url}
+                items={cfg.sections.instructor.items ?? []}
                 primary={primary}
               />
             )}
@@ -297,6 +300,35 @@ export default async function SiteBuilderPage() {
                   title: cfg.sections.newsletter.title,
                   subtitle: cfg.sections.newsletter.subtitle,
                   cta_label: cfg.sections.newsletter.cta_label
+                }}
+                primary={primary}
+              />
+            )}
+            {key === 'custom' && (
+              <CustomEditor
+                initial={{
+                  title: cfg.sections.custom.title,
+                  subtitle: cfg.sections.custom.subtitle,
+                  body: cfg.sections.custom.body,
+                  image_pos: cfg.sections.custom.image_pos,
+                  cta_label: cfg.sections.custom.cta_label,
+                  cta_href: cfg.sections.custom.cta_href
+                }}
+                imageUrl={cfg.sections.custom.image_url}
+                primary={primary}
+              />
+            )}
+            {key === 'contact' && (
+              <ContactEditor
+                initial={{
+                  title: cfg.sections.contact.title,
+                  subtitle: cfg.sections.contact.subtitle,
+                  email: cfg.sections.contact.email,
+                  whatsapp: cfg.sections.contact.whatsapp,
+                  name_label: cfg.sections.contact.name_label,
+                  email_label: cfg.sections.contact.email_label,
+                  message_label: cfg.sections.contact.message_label,
+                  submit_label: cfg.sections.contact.submit_label
                 }}
                 primary={primary}
               />
