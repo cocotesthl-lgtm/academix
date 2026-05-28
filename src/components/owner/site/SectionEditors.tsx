@@ -7,6 +7,8 @@ import {
   uploadInstructorPhotoAction,
   uploadHeroImageAction,
   uploadBeforeAfterImageAction,
+  addWheelPrizeAction,
+  deleteWheelPrizeAction,
   addTestimonialAction,
   deleteTestimonialAction,
   addFaqAction,
@@ -30,7 +32,7 @@ import {
 } from '@/lib/site/actions';
 import type {
   TestimonialItem, FaqItem, StatItem, LearnItem, FeatureItem, LogoItem,
-  NavLink, SocialLink, HeroLayout
+  NavLink, SocialLink, HeroLayout, WheelPrizeItem, WheelTrigger
 } from '@/lib/site/types';
 
 /* =====================================================================
@@ -1121,6 +1123,167 @@ export function BeforeAfterEditor({ initial, beforeUrl, afterUrl, primary }: {
               {v.after_body && <p className="text-[10px] text-black/70 mt-2 line-clamp-3">{v.after_body}</p>}
             </div>
           </div>
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * WHEEL of prizes
+ * ===================================================================== */
+
+type WheelValues = { title: string; subtitle: string; trigger: WheelTrigger; delay_seconds: number; button_label: string };
+
+export function WheelEditor({ initial, prizes, primary }: {
+  initial: WheelValues; prizes: WheelPrizeItem[]; primary: string;
+}) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('wheel');
+  const [addPending, startAdd] = useTransition();
+  const [delPending, startDel] = useTransition();
+  const [label, setLabel] = useState('');
+  const [type, setType] = useState<'percent' | 'fixed'>('percent');
+  const [amount, setAmount] = useState('20');
+  const [weight, setWeight] = useState('10');
+
+  // Preview spin animation state
+  const [spinning, setSpinning] = useState(false);
+  const [angle, setAngle] = useState(0);
+  function previewSpin() {
+    if (prizes.length === 0) return;
+    setSpinning(true);
+    const turns = 4 + Math.random() * 3;   // 4-7 full turns
+    setAngle((a) => a + turns * 360);
+    setTimeout(() => setSpinning(false), 3500);
+  }
+
+  const slice = prizes.length > 0 ? 360 / prizes.length : 0;
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título del popup" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+
+        <div>
+          <label className="block text-xs text-white/60 mb-1">Cuándo se muestra</label>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            {(['button', 'delay', 'exit'] as WheelTrigger[]).map((t) => (
+              <button key={t} type="button"
+                onClick={() => setV({ ...v, trigger: t })}
+                className={`px-3 py-2 rounded border ${v.trigger === t ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'}`}>
+                {t === 'button' ? 'Botón flotante' : t === 'delay' ? 'Auto tras N seg' : 'Al salir'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {v.trigger === 'delay' && (
+          <Field label="Segundos antes de abrir" type="number" value={String(v.delay_seconds)} onChange={(x) => setV({ ...v, delay_seconds: parseInt(x || '0', 10) })} />
+        )}
+        {v.trigger === 'button' && (
+          <Field label="Texto del botón flotante" value={v.button_label} onChange={(x) => setV({ ...v, button_label: x })} />
+        )}
+
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, delay_seconds: String(v.delay_seconds) })} />
+
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">Agregar premio</label>
+          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (ej. 20% OFF)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <div className="grid grid-cols-3 gap-2">
+            <select value={type} onChange={(e) => setType(e.target.value as 'percent' | 'fixed')} className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
+              <option value="percent">%</option>
+              <option value="fixed">$ fijo</option>
+            </select>
+            <input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" min="0" step="0.01" placeholder="20" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <input value={weight} onChange={(e) => setWeight(e.target.value)} type="number" min="1" placeholder="peso" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" title="Peso: chance relativa (más alto = más probable)" />
+          </div>
+          <button type="button" disabled={addPending || !label || !amount}
+            onClick={() => {
+              startAdd(async () => {
+                const fd = new FormData();
+                fd.set('label', label); fd.set('type', type); fd.set('amount', amount); fd.set('weight', weight);
+                await addWheelPrizeAction(fd);
+                setLabel(''); setAmount('20'); setWeight('10');
+              });
+            }}
+            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+            {addPending ? 'Agregando…' : '+ Agregar premio'}
+          </button>
+        </div>
+
+        {prizes.length > 0 && (
+          <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
+            {prizes.map((p) => (
+              <li key={p.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+                <div>
+                  <span className="font-medium">{p.label}</span>
+                  <span className="text-white/40 text-xs ml-2">
+                    {p.type === 'percent' ? `${p.amount}%` : `$${p.amount}`} · peso {p.weight}
+                  </span>
+                </div>
+                <button type="button" disabled={delPending} onClick={() => {
+                  startDel(async () => {
+                    const fd = new FormData(); fd.set('id', p.id);
+                    await deleteWheelPrizeAction(fd);
+                  });
+                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <PreviewFrame>
+        <div className="p-5 text-center" style={{ background: `${primary}15` }}>
+          <h3 className="text-base font-bold">{v.title || '—'}</h3>
+          {v.subtitle && <p className="text-xs text-black/60 mt-1">{v.subtitle}</p>}
+
+          <div className="relative my-4 mx-auto" style={{ width: 200, height: 200 }}>
+            {prizes.length === 0 ? (
+              <div className="w-full h-full rounded-full border-4 border-black/10 flex items-center justify-center text-xs text-black/40">
+                Agregá premios →
+              </div>
+            ) : (
+              <>
+                <div
+                  className="w-full h-full rounded-full overflow-hidden border-4"
+                  style={{
+                    borderColor: primary,
+                    transform: `rotate(${angle}deg)`,
+                    transition: spinning ? 'transform 3s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none',
+                    background: `conic-gradient(${prizes.map((p, i) => {
+                      const start = i * slice;
+                      const end = (i + 1) * slice;
+                      const color = i % 2 === 0 ? primary : `${primary}88`;
+                      return `${color} ${start}deg ${end}deg`;
+                    }).join(', ')})`
+                  }}
+                >
+                  {prizes.map((p, i) => {
+                    const a = i * slice + slice / 2;
+                    return (
+                      <div key={p.id}
+                        className="absolute top-1/2 left-1/2 text-[9px] font-bold text-white whitespace-nowrap"
+                        style={{ transform: `translate(-50%, -50%) rotate(${a}deg) translateY(-60px)` }}>
+                        {p.label}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border-2" style={{ borderColor: primary }} />
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0"
+                  style={{ borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `12px solid ${primary}` }} />
+              </>
+            )}
+          </div>
+
+          <button type="button" disabled={prizes.length === 0 || spinning} onClick={previewSpin}
+            className="rounded px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            style={{ background: primary }}>
+            {spinning ? 'Girando…' : 'Probar giro'}
+          </button>
         </div>
       </PreviewFrame>
     </div>

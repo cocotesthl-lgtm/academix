@@ -89,12 +89,14 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   const section = cfg.sections[key] as Record<string, unknown>;
 
   for (const f of ['title', 'subtitle', 'body', 'cta_label', 'cta_href', 'name', 'bio', 'credentials', 'ends_at',
-                   'before_label', 'after_label', 'before_body', 'after_body']) {
+                   'before_label', 'after_label', 'before_body', 'after_body', 'button_label']) {
     if (formData.has(f)) section[f] = String(formData.get(f) ?? '');
   }
   if (formData.has('show_filters')) section.show_filters = formData.get('show_filters') === 'on';
   if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
+  if (formData.has('trigger')) section.trigger = String(formData.get('trigger') ?? 'button');
+  if (formData.has('delay_seconds')) section.delay_seconds = Math.max(0, parseInt(String(formData.get('delay_seconds') ?? '15'), 10) || 15);
 
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
@@ -315,6 +317,34 @@ export async function deleteLogoAction(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '');
   const cfg = await loadConfig(tenant.id);
   cfg.sections.trusted_by.items = cfg.sections.trusted_by.items.filter((t) => t.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Wheel prizes CRUD ===== */
+
+export async function addWheelPrizeAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const label = String(formData.get('label') ?? '').trim();
+  const type = String(formData.get('type') ?? 'percent');
+  const amount = parseFloat(String(formData.get('amount') ?? '0').replace(/[^0-9.]/g, ''));
+  const weight = Math.max(1, parseInt(String(formData.get('weight') ?? '1'), 10) || 1);
+  if (!label || !['percent', 'fixed'].includes(type) || !amount || amount <= 0) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.wheel.prizes.push({
+    id: randomUUID(), label,
+    type: type as 'percent' | 'fixed',
+    amount, weight
+  });
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function deleteWheelPrizeAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.wheel.prizes = cfg.sections.wheel.prizes.filter((p) => p.id !== id);
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }

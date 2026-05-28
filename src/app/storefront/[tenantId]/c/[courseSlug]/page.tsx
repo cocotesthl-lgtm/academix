@@ -4,6 +4,7 @@ import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { trackClick } from "@/lib/affiliates/tracking";
+import { CouponInput } from "@/components/storefront/CouponInput";
 
 export const dynamic = "force-dynamic";
 
@@ -178,23 +179,12 @@ export default async function CourseDetailPage({
               </div>
               <p className="text-xs text-black/50 mt-1">Pago único · Acceso permanente</p>
             </div>
-            {course.price_cents > 0 ? (
-              <form action={`/api/checkout/${course.id}`} method="post">
-                <button
-                  className="w-full rounded-md py-3 font-semibold text-white"
-                  style={{ background: primary }}
-                >
-                  Comprar curso
-                </button>
-              </form>
-            ) : (
-              <button
-                className="w-full rounded-md py-3 font-semibold text-white"
-                style={{ background: primary }}
-              >
-                Inscribirme gratis
-              </button>
-            )}
+            <CouponInput
+              courseId={course.id}
+              priceCents={course.price_cents}
+              currency={course.currency}
+              primary={primary}
+            />
             <p className="text-xs text-center text-black/40">
               Pago seguro vía MercadoPago
             </p>

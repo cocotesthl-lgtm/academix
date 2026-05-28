@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { createPreference } from '@/lib/payments/mercadopago';
 import { verifyAffiliateCookie, cookieName } from '@/lib/affiliates/cookie';
+import { validateCoupon } from '@/lib/coupons/actions';
 import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
@@ -70,6 +71,18 @@ export async function POST(
   // Only honour attribution if the cookie was set for THIS course
   const affLinkId = affPayload && affPayload.courseId === course.id ? affPayload.linkId : null;
 
+  // Coupon (from form field or query param)
+  const form = await req.formData().catch(() => null);
+  const couponCode = (form?.get('coupon') as string | null)
+    ?? (new URL(req.url).searchParams.get('coupon'))
+    ?? '';
+  let couponValid: Awaited<ReturnType<typeof validateCoupon>> | null = null;
+  let finalPrice = course.price_cents;
+  if (couponCode) {
+    couponValid = await validateCoupon(course.tenant_id, couponCode, course.id, course.price_cents);
+    if (couponValid) finalPrice = couponValid.final_cents;
+  }
+
   // Build URLs (use the storefront origin from the request)
   const h = await headers();
   const proto = (h.get('x-forwarded-proto') ?? 'http').split(',')[0];
@@ -79,11 +92,37 @@ export async function POST(
   // Webhook URL must point to PLATFORM origin (where /api/webhooks lives), not tenant subdomain
   const platformOrigin = env.appUrl;
 
+  // If coupon makes it free, auto-enroll on the spot and skip MP entirely
+  if (finalPrice <= 0 && couponValid && user) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('enrollments') as any).insert({
+      tenant_id: course.tenant_id,
+      course_id: course.id,
+      user_id: user.id,
+      source: 'direct',
+      status: 'active'
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('coupon_redemptions') as any).insert({
+      coupon_id: couponValid.id,
+      tenant_id: course.tenant_id,
+      user_id: user.id,
+      course_id: course.id,
+      sale_id: null,
+      amount_discounted_cents: couponValid.discount_cents
+    });
+    // Bump redemption_count
+    const { data: c } = await svc.from('coupons').select('redemption_count').eq('id', couponValid.id).single<{ redemption_count: number }>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('coupons') as any).update({ redemption_count: (c?.redemption_count ?? 0) + 1 }).eq('id', couponValid.id);
+    return NextResponse.redirect(`${origin}/learn`, { status: 303 });
+  }
+
   try {
     const pref = await createPreference({
       accessToken: integration.access_token_enc,
       title: course.title,
-      unitPriceCents: course.price_cents,
+      unitPriceCents: finalPrice,
       currency: course.currency,
       buyerEmail: user?.email ?? undefined,
       externalReference: `${course.id}::${user?.id ?? 'anon'}::${affLinkId ?? ''}`,
@@ -95,7 +134,10 @@ export async function POST(
         course_id: course.id,
         tenant_id: course.tenant_id,
         buyer_user_id: user?.id ?? null,
-        affiliate_link_id: affLinkId
+        affiliate_link_id: affLinkId,
+        coupon_id: couponValid?.id ?? null,
+        coupon_code: couponValid?.code ?? null,
+        coupon_discount_cents: couponValid?.discount_cents ?? 0
       }
     });
 

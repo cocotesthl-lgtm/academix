@@ -20,6 +20,16 @@ export type SocialLink = {
   href: string;
 };
 
+export type WheelPrizeItem = {
+  id: string;
+  label: string;             // "20% OFF", "10% OFF", etc.
+  type: 'percent' | 'fixed';
+  amount: number;            // percent: 0-100; fixed: pesos (UI), stored as cents in coupon
+  weight: number;            // chance weight (higher = more likely)
+};
+
+export type WheelTrigger = 'delay' | 'button' | 'exit';
+
 export type HeroLayout = 'centered' | 'split' | 'gallery';
 
 export type SectionKey =
@@ -36,6 +46,7 @@ export type SectionKey =
   | 'before_after'
   | 'faq'
   | 'offer'
+  | 'wheel'
   | 'newsletter'
   | 'cta_final';
 
@@ -63,6 +74,7 @@ export type SiteConfig = {
     before_after: SectionBase & { title: string; before_label: string; after_label: string; before_image_url: string | null; after_image_url: string | null; before_body: string; after_body: string };
     faq:          SectionBase & { title: string; items: FaqItem[] };
     offer:        SectionBase & { title: string; subtitle: string; ends_at: string | null; cta_label: string; cta_href: string };
+    wheel:        SectionBase & { title: string; subtitle: string; trigger: WheelTrigger; delay_seconds: number; button_label: string; prizes: WheelPrizeItem[] };
     newsletter:   SectionBase & { title: string; subtitle: string; cta_label: string };
     cta_final:    SectionBase & { title: string; body: string; cta_label: string; cta_href: string };
   };
@@ -74,7 +86,7 @@ export type SiteConfig = {
 export const DEFAULT_ORDER: SectionKey[] = [
   'hero', 'trusted_by', 'about', 'instructor', 'stats', 'learn_points',
   'features', 'featured', 'catalog', 'testimonials', 'before_after', 'faq',
-  'offer', 'newsletter', 'cta_final'
+  'offer', 'wheel', 'newsletter', 'cta_final'
 ];
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
@@ -92,6 +104,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     before_after: { enabled: false, title: 'Antes vs después', before_label: 'Antes', after_label: 'Después', before_image_url: null, after_image_url: null, before_body: '', after_body: '' },
     faq:          { enabled: false, title: 'Preguntas frecuentes', items: [] },
     offer:        { enabled: false, title: 'Oferta por tiempo limitado', subtitle: 'Inscribite antes que termine.', ends_at: null, cta_label: 'Aprovecharla', cta_href: '#cursos' },
+    wheel:        { enabled: false, title: '¡Girá la ruleta!', subtitle: 'Ganá un descuento exclusivo.', trigger: 'button', delay_seconds: 15, button_label: '🎰 Probá tu suerte', prizes: [] },
     newsletter:   { enabled: false, title: 'Sumate al newsletter', subtitle: 'Recibí nuestros mejores tips y novedades.', cta_label: 'Suscribirme' },
     cta_final:    { enabled: false, title: '¿Listo para empezar?', body: '', cta_label: 'Quiero inscribirme', cta_href: '#cursos' }
   },

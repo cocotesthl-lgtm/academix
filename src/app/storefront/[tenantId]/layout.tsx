@@ -3,6 +3,7 @@ import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { mergeConfig } from "@/lib/site/types";
+import { SpinWheel } from "@/components/storefront/SpinWheel";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,19 @@ export default async function StorefrontLayout({
       </header>
 
       <main>{children}</main>
+
+      {cfg.sections.wheel.enabled && cfg.sections.wheel.prizes.length > 0 && (
+        <SpinWheel
+          tenantId={tenantId}
+          title={cfg.sections.wheel.title}
+          subtitle={cfg.sections.wheel.subtitle}
+          trigger={cfg.sections.wheel.trigger}
+          delaySeconds={cfg.sections.wheel.delay_seconds}
+          buttonLabel={cfg.sections.wheel.button_label}
+          prizes={cfg.sections.wheel.prizes}
+          primary={primary}
+        />
+      )}
 
       <footer className="border-t border-black/10 mt-16 py-10">
         <div className="max-w-5xl mx-auto px-6 text-center space-y-4">

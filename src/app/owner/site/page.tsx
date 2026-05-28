@@ -17,6 +17,7 @@ import {
   BeforeAfterEditor,
   FaqEditor,
   OfferEditor,
+  WheelEditor,
   NewsletterEditor,
   CtaFinalEditor,
   NavEditor,
@@ -39,6 +40,7 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   before_after: { title: "🔄 Antes / Después", desc: "Comparativa visual con imágenes y textos descriptivos." },
   faq:          { title: "❓ Preguntas frecuentes", desc: "Acordeón clásico para responder objeciones." },
   offer:        { title: "⏰ Oferta limitada", desc: "Banner con contador regresivo hasta una fecha." },
+  wheel:        { title: "🎰 Ruleta de premios", desc: "Popup con ruleta. Entrega un cupón único al spinner." },
   newsletter:   { title: "📧 Newsletter", desc: "Capturá emails con un formulario simple." },
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
@@ -203,6 +205,19 @@ export default async function SiteBuilderPage() {
                   cta_label: cfg.sections.offer.cta_label,
                   cta_href: cfg.sections.offer.cta_href
                 }}
+                primary={primary}
+              />
+            )}
+            {key === 'wheel' && (
+              <WheelEditor
+                initial={{
+                  title: cfg.sections.wheel.title,
+                  subtitle: cfg.sections.wheel.subtitle,
+                  trigger: cfg.sections.wheel.trigger,
+                  delay_seconds: cfg.sections.wheel.delay_seconds,
+                  button_label: cfg.sections.wheel.button_label
+                }}
+                prizes={cfg.sections.wheel.prizes}
                 primary={primary}
               />
             )}
