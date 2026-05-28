@@ -93,6 +93,52 @@ export async function createTenantAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await svc.from('audit_log').insert(auditPayload as any);
 
+  // Sample courses para que el catálogo del storefront no se vea vacío.
+  // El owner puede editarlos o borrarlos desde /owner/courses.
+  const sampleCourses = [
+    {
+      tenant_id: tenant.id,
+      slug: 'bienvenida',
+      title: 'Curso de bienvenida (gratis)',
+      description: 'Una introducción rápida para conocer la metodología y el estilo de la academia. Ideal para empezar.',
+      price_cents: 0,
+      currency: 'ARS',
+      status: 'published',
+      is_featured: true,
+      featured_position: 0,
+      affiliate_enabled: true,
+      created_by: user.id
+    },
+    {
+      tenant_id: tenant.id,
+      slug: 'curso-completo',
+      title: 'Curso completo',
+      description: 'El programa completo paso a paso, con casos prácticos y ejercicios para llevar la teoría a la acción.',
+      price_cents: 14900 * 100,
+      currency: 'ARS',
+      status: 'published',
+      is_featured: true,
+      featured_position: 1,
+      affiliate_enabled: true,
+      created_by: user.id
+    },
+    {
+      tenant_id: tenant.id,
+      slug: 'masterclass',
+      title: 'Masterclass intensiva',
+      description: 'Workshop avanzado para profundizar en los temas más complejos. Acceso a sesiones en vivo y comunidad privada.',
+      price_cents: 29900 * 100,
+      currency: 'ARS',
+      status: 'published',
+      is_featured: false,
+      featured_position: 2,
+      affiliate_enabled: true,
+      created_by: user.id
+    }
+  ];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('courses') as any).insert(sampleCourses);
+
   // Redirect target: owner subdomain. In dev (localhost) use app.localhost; in prod use app.{rootDomain}.
   const appUrl = new URL(env.appUrl);
   const isLocal = appUrl.hostname === 'localhost' || appUrl.hostname.endsWith('.localhost');

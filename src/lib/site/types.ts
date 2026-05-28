@@ -95,9 +95,24 @@ export type SiteConfig = {
 };
 
 export const DEFAULT_ORDER: SectionKey[] = [
-  'hero', 'trusted_by', 'about', 'instructor', 'video', 'stats', 'learn_points',
-  'features', 'featured', 'catalog', 'pricing', 'testimonials', 'before_after',
-  'gallery', 'faq', 'offer', 'newsletter', 'cta_final'
+  'hero',
+  'trusted_by',
+  'stats',
+  'about',
+  'video',
+  'learn_points',
+  'features',
+  'instructor',
+  'featured',
+  'catalog',
+  'pricing',
+  'before_after',
+  'gallery',
+  'testimonials',
+  'faq',
+  'offer',
+  'cta_final',
+  'newsletter'
 ];
 
 /**

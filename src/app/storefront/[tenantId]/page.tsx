@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
 import { mergeConfig, type SectionKey } from "@/lib/site/types";
+import { AnimatedCounter } from "@/components/storefront/AnimatedCounter";
+import { FadeIn } from "@/components/storefront/FadeIn";
 
 export const dynamic = "force-dynamic";
 
@@ -184,20 +186,25 @@ export default async function StorefrontHome({
           case 'about': {
             const a = cfg.sections.about;
             return (
-              <section key={key} className="px-6 py-16" style={{ background: bg ?? 'rgba(0,0,0,0.02)' }}>
-                <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 items-center">
-                  {a.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={a.image_url} alt="" className="rounded-xl w-full object-cover max-h-96" />
-                  ) : (
-                    <div className="rounded-xl w-full h-72 flex items-center justify-center" style={{ background: `${primary}15` }}>
-                      <span className="text-6xl">👋</span>
+              <section key={key} className="px-6 py-20" style={{ background: bg ?? '#fafafa' }}>
+                <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+                  <FadeIn>
+                    {a.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={a.image_url} alt="" className="rounded-2xl w-full object-cover max-h-96 shadow-lg" />
+                    ) : (
+                      <div className="rounded-2xl w-full h-80 flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, ${primary}20, ${primary}05)` }}>
+                        <span className="text-7xl">👋</span>
+                      </div>
+                    )}
+                  </FadeIn>
+                  <FadeIn delay={150}>
+                    <div>
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Sobre nosotros</div>
+                      <h2 className="text-3xl md:text-4xl font-bold mb-4">{a.title}</h2>
+                      <p className="text-black/70 whitespace-pre-line leading-relaxed text-lg">{a.body}</p>
                     </div>
-                  )}
-                  <div>
-                    <h2 className="text-3xl font-bold mb-4">{a.title}</h2>
-                    <p className="text-black/70 whitespace-pre-line leading-relaxed">{a.body}</p>
-                  </div>
+                  </FadeIn>
                 </div>
               </section>
             );
@@ -206,21 +213,24 @@ export default async function StorefrontHome({
           case 'instructor': {
             const i = cfg.sections.instructor;
             return (
-              <section key={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
-                <div className="max-w-3xl mx-auto text-center">
-                  <h2 className="text-2xl md:text-3xl font-bold mb-8">{i.title}</h2>
-                  {i.photo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={i.photo_url} alt={i.name} className="w-32 h-32 rounded-full mx-auto object-cover mb-4" />
-                  ) : (
-                    <div className="w-32 h-32 rounded-full mx-auto flex items-center justify-center text-5xl font-bold text-white mb-4" style={{ background: primary }}>
-                      {i.name.slice(0, 1).toUpperCase() || '👤'}
-                    </div>
-                  )}
-                  <h3 className="text-xl font-bold">{i.name || '—'}</h3>
-                  {i.credentials && <p className="text-sm text-black/60 mt-1">{i.credentials}</p>}
-                  {i.bio && <p className="mt-4 text-black/70 whitespace-pre-line leading-relaxed">{i.bio}</p>}
-                </div>
+              <section key={key} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
+                <FadeIn>
+                  <div className="max-w-3xl mx-auto text-center">
+                    <div className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: primary }}>Quién enseña</div>
+                    <h2 className="text-2xl md:text-3xl font-bold mb-10">{i.title}</h2>
+                    {i.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={i.photo_url} alt={i.name} className="w-36 h-36 rounded-full mx-auto object-cover mb-5 shadow-xl ring-4 ring-white" />
+                    ) : (
+                      <div className="w-36 h-36 rounded-full mx-auto flex items-center justify-center text-5xl font-bold text-white mb-5 shadow-xl ring-4 ring-white" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}aa)` }}>
+                        {i.name.slice(0, 1).toUpperCase() || '👤'}
+                      </div>
+                    )}
+                    <h3 className="text-2xl font-bold">{i.name || '—'}</h3>
+                    {i.credentials && <p className="text-sm text-black/60 mt-1.5">{i.credentials}</p>}
+                    {i.bio && <p className="mt-5 text-black/70 whitespace-pre-line leading-relaxed max-w-xl mx-auto">{i.bio}</p>}
+                  </div>
+                </FadeIn>
               </section>
             );
           }
@@ -230,15 +240,19 @@ export default async function StorefrontHome({
             if (st.items.length === 0) return null;
             const cols = Math.min(st.items.length, 4);
             return (
-              <section key={key} className="px-6 py-12" style={{ background: bg ?? 'rgba(0,0,0,0.02)' }}>
+              <section key={key} className="px-6 py-16" style={{ background: bg ?? `linear-gradient(180deg, ${primary}08 0%, transparent 100%)` }}>
                 <div className="max-w-5xl mx-auto">
-                  <h2 className="text-xl md:text-2xl font-bold text-center mb-8">{st.title}</h2>
+                  <FadeIn>
+                    <h2 className="text-xl md:text-2xl font-bold text-center mb-10">{st.title}</h2>
+                  </FadeIn>
                   <div className={`grid gap-4 grid-cols-2 md:grid-cols-${cols}`}>
-                    {st.items.map((s) => (
-                      <div key={s.id} className="text-center p-6 rounded-xl border border-black/10 bg-white">
-                        <div className="text-4xl font-bold" style={{ color: primary }}>{s.number}</div>
-                        <div className="text-sm text-black/60 mt-1">{s.label}</div>
-                      </div>
+                    {st.items.map((s, idx) => (
+                      <FadeIn key={s.id} delay={idx * 80}>
+                        <div className="text-center p-6 rounded-2xl border border-black/10 bg-white shadow-sm">
+                          <AnimatedCounter value={s.number} color={primary} />
+                          <div className="text-sm text-black/60 mt-2">{s.label}</div>
+                        </div>
+                      </FadeIn>
                     ))}
                   </div>
                 </div>
@@ -250,16 +264,23 @@ export default async function StorefrontHome({
             const lp = cfg.sections.learn_points;
             if (lp.items.length === 0) return null;
             return (
-              <section key={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-4xl mx-auto">
-                  <h2 className="text-2xl md:text-3xl font-bold text-center">{lp.title}</h2>
-                  {lp.subtitle && <p className="text-center text-black/60 mt-2">{lp.subtitle}</p>}
-                  <div className="mt-8 grid md:grid-cols-2 gap-4">
-                    {lp.items.map((p) => (
-                      <div key={p.id} className="flex items-start gap-3">
-                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs shrink-0 mt-0.5" style={{ background: primary }}>✓</span>
-                        <span className="text-black/80">{p.text}</span>
-                      </div>
+                  <FadeIn>
+                    <div className="text-center mb-10">
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Aprendizaje</div>
+                      <h2 className="text-3xl md:text-4xl font-bold">{lp.title}</h2>
+                      {lp.subtitle && <p className="text-black/60 mt-3 text-lg">{lp.subtitle}</p>}
+                    </div>
+                  </FadeIn>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {lp.items.map((p, idx) => (
+                      <FadeIn key={p.id} delay={idx * 60}>
+                        <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-black/5 hover:border-black/15 transition">
+                          <span className="w-7 h-7 rounded-full flex items-center justify-center text-white text-sm shrink-0 font-bold" style={{ background: primary }}>✓</span>
+                          <span className="text-black/80 pt-0.5">{p.text}</span>
+                        </div>
+                      </FadeIn>
                     ))}
                   </div>
                 </div>
@@ -271,16 +292,23 @@ export default async function StorefrontHome({
             const ft = cfg.sections.features;
             if (ft.items.length === 0) return null;
             return (
-              <section key={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} className="px-6 py-20" style={{ background: bg ?? '#fafafa' }}>
                 <div className="max-w-5xl mx-auto">
-                  <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">{ft.title}</h2>
+                  <FadeIn>
+                    <div className="text-center mb-12">
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Beneficios</div>
+                      <h2 className="text-3xl md:text-4xl font-bold">{ft.title}</h2>
+                    </div>
+                  </FadeIn>
                   <div className={`grid gap-6 ${ft.items.length === 1 ? 'grid-cols-1' : ft.items.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
-                    {ft.items.map((f) => (
-                      <div key={f.id} className="text-center p-6 rounded-xl border border-black/10 bg-white">
-                        <div className="text-4xl mb-3">{f.icon}</div>
-                        <h3 className="font-semibold text-lg" style={{ color: primary }}>{f.title}</h3>
-                        <p className="text-sm text-black/60 mt-2">{f.body}</p>
-                      </div>
+                    {ft.items.map((f, idx) => (
+                      <FadeIn key={f.id} delay={idx * 100}>
+                        <div className="text-center p-8 rounded-2xl bg-white border border-black/10 hover:shadow-xl hover:-translate-y-1 transition">
+                          <div className="text-5xl mb-4">{f.icon}</div>
+                          <h3 className="font-bold text-lg" style={{ color: primary }}>{f.title}</h3>
+                          <p className="text-sm text-black/60 mt-2 leading-relaxed">{f.body}</p>
+                        </div>
+                      </FadeIn>
                     ))}
                   </div>
                 </div>
@@ -341,29 +369,36 @@ export default async function StorefrontHome({
             const ts = cfg.sections.testimonials;
             if (ts.items.length === 0) return null;
             return (
-              <section key={key} className="px-6 py-16" style={{ background: bg ?? 'rgba(0,0,0,0.02)' }}>
+              <section key={key} id="testimonios" className="px-6 py-20" style={{ background: bg ?? `linear-gradient(180deg, ${primary}06 0%, ${primary}12 100%)` }}>
                 <div className="max-w-5xl mx-auto">
-                  <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">{ts.title}</h2>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {ts.items.map((t) => (
-                      <div key={t.id} className="rounded-xl bg-white border border-black/10 p-5">
-                        <div className="text-yellow-500 text-sm mb-2">{'★'.repeat(t.rating ?? 5)}</div>
-                        <p className="text-black/80 italic">"{t.text}"</p>
-                        <div className="mt-4 flex items-center gap-3">
-                          {t.photo_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={t.photo_url} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold" style={{ background: primary }}>
-                              {t.name.slice(0, 1).toUpperCase()}
+                  <FadeIn>
+                    <div className="text-center mb-12">
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Testimonios</div>
+                      <h2 className="text-3xl md:text-4xl font-bold">{ts.title}</h2>
+                    </div>
+                  </FadeIn>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {ts.items.map((t, idx) => (
+                      <FadeIn key={t.id} delay={idx * 100}>
+                        <div className="rounded-2xl bg-white border border-black/10 p-6 shadow-sm hover:shadow-md transition h-full">
+                          <div className="text-yellow-500 mb-3">{'★'.repeat(t.rating ?? 5)}</div>
+                          <p className="text-black/80 italic leading-relaxed">"{t.text}"</p>
+                          <div className="mt-5 pt-5 border-t border-black/5 flex items-center gap-3">
+                            {t.photo_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={t.photo_url} alt={t.name} className="w-11 h-11 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-semibold" style={{ background: primary }}>
+                                {t.name.slice(0, 1).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="text-sm">
+                              <div className="font-semibold">{t.name}</div>
+                              {t.role && <div className="text-black/50 text-xs">{t.role}</div>}
                             </div>
-                          )}
-                          <div className="text-sm">
-                            <div className="font-medium">{t.name}</div>
-                            {t.role && <div className="text-black/50 text-xs">{t.role}</div>}
                           </div>
                         </div>
-                      </div>
+                      </FadeIn>
                     ))}
                   </div>
                 </div>
@@ -408,15 +443,25 @@ export default async function StorefrontHome({
             const fq = cfg.sections.faq;
             if (fq.items.length === 0) return null;
             return (
-              <section key={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} id="faq" className="px-6 py-20" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-3xl mx-auto">
-                  <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">{fq.title}</h2>
+                  <FadeIn>
+                    <div className="text-center mb-10">
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>FAQ</div>
+                      <h2 className="text-3xl md:text-4xl font-bold">{fq.title}</h2>
+                    </div>
+                  </FadeIn>
                   <div className="space-y-3">
-                    {fq.items.map((f) => (
-                      <details key={f.id} className="rounded-lg border border-black/10 overflow-hidden">
-                        <summary className="cursor-pointer px-5 py-3 font-medium hover:bg-black/[0.02]">{f.q}</summary>
-                        <div className="px-5 pb-4 text-black/70 whitespace-pre-line">{f.a}</div>
-                      </details>
+                    {fq.items.map((f, idx) => (
+                      <FadeIn key={f.id} delay={idx * 60}>
+                        <details className="group rounded-xl border border-black/10 bg-white overflow-hidden hover:shadow-sm transition">
+                          <summary className="cursor-pointer px-6 py-4 font-medium hover:bg-black/[0.02] flex items-center justify-between gap-4 list-none">
+                            <span>{f.q}</span>
+                            <span className="text-2xl text-black/30 group-open:rotate-45 transition-transform" style={{ color: primary }}>+</span>
+                          </summary>
+                          <div className="px-6 pb-5 text-black/70 whitespace-pre-line leading-relaxed">{f.a}</div>
+                        </details>
+                      </FadeIn>
                     ))}
                   </div>
                 </div>
@@ -565,19 +610,21 @@ export default async function StorefrontHome({
           case 'cta_final': {
             const c = cfg.sections.cta_final;
             return (
-              <section key={key} className="px-6 py-20 text-center"
-                style={{ background: bg ?? `linear-gradient(0deg, ${primary}15 0%, transparent 100%)` }}>
-                <div className="max-w-2xl mx-auto">
-                  <h2 className="text-3xl md:text-4xl font-bold mb-4">{c.title}</h2>
-                  {c.body && <p className="text-black/70 mb-8">{c.body}</p>}
-                  {c.cta_label && (
-                    <a href={c.cta_href || '#cursos'}
-                      className="inline-block rounded-md px-6 py-3 font-semibold text-white"
-                      style={{ background: primary }}>
-                      {c.cta_label}
-                    </a>
-                  )}
-                </div>
+              <section key={key} className="px-6 py-24 text-center"
+                style={{ background: bg ?? `linear-gradient(135deg, ${primary}, ${primary}dd)` }}>
+                <FadeIn>
+                  <div className="max-w-2xl mx-auto text-white">
+                    <h2 className="text-3xl md:text-5xl font-bold mb-5">{c.title}</h2>
+                    {c.body && <p className="text-white/90 text-lg mb-10 leading-relaxed">{c.body}</p>}
+                    {c.cta_label && (
+                      <a href={c.cta_href || '#cursos'}
+                        className="inline-block rounded-md px-8 py-4 font-bold bg-white shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition text-lg"
+                        style={{ color: primary }}>
+                        {c.cta_label} →
+                      </a>
+                    )}
+                  </div>
+                </FadeIn>
               </section>
             );
           }
