@@ -7,8 +7,10 @@ import {
   uploadInstructorPhotoAction,
   uploadHeroImageAction,
   uploadBeforeAfterImageAction,
-  addWheelPrizeAction,
-  deleteWheelPrizeAction,
+  addPricingTierAction,
+  deletePricingTierAction,
+  addGalleryImageAction,
+  deleteGalleryImageAction,
   addTestimonialAction,
   deleteTestimonialAction,
   addFaqAction,
@@ -32,7 +34,7 @@ import {
 } from '@/lib/site/actions';
 import type {
   TestimonialItem, FaqItem, StatItem, LearnItem, FeatureItem, LogoItem,
-  NavLink, SocialLink, HeroLayout, WheelPrizeItem, WheelTrigger
+  NavLink, SocialLink, HeroLayout, PricingTier, GalleryItem
 } from '@/lib/site/types';
 
 /* =====================================================================
@@ -1130,103 +1132,80 @@ export function BeforeAfterEditor({ initial, beforeUrl, afterUrl, primary }: {
 }
 
 /* =====================================================================
- * WHEEL of prizes
+ * PRICING TIERS
  * ===================================================================== */
 
-type WheelValues = { title: string; subtitle: string; trigger: WheelTrigger; delay_seconds: number; button_label: string };
-
-export function WheelEditor({ initial, prizes, primary }: {
-  initial: WheelValues; prizes: WheelPrizeItem[]; primary: string;
+export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }: {
+  initialTitle: string; initialSubtitle: string; tiers: PricingTier[]; primary: string;
 }) {
-  const [v, setV] = useState(initial);
-  const { pending, saved, fire } = useSave('wheel');
+  const [title, setTitle] = useState(initialTitle);
+  const [subtitle, setSubtitle] = useState(initialSubtitle);
+  const { pending, saved, fire } = useSave('pricing');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
-  const [label, setLabel] = useState('');
-  const [type, setType] = useState<'percent' | 'fixed'>('percent');
-  const [amount, setAmount] = useState('20');
-  const [weight, setWeight] = useState('10');
 
-  // Preview spin animation state
-  const [spinning, setSpinning] = useState(false);
-  const [angle, setAngle] = useState(0);
-  function previewSpin() {
-    if (prizes.length === 0) return;
-    setSpinning(true);
-    const turns = 4 + Math.random() * 3;   // 4-7 full turns
-    setAngle((a) => a + turns * 360);
-    setTimeout(() => setSpinning(false), 3500);
-  }
-
-  const slice = prizes.length > 0 ? 360 / prizes.length : 0;
+  const [tn, setTn] = useState('');
+  const [tp, setTp] = useState('');
+  const [td, setTd] = useState('');
+  const [tf, setTf] = useState('');
+  const [tc, setTc] = useState('Elegir plan');
+  const [th, setTh] = useState('#cursos');
+  const [hi, setHi] = useState(false);
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título del popup" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
-        <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
-
-        <div>
-          <label className="block text-xs text-white/60 mb-1">Cuándo se muestra</label>
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            {(['button', 'delay', 'exit'] as WheelTrigger[]).map((t) => (
-              <button key={t} type="button"
-                onClick={() => setV({ ...v, trigger: t })}
-                className={`px-3 py-2 rounded border ${v.trigger === t ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'}`}>
-                {t === 'button' ? 'Botón flotante' : t === 'delay' ? 'Auto tras N seg' : 'Al salir'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {v.trigger === 'delay' && (
-          <Field label="Segundos antes de abrir" type="number" value={String(v.delay_seconds)} onChange={(x) => setV({ ...v, delay_seconds: parseInt(x || '0', 10) })} />
-        )}
-        {v.trigger === 'button' && (
-          <Field label="Texto del botón flotante" value={v.button_label} onChange={(x) => setV({ ...v, button_label: x })} />
-        )}
-
-        <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, delay_seconds: String(v.delay_seconds) })} />
+        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <Field label="Subtítulo" value={subtitle} onChange={setSubtitle} />
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, subtitle })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar premio</label>
-          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (ej. 20% OFF)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <div className="grid grid-cols-3 gap-2">
-            <select value={type} onChange={(e) => setType(e.target.value as 'percent' | 'fixed')} className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
-              <option value="percent">%</option>
-              <option value="fixed">$ fijo</option>
-            </select>
-            <input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" min="0" step="0.01" placeholder="20" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <input value={weight} onChange={(e) => setWeight(e.target.value)} type="number" min="1" placeholder="peso" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" title="Peso: chance relativa (más alto = más probable)" />
+          <label className="text-xs text-white/60 block mb-1">Agregar plan</label>
+          <div className="grid grid-cols-2 gap-2">
+            <input value={tn} onChange={(e) => setTn(e.target.value)} placeholder="Nombre (ej. Pro)" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <input value={tp} onChange={(e) => setTp(e.target.value)} placeholder="Precio (ej. $14.900 / mes)" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </div>
-          <button type="button" disabled={addPending || !label || !amount}
+          <input value={td} onChange={(e) => setTd(e.target.value)} placeholder="Descripción corta (opcional)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <textarea value={tf} onChange={(e) => setTf(e.target.value)} rows={3} placeholder="Features, una por línea&#10;Acceso de por vida&#10;Soporte 24/7&#10;Certificado" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <div className="grid grid-cols-2 gap-2">
+            <input value={tc} onChange={(e) => setTc(e.target.value)} placeholder="Texto del botón" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <input value={th} onChange={(e) => setTh(e.target.value)} placeholder="Destino (href)" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={hi} onChange={(e) => setHi(e.target.checked)} />
+            Marcar como plan destacado
+          </label>
+          <button type="button" disabled={addPending || !tn || !tp}
             onClick={() => {
               startAdd(async () => {
                 const fd = new FormData();
-                fd.set('label', label); fd.set('type', type); fd.set('amount', amount); fd.set('weight', weight);
-                await addWheelPrizeAction(fd);
-                setLabel(''); setAmount('20'); setWeight('10');
+                fd.set('name', tn); fd.set('price', tp); fd.set('description', td);
+                fd.set('features', tf); fd.set('cta_label', tc); fd.set('cta_href', th);
+                if (hi) fd.set('highlighted', 'on');
+                await addPricingTierAction(fd);
+                setTn(''); setTp(''); setTd(''); setTf(''); setTc('Elegir plan'); setTh('#cursos'); setHi(false);
               });
             }}
             className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-            {addPending ? 'Agregando…' : '+ Agregar premio'}
+            {addPending ? 'Agregando…' : '+ Agregar plan'}
           </button>
         </div>
 
-        {prizes.length > 0 && (
+        {tiers.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
-            {prizes.map((p) => (
-              <li key={p.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+            {tiers.map((t) => (
+              <li key={t.id} className="rounded border border-white/10 p-2 flex items-start justify-between gap-3 text-sm">
                 <div>
-                  <span className="font-medium">{p.label}</span>
-                  <span className="text-white/40 text-xs ml-2">
-                    {p.type === 'percent' ? `${p.amount}%` : `$${p.amount}`} · peso {p.weight}
-                  </span>
+                  <div className="font-medium">
+                    {t.name} <span className="text-white/40">— {t.price}</span>
+                    {t.highlighted && <span className="ml-2 text-xs text-amber-300">★ destacado</span>}
+                  </div>
+                  <div className="text-xs text-white/50 mt-0.5">{t.features.length} feature(s)</div>
                 </div>
                 <button type="button" disabled={delPending} onClick={() => {
                   startDel(async () => {
-                    const fd = new FormData(); fd.set('id', p.id);
-                    await deleteWheelPrizeAction(fd);
+                    const fd = new FormData(); fd.set('id', t.id);
+                    await deletePricingTierAction(fd);
                   });
                 }} className="text-xs text-red-300 hover:text-red-200">✕</button>
               </li>
@@ -1234,56 +1213,198 @@ export function WheelEditor({ initial, prizes, primary }: {
           </ul>
         )}
       </div>
-
       <PreviewFrame>
-        <div className="p-5 text-center" style={{ background: `${primary}15` }}>
-          <h3 className="text-base font-bold">{v.title || '—'}</h3>
-          {v.subtitle && <p className="text-xs text-black/60 mt-1">{v.subtitle}</p>}
-
-          <div className="relative my-4 mx-auto" style={{ width: 200, height: 200 }}>
-            {prizes.length === 0 ? (
-              <div className="w-full h-full rounded-full border-4 border-black/10 flex items-center justify-center text-xs text-black/40">
-                Agregá premios →
-              </div>
-            ) : (
-              <>
-                <div
-                  className="w-full h-full rounded-full overflow-hidden border-4"
-                  style={{
-                    borderColor: primary,
-                    transform: `rotate(${angle}deg)`,
-                    transition: spinning ? 'transform 3s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none',
-                    background: `conic-gradient(${prizes.map((p, i) => {
-                      const start = i * slice;
-                      const end = (i + 1) * slice;
-                      const color = i % 2 === 0 ? primary : `${primary}88`;
-                      return `${color} ${start}deg ${end}deg`;
-                    }).join(', ')})`
-                  }}
-                >
-                  {prizes.map((p, i) => {
-                    const a = i * slice + slice / 2;
-                    return (
-                      <div key={p.id}
-                        className="absolute top-1/2 left-1/2 text-[9px] font-bold text-white whitespace-nowrap"
-                        style={{ transform: `translate(-50%, -50%) rotate(${a}deg) translateY(-60px)` }}>
-                        {p.label}
-                      </div>
-                    );
-                  })}
+        <div className="p-5">
+          <h2 className="text-base font-bold text-center">{title || '—'}</h2>
+          {subtitle && <p className="text-xs text-black/60 text-center mt-1">{subtitle}</p>}
+          {tiers.length === 0 ? (
+            <div className="text-center text-xs text-black/40 py-4">Agregá planes para verlos acá.</div>
+          ) : (
+            <div className={`grid gap-2 mt-3 ${tiers.length === 1 ? 'grid-cols-1' : tiers.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              {tiers.slice(0, 3).map((t) => (
+                <div key={t.id} className={`rounded-lg border p-2.5 ${t.highlighted ? 'border-2' : 'border-black/10'}`} style={t.highlighted ? { borderColor: primary } : undefined}>
+                  <div className="text-[10px] font-semibold uppercase" style={{ color: primary }}>{t.name}</div>
+                  <div className="text-sm font-bold mt-0.5">{t.price}</div>
+                  {t.description && <div className="text-[9px] text-black/60 mt-0.5">{t.description}</div>}
+                  <ul className="mt-2 space-y-0.5">
+                    {t.features.slice(0, 3).map((f, i) => (
+                      <li key={i} className="text-[9px] text-black/70">✓ {f}</li>
+                    ))}
+                    {t.features.length > 3 && <li className="text-[9px] text-black/40">+{t.features.length - 3}</li>}
+                  </ul>
                 </div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border-2" style={{ borderColor: primary }} />
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0"
-                  style={{ borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `12px solid ${primary}` }} />
-              </>
+              ))}
+            </div>
+          )}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * VIDEO embed
+ * ===================================================================== */
+
+type VideoValues = { title: string; subtitle: string; provider: 'youtube' | 'drive'; video_id: string };
+
+export function VideoEditor({ initial, primary }: { initial: VideoValues; primary: string }) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('video');
+
+  function extractId(input: string): string {
+    const trimmed = input.trim();
+    // YouTube patterns
+    const yt = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{8,})/);
+    if (yt) return yt[1];
+    // Drive
+    const drv = trimmed.match(/\/file\/d\/([\w-]{15,})/);
+    if (drv) return drv[1];
+    // bare id
+    return trimmed.replace(/[^a-zA-Z0-9_-]/g, '');
+  }
+
+  function embedSrc() {
+    if (!v.video_id) return null;
+    if (v.provider === 'youtube') return `https://www.youtube.com/embed/${v.video_id}`;
+    return `https://drive.google.com/file/d/${v.video_id}/preview`;
+  }
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <Field label="Subtítulo (opcional)" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+        <div>
+          <label className="block text-xs text-white/60 mb-1">Plataforma</label>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {(['youtube', 'drive'] as const).map((p) => (
+              <button key={p} type="button"
+                onClick={() => setV({ ...v, provider: p })}
+                className={`px-3 py-2 rounded border ${v.provider === p ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'}`}>
+                {p === 'youtube' ? '▶ YouTube' : '📁 Google Drive'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-white/60 mb-1">URL del video o ID</label>
+          <input
+            value={v.video_id}
+            onChange={(e) => setV({ ...v, video_id: extractId(e.target.value) })}
+            placeholder={v.provider === 'youtube' ? 'https://youtu.be/... o ID' : 'https://drive.google.com/file/d/... o ID'}
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+          />
+          {v.video_id && <p className="text-xs text-white/40 mt-1 font-mono">ID: {v.video_id}</p>}
+        </div>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
+      </div>
+      <PreviewFrame>
+        <div className="p-5">
+          <h2 className="text-base font-bold text-center">{v.title || '—'}</h2>
+          {v.subtitle && <p className="text-xs text-black/60 text-center mt-1">{v.subtitle}</p>}
+          <div className="mt-3 aspect-video rounded-lg overflow-hidden border border-black/10 bg-black flex items-center justify-center">
+            {embedSrc() ? (
+              <iframe src={embedSrc()!} className="w-full h-full" allowFullScreen title="preview video" />
+            ) : (
+              <div className="text-white/40 text-sm">📺 Cargá un video</div>
             )}
           </div>
+          <p className="text-xs text-black/40 text-center mt-2" style={{ color: primary }}>
+            {v.provider === 'youtube' ? 'YouTube' : 'Google Drive'}
+          </p>
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
 
-          <button type="button" disabled={prizes.length === 0 || spinning} onClick={previewSpin}
-            className="rounded px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-            style={{ background: primary }}>
-            {spinning ? 'Girando…' : 'Probar giro'}
-          </button>
+/* =====================================================================
+ * GALLERY
+ * ===================================================================== */
+
+export function GalleryEditor({ initialTitle, initialSubtitle, items, columns }: {
+  initialTitle: string; initialSubtitle: string; items: GalleryItem[]; columns: 2 | 3 | 4;
+}) {
+  const [title, setTitle] = useState(initialTitle);
+  const [subtitle, setSubtitle] = useState(initialSubtitle);
+  const [cols, setCols] = useState<2 | 3 | 4>(columns);
+  const { pending, saved, fire } = useSave('gallery');
+  const [addPending, startAdd] = useTransition();
+  const [delPending, startDel] = useTransition();
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título" value={title} onChange={setTitle} />
+        <Field label="Subtítulo (opcional)" value={subtitle} onChange={setSubtitle} />
+        <div>
+          <label className="block text-xs text-white/60 mb-1">Columnas</label>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            {([2, 3, 4] as const).map((c) => (
+              <button key={c} type="button" onClick={() => setCols(c)}
+                className={`px-3 py-2 rounded border ${cols === c ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'}`}>
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, subtitle, columns: String(cols) })} />
+
+        <div className="pt-3 mt-3 border-t border-white/5">
+          <label className="text-xs text-white/60 block mb-1">Subir imagen</label>
+          <form
+            action={(fd) => startAdd(async () => { await addGalleryImageAction(fd); })}
+            className="space-y-2"
+            encType="multipart/form-data"
+          >
+            <input type="file" name="image" required accept="image/png,image/jpeg,image/webp"
+              className="w-full text-xs text-white/70 file:mr-3 file:rounded file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
+            <input name="caption" placeholder="Caption (opcional)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <button disabled={addPending} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Subiendo…' : '+ Agregar imagen'}
+            </button>
+          </form>
+        </div>
+
+        {items.length > 0 && (
+          <div className="pt-3 mt-3 border-t border-white/5">
+            <p className="text-xs text-white/60 mb-2">{items.length} imagen(es)</p>
+            <ul className="grid grid-cols-3 gap-2">
+              {items.map((it) => (
+                <li key={it.id} className="relative group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={it.image_url} alt={it.caption ?? ''} className="w-full h-20 object-cover rounded" />
+                  <button type="button" disabled={delPending}
+                    onClick={() => {
+                      startDel(async () => {
+                        const fd = new FormData(); fd.set('id', it.id);
+                        await deleteGalleryImageAction(fd);
+                      });
+                    }}
+                    className="absolute top-1 right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full opacity-0 group-hover:opacity-100">
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      <PreviewFrame>
+        <div className="p-5">
+          <h2 className="text-base font-bold text-center">{title || '—'}</h2>
+          {subtitle && <p className="text-xs text-black/60 text-center mt-1">{subtitle}</p>}
+          {items.length === 0 ? (
+            <div className="text-center text-xs text-black/40 py-4">Subí imágenes para verlas acá.</div>
+          ) : (
+            <div className={`grid gap-1 mt-3 grid-cols-${cols}`}>
+              {items.slice(0, 12).map((it) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={it.id} src={it.image_url} alt={it.caption ?? ''} className="w-full h-14 object-cover rounded" />
+              ))}
+            </div>
+          )}
         </div>
       </PreviewFrame>
     </div>

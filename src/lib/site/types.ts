@@ -20,15 +20,22 @@ export type SocialLink = {
   href: string;
 };
 
-export type WheelPrizeItem = {
+export type PricingTier = {
   id: string;
-  label: string;             // "20% OFF", "10% OFF", etc.
-  type: 'percent' | 'fixed';
-  amount: number;            // percent: 0-100; fixed: pesos (UI), stored as cents in coupon
-  weight: number;            // chance weight (higher = more likely)
+  name: string;            // "Básico", "Pro", "Elite"
+  price: string;           // free-form ("$ 14.900 / mes", "Gratis")
+  description?: string;
+  features: string[];      // bullets
+  cta_label: string;
+  cta_href: string;
+  highlighted?: boolean;   // true → tarjeta destacada
 };
 
-export type WheelTrigger = 'delay' | 'button' | 'exit';
+export type GalleryItem = {
+  id: string;
+  image_url: string;
+  caption?: string;
+};
 
 export type HeroLayout = 'centered' | 'split' | 'gallery';
 
@@ -46,7 +53,9 @@ export type SectionKey =
   | 'before_after'
   | 'faq'
   | 'offer'
-  | 'wheel'
+  | 'pricing'
+  | 'video'
+  | 'gallery'
   | 'newsletter'
   | 'cta_final';
 
@@ -74,7 +83,9 @@ export type SiteConfig = {
     before_after: SectionBase & { title: string; before_label: string; after_label: string; before_image_url: string | null; after_image_url: string | null; before_body: string; after_body: string };
     faq:          SectionBase & { title: string; items: FaqItem[] };
     offer:        SectionBase & { title: string; subtitle: string; ends_at: string | null; cta_label: string; cta_href: string };
-    wheel:        SectionBase & { title: string; subtitle: string; trigger: WheelTrigger; delay_seconds: number; button_label: string; prizes: WheelPrizeItem[] };
+    pricing:      SectionBase & { title: string; subtitle: string; tiers: PricingTier[] };
+    video:        SectionBase & { title: string; subtitle: string; provider: 'drive' | 'youtube'; video_id: string };
+    gallery:      SectionBase & { title: string; subtitle: string; items: GalleryItem[]; columns: 2 | 3 | 4 };
     newsletter:   SectionBase & { title: string; subtitle: string; cta_label: string };
     cta_final:    SectionBase & { title: string; body: string; cta_label: string; cta_href: string };
   };
@@ -84,9 +95,9 @@ export type SiteConfig = {
 };
 
 export const DEFAULT_ORDER: SectionKey[] = [
-  'hero', 'trusted_by', 'about', 'instructor', 'stats', 'learn_points',
-  'features', 'featured', 'catalog', 'testimonials', 'before_after', 'faq',
-  'offer', 'wheel', 'newsletter', 'cta_final'
+  'hero', 'trusted_by', 'about', 'instructor', 'video', 'stats', 'learn_points',
+  'features', 'featured', 'catalog', 'pricing', 'testimonials', 'before_after',
+  'gallery', 'faq', 'offer', 'newsletter', 'cta_final'
 ];
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
@@ -104,7 +115,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     before_after: { enabled: false, title: 'Antes vs después', before_label: 'Antes', after_label: 'Después', before_image_url: null, after_image_url: null, before_body: '', after_body: '' },
     faq:          { enabled: false, title: 'Preguntas frecuentes', items: [] },
     offer:        { enabled: false, title: 'Oferta por tiempo limitado', subtitle: 'Inscribite antes que termine.', ends_at: null, cta_label: 'Aprovecharla', cta_href: '#cursos' },
-    wheel:        { enabled: false, title: '¡Girá la ruleta!', subtitle: 'Ganá un descuento exclusivo.', trigger: 'button', delay_seconds: 15, button_label: '🎰 Probá tu suerte', prizes: [] },
+    pricing:      { enabled: false, title: 'Planes', subtitle: 'Elegí el que se adapta a tu nivel.', tiers: [] },
+    video:        { enabled: false, title: 'Mirá cómo trabajamos', subtitle: '', provider: 'youtube', video_id: '' },
+    gallery:      { enabled: false, title: 'Galería', subtitle: '', items: [], columns: 3 },
     newsletter:   { enabled: false, title: 'Sumate al newsletter', subtitle: 'Recibí nuestros mejores tips y novedades.', cta_label: 'Suscribirme' },
     cta_final:    { enabled: false, title: '¿Listo para empezar?', body: '', cta_label: 'Quiero inscribirme', cta_href: '#cursos' }
   },

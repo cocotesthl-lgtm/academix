@@ -17,7 +17,9 @@ import {
   type LogoItem,
   type NavLink,
   type SocialLink,
-  type HeroLayout
+  type HeroLayout,
+  type PricingTier,
+  type GalleryItem
 } from '@/lib/site/types';
 
 async function loadConfig(tenantId: string): Promise<SiteConfig> {
@@ -89,14 +91,17 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   const section = cfg.sections[key] as Record<string, unknown>;
 
   for (const f of ['title', 'subtitle', 'body', 'cta_label', 'cta_href', 'name', 'bio', 'credentials', 'ends_at',
-                   'before_label', 'after_label', 'before_body', 'after_body', 'button_label']) {
+                   'before_label', 'after_label', 'before_body', 'after_body', 'video_id']) {
     if (formData.has(f)) section[f] = String(formData.get(f) ?? '');
   }
   if (formData.has('show_filters')) section.show_filters = formData.get('show_filters') === 'on';
   if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
-  if (formData.has('trigger')) section.trigger = String(formData.get('trigger') ?? 'button');
-  if (formData.has('delay_seconds')) section.delay_seconds = Math.max(0, parseInt(String(formData.get('delay_seconds') ?? '15'), 10) || 15);
+  if (formData.has('provider')) section.provider = String(formData.get('provider') ?? 'youtube');
+  if (formData.has('columns')) {
+    const c = parseInt(String(formData.get('columns') ?? '3'), 10);
+    section.columns = (c === 2 || c === 3 || c === 4) ? c : 3;
+  }
 
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
@@ -321,30 +326,128 @@ export async function deleteLogoAction(formData: FormData): Promise<void> {
   revalidatePath('/site');
 }
 
-/* ===== Wheel prizes CRUD ===== */
+/* ===== Pricing tiers CRUD ===== */
 
-export async function addWheelPrizeAction(formData: FormData): Promise<void> {
+export async function addPricingTierAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
-  const label = String(formData.get('label') ?? '').trim();
-  const type = String(formData.get('type') ?? 'percent');
-  const amount = parseFloat(String(formData.get('amount') ?? '0').replace(/[^0-9.]/g, ''));
-  const weight = Math.max(1, parseInt(String(formData.get('weight') ?? '1'), 10) || 1);
-  if (!label || !['percent', 'fixed'].includes(type) || !amount || amount <= 0) return;
+  const name = String(formData.get('name') ?? '').trim();
+  const price = String(formData.get('price') ?? '').trim();
+  const description = String(formData.get('description') ?? '').trim() || undefined;
+  const featuresRaw = String(formData.get('features') ?? '').trim();
+  const cta_label = String(formData.get('cta_label') ?? '').trim() || 'Elegir plan';
+  const cta_href = String(formData.get('cta_href') ?? '').trim() || '#cursos';
+  const highlighted = formData.get('highlighted') === 'on';
+  if (!name || !price) return;
+  const features = featuresRaw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   const cfg = await loadConfig(tenant.id);
-  cfg.sections.wheel.prizes.push({
-    id: randomUUID(), label,
-    type: type as 'percent' | 'fixed',
-    amount, weight
-  });
+  const item: PricingTier = { id: randomUUID(), name, price, description, features, cta_label, cta_href, highlighted };
+  cfg.sections.pricing.tiers.push(item);
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }
 
-export async function deleteWheelPrizeAction(formData: FormData): Promise<void> {
+export async function deletePricingTierAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const id = String(formData.get('id') ?? '');
   const cfg = await loadConfig(tenant.id);
-  cfg.sections.wheel.prizes = cfg.sections.wheel.prizes.filter((p) => p.id !== id);
+  cfg.sections.pricing.tiers = cfg.sections.pricing.tiers.filter((t) => t.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Gallery items CRUD ===== */
+
+export async function addGalleryImageAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const file = formData.get('image') as File | null;
+  const caption = String(formData.get('caption') ?? '').trim() || undefined;
+  if (!file || file.size === 0) return;
+  const url = await uploadImage(tenant.id, 'gallery', file);
+  if (!url) return;
+  const cfg = await loadConfig(tenant.id);
+  const item: GalleryItem = { id: randomUUID(), image_url: url, caption };
+  cfg.sections.gallery.items.push(item);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function deleteGalleryImageAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.gallery.items = cfg.sections.gallery.items.filter((i) => i.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Section duplication / templates ===== */
+
+export async function duplicateSectionAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const key = String(formData.get('section') ?? '') as SectionKey;
+  if (!(key in DEFAULT_SITE_CONFIG.sections)) return;
+  // For now "duplicate" toggles enabled true (true clone needs separate keyspace).
+  // Real duplicate requires breaking jsonb singleton into array of section instances —
+  // post-MVP refactor. We just ensure the section is enabled.
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections[key].enabled = true;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export type ThemeKey = 'fitness' | 'tech' | 'business';
+
+export async function applyThemeAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const theme = String(formData.get('theme') ?? '') as ThemeKey;
+  if (!['fitness', 'tech', 'business'].includes(theme)) return;
+  const cfg = await loadConfig(tenant.id);
+
+  // Reset to a known good baseline per theme
+  if (theme === 'fitness') {
+    cfg.sections.hero.layout = 'split';
+    cfg.sections.hero.subtitle = 'Transformá tu cuerpo y tu mente.';
+    cfg.sections.hero.cta_label = 'Empezá hoy';
+    cfg.sections.about.enabled = true;
+    cfg.sections.about.title = 'Sobre la academia';
+    cfg.sections.instructor.enabled = true;
+    cfg.sections.instructor.title = 'Tu coach';
+    cfg.sections.stats.enabled = true;
+    cfg.sections.learn_points.enabled = true;
+    cfg.sections.testimonials.enabled = true;
+    cfg.sections.before_after.enabled = true;
+    cfg.sections.faq.enabled = true;
+    cfg.sections.cta_final.enabled = true;
+    cfg.sections.cta_final.title = '¿Te animás al cambio?';
+  } else if (theme === 'tech') {
+    cfg.sections.hero.layout = 'centered';
+    cfg.sections.hero.subtitle = 'Aprendé las skills que pide el mercado.';
+    cfg.sections.hero.cta_label = 'Ver cursos';
+    cfg.sections.trusted_by.enabled = true;
+    cfg.sections.features.enabled = true;
+    cfg.sections.features.title = 'Por qué elegirnos';
+    cfg.sections.learn_points.enabled = true;
+    cfg.sections.instructor.enabled = true;
+    cfg.sections.testimonials.enabled = true;
+    cfg.sections.faq.enabled = true;
+    cfg.sections.cta_final.enabled = true;
+  } else {
+    // business
+    cfg.sections.hero.layout = 'gallery';
+    cfg.sections.hero.subtitle = 'Capacitate para escalar tu negocio.';
+    cfg.sections.trusted_by.enabled = true;
+    cfg.sections.about.enabled = true;
+    cfg.sections.stats.enabled = true;
+    cfg.sections.features.enabled = true;
+    cfg.sections.pricing.enabled = true;
+    cfg.sections.testimonials.enabled = true;
+    cfg.sections.faq.enabled = true;
+    cfg.sections.cta_final.enabled = true;
+  }
+
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }

@@ -446,6 +446,100 @@ export default async function StorefrontHome({
             );
           }
 
+          case 'pricing': {
+            const pr = cfg.sections.pricing;
+            if (pr.tiers.length === 0) return null;
+            return (
+              <section key={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+                <div className="max-w-5xl mx-auto">
+                  <h2 className="text-2xl md:text-3xl font-bold text-center">{pr.title}</h2>
+                  {pr.subtitle && <p className="text-center text-black/60 mt-2">{pr.subtitle}</p>}
+                  <div className={`mt-10 grid gap-6 ${pr.tiers.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' : pr.tiers.length === 2 ? 'md:grid-cols-2 max-w-3xl mx-auto' : 'md:grid-cols-3'}`}>
+                    {pr.tiers.map((t) => (
+                      <div
+                        key={t.id}
+                        className={`rounded-xl p-6 bg-white ${t.highlighted ? 'border-2 shadow-lg scale-105' : 'border border-black/10'}`}
+                        style={t.highlighted ? { borderColor: primary } : undefined}
+                      >
+                        {t.highlighted && (
+                          <div className="text-xs font-bold text-white inline-block px-2 py-0.5 rounded mb-2" style={{ background: primary }}>
+                            ★ Recomendado
+                          </div>
+                        )}
+                        <h3 className="text-lg font-bold" style={{ color: primary }}>{t.name}</h3>
+                        <div className="text-3xl font-bold mt-2">{t.price}</div>
+                        {t.description && <p className="text-sm text-black/60 mt-1">{t.description}</p>}
+                        <ul className="mt-4 space-y-2">
+                          {t.features.map((f, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm">
+                              <span className="text-emerald-500 shrink-0">✓</span>
+                              <span>{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <a
+                          href={t.cta_href}
+                          className={`mt-6 block text-center rounded-md py-2.5 font-semibold ${t.highlighted ? 'text-white' : 'border-2'}`}
+                          style={t.highlighted ? { background: primary } : { borderColor: primary, color: primary }}
+                        >
+                          {t.cta_label}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            );
+          }
+
+          case 'video': {
+            const vd = cfg.sections.video;
+            if (!vd.video_id) return null;
+            const src = vd.provider === 'youtube'
+              ? `https://www.youtube.com/embed/${vd.video_id}`
+              : `https://drive.google.com/file/d/${vd.video_id}/preview`;
+            return (
+              <section key={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+                <div className="max-w-4xl mx-auto">
+                  <h2 className="text-2xl md:text-3xl font-bold text-center">{vd.title}</h2>
+                  {vd.subtitle && <p className="text-center text-black/60 mt-2">{vd.subtitle}</p>}
+                  <div className="mt-8 aspect-video rounded-2xl overflow-hidden border border-black/10 bg-black shadow-xl">
+                    <iframe
+                      src={src}
+                      className="w-full h-full"
+                      allow="autoplay; encrypted-media; fullscreen"
+                      allowFullScreen
+                      title={vd.title}
+                    />
+                  </div>
+                </div>
+              </section>
+            );
+          }
+
+          case 'gallery': {
+            const g = cfg.sections.gallery;
+            if (g.items.length === 0) return null;
+            const colsClass = g.columns === 2 ? 'md:grid-cols-2' : g.columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3';
+            return (
+              <section key={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+                <div className="max-w-6xl mx-auto">
+                  <h2 className="text-2xl md:text-3xl font-bold text-center">{g.title}</h2>
+                  {g.subtitle && <p className="text-center text-black/60 mt-2">{g.subtitle}</p>}
+                  <div className={`mt-8 grid grid-cols-2 ${colsClass} gap-3`}>
+                    {g.items.map((it) => (
+                      <figure key={it.id} className="overflow-hidden rounded-xl border border-black/10">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={it.image_url} alt={it.caption ?? ''} className="w-full h-48 object-cover hover:scale-105 transition" />
+                        {it.caption && <figcaption className="text-xs text-black/60 px-3 py-2">{it.caption}</figcaption>}
+                      </figure>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            );
+          }
+
           case 'newsletter': {
             const n = cfg.sections.newsletter;
             return (

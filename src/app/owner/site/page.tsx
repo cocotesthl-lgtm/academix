@@ -2,7 +2,12 @@ import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { mergeConfig, type SectionKey } from "@/lib/site/types";
-import { toggleSectionAction, moveSectionAction, setSectionBgColorAction } from "@/lib/site/actions";
+import {
+  toggleSectionAction,
+  moveSectionAction,
+  setSectionBgColorAction,
+  applyThemeAction
+} from "@/lib/site/actions";
 import {
   HeroEditor,
   TrustedByEditor,
@@ -17,7 +22,9 @@ import {
   BeforeAfterEditor,
   FaqEditor,
   OfferEditor,
-  WheelEditor,
+  PricingEditor,
+  VideoEditor,
+  GalleryEditor,
   NewsletterEditor,
   CtaFinalEditor,
   NavEditor,
@@ -40,7 +47,9 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   before_after: { title: "🔄 Antes / Después", desc: "Comparativa visual con imágenes y textos descriptivos." },
   faq:          { title: "❓ Preguntas frecuentes", desc: "Acordeón clásico para responder objeciones." },
   offer:        { title: "⏰ Oferta limitada", desc: "Banner con contador regresivo hasta una fecha." },
-  wheel:        { title: "🎰 Ruleta de premios", desc: "Popup con ruleta. Entrega un cupón único al spinner." },
+  pricing:      { title: "💰 Planes / pricing", desc: "Tarjetas comparativas con plan, precio, features y CTA." },
+  video:        { title: "🎬 Video", desc: "Embed de YouTube o Google Drive. Trailer, presentación, lo que quieras." },
+  gallery:      { title: "🖼️ Galería", desc: "Grid de imágenes con caption. 2, 3 o 4 columnas." },
   newsletter:   { title: "📧 Newsletter", desc: "Capturá emails con un formulario simple." },
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
@@ -81,6 +90,40 @@ export default async function SiteBuilderPage() {
         >
           Ver storefront →
         </a>
+      </div>
+
+      {/* Pre-built themes */}
+      <div className="rounded-xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/5 to-purple-500/5 p-5">
+        <h2 className="text-lg font-bold mb-1">✨ Aplicar plantilla</h2>
+        <p className="text-sm text-white/60 mb-4">
+          Activá un set de secciones recomendado según tu vertical. No borra tus textos custom; solo enciende y reorganiza secciones.
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <form action={applyThemeAction}>
+            <input type="hidden" name="theme" value="fitness" />
+            <button className="w-full text-left rounded-lg border border-white/15 bg-white/[0.02] p-4 hover:bg-white/[0.05]">
+              <div className="text-2xl mb-1">💪</div>
+              <div className="font-semibold text-sm">Fitness / Coaching</div>
+              <div className="text-xs text-white/50 mt-1">Hero split + about + instructor + before-after</div>
+            </button>
+          </form>
+          <form action={applyThemeAction}>
+            <input type="hidden" name="theme" value="tech" />
+            <button className="w-full text-left rounded-lg border border-white/15 bg-white/[0.02] p-4 hover:bg-white/[0.05]">
+              <div className="text-2xl mb-1">💻</div>
+              <div className="font-semibold text-sm">Tech / Educación</div>
+              <div className="text-xs text-white/50 mt-1">Hero + trusted + features + learn-points + FAQ</div>
+            </button>
+          </form>
+          <form action={applyThemeAction}>
+            <input type="hidden" name="theme" value="business" />
+            <button className="w-full text-left rounded-lg border border-white/15 bg-white/[0.02] p-4 hover:bg-white/[0.05]">
+              <div className="text-2xl mb-1">📈</div>
+              <div className="font-semibold text-sm">Business / Pro</div>
+              <div className="text-xs text-white/50 mt-1">Hero gallery + stats + features + pricing</div>
+            </button>
+          </form>
+        </div>
       </div>
 
       {cfg.order.map((key, idx) => {
@@ -208,17 +251,31 @@ export default async function SiteBuilderPage() {
                 primary={primary}
               />
             )}
-            {key === 'wheel' && (
-              <WheelEditor
-                initial={{
-                  title: cfg.sections.wheel.title,
-                  subtitle: cfg.sections.wheel.subtitle,
-                  trigger: cfg.sections.wheel.trigger,
-                  delay_seconds: cfg.sections.wheel.delay_seconds,
-                  button_label: cfg.sections.wheel.button_label
-                }}
-                prizes={cfg.sections.wheel.prizes}
+            {key === 'pricing' && (
+              <PricingEditor
+                initialTitle={cfg.sections.pricing.title}
+                initialSubtitle={cfg.sections.pricing.subtitle}
+                tiers={cfg.sections.pricing.tiers}
                 primary={primary}
+              />
+            )}
+            {key === 'video' && (
+              <VideoEditor
+                initial={{
+                  title: cfg.sections.video.title,
+                  subtitle: cfg.sections.video.subtitle,
+                  provider: cfg.sections.video.provider,
+                  video_id: cfg.sections.video.video_id
+                }}
+                primary={primary}
+              />
+            )}
+            {key === 'gallery' && (
+              <GalleryEditor
+                initialTitle={cfg.sections.gallery.title}
+                initialSubtitle={cfg.sections.gallery.subtitle}
+                items={cfg.sections.gallery.items}
+                columns={cfg.sections.gallery.columns}
               />
             )}
             {key === 'newsletter' && (
