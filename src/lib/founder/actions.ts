@@ -53,3 +53,52 @@ export async function setTenantStatusAction(formData: FormData): Promise<void> {
   revalidatePath('/tenants');
   revalidatePath('/dashboard');
 }
+
+/**
+ * Borrado total de una academia. Cascade elimina:
+ * - memberships, courses (y sus modules, lessons, enrollments, sales,
+ *   commission ledger entries, debt payments, integrations, tickets,
+ *   affiliate_links/clicks/attributions/commissions)
+ * - El audit_log conserva la entrada anterior con tenant_id=null.
+ * Requiere confirmación: el form debe enviar 'confirm=<slug>' que tiene
+ * que coincidir con el slug actual del tenant. Si no coincide, no se
+ * borra nada (seguridad anti-clicks accidentales).
+ */
+export async function deleteTenantAction(formData: FormData): Promise<void> {
+  const founderId = await requireFounder();
+  const tenantId = String(formData.get('tenant_id') ?? '');
+  const confirm = String(formData.get('confirm') ?? '').trim();
+  if (!tenantId) return;
+
+  const svc = getServiceClient();
+  const { data: before } = await svc
+    .from('tenants')
+    .select('slug, name')
+    .eq('id', tenantId)
+    .single<{ slug: string; name: string }>();
+  if (!before) return;
+
+  // Safety: confirm string must equal the slug
+  if (confirm !== before.slug) {
+    return;
+  }
+
+  // Audit BEFORE delete so we keep a trace (tenant_id will be set to null by FK)
+  const auditPayload = {
+    actor_user_id: founderId,
+    tenant_id: tenantId,
+    action: 'tenant.deleted',
+    target_type: 'tenant',
+    target_id: tenantId,
+    before: { slug: before.slug, name: before.name },
+    after: null,
+    reason: `Founder deleted academy ${before.slug}`
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await svc.from('audit_log').insert(auditPayload as any);
+
+  await svc.from('tenants').delete().eq('id', tenantId);
+
+  revalidatePath('/tenants');
+  revalidatePath('/dashboard');
+}

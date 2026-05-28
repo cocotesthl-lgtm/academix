@@ -1,5 +1,6 @@
 import { getServiceClient } from "@/lib/supabase/service";
 import { setTenantStatusAction } from "@/lib/founder/actions";
+import { DeleteTenantButton } from "@/components/founder/DeleteTenantButton";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +72,10 @@ export default async function FounderTenants() {
                     {new Date(t.created_at).toLocaleDateString('es-AR')}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <StatusActions tenantId={t.id} status={t.status} />
+                    <div className="flex justify-end items-center gap-2">
+                      <StatusActions tenantId={t.id} status={t.status} />
+                      <DeleteTenantButton tenantId={t.id} slug={t.slug} name={t.name} />
+                    </div>
                   </td>
                 </tr>
               ))}
