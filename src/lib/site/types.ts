@@ -100,30 +100,132 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'gallery', 'faq', 'offer', 'newsletter', 'cta_final'
 ];
 
+/**
+ * Default config for NEW tenants: storefront completo con contenido de muestra
+ * para que el sitio se vea armado desde el día 1. El owner puede editar/desactivar
+ * todo desde /owner/site.
+ *
+ * Existing tenants no se ven afectados — mergeConfig respeta su config almacenada
+ * key por key. Solo se aplica a tenants creados después de este cambio.
+ */
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
   sections: {
-    hero:         { enabled: true,  layout: 'centered', title: null, subtitle: 'Aprendé con nosotros.', cta_label: 'Ver cursos', cta_href: '#cursos', image_url: null },
-    trusted_by:   { enabled: false, title: 'Confían en nosotros', items: [], grayscale: true },
-    about:        { enabled: false, title: 'Sobre nosotros', body: '', image_url: null },
-    instructor:   { enabled: false, title: 'Tu instructor', name: '', bio: '', photo_url: null, credentials: '' },
-    stats:        { enabled: false, title: 'En números', items: [] },
-    learn_points: { enabled: false, title: 'Qué vas a aprender', subtitle: '', items: [] },
-    features:     { enabled: false, title: 'Por qué elegirnos', items: [] },
-    featured:     { enabled: true,  title: 'Cursos destacados' },
-    catalog:      { enabled: true,  title: 'Todos los cursos', show_filters: true },
-    testimonials: { enabled: false, title: 'Lo que dicen nuestros alumnos', items: [] },
+    hero: {
+      enabled: true,
+      layout: 'centered',
+      title: null,
+      subtitle: 'Aprendé con cursos prácticos, mentoría directa y una comunidad que te acompaña.',
+      cta_label: 'Ver cursos',
+      cta_href: '#cursos',
+      image_url: null
+    },
+    trusted_by: {
+      enabled: false,
+      title: 'Confían en nosotros',
+      items: [],
+      grayscale: true
+    },
+    about: {
+      enabled: true,
+      title: 'Sobre nosotros',
+      body: 'Somos una academia comprometida con tu crecimiento. Combinamos contenido de alta calidad con acompañamiento personalizado para que aprendas haciendo y veas resultados desde el primer día.\n\nNuestra metodología está pensada para que avances a tu ritmo, con apoyo cuando lo necesités y libertad para explorar a fondo.',
+      image_url: null
+    },
+    instructor: {
+      enabled: true,
+      title: 'Conocé a tu instructor',
+      name: 'Tu nombre acá',
+      bio: 'Apasionado por enseñar y por ver crecer a cada alumno. Vengo formando personas hace varios años con un método práctico, sin vueltas, orientado a resultados reales.',
+      photo_url: null,
+      credentials: '+10 años de experiencia · +1.000 alumnos formados'
+    },
+    stats: {
+      enabled: true,
+      title: 'En números',
+      items: [
+        { id: '00000000-0000-0000-0000-000000000001', number: '+2.400', label: 'alumnos formados' },
+        { id: '00000000-0000-0000-0000-000000000002', number: '98%', label: 'satisfacción' },
+        { id: '00000000-0000-0000-0000-000000000003', number: '+50hs', label: 'de contenido' },
+        { id: '00000000-0000-0000-0000-000000000004', number: '5★', label: 'puntaje promedio' }
+      ]
+    },
+    learn_points: {
+      enabled: true,
+      title: 'Qué vas a aprender',
+      subtitle: 'Habilidades concretas que vas a poder aplicar desde el día uno.',
+      items: [
+        { id: '00000000-0000-0000-0000-000000000010', text: 'Fundamentos sólidos desde cero' },
+        { id: '00000000-0000-0000-0000-000000000011', text: 'Casos prácticos del mundo real' },
+        { id: '00000000-0000-0000-0000-000000000012', text: 'Acompañamiento personalizado' },
+        { id: '00000000-0000-0000-0000-000000000013', text: 'Comunidad activa de alumnos' },
+        { id: '00000000-0000-0000-0000-000000000014', text: 'Certificado al finalizar' },
+        { id: '00000000-0000-0000-0000-000000000015', text: 'Acceso de por vida al contenido' }
+      ]
+    },
+    features: {
+      enabled: true,
+      title: 'Por qué elegirnos',
+      items: [
+        { id: '00000000-0000-0000-0000-000000000020', icon: '⚡', title: 'Aprendizaje rápido', body: 'Vas a ver resultados visibles en pocas semanas con un método probado.' },
+        { id: '00000000-0000-0000-0000-000000000021', icon: '🎯', title: 'Enfoque práctico', body: 'Cada lección incluye ejercicios y casos reales. Nada de teoría que no se usa.' },
+        { id: '00000000-0000-0000-0000-000000000022', icon: '🤝', title: 'Soporte directo', body: 'Resolvemos tus dudas. No estás solo en el camino.' }
+      ]
+    },
+    featured: { enabled: true, title: 'Cursos destacados' },
+    catalog: { enabled: true, title: 'Todos los cursos', show_filters: true },
+    testimonials: {
+      enabled: true,
+      title: 'Lo que dicen nuestros alumnos',
+      items: [
+        { id: '00000000-0000-0000-0000-000000000030', name: 'María González', role: 'Estudiante', text: 'El mejor curso que tomé. Aprendí más en dos meses que en años buscando por mi cuenta.', rating: 5 },
+        { id: '00000000-0000-0000-0000-000000000031', name: 'Juan Pérez', role: 'Profesional', text: 'Lo recomiendo 100%. El instructor sabe transmitir y siempre está disponible para responder.', rating: 5 },
+        { id: '00000000-0000-0000-0000-000000000032', name: 'Laura Méndez', role: 'Emprendedora', text: 'Cambió mi forma de trabajar. Volví a sentir pasión por lo que hago.', rating: 5 }
+      ]
+    },
     before_after: { enabled: false, title: 'Antes vs después', before_label: 'Antes', after_label: 'Después', before_image_url: null, after_image_url: null, before_body: '', after_body: '' },
-    faq:          { enabled: false, title: 'Preguntas frecuentes', items: [] },
-    offer:        { enabled: false, title: 'Oferta por tiempo limitado', subtitle: 'Inscribite antes que termine.', ends_at: null, cta_label: 'Aprovecharla', cta_href: '#cursos' },
-    pricing:      { enabled: false, title: 'Planes', subtitle: 'Elegí el que se adapta a tu nivel.', tiers: [] },
-    video:        { enabled: false, title: 'Mirá cómo trabajamos', subtitle: '', provider: 'youtube', video_id: '' },
-    gallery:      { enabled: false, title: 'Galería', subtitle: '', items: [], columns: 3 },
-    newsletter:   { enabled: false, title: 'Sumate al newsletter', subtitle: 'Recibí nuestros mejores tips y novedades.', cta_label: 'Suscribirme' },
-    cta_final:    { enabled: false, title: '¿Listo para empezar?', body: '', cta_label: 'Quiero inscribirme', cta_href: '#cursos' }
+    faq: {
+      enabled: true,
+      title: 'Preguntas frecuentes',
+      items: [
+        { id: '00000000-0000-0000-0000-000000000040', q: '¿Necesito conocimientos previos?', a: 'No. Empezamos desde cero y vamos avanzando a tu ritmo. Todos los conceptos se explican paso a paso.' },
+        { id: '00000000-0000-0000-0000-000000000041', q: '¿Cuánto dura el curso?', a: 'El acceso es de por vida, así que lo hacés a tu ritmo. La mayoría completa el contenido en 6 a 8 semanas.' },
+        { id: '00000000-0000-0000-0000-000000000042', q: '¿Puedo pedir reembolso?', a: 'Sí. Tenés 7 días desde la compra para pedir devolución sin preguntas.' },
+        { id: '00000000-0000-0000-0000-000000000043', q: '¿Cómo recibo el certificado?', a: 'Al completar el 100% de las lecciones lo descargás automáticamente desde tu perfil.' },
+        { id: '00000000-0000-0000-0000-000000000044', q: '¿Cómo accedo a los videos?', a: 'Inmediatamente después de la compra. Funciona en cualquier dispositivo (compu, tablet, celu).' }
+      ]
+    },
+    offer: { enabled: false, title: 'Oferta por tiempo limitado', subtitle: 'Inscribite antes que termine.', ends_at: null, cta_label: 'Aprovecharla', cta_href: '#cursos' },
+    pricing: { enabled: false, title: 'Planes', subtitle: 'Elegí el que se adapta a tu nivel.', tiers: [] },
+    video: { enabled: false, title: 'Mirá cómo trabajamos', subtitle: '', provider: 'youtube', video_id: '' },
+    gallery: { enabled: false, title: 'Galería', subtitle: '', items: [], columns: 3 },
+    newsletter: {
+      enabled: true,
+      title: 'Sumate al newsletter',
+      subtitle: 'Recibí contenido exclusivo, descuentos y novedades antes que nadie.',
+      cta_label: 'Suscribirme'
+    },
+    cta_final: {
+      enabled: true,
+      title: '¿Listo para empezar?',
+      body: 'Sumate a los miles de alumnos que ya están transformando su camino con nosotros.',
+      cta_label: 'Empezar ahora',
+      cta_href: '#cursos'
+    }
   },
   order: DEFAULT_ORDER,
-  nav: { links: [], show_login: true },
-  footer: { text: '', socials: [], links: [] }
+  nav: {
+    links: [
+      { id: '00000000-0000-0000-0000-000000000050', label: 'Cursos', href: '#cursos' },
+      { id: '00000000-0000-0000-0000-000000000051', label: 'Testimonios', href: '#testimonios' },
+      { id: '00000000-0000-0000-0000-000000000052', label: 'FAQ', href: '#faq' }
+    ],
+    show_login: true
+  },
+  footer: {
+    text: 'Hecho con dedicación. Cualquier consulta escribinos.',
+    socials: [],
+    links: []
+  }
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { env, RESERVED_SLUGS } from '@/lib/env';
+import { DEFAULT_SITE_CONFIG } from '@/lib/site/types';
 
 export type OnboardingResult =
   | { ok: true; tenantId: string; slug: string; redirectTo: string }
@@ -41,12 +42,15 @@ export async function createTenantAction(
   if (existing) return { ok: false, error: 'Ese subdominio ya está tomado. Elegí otro.' };
 
   // Insert tenant via service-role (RLS would otherwise require a custom INSERT policy)
+  // site_config se popula con DEFAULT_SITE_CONFIG (rich sample content) para que el
+  // storefront se vea armado desde el día 1.
   const tenantPayload = {
     slug,
     name,
     owner_user_id: user.id,
     brand: { primary_color: primaryColor },
-    status: 'active'
+    status: 'active',
+    site_config: DEFAULT_SITE_CONFIG
   };
   const { data: tenant, error: insertErr } = await svc
     .from('tenants')

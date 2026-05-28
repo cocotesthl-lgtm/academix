@@ -398,12 +398,21 @@ export async function duplicateSectionAction(formData: FormData): Promise<void> 
   revalidatePath('/site');
 }
 
-export type ThemeKey = 'fitness' | 'tech' | 'business';
+export type ThemeKey = 'sample' | 'fitness' | 'tech' | 'business';
 
 export async function applyThemeAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const theme = String(formData.get('theme') ?? '') as ThemeKey;
-  if (!['fitness', 'tech', 'business'].includes(theme)) return;
+  if (!['sample', 'fitness', 'tech', 'business'].includes(theme)) return;
+
+  // 'sample' reescribe el config completo con el default rich (descarta cambios)
+  if (theme === 'sample') {
+    const fresh = JSON.parse(JSON.stringify(DEFAULT_SITE_CONFIG));
+    await saveConfig(tenant.id, fresh);
+    revalidatePath('/site');
+    return;
+  }
+
   const cfg = await loadConfig(tenant.id);
 
   // Reset to a known good baseline per theme
