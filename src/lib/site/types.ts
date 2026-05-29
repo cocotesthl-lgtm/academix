@@ -157,7 +157,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       cta_label_2: 'Cómo funciona',
       cta_href_2: '#features',
       caption: 'Sin tarjeta · Acceso de por vida · Certificado al finalizar',
-      image_url: null
+      // Imagen placeholder de Unsplash (gratis, libre uso). El owner la reemplaza
+      // por la suya desde el builder pegando otra URL.
+      image_url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=2400&q=80&auto=format&fit=crop'
     },
     trusted_by: {
       enabled: true,
@@ -179,7 +181,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       enabled: true,
       title: 'Sobre nosotros',
       body: 'Somos una academia comprometida con tu crecimiento. Combinamos contenido de alta calidad con acompañamiento personalizado para que aprendas haciendo y veas resultados desde el primer día.\n\nNuestra metodología está pensada para que avances a tu ritmo, con apoyo cuando lo necesités y libertad para explorar a fondo.',
-      image_url: null
+      image_url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80&auto=format&fit=crop'
     },
     instructor: {
       enabled: true,
@@ -190,9 +192,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       photo_url: null,
       credentials: '+10 años de experiencia · +1.000 alumnos formados',
       items: [
-        { id: '00000000-0000-0000-0000-000000000080', name: 'Tu nombre acá', credentials: '+10 años · +1.000 alumnos', bio: 'Apasionado por enseñar y orientado a resultados.', photo_url: null },
-        { id: '00000000-0000-0000-0000-000000000081', name: 'Co-instructor 1', credentials: 'Especialista en UX', bio: 'Aporta la mirada práctica y los casos reales.', photo_url: null },
-        { id: '00000000-0000-0000-0000-000000000082', name: 'Co-instructor 2', credentials: 'Mentoría 1 a 1', bio: 'Acompañamiento personalizado para cada alumno.', photo_url: null }
+        { id: '00000000-0000-0000-0000-000000000080', name: 'Tu nombre acá', credentials: '+10 años · +1.000 alumnos', bio: 'Apasionado por enseñar y orientado a resultados.', photo_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&q=80&auto=format&fit=crop' },
+        { id: '00000000-0000-0000-0000-000000000081', name: 'Co-instructor 1', credentials: 'Especialista en UX', bio: 'Aporta la mirada práctica y los casos reales.', photo_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&q=80&auto=format&fit=crop' },
+        { id: '00000000-0000-0000-0000-000000000082', name: 'Co-instructor 2', credentials: 'Mentoría 1 a 1', bio: 'Acompañamiento personalizado para cada alumno.', photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&q=80&auto=format&fit=crop' }
       ]
     },
     stats: {
@@ -233,9 +235,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       enabled: true,
       title: 'Lo que dicen nuestros alumnos',
       items: [
-        { id: '00000000-0000-0000-0000-000000000030', name: 'María González', role: 'Estudiante', text: 'El mejor curso que tomé. Aprendí más en dos meses que en años buscando por mi cuenta.', rating: 5 },
-        { id: '00000000-0000-0000-0000-000000000031', name: 'Juan Pérez', role: 'Profesional', text: 'Lo recomiendo 100%. El instructor sabe transmitir y siempre está disponible para responder.', rating: 5 },
-        { id: '00000000-0000-0000-0000-000000000032', name: 'Laura Méndez', role: 'Emprendedora', text: 'Cambió mi forma de trabajar. Volví a sentir pasión por lo que hago.', rating: 5 }
+        { id: '00000000-0000-0000-0000-000000000030', name: 'María González', role: 'Estudiante', text: 'El mejor curso que tomé. Aprendí más en dos meses que en años buscando por mi cuenta.', rating: 5, photo_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&q=80&auto=format&fit=crop' },
+        { id: '00000000-0000-0000-0000-000000000031', name: 'Juan Pérez', role: 'Profesional', text: 'Lo recomiendo 100%. El instructor sabe transmitir y siempre está disponible para responder.', rating: 5, photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&q=80&auto=format&fit=crop' },
+        { id: '00000000-0000-0000-0000-000000000032', name: 'Laura Méndez', role: 'Emprendedora', text: 'Cambió mi forma de trabajar. Volví a sentir pasión por lo que hago.', rating: 5, photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&q=80&auto=format&fit=crop' }
       ]
     },
     before_after: { enabled: false, title: 'Antes vs después', before_label: 'Antes', after_label: 'Después', before_image_url: null, after_image_url: null, before_body: '', after_body: '' },
