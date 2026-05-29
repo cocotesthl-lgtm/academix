@@ -6,19 +6,15 @@ import { getServiceClient } from '@/lib/supabase/service';
 
 export type BrandingResult = { ok: true } | { ok: false; error: string };
 
-const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2MB
-const ALLOWED_MIME = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml']);
-
-function extFromMime(mime: string) {
-  switch (mime) {
-    case 'image/png': return 'png';
-    case 'image/jpeg': return 'jpg';
-    case 'image/webp': return 'webp';
-    case 'image/svg+xml': return 'svg';
-    default: return 'bin';
-  }
-}
-
+/**
+ * Actualiza branding. URL-only, sin uploads.
+ * Campos editables:
+ *  - name (academia)
+ *  - primary_color, accent_color
+ *  - logo_layout: 'square' | 'horizontal'
+ *  - logo_url (URL del logo principal)
+ *  - logo_text (texto opcional al lado del logo, solo aplica si layout=square)
+ */
 export async function updateBrandingAction(
   _prev: BrandingResult | null,
   formData: FormData
@@ -29,7 +25,6 @@ export async function updateBrandingAction(
 
   const svc = getServiceClient();
 
-  // Find the user's tenant (owner role).
   const { data: membership } = await svc
     .from('memberships')
     .select('tenant_id')
@@ -45,11 +40,15 @@ export async function updateBrandingAction(
   const name = String(formData.get('name') ?? '').trim();
   const primary = String(formData.get('primary_color') ?? '').trim();
   const accent = String(formData.get('accent_color') ?? '').trim();
-  const logo = formData.get('logo') as File | null;
+  const logoLayoutRaw = String(formData.get('logo_layout') ?? '').trim();
+  const logoUrl = String(formData.get('logo_url') ?? '').trim();
+  const logoText = String(formData.get('logo_text') ?? '').trim();
 
   if (!name) return { ok: false, error: 'El nombre no puede estar vacío.' };
 
-  // Read current brand to merge
+  const logoLayout: 'square' | 'horizontal' =
+    logoLayoutRaw === 'horizontal' ? 'horizontal' : 'square';
+
   const { data: current } = await svc
     .from('tenants')
     .select('brand')
@@ -59,29 +58,9 @@ export async function updateBrandingAction(
   const brand: Record<string, unknown> = { ...(current?.brand ?? {}) };
   if (primary) brand.primary_color = primary;
   if (accent) brand.accent_color = accent;
-
-  // Optional logo upload
-  if (logo && logo.size > 0) {
-    if (logo.size > MAX_LOGO_BYTES) {
-      return { ok: false, error: 'El logo no puede pesar más de 2 MB.' };
-    }
-    if (!ALLOWED_MIME.has(logo.type)) {
-      return { ok: false, error: 'Formato no soportado. Usá PNG, JPG, WebP o SVG.' };
-    }
-    const ext = extFromMime(logo.type);
-    const path = `${tenantId}/logo-${Date.now()}.${ext}`;
-    const arrayBuffer = await logo.arrayBuffer();
-    const { error: uploadErr } = await svc.storage
-      .from('branding')
-      .upload(path, new Uint8Array(arrayBuffer), {
-        contentType: logo.type,
-        upsert: true
-      });
-    if (uploadErr) return { ok: false, error: `Upload falló: ${uploadErr.message}` };
-
-    const { data: pub } = svc.storage.from('branding').getPublicUrl(path);
-    brand.logo_url = pub.publicUrl;
-  }
+  brand.logo_layout = logoLayout;
+  brand.logo_url = logoUrl || null;
+  brand.logo_text = logoText || null;
 
   const updatePayload = { name, brand, updated_at: new Date().toISOString() };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -91,17 +70,15 @@ export async function updateBrandingAction(
 
   if (updErr) return { ok: false, error: updErr.message };
 
-  // Audit
-  const auditPayload = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await svc.from('audit_log').insert({
     actor_user_id: user.id,
     tenant_id: tenantId,
     action: 'tenant.branding_updated',
     target_type: 'tenant',
     target_id: tenantId,
     after: { name, brand }
-  };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await svc.from('audit_log').insert(auditPayload as any);
+  } as any);
 
   revalidatePath('/branding');
   revalidatePath('/dashboard');

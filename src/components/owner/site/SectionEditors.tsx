@@ -3,11 +3,7 @@
 import { useState, useTransition, useEffect } from 'react';
 import {
   updateSectionFieldsAction,
-  uploadAboutImageAction,
-  uploadInstructorPhotoAction,
-  uploadHeroImageAction,
-  uploadBeforeAfterImageAction,
-  uploadCustomImageAction,
+  setSectionImageUrlAction,
   addPricingTierAction,
   deletePricingTierAction,
   addGalleryImageAction,
@@ -90,6 +86,63 @@ function SaveBar({ pending, saved, onSave }: { pending: boolean; saved: boolean;
   );
 }
 
+/**
+ * Picker de URL de imagen. NO sube archivos — solo URL.
+ * Muestra hint con el tamaño recomendado para evitar recortes.
+ */
+function UrlPicker({
+  label, section, field, value, hint, onLocalChange
+}: {
+  label: string;
+  section: string;
+  field: string;
+  value: string | null;
+  hint?: string;
+  onLocalChange?: (v: string) => void;
+}) {
+  const [v, setV] = useState(value ?? '');
+  const [pending, start] = useTransition();
+  const [saved, setSaved] = useState(false);
+
+  return (
+    <div>
+      <label className="block text-xs text-white/60 mb-1">{label}</label>
+      <div className="flex gap-2">
+        <input
+          type="url"
+          value={v}
+          onChange={(e) => { setV(e.target.value); onLocalChange?.(e.target.value); setSaved(false); }}
+          placeholder="https://… (pegá la URL de la imagen)"
+          className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+        />
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => {
+            setSaved(false);
+            start(async () => {
+              const fd = new FormData();
+              fd.set('section', section);
+              fd.set('field', field);
+              fd.set('url', v);
+              await setSectionImageUrlAction(fd);
+              setSaved(true);
+              setTimeout(() => setSaved(false), 2500);
+            });
+          }}
+          className="rounded bg-white text-black px-3 py-2 text-sm font-medium disabled:opacity-50"
+        >
+          {pending ? '…' : 'Guardar'}
+        </button>
+      </div>
+      <div className="flex items-center justify-between mt-1">
+        {hint && <span className="text-[10px] text-white/40">📐 {hint}</span>}
+        {saved && <span className="text-[10px] text-emerald-300">✓ Guardado</span>}
+      </div>
+    </div>
+  );
+}
+
 function PreviewFrame({ children, label }: { children: React.ReactNode; label?: string }) {
   return (
     <div>
@@ -140,7 +193,6 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
   const [v, setV] = useState(initial);
   const [layoutSel, setLayoutSel] = useState<HeroLayout>(layout);
   const { pending, saved, fire } = useSave('hero');
-  const [uploadPending, startUpload] = useTransition();
   const displayTitle = v.title || fallbackTitle;
 
   return (
@@ -179,14 +231,13 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
 
           {(layoutSel === 'split' || layoutSel === 'gallery') && (
             <div className="pt-3 mt-3 border-t border-white/5">
-              <label className="block text-xs text-white/60 mb-2">Imagen del Hero</label>
-              <form action={(fd) => startUpload(async () => { await uploadHeroImageAction(fd); })} className="flex items-center gap-3">
-                <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-                  className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
-                <button className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium hover:bg-white/90" disabled={uploadPending}>
-                  {uploadPending ? 'Subiendo…' : 'Subir'}
-                </button>
-              </form>
+              <UrlPicker
+                label="URL de la imagen del Hero"
+                section="hero"
+                field="image_url"
+                value={imageUrl}
+                hint={layoutSel === 'split' ? 'Recomendado 1200×900px, formato 4:3 o cuadrado' : 'Recomendado 1920×800px, formato panorámico 21:9'}
+              />
             </div>
           )}
         </div>
@@ -296,8 +347,8 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee }: {
             className="flex items-center gap-2"
             encType="multipart/form-data"
           >
-            <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml"
-              className="flex-1 text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
+            <input type="url" name="logo_url" placeholder="URL del logo (vacío = solo nombre)"
+              className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <button disabled={addPending || !name} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
               {addPending ? 'Agregando…' : '+ Agregar'}
             </button>
@@ -365,7 +416,6 @@ export function AboutEditor({ initial, imageUrl, primary }: {
 }) {
   const [v, setV] = useState(initial);
   const { pending, saved, fire } = useSave('about');
-  const [uploadPending, startUpload] = useTransition();
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -375,14 +425,13 @@ export function AboutEditor({ initial, imageUrl, primary }: {
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
 
         <div className="pt-3 mt-3 border-t border-white/5">
-          <label className="block text-xs text-white/60 mb-2">Foto (opcional)</label>
-          <form action={(fd) => startUpload(async () => { await uploadAboutImageAction(fd); })} className="flex items-center gap-3">
-            <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-              className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
-            <button className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium hover:bg-white/90" disabled={uploadPending}>
-              {uploadPending ? 'Subiendo…' : 'Subir'}
-            </button>
-          </form>
+          <UrlPicker
+            label="URL de la foto (opcional)"
+            section="about"
+            field="image_url"
+            value={imageUrl}
+            hint="Recomendado 1200×900px, formato 4:3"
+          />
         </div>
       </div>
       <PreviewFrame>
@@ -454,8 +503,8 @@ export function InstructorEditor({ initial, items, primary }: {
             className="flex items-center gap-2"
             encType="multipart/form-data"
           >
-            <input type="file" name="photo" accept="image/png,image/jpeg,image/webp"
-              className="flex-1 text-xs text-white/70 file:mr-2 file:rounded file:border-0 file:bg-white file:text-black file:px-2 file:py-1 file:font-medium" />
+            <input type="url" name="photo_url" placeholder="URL de la foto (opcional, cuadrada 400×400)"
+              className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <button disabled={addPending || !name} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
               {addPending ? 'Agregando…' : '+ Agregar'}
             </button>
@@ -911,8 +960,8 @@ export function TestimonialsEditor({ initialTitle, items, primary }: {
             className="flex items-center gap-2"
             encType="multipart/form-data"
           >
-            <input type="file" name="photo" accept="image/png,image/jpeg,image/webp"
-              className="flex-1 text-xs text-white/70 file:mr-2 file:rounded-md file:border-0 file:bg-white file:text-black file:px-2 file:py-1 file:font-medium" />
+            <input type="url" name="photo_url" placeholder="URL de la foto (opcional, cuadrada 400×400)"
+              className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <button disabled={addPending || !name || !text} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
               {addPending ? 'Agregando…' : '+ Agregar'}
             </button>
@@ -1196,8 +1245,6 @@ export function BeforeAfterEditor({ initial, beforeUrl, afterUrl, primary }: {
 }) {
   const [v, setV] = useState(initial);
   const { pending, saved, fire } = useSave('before_after');
-  const [bPending, startB] = useTransition();
-  const [aPending, startA] = useTransition();
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -1213,33 +1260,21 @@ export function BeforeAfterEditor({ initial, beforeUrl, afterUrl, primary }: {
         </div>
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
 
-        <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-white/5">
-          <div>
-            <label className="block text-xs text-white/60 mb-1">Imagen Antes</label>
-            <form
-              action={(fd) => { fd.set('which', 'before'); startB(async () => { await uploadBeforeAfterImageAction(fd); }); }}
-              className="flex flex-col gap-2"
-            >
-              <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-                className="text-xs text-white/70 file:mr-2 file:rounded file:border-0 file:bg-white file:text-black file:px-2 file:py-1 file:font-medium" />
-              <button disabled={bPending} className="rounded bg-white text-black px-3 py-1 text-xs font-medium disabled:opacity-50">
-                {bPending ? 'Subiendo…' : 'Subir Antes'}
-              </button>
-            </form>
-          </div>
-          <div>
-            <label className="block text-xs text-white/60 mb-1">Imagen Después</label>
-            <form
-              action={(fd) => { fd.set('which', 'after'); startA(async () => { await uploadBeforeAfterImageAction(fd); }); }}
-              className="flex flex-col gap-2"
-            >
-              <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-                className="text-xs text-white/70 file:mr-2 file:rounded file:border-0 file:bg-white file:text-black file:px-2 file:py-1 file:font-medium" />
-              <button disabled={aPending} className="rounded bg-white text-black px-3 py-1 text-xs font-medium disabled:opacity-50">
-                {aPending ? 'Subiendo…' : 'Subir Después'}
-              </button>
-            </form>
-          </div>
+        <div className="grid grid-cols-1 gap-3 pt-3 mt-3 border-t border-white/5">
+          <UrlPicker
+            label="URL imagen Antes"
+            section="before_after"
+            field="before_image_url"
+            value={beforeUrl}
+            hint="Recomendado 800×600px, 4:3"
+          />
+          <UrlPicker
+            label="URL imagen Después"
+            section="before_after"
+            field="after_image_url"
+            value={afterUrl}
+            hint="Recomendado 800×600px, 4:3 (mismas dimensiones que la de Antes)"
+          />
         </div>
       </div>
       <PreviewFrame>
@@ -1494,18 +1529,18 @@ export function GalleryEditor({ initialTitle, initialSubtitle, items, columns }:
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, subtitle, columns: String(cols) })} />
 
         <div className="pt-3 mt-3 border-t border-white/5">
-          <label className="text-xs text-white/60 block mb-1">Subir imagen</label>
+          <label className="text-xs text-white/60 block mb-1">Agregar imagen (URL)</label>
           <form
             action={(fd) => startAdd(async () => { await addGalleryImageAction(fd); })}
             className="space-y-2"
-            encType="multipart/form-data"
           >
-            <input type="file" name="image" required accept="image/png,image/jpeg,image/webp"
-              className="w-full text-xs text-white/70 file:mr-3 file:rounded file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
+            <input type="url" name="image_url" required placeholder="https://… URL de la imagen"
+              className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <input name="caption" placeholder="Caption (opcional)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <button disabled={addPending} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-              {addPending ? 'Subiendo…' : '+ Agregar imagen'}
+              {addPending ? 'Agregando…' : '+ Agregar imagen'}
             </button>
+            <p className="text-[10px] text-white/40">📐 Recomendado 1200×900px (4:3) o 1200×1200px (cuadrada) para que se vean iguales</p>
           </form>
         </div>
 
@@ -1611,7 +1646,6 @@ export function CustomEditor({ initial, imageUrl, primary }: {
 }) {
   const [v, setV] = useState(initial);
   const { pending, saved, fire } = useSave('custom');
-  const [uploadPending, startUpload] = useTransition();
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -1638,14 +1672,13 @@ export function CustomEditor({ initial, imageUrl, primary }: {
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
 
         <div className="pt-3 mt-3 border-t border-white/5">
-          <label className="block text-xs text-white/60 mb-2">Imagen del bloque</label>
-          <form action={(fd) => startUpload(async () => { await uploadCustomImageAction(fd); })} className="flex items-center gap-3">
-            <input type="file" name="image" accept="image/png,image/jpeg,image/webp"
-              className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium" />
-            <button className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium hover:bg-white/90" disabled={uploadPending}>
-              {uploadPending ? 'Subiendo…' : 'Subir'}
-            </button>
-          </form>
+          <UrlPicker
+            label="URL de la imagen del bloque"
+            section="custom"
+            field="image_url"
+            value={imageUrl}
+            hint="Recomendado 1200×900px (4:3) o cuadrada"
+          />
         </div>
       </div>
       <PreviewFrame>

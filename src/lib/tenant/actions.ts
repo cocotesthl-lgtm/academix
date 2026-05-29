@@ -10,6 +10,7 @@ export type OnboardingResult =
   | { ok: true; tenantId: string; slug: string; redirectTo: string }
   | { ok: false; error: string };
 
+// 3-32 chars: una letra/digit, 1-30 medio (letras/digits/guión), última letra/digit
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 
 export async function createTenantAction(

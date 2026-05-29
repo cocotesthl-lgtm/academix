@@ -55,7 +55,7 @@ export function CourseEditor({ course, modules, categories }: { course: Course; 
       {/* Course metadata */}
       <section>
         <h2 className="text-lg font-semibold mb-4">Información del curso</h2>
-        <form action={updateAction} className="space-y-4" encType="multipart/form-data">
+        <form action={updateAction} className="space-y-4">
           <input type="hidden" name="id" value={course.id} />
           <div>
             <label className="block text-sm mb-1.5 text-white/70">Título</label>
@@ -77,9 +77,9 @@ export function CourseEditor({ course, modules, categories }: { course: Course; 
           </div>
 
           <div>
-            <label className="block text-sm mb-1.5 text-white/70">Portada del curso</label>
-            <div className="flex items-center gap-3">
-              <div className="w-32 h-20 rounded-md bg-white/5 border border-white/15 overflow-hidden flex items-center justify-center">
+            <label className="block text-sm mb-1.5 text-white/70">URL de la portada</label>
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 w-32 h-20 rounded-md bg-white/5 border border-white/15 overflow-hidden flex items-center justify-center">
                 {course.cover_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={course.cover_url} alt="" className="w-full h-full object-cover" />
@@ -88,13 +88,16 @@ export function CourseEditor({ course, modules, categories }: { course: Course; 
                 )}
               </div>
               <input
-                type="file"
-                name="cover"
-                accept="image/png,image/jpeg,image/webp"
-                className="text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium"
+                type="url"
+                name="cover_url"
+                defaultValue={course.cover_url ?? ''}
+                placeholder="https://… (pegá la URL de la imagen)"
+                className="flex-1 rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
               />
             </div>
-            <p className="text-xs text-white/40 mt-1">PNG / JPG / WebP, hasta 4 MB.</p>
+            <p className="text-xs text-white/50 mt-1">
+              📐 Recomendado: 1600×900px (16:9). Dejá vacío para quitar la portada.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

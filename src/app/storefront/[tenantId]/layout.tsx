@@ -1,7 +1,5 @@
-import { headers } from "next/headers";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
-import { env } from "@/lib/env";
 import { mergeConfig } from "@/lib/site/types";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +18,6 @@ export default async function StorefrontLayout({
 }) {
   const { tenantId } = await params;
   const tenant = await getTenantById(tenantId);
-  const h = await headers();
-  const slug = h.get("x-tenant-slug") ?? tenant?.slug ?? "";
 
   if (!tenant) {
     return (
@@ -44,6 +40,9 @@ export default async function StorefrontLayout({
   const brand = tenant.brand ?? {};
   const primary = brand.primary_color ?? '#0a0a0a';
   const accent = brand.accent_color ?? primary;
+  const logoLayout: 'square' | 'horizontal' =
+    (brand as { logo_layout?: string }).logo_layout === 'horizontal' ? 'horizontal' : 'square';
+  const logoText = (brand as { logo_text?: string | null }).logo_text ?? null;
 
   const svc = getServiceClient();
   const { data: tenantRow } = await svc
@@ -52,8 +51,6 @@ export default async function StorefrontLayout({
     .eq('id', tenantId)
     .single<{ site_config: unknown }>();
   const cfg = mergeConfig(tenantRow?.site_config);
-
-  const rootDomain = env.rootDomain;
 
   return (
     <div
@@ -66,21 +63,27 @@ export default async function StorefrontLayout({
       <header className="border-b border-black/10 bg-white sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <a href="/" className="flex items-center gap-3">
-            {brand.logo_url ? (
+            {logoLayout === 'horizontal' && brand.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={brand.logo_url} alt={tenant.name} className="h-9 w-9 object-contain rounded" />
+              <img src={brand.logo_url} alt={tenant.name} className="h-9 w-auto max-w-[200px] object-contain" />
             ) : (
-              <div
-                className="h-9 w-9 rounded-lg flex items-center justify-center text-white font-bold"
-                style={{ background: primary }}
-              >
-                {tenant.name.slice(0, 1).toUpperCase()}
-              </div>
+              <>
+                {brand.logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={brand.logo_url} alt={tenant.name} className="h-9 w-9 object-contain rounded" />
+                ) : (
+                  <div
+                    className="h-9 w-9 rounded-lg flex items-center justify-center text-white font-bold"
+                    style={{ background: primary }}
+                  >
+                    {tenant.name.slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+                <div className="font-bold leading-tight">
+                  {logoText || tenant.name}
+                </div>
+              </>
             )}
-            <div>
-              <div className="font-bold leading-tight">{tenant.name}</div>
-              <div className="text-xs text-black/40">{slug}.{rootDomain}</div>
-            </div>
           </a>
           <nav className="hidden md:flex gap-6 text-sm text-black/70">
             {cfg.nav.links.map((l) => (

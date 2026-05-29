@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { randomUUID } from 'node:crypto';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
@@ -120,55 +121,24 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   revalidatePath('/site');
 }
 
-/* ===== Image uploads ===== */
+/* ===== URL-based image setter ===== */
 
-async function uploadImage(tenantId: string, prefix: string, file: File): Promise<string | null> {
-  if (file.size > 4 * 1024 * 1024) return null;
-  if (!['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'].includes(file.type)) return null;
-  const ext = file.type === 'image/png' ? 'png'
-    : file.type === 'image/webp' ? 'webp'
-    : file.type === 'image/svg+xml' ? 'svg'
-    : 'jpg';
-  const path = `${tenantId}/${prefix}-${Date.now()}.${ext}`;
-  const svc = getServiceClient();
-  const buf = new Uint8Array(await file.arrayBuffer());
-  const { error } = await svc.storage.from('branding').upload(path, buf, { contentType: file.type, upsert: true });
-  if (error) return null;
-  return svc.storage.from('branding').getPublicUrl(path).data.publicUrl;
-}
-
-export async function uploadAboutImageAction(formData: FormData): Promise<void> {
+/**
+ * Setea una URL de imagen para un campo de una sección.
+ * field debe terminar en _url (image_url, photo_url, before_image_url, etc).
+ * urlRaw vacío = setear null (limpia el campo).
+ */
+export async function setSectionImageUrlAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
-  const file = formData.get('image') as File | null;
-  if (!file || file.size === 0) return;
-  const url = await uploadImage(tenant.id, 'about', file);
-  if (!url) return;
-  const cfg = await loadConfig(tenant.id);
-  cfg.sections.about.image_url = url;
-  await saveConfig(tenant.id, cfg);
-  revalidatePath('/site');
-}
+  const key = String(formData.get('section') ?? '') as SectionKey;
+  const field = String(formData.get('field') ?? '');
+  const urlRaw = String(formData.get('url') ?? '').trim();
+  if (!(key in DEFAULT_SITE_CONFIG.sections)) return;
+  if (!field.endsWith('_url')) return;
 
-export async function uploadInstructorPhotoAction(formData: FormData): Promise<void> {
-  const { tenant } = await requireOwner();
-  const file = formData.get('image') as File | null;
-  if (!file || file.size === 0) return;
-  const url = await uploadImage(tenant.id, 'instructor', file);
-  if (!url) return;
   const cfg = await loadConfig(tenant.id);
-  cfg.sections.instructor.photo_url = url;
-  await saveConfig(tenant.id, cfg);
-  revalidatePath('/site');
-}
-
-export async function uploadCustomImageAction(formData: FormData): Promise<void> {
-  const { tenant } = await requireOwner();
-  const file = formData.get('image') as File | null;
-  if (!file || file.size === 0) return;
-  const url = await uploadImage(tenant.id, 'custom', file);
-  if (!url) return;
-  const cfg = await loadConfig(tenant.id);
-  cfg.sections.custom.image_url = url;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (cfg.sections[key] as any)[field] = urlRaw === '' ? null : urlRaw;
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }
@@ -180,13 +150,9 @@ export async function addInstructorItemAction(formData: FormData): Promise<void>
   const name = String(formData.get('name') ?? '').trim();
   const credentials = String(formData.get('credentials') ?? '').trim() || undefined;
   const bio = String(formData.get('bio') ?? '').trim() || undefined;
+  const photoUrlRaw = String(formData.get('photo_url') ?? '').trim();
   if (!name) return;
-
-  let photo_url: string | null = null;
-  const photo = formData.get('photo') as File | null;
-  if (photo && photo.size > 0) {
-    photo_url = await uploadImage(tenant.id, 'instructor-item', photo);
-  }
+  const photo_url = photoUrlRaw || null;
 
   const cfg = await loadConfig(tenant.id);
   const item: InstructorItem = { id: randomUUID(), name, credentials, bio, photo_url };
@@ -204,33 +170,6 @@ export async function deleteInstructorItemAction(formData: FormData): Promise<vo
   revalidatePath('/site');
 }
 
-export async function uploadHeroImageAction(formData: FormData): Promise<void> {
-  const { tenant } = await requireOwner();
-  const file = formData.get('image') as File | null;
-  if (!file || file.size === 0) return;
-  const url = await uploadImage(tenant.id, 'hero', file);
-  if (!url) return;
-  const cfg = await loadConfig(tenant.id);
-  cfg.sections.hero.image_url = url;
-  await saveConfig(tenant.id, cfg);
-  revalidatePath('/site');
-}
-
-export async function uploadBeforeAfterImageAction(formData: FormData): Promise<void> {
-  const { tenant } = await requireOwner();
-  const which = String(formData.get('which') ?? '');
-  if (which !== 'before' && which !== 'after') return;
-  const file = formData.get('image') as File | null;
-  if (!file || file.size === 0) return;
-  const url = await uploadImage(tenant.id, `ba-${which}`, file);
-  if (!url) return;
-  const cfg = await loadConfig(tenant.id);
-  if (which === 'before') cfg.sections.before_after.before_image_url = url;
-  else cfg.sections.before_after.after_image_url = url;
-  await saveConfig(tenant.id, cfg);
-  revalidatePath('/site');
-}
-
 /* ===== Testimonials CRUD (enhanced) ===== */
 
 export async function addTestimonialAction(formData: FormData): Promise<void> {
@@ -242,12 +181,8 @@ export async function addTestimonialAction(formData: FormData): Promise<void> {
   const rating = Math.min(5, Math.max(1, parseInt(ratingRaw, 10) || 5));
   if (!name || !text) return;
 
-  // Optional photo
-  let photo_url: string | null = null;
-  const photo = formData.get('photo') as File | null;
-  if (photo && photo.size > 0) {
-    photo_url = await uploadImage(tenant.id, 'testimonial', photo);
-  }
+  const photoUrlRaw = String(formData.get('photo_url') ?? '').trim();
+  const photo_url = photoUrlRaw || null;
 
   const cfg = await loadConfig(tenant.id);
   const item: TestimonialItem = { id: randomUUID(), name, text, role, rating, photo_url };
@@ -359,13 +294,9 @@ export async function addLogoAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const name = String(formData.get('name') ?? '').trim();
   const href = String(formData.get('href') ?? '').trim() || null;
+  const logoUrlRaw = String(formData.get('logo_url') ?? '').trim();
   if (!name) return;
-
-  let logo_url: string | null = null;
-  const file = formData.get('logo') as File | null;
-  if (file && file.size > 0) {
-    logo_url = await uploadImage(tenant.id, 'logo', file);
-  }
+  const logo_url = logoUrlRaw || null;
 
   const cfg = await loadConfig(tenant.id);
   cfg.sections.trusted_by.items.push({ id: randomUUID(), name, logo_url, href });
@@ -418,13 +349,11 @@ export async function deletePricingTierAction(formData: FormData): Promise<void>
 
 export async function addGalleryImageAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
-  const file = formData.get('image') as File | null;
+  const imageUrlRaw = String(formData.get('image_url') ?? '').trim();
   const caption = String(formData.get('caption') ?? '').trim() || undefined;
-  if (!file || file.size === 0) return;
-  const url = await uploadImage(tenant.id, 'gallery', file);
-  if (!url) return;
+  if (!imageUrlRaw) return;
   const cfg = await loadConfig(tenant.id);
-  const item: GalleryItem = { id: randomUUID(), image_url: url, caption };
+  const item: GalleryItem = { id: randomUUID(), image_url: imageUrlRaw, caption };
   cfg.sections.gallery.items.push(item);
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
@@ -452,6 +381,7 @@ export async function duplicateSectionAction(formData: FormData): Promise<void> 
   cfg.sections[key].enabled = true;
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
+  redirect('/site');
 }
 
 export type ThemeKey = 'sample' | 'fitness' | 'tech' | 'business';
@@ -466,7 +396,9 @@ export async function applyThemeAction(formData: FormData): Promise<void> {
     const fresh = JSON.parse(JSON.stringify(DEFAULT_SITE_CONFIG));
     await saveConfig(tenant.id, fresh);
     revalidatePath('/site');
-    return;
+    revalidatePath('/dashboard');
+    revalidatePath('/', 'layout');
+    redirect('/site');
   }
 
   const cfg = await loadConfig(tenant.id);

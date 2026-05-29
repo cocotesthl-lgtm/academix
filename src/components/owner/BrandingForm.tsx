@@ -1,18 +1,26 @@
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useState } from 'react';
 import { updateBrandingAction, type BrandingResult } from '@/lib/branding/actions';
 
-type Brand = { logo_url?: string; primary_color?: string; accent_color?: string };
+type Brand = {
+  logo_url?: string | null;
+  logo_text?: string | null;
+  logo_layout?: 'square' | 'horizontal' | null;
+  primary_color?: string;
+  accent_color?: string;
+};
 
 export function BrandingForm({
   initialName,
   initialBrand,
-  slug
+  slug,
+  rootDomain
 }: {
   initialName: string;
   initialBrand: Brand;
   slug: string;
+  rootDomain?: string;
 }) {
   const [state, formAction, pending] = useActionState<BrandingResult | null, FormData>(
     updateBrandingAction,
@@ -20,14 +28,13 @@ export function BrandingForm({
   );
   const [primary, setPrimary] = useState(initialBrand.primary_color ?? '#a855f7');
   const [accent, setAccent] = useState(initialBrand.accent_color ?? '#22d3ee');
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(initialBrand.logo_url ?? null);
+  const [layout, setLayout] = useState<'square' | 'horizontal'>(
+    initialBrand.logo_layout === 'horizontal' ? 'horizontal' : 'square'
+  );
+  const [logoUrl, setLogoUrl] = useState(initialBrand.logo_url ?? '');
+  const [logoText, setLogoText] = useState(initialBrand.logo_text ?? '');
 
-  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setLogoPreview(URL.createObjectURL(f));
-  }
+  const domain = rootDomain ?? 'bzseguridad.store';
 
   return (
     <form action={formAction} className="space-y-6 max-w-2xl">
@@ -40,36 +47,100 @@ export function BrandingForm({
           maxLength={80}
           className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 focus:outline-none focus:border-white/40"
         />
-        <p className="text-xs text-white/40 mt-1">Subdominio actual: {slug}.curplat.com</p>
+        <p className="text-xs text-white/40 mt-1">Subdominio actual: {slug}.{domain}</p>
       </div>
 
+      {/* Logo layout selector */}
       <div>
-        <label className="block text-sm mb-1.5 text-white/70">Logo</label>
-        <div className="flex items-center gap-4">
-          <div
-            className="w-20 h-20 rounded-lg bg-white/5 border border-white/15 flex items-center justify-center overflow-hidden"
-            style={{ background: logoPreview ? 'transparent' : undefined }}
+        <label className="block text-sm mb-1.5 text-white/70">Tipo de logo</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setLayout('square')}
+            className={`rounded-md border px-3 py-2 text-sm text-left ${
+              layout === 'square'
+                ? 'border-white bg-white/10 text-white'
+                : 'border-white/15 text-white/60 hover:border-white/30'
+            }`}
           >
-            {logoPreview ? (
+            <div className="font-medium">Cuadrado (isotipo)</div>
+            <div className="text-xs text-white/50 mt-0.5">Imagen 1:1 + texto opcional al lado</div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setLayout('horizontal')}
+            className={`rounded-md border px-3 py-2 text-sm text-left ${
+              layout === 'horizontal'
+                ? 'border-white bg-white/10 text-white'
+                : 'border-white/15 text-white/60 hover:border-white/30'
+            }`}
+          >
+            <div className="font-medium">Horizontal (imagotipo)</div>
+            <div className="text-xs text-white/50 mt-0.5">Solo imagen alargada, sin texto</div>
+          </button>
+        </div>
+        <input type="hidden" name="logo_layout" value={layout} />
+      </div>
+
+      {/* Logo URL */}
+      <div>
+        <label className="block text-sm mb-1.5 text-white/70">URL del logo</label>
+        <div className="flex items-start gap-3">
+          <div
+            className={`shrink-0 rounded-lg bg-white/5 border border-white/15 flex items-center justify-center overflow-hidden ${
+              layout === 'horizontal' ? 'w-40 h-14' : 'w-20 h-20'
+            }`}
+          >
+            {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoPreview} alt="logo" className="w-full h-full object-contain" />
+              <img src={logoUrl} alt="logo" className="w-full h-full object-contain" />
             ) : (
               <span className="text-xs text-white/40">sin logo</span>
             )}
           </div>
           <div className="flex-1">
             <input
-              ref={fileRef}
-              type="file"
-              name="logo"
-              accept="image/png,image/jpeg,image/webp,image/svg+xml"
-              onChange={onFileChange}
-              className="block text-sm text-white/70 file:mr-3 file:rounded-md file:border-0 file:bg-white file:text-black file:px-3 file:py-1.5 file:font-medium hover:file:bg-white/90"
+              type="url"
+              name="logo_url"
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+              placeholder="https://… (pegá la URL pública de la imagen)"
+              className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
             />
-            <p className="text-xs text-white/40 mt-1">PNG, JPG, WebP o SVG. Hasta 2 MB.</p>
+            <p className="text-xs text-white/50 mt-1">
+              📐 Recomendado:{' '}
+              {layout === 'horizontal'
+                ? '480×120px (4:1), PNG con fondo transparente'
+                : '256×256px (1:1), PNG con fondo transparente'}
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Logo text (solo cuadrado) */}
+      {layout === 'square' && (
+        <div>
+          <label className="block text-sm mb-1.5 text-white/70">
+            Texto al lado del logo <span className="text-white/40">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            name="logo_text"
+            value={logoText}
+            onChange={(e) => setLogoText(e.target.value)}
+            maxLength={40}
+            placeholder="Ej: Academia Bz"
+            className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+          />
+          <p className="text-xs text-white/40 mt-1">
+            Si lo dejás vacío, solo se muestra el isotipo cuadrado.
+          </p>
+        </div>
+      )}
+      {layout === 'horizontal' && (
+        // Mantenemos el campo igual presente (vacío) para evitar perder el valor previo silenciosamente
+        <input type="hidden" name="logo_text" value="" />
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -103,6 +174,30 @@ export function BrandingForm({
       {/* Preview */}
       <div className="rounded-xl border border-white/10 p-4">
         <p className="text-xs text-white/40 uppercase tracking-wider mb-3">Vista previa</p>
+        <div className="flex items-center gap-3 mb-4">
+          {layout === 'square' ? (
+            <>
+              <div className="w-10 h-10 rounded-md bg-white/5 border border-white/15 flex items-center justify-center overflow-hidden">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt="" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="text-[10px] text-white/40">logo</span>
+                )}
+              </div>
+              {logoText && <span className="font-semibold text-white">{logoText}</span>}
+            </>
+          ) : (
+            <div className="h-10 w-auto max-w-[200px] bg-white/5 border border-white/15 rounded-md px-2 flex items-center overflow-hidden">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt="" className="h-full w-auto object-contain" />
+              ) : (
+                <span className="text-[10px] text-white/40">logo horizontal</span>
+              )}
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <button
             type="button"

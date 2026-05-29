@@ -126,33 +126,14 @@ export default async function StorefrontHome({
                     <FadeIn delay={150}>
                       {h.image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={h.image_url} alt="" className="rounded-2xl w-full max-h-[440px] object-cover shadow-2xl" />
+                        <img src={h.image_url} alt="" className="rounded-2xl w-full max-h-[480px] object-cover shadow-2xl" />
                       ) : (
-                        /* Mockup card cuando no hay imagen */
-                        <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                          {/* Window chrome */}
-                          <div className="px-4 py-2 flex items-center gap-1.5 text-white/80" style={{ background: '#1f2937' }}>
-                            <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                            <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                            <span className="ml-4 text-xs">{tenant?.slug}.bzseguridad.store</span>
-                          </div>
-                          {/* Card body */}
-                          <div className="p-8 text-white text-center" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}cc)` }}>
-                            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-4xl mx-auto">
-                              ▶
-                            </div>
-                            <div className="mt-4 text-xs font-medium opacity-80 uppercase tracking-widest">Curso destacado</div>
-                            <div className="mt-2 text-2xl font-bold">Tu primer paso al éxito</div>
-                            <div className="mt-1 text-sm opacity-90">12 lecciones · 4 horas</div>
-                            <div className="mt-6 rounded-md bg-white py-3 font-bold" style={{ color: primary }}>
-                              Empezar ahora →
-                            </div>
-                            <div className="mt-4 flex items-center justify-center gap-3 text-xs opacity-90">
-                              <span>⭐ 4.9</span>
-                              <span>·</span>
-                              <span>2.400 alumnos</span>
-                            </div>
+                        /* Sin URL: placeholder discreto. El owner debe pegar una URL en el builder. */
+                        <div className="rounded-2xl w-full aspect-[4/3] flex items-center justify-center border-2 border-dashed border-black/15 bg-black/5">
+                          <div className="text-center px-6">
+                            <div className="text-5xl opacity-30">🖼️</div>
+                            <p className="mt-3 text-sm text-black/40">Pegá la URL de tu imagen hero en el builder</p>
+                            <p className="mt-1 text-xs text-black/30">Recomendado 1200×900px</p>
                           </div>
                         </div>
                       )}
@@ -163,31 +144,67 @@ export default async function StorefrontHome({
             }
 
             if (h.layout === 'gallery') {
+              /* Amazon-style: imagen full-width grandota arriba que ocupa pantalla,
+                 con CTA overlay encima del banner para empujar a la acción. */
               return (
-                <section key={key} className="px-6 py-20" style={{ background: bg ?? `linear-gradient(180deg, ${primary}10 0%, transparent 100%)` }}>
-                  <div className="max-w-5xl mx-auto">
-                    <FadeIn>
-                      {h.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={h.image_url} alt="" className="rounded-2xl w-full max-h-[420px] object-cover mb-10 shadow-xl" />
-                      ) : (
-                        <div className="rounded-2xl w-full h-72 flex items-center justify-center mb-10 shadow-xl" style={{ background: `linear-gradient(135deg, ${primary}30, ${primary}10)` }}>
-                          <span className="text-7xl">🖼️</span>
+                <section key={key} className="relative" style={{ background: bg ?? '#0a0a0a' }}>
+                  {/* Banner principal */}
+                  <div className="relative w-full h-[60vh] min-h-[440px] max-h-[680px] overflow-hidden">
+                    {h.image_url ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={h.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                        {/* Gradient overlay para legibilidad del texto */}
+                        <div
+                          className="absolute inset-0"
+                          style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)' }}
+                        />
+                      </>
+                    ) : (
+                      <div
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{ background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }}
+                      >
+                        <div className="text-center text-white/70 px-6">
+                          <div className="text-6xl opacity-50">🖼️</div>
+                          <p className="mt-3 text-sm">Pegá la URL del banner principal en el builder</p>
+                          <p className="mt-1 text-xs opacity-70">Recomendado 2400×1200px (banner ancho)</p>
                         </div>
-                      )}
-                    </FadeIn>
-                    <FadeIn delay={100}>
-                      <div className="text-center">
-                        {eyebrowPill}
-                        <h1 className="mt-4 text-4xl md:text-6xl font-bold tracking-tight">{heroTitle}</h1>
-                        {h.subtitle && <p className="mt-4 text-lg text-black/65 max-w-2xl mx-auto leading-relaxed">{h.subtitle}</p>}
-                        <div className="mt-8 flex flex-wrap justify-center gap-3">
-                          {cta1}
-                          {cta2}
-                        </div>
-                        {h.caption && <p className="mt-5 text-sm text-black/45">{h.caption}</p>}
                       </div>
-                    </FadeIn>
+                    )}
+
+                    {/* Contenido sobreimpreso */}
+                    <div className="relative h-full flex items-end">
+                      <div className="max-w-6xl mx-auto px-6 pb-12 md:pb-16 w-full">
+                        <FadeIn>
+                          <div className="max-w-2xl text-white">
+                            {h.eyebrow && (
+                              <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-white/15 backdrop-blur border border-white/30">
+                                {h.eyebrow}
+                              </span>
+                            )}
+                            <h1 className="mt-4 text-4xl md:text-6xl font-bold tracking-tight leading-tight drop-shadow-lg">
+                              {heroTitle}
+                            </h1>
+                            {h.subtitle && (
+                              <p className="mt-4 text-lg md:text-xl text-white/90 leading-relaxed max-w-xl drop-shadow">
+                                {h.subtitle}
+                              </p>
+                            )}
+                            <div className="mt-7 flex flex-wrap gap-3">
+                              {cta1}
+                              {h.cta_label_2 && (
+                                <a href={h.cta_href_2 || '#cursos'}
+                                  className="inline-block rounded-md px-6 py-3 font-semibold bg-white/10 backdrop-blur border-2 border-white text-white hover:bg-white hover:text-black transition">
+                                  {h.cta_label_2}
+                                </a>
+                              )}
+                            </div>
+                            {h.caption && <p className="mt-5 text-sm text-white/75">{h.caption}</p>}
+                          </div>
+                        </FadeIn>
+                      </div>
+                    </div>
                   </div>
                 </section>
               );

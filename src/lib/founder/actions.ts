@@ -196,3 +196,93 @@ export async function deleteTenantAction(formData: FormData): Promise<void> {
   revalidatePath('/tenants');
   revalidatePath('/dashboard');
 }
+
+/**
+ * Update display_name de un profile. Solo el founder puede editar nombres
+ * de otros usuarios. Si el campo viene vacío, lo setea a null.
+ */
+export async function updateUserDisplayNameAction(formData: FormData): Promise<void> {
+  const founderId = await requireFounder();
+  const profileId = String(formData.get('profile_id') ?? '');
+  const displayNameRaw = String(formData.get('display_name') ?? '').trim();
+  if (!profileId) return;
+
+  const svc = getServiceClient();
+  const { data: before } = await svc
+    .from('profiles')
+    .select('display_name, email')
+    .eq('id', profileId)
+    .maybeSingle<{ display_name: string | null; email: string | null }>();
+  if (!before) return;
+
+  const newName = displayNameRaw === '' ? null : displayNameRaw.slice(0, 80);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('profiles') as any)
+    .update({ display_name: newName, updated_at: new Date().toISOString() })
+    .eq('id', profileId);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await svc.from('audit_log').insert({
+    actor_user_id: founderId,
+    action: 'profile.display_name_updated',
+    target_type: 'profile',
+    target_id: profileId,
+    before: { display_name: before.display_name },
+    after: { display_name: newName },
+    reason: `Founder renamed user ${before.email ?? profileId}`
+  } as never);
+
+  revalidatePath('/users');
+}
+
+/**
+ * Borrar un usuario completo: profile + auth.user (cascade limpia
+ * memberships, enrollments, affiliate_links, etc.). Requiere confirmación
+ * vía 'confirm=<email>' que tiene que coincidir con el email del usuario.
+ * El founder no puede borrarse a sí mismo.
+ */
+export async function deleteUserAction(formData: FormData): Promise<void> {
+  const founderId = await requireFounder();
+  const profileId = String(formData.get('profile_id') ?? '');
+  const confirm = String(formData.get('confirm') ?? '').trim().toLowerCase();
+  if (!profileId) return;
+  if (profileId === founderId) return; // no auto-borrado
+
+  const svc = getServiceClient();
+  const { data: before } = await svc
+    .from('profiles')
+    .select('email, display_name')
+    .eq('id', profileId)
+    .maybeSingle<{ email: string | null; display_name: string | null }>();
+  if (!before) return;
+
+  const expected = (before.email ?? '').trim().toLowerCase();
+  if (!expected || confirm !== expected) {
+    // safety: confirmación inválida → no hacemos nada
+    return;
+  }
+
+  // Audit ANTES del borrado
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await svc.from('audit_log').insert({
+    actor_user_id: founderId,
+    action: 'profile.deleted',
+    target_type: 'profile',
+    target_id: profileId,
+    before: { email: before.email, display_name: before.display_name },
+    after: null,
+    reason: `Founder deleted user ${before.email}`
+  } as never);
+
+  // Borrado en auth: cascade vía FK borra profiles + memberships + enrollments + …
+  try {
+    await svc.auth.admin.deleteUser(profileId);
+  } catch {
+    // Si auth admin falla (e.g. ya borrado), intentamos limpiar profile igual
+    await svc.from('profiles').delete().eq('id', profileId);
+  }
+
+  revalidatePath('/users');
+  revalidatePath('/dashboard');
+  revalidatePath('/tenants');
+}

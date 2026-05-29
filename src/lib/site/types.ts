@@ -128,9 +128,9 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'faq',
   'offer',
   'custom',
-  'contact',
   'cta_final',
-  'newsletter'
+  'newsletter',
+  'contact'   // anteúltimo según pedido — pero al ser la última realmente queda como cierre
 ];
 
 /**
@@ -145,7 +145,10 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   sections: {
     hero: {
       enabled: true,
-      layout: 'split',
+      // gallery = banner Amazon-style (imagen full-width + CTA overlay).
+      // El owner puede cambiarlo a 'split' (texto + imagen al lado) o 'centered'
+      // (solo texto centrado) desde el builder.
+      layout: 'gallery',
       eyebrow: '🟢 Beta abierta · Inscripciones online',
       title: null,
       subtitle: 'Aprendé con cursos prácticos, mentoría directa y una comunidad que te acompaña en cada paso del camino.',

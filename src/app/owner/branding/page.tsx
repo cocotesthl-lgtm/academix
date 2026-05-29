@@ -1,8 +1,17 @@
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
+import { env } from "@/lib/env";
 import { BrandingForm } from "@/components/owner/BrandingForm";
 
 export const dynamic = "force-dynamic";
+
+type BrandRow = {
+  logo_url?: string | null;
+  logo_text?: string | null;
+  logo_layout?: 'square' | 'horizontal' | null;
+  primary_color?: string;
+  accent_color?: string;
+};
 
 export default async function BrandingPage() {
   const { tenant } = await requireOwner();
@@ -11,7 +20,7 @@ export default async function BrandingPage() {
     .from("tenants")
     .select("brand")
     .eq("id", tenant.id)
-    .single<{ brand: Record<string, string> | null }>();
+    .single<{ brand: Record<string, unknown> | null }>();
 
   return (
     <div className="space-y-6">
@@ -23,8 +32,9 @@ export default async function BrandingPage() {
       </div>
       <BrandingForm
         initialName={tenant.name}
-        initialBrand={(data?.brand as { logo_url?: string; primary_color?: string; accent_color?: string }) ?? {}}
+        initialBrand={(data?.brand as BrandRow) ?? {}}
         slug={tenant.slug}
+        rootDomain={env.rootDomain}
       />
     </div>
   );

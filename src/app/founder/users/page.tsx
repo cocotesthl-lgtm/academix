@@ -1,5 +1,6 @@
 import { getServiceClient } from "@/lib/supabase/service";
-import { toggleSuperAdminAction } from "@/lib/founder/actions";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { UserRowActions } from "@/components/founder/UserRowActions";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,9 @@ type Profile = {
 
 export default async function FounderUsersPage() {
   const svc = getServiceClient();
+  const supabase = await createSupabaseServerClient();
+  const { data: { user: me } } = await supabase.auth.getUser();
+  const myId = me?.id ?? null;
 
   const [{ data: profilesRaw }, { data: memberships }, { data: enrollments }] = await Promise.all([
     svc.from('profiles')
@@ -43,7 +47,7 @@ export default async function FounderUsersPage() {
       <div>
         <h1 className="text-2xl font-bold">Usuarios</h1>
         <p className="text-white/60 text-sm mt-1">
-          Todos los usuarios registrados en la plataforma.
+          Todos los usuarios registrados en la plataforma. Podés renombrarlos, hacerlos admin o borrarlos.
         </p>
       </div>
 
@@ -91,18 +95,13 @@ export default async function FounderUsersPage() {
                     <td className="px-4 py-3 text-white/70">{enrollCount}</td>
                     <td className="px-4 py-3 text-white/50">{new Date(p.created_at).toLocaleDateString('es-AR')}</td>
                     <td className="px-4 py-3 text-right">
-                      <form action={toggleSuperAdminAction}>
-                        <input type="hidden" name="profile_id" value={p.id} />
-                        <button
-                          className={`text-xs rounded border px-2 py-1 ${
-                            p.is_super_admin
-                              ? 'border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20'
-                              : 'border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300 hover:bg-fuchsia-500/20'
-                          }`}
-                        >
-                          {p.is_super_admin ? 'Quitar admin' : 'Hacer admin'}
-                        </button>
-                      </form>
+                      <UserRowActions
+                        profileId={p.id}
+                        email={p.email}
+                        displayName={p.display_name}
+                        isSuperAdmin={p.is_super_admin}
+                        isSelf={p.id === myId}
+                      />
                     </td>
                   </tr>
                 );
