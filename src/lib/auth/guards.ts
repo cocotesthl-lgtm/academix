@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
-import { IMPERSONATE_COOKIE } from '@/lib/founder/actions';
+import { IMPERSONATE_COOKIE } from '@/lib/founder/constants';
 
 export async function getCurrentUser() {
   const supabase = await createSupabaseServerClient();

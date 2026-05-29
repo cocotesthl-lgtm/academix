@@ -6,8 +6,7 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { env } from '@/lib/env';
-
-export const IMPERSONATE_COOKIE = 'cp_as_tenant';
+import { IMPERSONATE_COOKIE } from '@/lib/founder/constants';
 
 async function requireFounder(): Promise<string> {
   const supabase = await createSupabaseServerClient();
