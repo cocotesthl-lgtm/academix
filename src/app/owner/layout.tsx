@@ -1,10 +1,11 @@
 import { requireOwner } from "@/lib/auth/guards";
 import { SignoutButton } from "@/components/auth/SignoutButton";
+import { stopImpersonatingAction } from "@/lib/founder/actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function OwnerLayout({ children }: { children: React.ReactNode }) {
-  const { tenant } = await requireOwner();
+  const { tenant, impersonating } = await requireOwner();
   return (
     <div className="min-h-screen flex bg-[#0a0a0a] text-white">
       <aside className="w-64 border-r border-white/10 p-4 flex flex-col">
@@ -28,7 +29,21 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
           <SignoutButton />
         </div>
       </aside>
-      <main className="flex-1 p-8">{children}</main>
+      <main className="flex-1">
+        {impersonating && (
+          <div className="bg-amber-500 text-amber-950 px-6 py-2.5 flex items-center justify-between text-sm font-medium">
+            <span>
+              ⚠️ Estás viendo <strong>{tenant.name}</strong> como administrador de la plataforma. Tus acciones quedan registradas en el audit log.
+            </span>
+            <form action={stopImpersonatingAction}>
+              <button className="rounded bg-amber-950 text-amber-100 px-3 py-1 text-xs font-semibold hover:bg-black">
+                Salir del modo admin
+              </button>
+            </form>
+          </div>
+        )}
+        <div className="p-8">{children}</div>
+      </main>
     </div>
   );
 }

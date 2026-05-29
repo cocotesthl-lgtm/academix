@@ -1,5 +1,5 @@
 import { getServiceClient } from "@/lib/supabase/service";
-import { setTenantStatusAction } from "@/lib/founder/actions";
+import { setTenantStatusAction, impersonateTenantAction } from "@/lib/founder/actions";
 import { DeleteTenantButton } from "@/components/founder/DeleteTenantButton";
 
 export const dynamic = "force-dynamic";
@@ -11,16 +11,30 @@ type TenantRow = {
   status: string;
   created_at: string;
   commission_rate_override: number | null;
+  owner_user_id: string;
 };
+
+type OwnerProfile = { id: string; email: string | null; display_name: string | null };
 
 export default async function FounderTenants() {
   const svc = getServiceClient();
   const { data } = await svc
     .from("tenants")
-    .select("id, slug, name, status, created_at, commission_rate_override")
+    .select("id, slug, name, status, created_at, commission_rate_override, owner_user_id")
     .order("created_at", { ascending: false });
 
   const tenants = (data ?? []) as TenantRow[];
+
+  // Fetch owner profiles in batch
+  const ownerIds = Array.from(new Set(tenants.map((t) => t.owner_user_id)));
+  let ownersById = new Map<string, OwnerProfile>();
+  if (ownerIds.length > 0) {
+    const { data: profs } = await svc
+      .from("profiles")
+      .select("id, email, display_name")
+      .in("id", ownerIds);
+    ownersById = new Map(((profs ?? []) as OwnerProfile[]).map((p) => [p.id, p]));
+  }
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -40,6 +54,7 @@ export default async function FounderTenants() {
               <tr>
                 <th className="text-left px-4 py-2.5">Academia</th>
                 <th className="text-left px-4 py-2.5">Slug</th>
+                <th className="text-left px-4 py-2.5">Owner</th>
                 <th className="text-left px-4 py-2.5">Comisión</th>
                 <th className="text-left px-4 py-2.5">Estado</th>
                 <th className="text-left px-4 py-2.5">Alta</th>
@@ -60,6 +75,18 @@ export default async function FounderTenants() {
                     </a>
                   </td>
                   <td className="px-4 py-3 text-white/60">{t.slug}</td>
+                  <td className="px-4 py-3 text-white/70 text-xs">
+                    {(() => {
+                      const o = ownersById.get(t.owner_user_id);
+                      if (!o) return <span className="text-white/30">—</span>;
+                      return (
+                        <div>
+                          <div className="font-medium text-white/90">{o.display_name ?? '—'}</div>
+                          <div className="text-white/40">{o.email ?? '—'}</div>
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-3 text-white/80">
                     {t.commission_rate_override !== null
                       ? `${(t.commission_rate_override * 100).toFixed(1)}% (override)`
@@ -72,7 +99,13 @@ export default async function FounderTenants() {
                     {new Date(t.created_at).toLocaleDateString('es-AR')}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end items-center gap-2">
+                    <div className="flex justify-end items-center gap-2 flex-wrap">
+                      <form action={impersonateTenantAction}>
+                        <input type="hidden" name="slug" value={t.slug} />
+                        <button className="text-xs rounded border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300 px-2 py-1 hover:bg-fuchsia-500/20">
+                          Abrir como owner →
+                        </button>
+                      </form>
                       <StatusActions tenantId={t.id} status={t.status} />
                       <DeleteTenantButton tenantId={t.id} slug={t.slug} name={t.name} />
                     </div>
