@@ -6,6 +6,19 @@ import { getServiceClient } from '@/lib/supabase/service';
 
 export type BrandingResult = { ok: true } | { ok: false; error: string };
 
+/** Solo aceptamos URLs http(s) para evitar javascript:/data: u otros esquemas. */
+function safeImageUrl(raw: string): string | null {
+  const v = raw.trim();
+  if (v === '') return null;
+  if (v.length > 2048) return null;
+  try {
+    const u = new URL(v);
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Actualiza branding. URL-only, sin uploads.
  * Campos editables:
@@ -59,8 +72,9 @@ export async function updateBrandingAction(
   if (primary) brand.primary_color = primary;
   if (accent) brand.accent_color = accent;
   brand.logo_layout = logoLayout;
-  brand.logo_url = logoUrl || null;
-  brand.logo_text = logoText || null;
+  brand.logo_url = safeImageUrl(logoUrl);
+  // En modo horizontal el texto no se renderiza, lo guardamos vacío.
+  brand.logo_text = logoLayout === 'horizontal' ? null : (logoText.slice(0, 40) || null);
 
   const updatePayload = { name, brand, updated_at: new Date().toISOString() };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

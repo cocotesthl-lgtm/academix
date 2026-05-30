@@ -44,6 +44,27 @@ async function saveConfig(tenantId: string, cfg: SiteConfig) {
     .eq('id', tenantId);
 }
 
+/**
+ * Sanea una URL de imagen pegada por el usuario:
+ * - vacía → null (limpia el campo)
+ * - http(s) válido → la URL trim
+ * - cualquier otro esquema (javascript:, data:, file:, …) → null (anti-XSS)
+ * Las urls relativas (sin esquema) también se rechazan: queremos hotlinks
+ * a CDNs/Drive/Unsplash, no rutas locales que no van a resolver.
+ */
+function safeImageUrl(raw: string): string | null {
+  const v = raw.trim();
+  if (v === '') return null;
+  if (v.length > 2048) return null;
+  try {
+    const u = new URL(v);
+    if (u.protocol === 'http:' || u.protocol === 'https:') return v;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /* ===== Toggle / reorder / bg color ===== */
 
 export async function toggleSectionAction(formData: FormData): Promise<void> {
@@ -132,13 +153,13 @@ export async function setSectionImageUrlAction(formData: FormData): Promise<void
   const { tenant } = await requireOwner();
   const key = String(formData.get('section') ?? '') as SectionKey;
   const field = String(formData.get('field') ?? '');
-  const urlRaw = String(formData.get('url') ?? '').trim();
+  const urlRaw = String(formData.get('url') ?? '');
   if (!(key in DEFAULT_SITE_CONFIG.sections)) return;
   if (!field.endsWith('_url')) return;
 
   const cfg = await loadConfig(tenant.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (cfg.sections[key] as any)[field] = urlRaw === '' ? null : urlRaw;
+  (cfg.sections[key] as any)[field] = safeImageUrl(urlRaw);
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }
@@ -150,9 +171,9 @@ export async function addInstructorItemAction(formData: FormData): Promise<void>
   const name = String(formData.get('name') ?? '').trim();
   const credentials = String(formData.get('credentials') ?? '').trim() || undefined;
   const bio = String(formData.get('bio') ?? '').trim() || undefined;
-  const photoUrlRaw = String(formData.get('photo_url') ?? '').trim();
+  const photoUrlRaw = String(formData.get('photo_url') ?? '');
   if (!name) return;
-  const photo_url = photoUrlRaw || null;
+  const photo_url = safeImageUrl(photoUrlRaw);
 
   const cfg = await loadConfig(tenant.id);
   const item: InstructorItem = { id: randomUUID(), name, credentials, bio, photo_url };
@@ -181,8 +202,8 @@ export async function addTestimonialAction(formData: FormData): Promise<void> {
   const rating = Math.min(5, Math.max(1, parseInt(ratingRaw, 10) || 5));
   if (!name || !text) return;
 
-  const photoUrlRaw = String(formData.get('photo_url') ?? '').trim();
-  const photo_url = photoUrlRaw || null;
+  const photoUrlRaw = String(formData.get('photo_url') ?? '');
+  const photo_url = safeImageUrl(photoUrlRaw);
 
   const cfg = await loadConfig(tenant.id);
   const item: TestimonialItem = { id: randomUUID(), name, text, role, rating, photo_url };
@@ -294,9 +315,9 @@ export async function addLogoAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const name = String(formData.get('name') ?? '').trim();
   const href = String(formData.get('href') ?? '').trim() || null;
-  const logoUrlRaw = String(formData.get('logo_url') ?? '').trim();
+  const logoUrlRaw = String(formData.get('logo_url') ?? '');
   if (!name) return;
-  const logo_url = logoUrlRaw || null;
+  const logo_url = safeImageUrl(logoUrlRaw);
 
   const cfg = await loadConfig(tenant.id);
   cfg.sections.trusted_by.items.push({ id: randomUUID(), name, logo_url, href });
@@ -349,11 +370,12 @@ export async function deletePricingTierAction(formData: FormData): Promise<void>
 
 export async function addGalleryImageAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
-  const imageUrlRaw = String(formData.get('image_url') ?? '').trim();
+  const imageUrlRaw = String(formData.get('image_url') ?? '');
   const caption = String(formData.get('caption') ?? '').trim() || undefined;
-  if (!imageUrlRaw) return;
+  const image_url = safeImageUrl(imageUrlRaw);
+  if (!image_url) return; // si la url no es http(s) válida, no agregamos
   const cfg = await loadConfig(tenant.id);
-  const item: GalleryItem = { id: randomUUID(), image_url: imageUrlRaw, caption };
+  const item: GalleryItem = { id: randomUUID(), image_url, caption };
   cfg.sections.gallery.items.push(item);
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');

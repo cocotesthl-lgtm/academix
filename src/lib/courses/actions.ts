@@ -12,6 +12,19 @@ export type Result<T = unknown> =
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,80}[a-z0-9]$/;
 
+/** Solo aceptamos URLs http(s) para evitar javascript:/data: u otros esquemas. */
+function safeImageUrl(raw: string): string | null {
+  const v = raw.trim();
+  if (v === '') return null;
+  if (v.length > 2048) return null;
+  try {
+    const u = new URL(v);
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 function slugify(input: string): string {
   return input
     .toLowerCase()
@@ -105,7 +118,7 @@ export async function updateCourseAction(
   const categoryRaw = String(formData.get('category_id') ?? '').trim();
   const categoryId = categoryRaw === '' ? null : categoryRaw;
   // URL-only: el owner pega un link público (Drive/Imgur/Unsplash/etc.)
-  const coverUrlRaw = String(formData.get('cover_url') ?? '').trim();
+  const coverUrlRaw = String(formData.get('cover_url') ?? '');
 
   if (!title) return { ok: false, error: 'El título es obligatorio.' };
 
@@ -120,7 +133,7 @@ export async function updateCourseAction(
   };
   // Solo actualizamos cover_url si llegó algo (string vacío también permite limpiar)
   if (formData.has('cover_url')) {
-    payload.cover_url = coverUrlRaw === '' ? null : coverUrlRaw;
+    payload.cover_url = safeImageUrl(coverUrlRaw);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
