@@ -45,7 +45,7 @@ export function NewCourseForm() {
             name="price"
             type="number"
             min="0"
-            step="100"
+            step="1"
             defaultValue="0"
             className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 focus:outline-none focus:border-white/40"
           />

@@ -107,7 +107,7 @@ export function CourseEditor({ course, modules, categories }: { course: Course; 
                 name="price"
                 type="number"
                 min="0"
-                step="100"
+                step="1"
                 defaultValue={(course.price_cents / 100).toString()}
                 className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 focus:outline-none focus:border-white/40"
               />
