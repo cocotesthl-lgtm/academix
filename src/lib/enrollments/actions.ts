@@ -129,9 +129,11 @@ export async function setEnrollmentStatusAction(formData: FormData): Promise<voi
 /**
  * Edita los datos de contacto de un alumno inscripto: name/dni/phone/location.
  * No edita el email porque eso podría romper el login del alumno.
+ * Si se pasa new_password (>= 6 chars), también resetea la contraseña
+ * del alumno vía supabase admin (útil cuando el alumno la olvidó).
  */
 export async function updateEnrollmentBuyerInfoAction(formData: FormData): Promise<void> {
-  const { tenant } = await requireOwner();
+  const { tenant, userId } = await requireOwner();
   const enrollmentId = String(formData.get('enrollment_id') ?? '');
   if (!enrollmentId) return;
 
@@ -139,6 +141,7 @@ export async function updateEnrollmentBuyerInfoAction(formData: FormData): Promi
   const buyerDni      = String(formData.get('buyer_dni')      ?? '').trim().slice(0, 20)  || null;
   const buyerLocation = String(formData.get('buyer_location') ?? '').trim().slice(0, 120) || null;
   const buyerPhone    = String(formData.get('buyer_phone')    ?? '').trim().slice(0, 30)  || null;
+  const newPassword   = String(formData.get('new_password')   ?? '').slice(0, 120);
 
   const svc = getServiceClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -151,6 +154,33 @@ export async function updateEnrollmentBuyerInfoAction(formData: FormData): Promi
     })
     .eq('id', enrollmentId)
     .eq('tenant_id', tenant.id);
+
+  // Reset de contraseña opcional
+  if (newPassword.length >= 6) {
+    const { data: enroll } = await svc
+      .from('enrollments')
+      .select('user_id')
+      .eq('id', enrollmentId)
+      .eq('tenant_id', tenant.id)
+      .maybeSingle<{ user_id: string }>();
+    if (enroll?.user_id) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (svc.auth.admin as any).updateUserById(enroll.user_id, { password: newPassword });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await svc.from('audit_log').insert({
+          actor_user_id: userId,
+          tenant_id: tenant.id,
+          action: 'enrollment.password_reset_by_owner',
+          target_type: 'profile',
+          target_id: enroll.user_id,
+          reason: 'Owner reseteó la contraseña del alumno desde /students'
+        } as never);
+      } catch {
+        // Si falla el reset (raro), no rompemos el resto del update
+      }
+    }
+  }
 
   revalidatePath('/students');
 }

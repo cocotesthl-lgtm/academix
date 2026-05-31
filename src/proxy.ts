@@ -53,8 +53,23 @@ function buildResponse(req: NextRequest): { response: NextResponse; portal: stri
   const slug = parsed.slug!;
 
   if (isAuthPath(pathname)) {
-    const portal = slug === 'admin' ? 'founder' : slug === 'app' ? 'owner' : 'storefront';
-    return { response: NextResponse.next({ request: req }), portal };
+    // Para subdominios admin y app, el login es el global de Curplat (el
+    // que dice "Curplat / Crear academia") porque ahí los users SON
+    // owners o founders.
+    if (slug === 'admin' || slug === 'app') {
+      return {
+        response: NextResponse.next({ request: req }),
+        portal: slug === 'admin' ? 'founder' : 'owner'
+      };
+    }
+    // Para storefronts (kan.bzseguridad.store/login, etc.) queremos el
+    // login BRANDED del owner. Caemos al mismo flow del storefront-pending
+    // que resuelve el tenant y rewrite a /storefront/[tenantId]/login.
+    return {
+      response: NextResponse.next({ request: req }),
+      portal: 'storefront-pending',
+      tenantSlug: slug
+    };
   }
 
   if (slug === 'admin') {

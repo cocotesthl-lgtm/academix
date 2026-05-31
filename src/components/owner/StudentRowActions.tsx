@@ -29,6 +29,7 @@ export function StudentRowActions({ enrollment }: { enrollment: StudentData }) {
   const [dni, setDni] = useState(enrollment.buyer_dni ?? '');
   const [location, setLocation] = useState(enrollment.buyer_location ?? '');
   const [phone, setPhone] = useState(enrollment.buyer_phone ?? '');
+  const [newPassword, setNewPassword] = useState('');
   const [reason, setReason] = useState('');
 
   function close() {
@@ -60,9 +61,11 @@ export function StudentRowActions({ enrollment }: { enrollment: StudentData }) {
     fd.set('buyer_dni', dni);
     fd.set('buyer_location', location);
     fd.set('buyer_phone', phone);
+    if (newPassword.length >= 6) fd.set('new_password', newPassword);
     start(async () => {
       await updateEnrollmentBuyerInfoAction(fd);
       router.refresh();
+      setNewPassword('');
       close();
     });
   }
@@ -146,6 +149,8 @@ export function StudentRowActions({ enrollment }: { enrollment: StudentData }) {
               dni={dni} setDni={setDni}
               phone={phone} setPhone={setPhone}
               location={location} setLocation={setLocation}
+              newPassword={newPassword} setNewPassword={setNewPassword}
+              email={enrollment.buyer_email}
               pending={pending}
               onSave={saveEdit}
               onCancel={close}
@@ -215,12 +220,15 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 
 function EditModal({
   name, setName, dni, setDni, phone, setPhone, location, setLocation,
+  newPassword, setNewPassword, email,
   pending, onSave, onCancel
 }: {
   name: string; setName: (s: string) => void;
   dni: string; setDni: (s: string) => void;
   phone: string; setPhone: (s: string) => void;
   location: string; setLocation: (s: string) => void;
+  newPassword: string; setNewPassword: (s: string) => void;
+  email: string | null;
   pending: boolean;
   onSave: () => void;
   onCancel: () => void;
@@ -228,10 +236,12 @@ function EditModal({
   return (
     <>
       <div>
-        <h2 className="text-lg font-bold">Editar datos del alumno</h2>
-        <p className="text-xs text-white/50 mt-1">
-          El email no se puede editar (rompería el login del alumno).
-        </p>
+        <h2 className="text-lg font-bold">Editar alumno</h2>
+        {email && (
+          <p className="text-xs text-white/40 mt-1">
+            Email: <span className="font-mono text-white/60">{email}</span> (no editable)
+          </p>
+        )}
       </div>
       <div className="space-y-2">
         <Field label="Nombre y apellido" value={name} onChange={setName} />
@@ -239,11 +249,36 @@ function EditModal({
         <Field label="Teléfono / WhatsApp" value={phone} onChange={setPhone} />
         <Field label="Ubicación" value={location} onChange={setLocation} />
       </div>
+
+      <div className="pt-3 mt-3 border-t border-white/10 space-y-2">
+        <div>
+          <label className="block text-xs text-white/60 mb-1">
+            🔑 Resetear contraseña <span className="text-white/40">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Dejar vacío para no cambiar"
+            minLength={6}
+            maxLength={120}
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono focus:outline-none focus:border-white/40"
+          />
+          <p className="text-[10px] text-white/40 mt-1">
+            Si el alumno olvidó su contraseña, ponele una nueva acá (mínimo 6 caracteres). Va a poder
+            usarla para loguearse de inmediato. Pasásela vos por WhatsApp o email.
+          </p>
+          {newPassword.length > 0 && newPassword.length < 6 && (
+            <p className="text-[10px] text-amber-300 mt-1">Mínimo 6 caracteres.</p>
+          )}
+        </div>
+      </div>
+
       <div className="flex gap-2 pt-2">
         <button
           type="button"
           onClick={onSave}
-          disabled={pending}
+          disabled={pending || (newPassword.length > 0 && newPassword.length < 6)}
           className="flex-1 rounded bg-white text-black px-4 py-2 text-sm font-bold disabled:opacity-30"
         >
           {pending ? 'Guardando…' : 'Guardar cambios'}
