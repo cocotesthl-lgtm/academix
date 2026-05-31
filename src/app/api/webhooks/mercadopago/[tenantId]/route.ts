@@ -11,6 +11,19 @@ type Integration = {
   webhook_secret: string;
 };
 
+/**
+ * MP hace una validación GET de la URL antes de enviar el POST con la
+ * notificación. Si no respondemos 200 OK, MP marca la URL como inválida
+ * y nunca envía el POST. Por eso devolvemos un health check liviano.
+ */
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ tenantId: string }> }
+) {
+  const { tenantId } = await params;
+  return NextResponse.json({ ok: true, route: 'mercadopago_webhook', tenant_id: tenantId });
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ tenantId: string }> }
