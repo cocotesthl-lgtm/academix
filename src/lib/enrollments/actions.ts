@@ -81,24 +81,49 @@ export async function markLessonCompleteAction(formData: FormData): Promise<void
 
 /**
  * Cambia el estado de una inscripción: active | suspended | cancelled.
- * Solo el owner del tenant puede ejecutarla.
+ * Pide motivo opcional (recomendado para suspender/cancelar) y lo
+ * persiste en el audit_log para trazabilidad.
  */
 export async function setEnrollmentStatusAction(formData: FormData): Promise<void> {
-  const { tenant } = await requireOwner();
+  const { tenant, userId } = await requireOwner();
   const enrollmentId = String(formData.get('enrollment_id') ?? '');
   const status = String(formData.get('status') ?? '');
+  const reason = String(formData.get('reason') ?? '').trim().slice(0, 500) || null;
 
   if (!enrollmentId) return;
   if (!['active', 'suspended', 'cancelled'].includes(status)) return;
 
   const svc = getServiceClient();
+
+  // Leer estado actual para el audit log
+  const { data: before } = await svc
+    .from('enrollments')
+    .select('status, user_id, course_id')
+    .eq('id', enrollmentId)
+    .eq('tenant_id', tenant.id)
+    .maybeSingle<{ status: string; user_id: string; course_id: string }>();
+  if (!before) return;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('enrollments') as any)
     .update({ status })
     .eq('id', enrollmentId)
     .eq('tenant_id', tenant.id);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await svc.from('audit_log').insert({
+    actor_user_id: userId,
+    tenant_id: tenant.id,
+    action: 'enrollment.status_changed',
+    target_type: 'enrollment',
+    target_id: enrollmentId,
+    before: { status: before.status },
+    after: { status, user_id: before.user_id, course_id: before.course_id },
+    reason
+  } as never);
+
   revalidatePath('/students');
+  revalidatePath('/dashboard');
 }
 
 /**
@@ -136,14 +161,37 @@ export async function updateEnrollmentBuyerInfoAction(formData: FormData): Promi
  * el acceso al curso.
  */
 export async function deleteEnrollmentAction(formData: FormData): Promise<void> {
-  const { tenant } = await requireOwner();
+  const { tenant, userId } = await requireOwner();
   const enrollmentId = String(formData.get('enrollment_id') ?? '');
+  const reason = String(formData.get('reason') ?? '').trim().slice(0, 500) || null;
   if (!enrollmentId) return;
 
   const svc = getServiceClient();
+
+  // Snapshot del registro antes de borrar para que quede en el audit
+  const { data: before } = await svc
+    .from('enrollments')
+    .select('user_id, course_id, status, buyer_name, buyer_email, sale_id')
+    .eq('id', enrollmentId)
+    .eq('tenant_id', tenant.id)
+    .maybeSingle();
+
   await svc.from('enrollments').delete().eq('id', enrollmentId).eq('tenant_id', tenant.id);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await svc.from('audit_log').insert({
+    actor_user_id: userId,
+    tenant_id: tenant.id,
+    action: 'enrollment.deleted',
+    target_type: 'enrollment',
+    target_id: enrollmentId,
+    before,
+    after: null,
+    reason
+  } as never);
+
   revalidatePath('/students');
+  revalidatePath('/dashboard');
 }
 
 export async function isEnrolled(userId: string, courseId: string): Promise<{ enrolled: boolean; enrollmentId?: string }> {
