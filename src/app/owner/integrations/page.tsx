@@ -12,8 +12,13 @@ type IntegrationRow = {
   metadata: Record<string, unknown> | null;
 };
 
-export default async function IntegrationsPage() {
+export default async function IntegrationsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ error?: string; detail?: string }>;
+}) {
   const { tenant } = await requireOwner();
+  const sp = await searchParams;
   const svc = getServiceClient();
   const { data } = await svc
     .from("integrations")
@@ -37,6 +42,26 @@ export default async function IntegrationsPage() {
           Conectá tu pasarela de pago y tu Drive. Cobrás vos directo, sin pasar por la plataforma.
         </p>
       </div>
+
+      {sp.error === 'mp_not_configured' && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+          <div className="font-semibold text-amber-200 mb-1">⚠️ MercadoPago todavía no está habilitado en la plataforma</div>
+          <p className="text-amber-100/90 leading-relaxed">
+            La integración con MercadoPago está pendiente de configuración por parte del administrador
+            de Curplat. Mientras tanto, podés seguir armando tu sitio y tus cursos. Cuando esté listo,
+            volvé a esta página y vas a poder conectar tu cuenta de MP.
+          </p>
+        </div>
+      )}
+
+      {sp.error === 'mp_oauth_failed' && (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm">
+          <div className="font-semibold text-red-200 mb-1">❌ Falló el inicio del OAuth de MercadoPago</div>
+          <p className="text-red-100/90 leading-relaxed">
+            {sp.detail || 'Reintentá en un momento. Si persiste, contactá al equipo de Curplat.'}
+          </p>
+        </div>
+      )}
 
       {/* MercadoPago */}
       <div className="rounded-xl border border-white/10 p-6 space-y-4">

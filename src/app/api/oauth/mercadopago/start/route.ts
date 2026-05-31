@@ -7,12 +7,12 @@ import { getAuthUrl } from '@/lib/payments/mercadopago';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   // Owner must be authenticated
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.redirect(new URL('/login', _req.url));
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   const svc = getServiceClient();
@@ -24,7 +24,15 @@ export async function GET(_req: NextRequest) {
     .eq('status', 'active')
     .limit(1)
     .maybeSingle<{ tenant_id: string }>();
-  if (!membership) return NextResponse.redirect(new URL('/onboarding', _req.url));
+  if (!membership) return NextResponse.redirect(new URL('/onboarding', req.url));
+
+  // Pre-check: si faltan las env vars, no crasheamos en 500. Redirigimos a
+  // /integrations con un mensaje claro para que el owner sepa qué pasa.
+  if (!process.env.MERCADOPAGO_CLIENT_ID || !process.env.MERCADOPAGO_CLIENT_SECRET) {
+    const u = new URL('/integrations', req.url);
+    u.searchParams.set('error', 'mp_not_configured');
+    return NextResponse.redirect(u);
+  }
 
   // CSRF state cookie
   const nonce = randomBytes(16).toString('hex');
@@ -38,5 +46,13 @@ export async function GET(_req: NextRequest) {
     path: '/'
   });
 
-  return NextResponse.redirect(getAuthUrl(state));
+  try {
+    return NextResponse.redirect(getAuthUrl(state));
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'oauth_failed';
+    const u = new URL('/integrations', req.url);
+    u.searchParams.set('error', 'mp_oauth_failed');
+    u.searchParams.set('detail', msg.slice(0, 200));
+    return NextResponse.redirect(u);
+  }
 }
