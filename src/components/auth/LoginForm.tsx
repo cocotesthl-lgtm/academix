@@ -13,11 +13,14 @@ import { loginAction, type ActionResult } from '@/lib/auth/actions';
 export function LoginForm({
   theme = 'dark',
   hideCreateAccount = false,
-  primaryColor
+  primaryColor,
+  fallbackRedirect = '/onboarding'
 }: {
   theme?: 'dark' | 'light';
   hideCreateAccount?: boolean;
   primaryColor?: string;
+  /** Default si no hay next ni redirectTo. Usar '/learn' en storefronts. */
+  fallbackRedirect?: string;
 } = {}) {
   const params = useSearchParams();
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(loginAction, null);
@@ -29,9 +32,9 @@ export function LoginForm({
     if (state?.ok) {
       // Use window.location.href so absolute cross-subdomain URLs work
       // (router.push won't navigate cross-origin).
-      window.location.href = next || state.redirectTo || '/onboarding';
+      window.location.href = next || state.redirectTo || fallbackRedirect;
     }
-  }, [state, next]);
+  }, [state, next, fallbackRedirect]);
 
   const isLight = theme === 'light';
 

@@ -35,7 +35,7 @@ export default async function StorefrontLoginPage({
           style={{ ['--brand-primary' as string]: primary }}
         >
           <Suspense fallback={<div className="text-black/40 text-sm">Cargando…</div>}>
-            <LoginForm theme="light" hideCreateAccount primaryColor={primary} />
+            <LoginForm theme="light" hideCreateAccount primaryColor={primary} fallbackRedirect="/learn" />
           </Suspense>
         </div>
         <p className="text-center text-xs text-black/50">

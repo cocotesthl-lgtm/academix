@@ -62,6 +62,13 @@ function buildResponse(req: NextRequest): { response: NextResponse; portal: stri
         portal: slug === 'admin' ? 'founder' : 'owner'
       };
     }
+    // En storefront NO existen /onboarding (crear academia) ni /signup
+    // (crear cuenta) porque los alumnos se crean al comprar el curso.
+    // Si caen acá por algún redirect, los mandamos a /learn (sus cursos).
+    if (pathname === '/onboarding' || pathname === '/signup') {
+      url.pathname = '/learn';
+      return { response: NextResponse.redirect(url), portal: 'storefront' };
+    }
     // Para storefronts (kan.bzseguridad.store/login, etc.) queremos el
     // login BRANDED del owner. Caemos al mismo flow del storefront-pending
     // que resuelve el tenant y rewrite a /storefront/[tenantId]/login.

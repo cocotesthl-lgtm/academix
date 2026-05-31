@@ -27,7 +27,11 @@ function subdomainUrl(sub: 'admin' | 'app', path: string): string {
  * Decide where to land a user post-auth based on their roles:
  *  - super_admin → admin.<root>/dashboard
  *  - owner of a tenant → app.<root>/dashboard
- *  - neither → /onboarding (apex) to create their first academia
+ *  - student con enrollments → /learn (sus cursos en el tenant donde se logueó)
+ *  - sin nada → /onboarding (apex) para crear su primera academia
+ *
+ * Para students el redirect es relativo (/learn) en vez de absoluto al
+ * subdominio, así se queda en el storefront donde se logueó.
  */
 async function postAuthRedirect(userId: string): Promise<string> {
   const svc = getServiceClient();
@@ -50,6 +54,19 @@ async function postAuthRedirect(userId: string): Promise<string> {
   if (ownership) {
     return subdomainUrl('app', '/dashboard');
   }
+  // Si el user tiene enrollments es un alumno → mandarlo a /learn (relativo,
+  // así se queda en el storefront donde se está logueando)
+  const { data: enroll } = await svc
+    .from('enrollments')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle();
+  if (enroll) {
+    return '/learn';
+  }
+  // User sin ningún rol → asumimos que quiere crear academia
   return '/onboarding';
 }
 
