@@ -79,6 +79,73 @@ export async function markLessonCompleteAction(formData: FormData): Promise<void
   revalidatePath(`/learn`);
 }
 
+/**
+ * Cambia el estado de una inscripción: active | suspended | cancelled.
+ * Solo el owner del tenant puede ejecutarla.
+ */
+export async function setEnrollmentStatusAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const enrollmentId = String(formData.get('enrollment_id') ?? '');
+  const status = String(formData.get('status') ?? '');
+
+  if (!enrollmentId) return;
+  if (!['active', 'suspended', 'cancelled'].includes(status)) return;
+
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('enrollments') as any)
+    .update({ status })
+    .eq('id', enrollmentId)
+    .eq('tenant_id', tenant.id);
+
+  revalidatePath('/students');
+}
+
+/**
+ * Edita los datos de contacto de un alumno inscripto: name/dni/phone/location.
+ * No edita el email porque eso podría romper el login del alumno.
+ */
+export async function updateEnrollmentBuyerInfoAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const enrollmentId = String(formData.get('enrollment_id') ?? '');
+  if (!enrollmentId) return;
+
+  const buyerName     = String(formData.get('buyer_name')     ?? '').trim().slice(0, 120) || null;
+  const buyerDni      = String(formData.get('buyer_dni')      ?? '').trim().slice(0, 20)  || null;
+  const buyerLocation = String(formData.get('buyer_location') ?? '').trim().slice(0, 120) || null;
+  const buyerPhone    = String(formData.get('buyer_phone')    ?? '').trim().slice(0, 30)  || null;
+
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('enrollments') as any)
+    .update({
+      buyer_name: buyerName,
+      buyer_dni: buyerDni,
+      buyer_location: buyerLocation,
+      buyer_phone: buyerPhone
+    })
+    .eq('id', enrollmentId)
+    .eq('tenant_id', tenant.id);
+
+  revalidatePath('/students');
+}
+
+/**
+ * Elimina una inscripción. NO devuelve la plata — el owner debe gestionar
+ * el reembolso desde MercadoPago aparte. Solo borra el registro y revoca
+ * el acceso al curso.
+ */
+export async function deleteEnrollmentAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const enrollmentId = String(formData.get('enrollment_id') ?? '');
+  if (!enrollmentId) return;
+
+  const svc = getServiceClient();
+  await svc.from('enrollments').delete().eq('id', enrollmentId).eq('tenant_id', tenant.id);
+
+  revalidatePath('/students');
+}
+
 export async function isEnrolled(userId: string, courseId: string): Promise<{ enrolled: boolean; enrollmentId?: string }> {
   const svc = getServiceClient();
   const { data } = await svc

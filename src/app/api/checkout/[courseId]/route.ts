@@ -60,6 +60,14 @@ export async function POST(
     return NextResponse.json({ error: 'mercadopago_not_connected' }, { status: 409 });
   }
 
+  // Build URLs (use the storefront origin from the request). Esto se hace
+  // primero porque el flujo de creación de cuenta del buyer puede necesitar
+  // redirigir con errores al course page del storefront.
+  const h = await headers();
+  const proto = (h.get('x-forwarded-proto') ?? 'http').split(',')[0];
+  const host = h.get('host') ?? `${tenant.slug}.localhost:3000`;
+  const origin = `${proto}://${host}`;
+
   // Buyer (optional — anon allowed)
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -85,6 +93,7 @@ export async function POST(
   const buyerLocationRaw = String(form?.get('buyer_location') ?? '').trim().slice(0, 120);
   const buyerEmailRaw    = String(form?.get('buyer_email')    ?? '').trim().slice(0, 200);
   const buyerPhoneRaw    = String(form?.get('buyer_phone')    ?? '').trim().slice(0, 30);
+  const buyerPasswordRaw = String(form?.get('buyer_password') ?? '').slice(0, 120);
   const buyerInfo = {
     name:     buyerNameRaw     || null,
     dni:      buyerDniRaw      || null,
@@ -92,18 +101,64 @@ export async function POST(
     email:    buyerEmailRaw    || null,
     phone:    buyerPhoneRaw    || null
   };
+
+  // Si el comprador NO está logueado pero mandó email + password, creamos
+  // (o logueamos) su cuenta acá antes de redirigir a MP. Así cuando vuelve
+  // post-pago aterriza ya logueado en /learn — sin pasar por la pantalla
+  // de "Iniciar sesión" pidiendo credenciales que no tendría.
+  let buyerUserId: string | null = user?.id ?? null;
+  if (!user && buyerInfo.email && buyerPasswordRaw.length >= 6) {
+    const { data: existingProfile } = await svc
+      .from('profiles')
+      .select('id')
+      .eq('email', buyerInfo.email)
+      .maybeSingle<{ id: string }>();
+
+    if (!existingProfile) {
+      // Crear usuario con email auto-confirmado (no requerimos verificar mail
+      // para que el flujo de compra no se trabe).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: created, error: createErr } = await (svc.auth.admin as any).createUser({
+        email: buyerInfo.email,
+        password: buyerPasswordRaw,
+        email_confirm: true,
+        user_metadata: {
+          display_name: buyerInfo.name,
+          dni: buyerInfo.dni,
+          phone: buyerInfo.phone
+        }
+      });
+      if (createErr) {
+        return NextResponse.redirect(
+          `${origin}/c/${course.slug}?error=signup_failed&detail=${encodeURIComponent(createErr.message)}`,
+          { status: 303 }
+        );
+      }
+      buyerUserId = (created as { user?: { id: string } } | null)?.user?.id ?? null;
+    } else {
+      buyerUserId = existingProfile.id;
+    }
+
+    // Loguear al buyer con esa password (signInWithPassword setea las cookies
+    // de sesión cross-subdomain).
+    const { error: signInErr } = await supabase.auth.signInWithPassword({
+      email: buyerInfo.email,
+      password: buyerPasswordRaw
+    });
+    if (signInErr) {
+      // Probablemente el email ya existía con otra password. Le decimos.
+      return NextResponse.redirect(
+        `${origin}/c/${course.slug}?error=wrong_password&detail=${encodeURIComponent(signInErr.message)}`,
+        { status: 303 }
+      );
+    }
+  }
   let couponValid: Awaited<ReturnType<typeof validateCoupon>> | null = null;
   let finalPrice = course.price_cents;
   if (couponCode) {
     couponValid = await validateCoupon(course.tenant_id, couponCode, course.id, course.price_cents);
     if (couponValid) finalPrice = couponValid.final_cents;
   }
-
-  // Build URLs (use the storefront origin from the request)
-  const h = await headers();
-  const proto = (h.get('x-forwarded-proto') ?? 'http').split(',')[0];
-  const host = h.get('host') ?? `${tenant.slug}.localhost:3000`;
-  const origin = `${proto}://${host}`;
 
   // Webhook URL DEBE apuntar al subdominio app.<rootDomain> (donde corren
   // las API routes), NO al apex que podría estar configurado en appUrl
@@ -112,25 +167,25 @@ export async function POST(
   const platformOrigin = env.platformApiOrigin;
 
   // If coupon makes it free, auto-enroll on the spot and skip MP entirely
-  if (finalPrice <= 0 && couponValid && user) {
+  if (finalPrice <= 0 && couponValid && buyerUserId) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('enrollments') as any).insert({
       tenant_id: course.tenant_id,
       course_id: course.id,
-      user_id: user.id,
+      user_id: buyerUserId,
       source: 'direct',
       status: 'active',
       buyer_name: buyerInfo.name,
       buyer_dni: buyerInfo.dni,
       buyer_location: buyerInfo.location,
-      buyer_email: buyerInfo.email ?? user.email ?? null,
+      buyer_email: buyerInfo.email ?? user?.email ?? null,
       buyer_phone: buyerInfo.phone
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('coupon_redemptions') as any).insert({
       coupon_id: couponValid.id,
       tenant_id: course.tenant_id,
-      user_id: user.id,
+      user_id: buyerUserId,
       course_id: course.id,
       sale_id: null,
       amount_discounted_cents: couponValid.discount_cents
@@ -163,7 +218,7 @@ export async function POST(
       // Mandamos el email del buyer (si lo escribió en el form) para que MP
       // lo pre-llene en el checkout. Fallback al email del user logueado.
       buyerEmail: buyerInfo.email ?? user?.email ?? undefined,
-      externalReference: `${course.id}::${user?.id ?? 'anon'}::${affLinkId ?? ''}`,
+      externalReference: `${course.id}::${buyerUserId ?? 'anon'}::${affLinkId ?? ''}`,
       notificationUrl,
       successUrl: `${origin}/learn`,
       failureUrl: `${origin}/c/${course.slug}?checkout=failed`,
@@ -171,7 +226,7 @@ export async function POST(
       metadata: {
         course_id: course.id,
         tenant_id: course.tenant_id,
-        buyer_user_id: user?.id ?? null,
+        buyer_user_id: buyerUserId,
         affiliate_link_id: affLinkId,
         coupon_id: couponValid?.id ?? null,
         coupon_code: couponValid?.code ?? null,

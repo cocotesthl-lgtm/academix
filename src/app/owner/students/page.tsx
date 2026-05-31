@@ -1,5 +1,6 @@
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
+import { StudentRowActions } from "@/components/owner/StudentRowActions";
 
 export const dynamic = "force-dynamic";
 
@@ -152,6 +153,7 @@ export default async function OwnerStudentsPage({
                 <th className="text-left px-3 py-2.5">Curso</th>
                 <th className="text-left px-3 py-2.5">Estado</th>
                 <th className="text-left px-3 py-2.5">Fecha</th>
+                <th className="text-right px-3 py-2.5">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -187,13 +189,26 @@ export default async function OwnerStudentsPage({
                       <span className={`text-xs px-2 py-0.5 rounded ${
                         e.status === 'active'
                           ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
-                          : 'bg-white/5 text-white/50 border border-white/15'
+                          : e.status === 'suspended'
+                            ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                            : 'bg-white/5 text-white/50 border border-white/15'
                       }`}>
                         {e.status}
                       </span>
                     </td>
                     <td className="px-3 py-2.5 text-white/50 text-xs whitespace-nowrap">
                       {new Date(e.created_at).toLocaleDateString('es-AR')}
+                    </td>
+                    <td className="px-3 py-2.5 text-right relative">
+                      <StudentRowActions enrollment={{
+                        id: e.id,
+                        status: e.status,
+                        buyer_name: e.buyer_name,
+                        buyer_dni: e.buyer_dni,
+                        buyer_location: e.buyer_location,
+                        buyer_phone: e.buyer_phone,
+                        buyer_email: e.buyer_email
+                      }} />
                     </td>
                   </tr>
                 );

@@ -41,15 +41,21 @@ export function CouponInput({
   const [location, setLocation] = useState('');
   const [email, setEmail] = useState(defaultEmail);
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
 
   const isFree = priceCents === 0;
+  const isLoggedIn = defaultEmail.length > 0;
+
+  const passwordOk = isLoggedIn || (password.length >= 6 && password === password2);
 
   const dataReady =
     name.trim().length >= 3 &&
     dni.trim().length >= 6 &&
     location.trim().length >= 2 &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
-    phone.trim().length >= 6;
+    phone.trim().length >= 6 &&
+    passwordOk;
 
   return (
     <form action={`/api/checkout/${courseId}`} method="post" className="space-y-3">
@@ -167,6 +173,45 @@ export function CouponInput({
             />
           </div>
 
+          {!isLoggedIn && (
+            <>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-black/10">
+                <div>
+                  <label className="block text-xs text-black/60 mb-1">Contraseña *</label>
+                  <input
+                    name="buyer_password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    minLength={6}
+                    maxLength={120}
+                    placeholder="Mínimo 6 caracteres"
+                    className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-black/60 mb-1">Repetir contraseña *</label>
+                  <input
+                    type="password"
+                    required
+                    value={password2}
+                    onChange={(e) => setPassword2(e.target.value)}
+                    minLength={6}
+                    maxLength={120}
+                    placeholder="Repetir"
+                    className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] text-black/55">
+                🔐 Vamos a crear tu cuenta con estos datos. Con ese email y contraseña vas a poder
+                entrar siempre que quieras a ver tus cursos. Si ya tenés cuenta acá, usá la misma
+                contraseña y vamos a loguearte directo.
+              </p>
+            </>
+          )}
+
           <p className="text-[11px] text-black/45 leading-snug">
             Vamos a usar estos datos sólo para inscribirte, enviarte el acceso al curso y
             contactarte si hace falta. No los compartimos con terceros.
@@ -182,7 +227,11 @@ export function CouponInput({
           </button>
           {!dataReady && (
             <p className="text-[11px] text-amber-700 text-center">
-              Completá todos los campos para continuar.
+              {!isLoggedIn && password.length > 0 && password !== password2
+                ? 'Las contraseñas no coinciden.'
+                : !isLoggedIn && password.length > 0 && password.length < 6
+                  ? 'La contraseña tiene que tener al menos 6 caracteres.'
+                  : 'Completá todos los campos para continuar.'}
             </p>
           )}
         </div>
