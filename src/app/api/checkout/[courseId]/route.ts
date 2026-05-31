@@ -139,6 +139,18 @@ export async function POST(
     return NextResponse.redirect(`${origin}/learn`, { status: 303 });
   }
 
+  // Log para diagnosticar problemas de webhook: vemos la URL exacta que
+  // mandamos a MP. Si MP nunca llama, podemos verificar acá si la URL
+  // es válida y accesible públicamente.
+  const notificationUrl = `${platformOrigin}/api/webhooks/mercadopago/${course.tenant_id}`;
+  console.log('[checkout] creating MP preference', {
+    course_id: course.id,
+    tenant_id: course.tenant_id,
+    notification_url: notificationUrl,
+    success_url: `${origin}/learn`,
+    final_price_cents: finalPrice
+  });
+
   try {
     const pref = await createPreference({
       accessToken: integration.access_token_enc,
@@ -149,7 +161,7 @@ export async function POST(
       // lo pre-llene en el checkout. Fallback al email del user logueado.
       buyerEmail: buyerInfo.email ?? user?.email ?? undefined,
       externalReference: `${course.id}::${user?.id ?? 'anon'}::${affLinkId ?? ''}`,
-      notificationUrl: `${platformOrigin}/api/webhooks/mercadopago/${course.tenant_id}`,
+      notificationUrl,
       successUrl: `${origin}/learn`,
       failureUrl: `${origin}/c/${course.slug}?checkout=failed`,
       pendingUrl: `${origin}/c/${course.slug}?checkout=pending`,
