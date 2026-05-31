@@ -1,7 +1,7 @@
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { getOwnerBalance } from "@/lib/debt/accrue";
-import { payDebtAction } from "@/lib/debt/payment";
+import { CopyButton } from "@/components/owner/CopyButton";
 
 export const dynamic = "force-dynamic";
 
@@ -83,17 +83,7 @@ export default async function OwnerFinance() {
         <Stat label="Movimientos de ledger" value={ledgerRows.length.toString()} />
       </div>
 
-      {balance > 0 && (
-        <form action={payDebtAction}>
-          <button className="rounded-md bg-white text-black px-5 py-2.5 font-semibold hover:bg-white/90">
-            Pagar saldo ({ars(balance)})
-          </button>
-          <p className="text-xs text-white/40 mt-2">
-            Te redirige a MercadoPago para pagar la comisión acumulada. Una vez confirmado el pago,
-            tu storefront se reactiva automáticamente si estaba suspendido.
-          </p>
-        </form>
-      )}
+      {balance > 0 && <CryptoPayoutCard balanceCents={balance} />}
 
       <section>
         <h2 className="text-lg font-semibold mb-3">Últimos movimientos</h2>
@@ -166,7 +156,64 @@ export default async function OwnerFinance() {
       </section>
 
       <p className="text-xs text-white/40">
-        El cobro de la deuda vía botón "Pagar saldo" se habilita en la próxima versión.
+        Cuando el equipo de Curplat confirme tu pago en cripto, tu saldo vuelve a 0 automáticamente
+        y, si estabas suspendido, tu storefront se reactiva.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Card de pago vía cripto. Muestra las direcciones que la plataforma
+ * publicó en env vars (CURPLAT_USDT_TRC20, CURPLAT_USDT_ERC20, CURPLAT_BTC).
+ * El owner transfiere y manda comprobante por soporte; el founder marca
+ * saldado desde /founder/tenants → settleDebtManuallyAction.
+ */
+function CryptoPayoutCard({ balanceCents }: { balanceCents: number }) {
+  const wallets = [
+    { label: 'USDT (TRC20 · Tron)', addr: process.env.CURPLAT_USDT_TRC20 || '' },
+    { label: 'USDT (BEP20 · BSC)', addr: process.env.CURPLAT_USDT_BEP20 || '' },
+    { label: 'USDT (ERC20 · Ethereum)', addr: process.env.CURPLAT_USDT_ERC20 || '' },
+    { label: 'BTC (Bitcoin)', addr: process.env.CURPLAT_BTC || '' }
+  ].filter((w) => w.addr);
+
+  return (
+    <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.04] p-5 space-y-4">
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">🪙</span>
+          <h3 className="font-semibold">Saldar tu comisión con cripto</h3>
+        </div>
+        <p className="text-sm text-white/70 leading-relaxed">
+          Por ahora la comisión se paga en USDT o BTC. Transferí el equivalente a{' '}
+          <strong>${(balanceCents / 100).toLocaleString('es-AR')} ARS</strong> a una de estas direcciones
+          y mandanos el comprobante por <a href="/tickets/new" className="underline hover:text-white">soporte</a>.
+          En menos de 24h marcamos tu saldo en 0.
+        </p>
+      </div>
+
+      {wallets.length === 0 ? (
+        <div className="rounded border border-white/15 bg-white/5 p-4 text-xs text-white/60">
+          El admin de Curplat todavía no publicó las direcciones de cripto. Pedile el dato por soporte
+          y te las pasa a mano mientras tanto.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {wallets.map((w) => (
+            <div key={w.label} className="flex items-center gap-3 rounded border border-white/10 bg-white/[0.03] p-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-white/50 uppercase tracking-wider">{w.label}</div>
+                <div className="font-mono text-xs text-white truncate">{w.addr}</div>
+              </div>
+              <CopyButton value={w.addr} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-xs text-white/45 leading-snug">
+        Tipo de cambio sugerido: el del momento de la transferencia (CoinGecko / Binance).
+        Cualquier diferencia menor se ajusta en el próximo ciclo.
       </p>
     </div>
   );

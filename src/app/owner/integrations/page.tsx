@@ -2,6 +2,7 @@ import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { disconnectIntegrationAction } from "@/lib/integrations/actions";
 import { env } from "@/lib/env";
+import { CopyButton } from "@/components/owner/CopyButton";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +13,17 @@ type IntegrationRow = {
   metadata: Record<string, unknown> | null;
 };
 
+const MP_ERROR_LABELS: Record<string, string> = {
+  mp_not_configured: 'La integración con MercadoPago todavía no está habilitada en la plataforma. El admin de Curplat la activará pronto.',
+  mp_oauth_failed: 'No pudimos iniciar el flujo OAuth con MercadoPago.',
+  invalid_state: 'La sesión de conexión expiró. Volvé a clickear "Conectar".',
+  not_owner: 'No sos owner de este tenant.',
+};
+
 export default async function IntegrationsPage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: string; detail?: string }>;
+  searchParams: Promise<{ error?: string; detail?: string; mp_connected?: string; mp_error?: string }>;
 }) {
   const { tenant } = await requireOwner();
   const sp = await searchParams;
@@ -34,31 +42,52 @@ export default async function IntegrationsPage({
   const shopify = byProvider.get('shopify');
   const drive = byProvider.get('google_drive');
 
+  // ¿Cuenta conectada en modo TEST o LIVE? lo marca MP en el callback
+  const mpLiveMode = mp?.metadata && typeof (mp.metadata as { live_mode?: unknown }).live_mode === 'boolean'
+    ? (mp.metadata as { live_mode: boolean }).live_mode
+    : null;
+  const mpPublicKey = mp?.metadata && typeof (mp.metadata as { public_key?: unknown }).public_key === 'string'
+    ? (mp.metadata as { public_key: string }).public_key
+    : null;
+
+  // Errores que vienen del flujo OAuth start
+  const startError = sp.error;
+  // Errores que devuelve el callback (?mp_error=...)
+  const callbackError = sp.mp_error;
+  const justConnected = sp.mp_connected === '1';
+
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold">Integraciones</h1>
         <p className="text-white/60 text-sm mt-1">
-          Conectá tu pasarela de pago y tu Drive. Cobrás vos directo, sin pasar por la plataforma.
+          Conectá tu pasarela de pago. Cobrás vos directo a tu cuenta, sin pasar por la plataforma.
         </p>
       </div>
 
-      {sp.error === 'mp_not_configured' && (
-        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
-          <div className="font-semibold text-amber-200 mb-1">⚠️ MercadoPago todavía no está habilitado en la plataforma</div>
-          <p className="text-amber-100/90 leading-relaxed">
-            La integración con MercadoPago está pendiente de configuración por parte del administrador
-            de Curplat. Mientras tanto, podés seguir armando tu sitio y tus cursos. Cuando esté listo,
-            volvé a esta página y vas a poder conectar tu cuenta de MP.
+      {/* Banners de estado */}
+      {justConnected && (
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm">
+          <div className="font-semibold text-emerald-200 mb-1">✓ MercadoPago conectado correctamente</div>
+          <p className="text-emerald-100/90 leading-relaxed">
+            Ya podés vender. Cuando un alumno compre un curso, el dinero entra directo a tu MP y
+            quedan inscriptos automáticamente.
           </p>
         </div>
       )}
 
-      {sp.error === 'mp_oauth_failed' && (
+      {startError && MP_ERROR_LABELS[startError] && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+          <div className="font-semibold text-amber-200 mb-1">⚠️ {MP_ERROR_LABELS[startError]}</div>
+          {sp.detail && <p className="text-amber-100/80 text-xs mt-2 font-mono">{sp.detail}</p>}
+        </div>
+      )}
+
+      {callbackError && (
         <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm">
-          <div className="font-semibold text-red-200 mb-1">❌ Falló el inicio del OAuth de MercadoPago</div>
+          <div className="font-semibold text-red-200 mb-1">❌ Falló la conexión con MercadoPago</div>
           <p className="text-red-100/90 leading-relaxed">
-            {sp.detail || 'Reintentá en un momento. Si persiste, contactá al equipo de Curplat.'}
+            {MP_ERROR_LABELS[callbackError] ?? `Error: ${callbackError}`}
           </p>
         </div>
       )}
@@ -74,22 +103,33 @@ export default async function IntegrationsPage({
                   conectado
                 </span>
               )}
+              {mp && mpLiveMode === false && (
+                <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-200 border border-amber-500/30">
+                  modo TEST
+                </span>
+              )}
+              {mp && mpLiveMode === true && (
+                <span className="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-200 border border-blue-500/30">
+                  modo LIVE
+                </span>
+              )}
             </h2>
             <p className="text-sm text-white/60 mt-1">
-              El dinero entra directo a tu cuenta de MP. La plataforma cobra comisión por venta.
+              El dinero entra directo a tu cuenta de MP. La plataforma cobra una comisión por venta
+              (la pagás aparte, no se descuenta del cobro).
             </p>
           </div>
           {!mp ? (
             <a
               href="/api/oauth/mercadopago/start"
-              className="rounded-md bg-white text-black px-4 py-2 text-sm font-medium hover:bg-white/90"
+              className="rounded-md bg-white text-black px-4 py-2 text-sm font-medium hover:bg-white/90 whitespace-nowrap"
             >
-              Conectar
+              Conectar MercadoPago
             </a>
           ) : (
             <form action={disconnectIntegrationAction}>
               <input type="hidden" name="provider" value="mercadopago" />
-              <button className="rounded-md border border-red-500/30 bg-red-500/10 text-red-300 px-4 py-2 text-sm hover:bg-red-500/20">
+              <button className="rounded-md border border-red-500/30 bg-red-500/10 text-red-300 px-4 py-2 text-sm hover:bg-red-500/20 whitespace-nowrap">
                 Desconectar
               </button>
             </form>
@@ -97,16 +137,52 @@ export default async function IntegrationsPage({
         </div>
 
         {mp && (
-          <div className="space-y-2">
-            <p className="text-xs text-white/50">
-              Cuenta MP: <span className="text-white font-mono">{mp.external_account_id}</span>
-            </p>
+          <div className="space-y-3 pt-4 border-t border-white/10">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <div className="text-xs text-white/50 uppercase tracking-wider mb-1">ID de cuenta MP</div>
+                <div className="font-mono text-white text-xs break-all">{mp.external_account_id ?? '—'}</div>
+              </div>
+              {mpPublicKey && (
+                <div>
+                  <div className="text-xs text-white/50 uppercase tracking-wider mb-1">Public key</div>
+                  <div className="font-mono text-white/70 text-xs break-all">{mpPublicKey.slice(0, 40)}…</div>
+                </div>
+              )}
+            </div>
+
             <div>
-              <p className="text-xs text-white/50 mb-1">URL de webhook (pegala en MP → Webhooks):</p>
-              <code className="block rounded bg-white/5 border border-white/10 px-3 py-2 text-xs break-all">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs text-white/50 uppercase tracking-wider">URL de webhook</p>
+                <CopyButton value={mpWebhookUrl} />
+              </div>
+              <code className="block rounded bg-white/5 border border-white/10 px-3 py-2 text-xs break-all text-white/80">
                 {mpWebhookUrl}
               </code>
+              <p className="text-xs text-white/50 mt-1.5 leading-snug">
+                Pegala en <strong>MercadoPago Developers → tu app → Webhooks</strong> (eventos: <span className="font-mono">payment</span>).
+                Sin esto, las ventas no se confirman automáticamente en Curplat.
+              </p>
             </div>
+
+            {mpLiveMode === false && (
+              <div className="rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-100/90">
+                Estás en <strong>modo TEST</strong>. Sólo se procesan tarjetas de prueba de MP.
+                Cuando termines de validar, reconectá con tu cuenta real (Desconectar → Conectar).
+              </div>
+            )}
+          </div>
+        )}
+
+        {!mp && (
+          <div className="rounded border border-white/10 bg-white/[0.02] p-4 text-xs text-white/60 leading-relaxed">
+            <strong className="text-white/80 block mb-2">Cómo funciona:</strong>
+            <ol className="list-decimal pl-4 space-y-1">
+              <li>Hacés click en <strong>Conectar MercadoPago</strong></li>
+              <li>Te redirige a MP, hacés login con tu cuenta y autorizás</li>
+              <li>Volvés acá con tu cuenta conectada</li>
+              <li>Tus alumnos pagan con MP y el dinero entra a tu cuenta. La plataforma factura comisión aparte.</li>
+            </ol>
           </div>
         )}
       </div>

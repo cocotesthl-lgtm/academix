@@ -1,6 +1,7 @@
 import { getServiceClient } from "@/lib/supabase/service";
 import { setTenantStatusAction, impersonateTenantAction } from "@/lib/founder/actions";
 import { DeleteTenantButton } from "@/components/founder/DeleteTenantButton";
+import { SettleDebtButton } from "@/components/founder/SettleDebtButton";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,18 @@ export default async function FounderTenants() {
     ownersById = new Map(((profs ?? []) as OwnerProfile[]).map((p) => [p.id, p]));
   }
 
+  // Balance de cada tenant (suma de owner_debt_ledger.amount_cents)
+  const balancesByTenant = new Map<string, number>();
+  if (tenants.length > 0) {
+    const { data: ledgerRows } = await svc
+      .from("owner_debt_ledger")
+      .select("tenant_id, amount_cents")
+      .in("tenant_id", tenants.map((t) => t.id));
+    for (const r of ((ledgerRows ?? []) as Array<{ tenant_id: string; amount_cents: number }>)) {
+      balancesByTenant.set(r.tenant_id, (balancesByTenant.get(r.tenant_id) ?? 0) + Number(r.amount_cents));
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-6xl">
       <div>
@@ -56,6 +69,7 @@ export default async function FounderTenants() {
                 <th className="text-left px-4 py-2.5">Slug</th>
                 <th className="text-left px-4 py-2.5">Owner</th>
                 <th className="text-left px-4 py-2.5">Comisión</th>
+                <th className="text-right px-4 py-2.5">Saldo a cobrar</th>
                 <th className="text-left px-4 py-2.5">Estado</th>
                 <th className="text-left px-4 py-2.5">Alta</th>
                 <th className="text-right px-4 py-2.5">Acciones</th>
@@ -92,14 +106,30 @@ export default async function FounderTenants() {
                       ? `${(t.commission_rate_override * 100).toFixed(1)}% (override)`
                       : <span className="text-white/40">global</span>}
                   </td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    {(() => {
+                      const b = balancesByTenant.get(t.id) ?? 0;
+                      if (b <= 0) return <span className="text-white/30">$0</span>;
+                      return (
+                        <span className={b >= 200_000_00 ? 'text-red-300' : b >= 50_000_00 ? 'text-amber-300' : 'text-white'}>
+                          ${(b / 100).toLocaleString('es-AR')}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={t.status} />
                   </td>
                   <td className="px-4 py-3 text-white/50">
                     {new Date(t.created_at).toLocaleDateString('es-AR')}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right relative">
                     <div className="flex justify-end items-center gap-2 flex-wrap">
+                      <SettleDebtButton
+                        tenantId={t.id}
+                        tenantSlug={t.slug}
+                        balanceCents={balancesByTenant.get(t.id) ?? 0}
+                      />
                       <form action={impersonateTenantAction}>
                         <input type="hidden" name="slug" value={t.slug} />
                         <button className="text-xs rounded border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300 px-2 py-1 hover:bg-fuchsia-500/20">
