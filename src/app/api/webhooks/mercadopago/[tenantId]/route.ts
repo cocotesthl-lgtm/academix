@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { verifyMercadoPagoSignature } from '@/lib/payments/signatures';
-import { getPayment } from '@/lib/payments/mercadopago';
-import { accrueCommissionForSale } from '@/lib/debt/accrue';
-import { accrueAffiliateCommissionsForSale } from '@/lib/affiliates/commission';
+import { processMpPayment } from '@/lib/payments/process';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -11,13 +9,6 @@ export const runtime = 'nodejs';
 type Integration = {
   access_token_enc: string;
   webhook_secret: string;
-};
-
-type CourseLookup = {
-  id: string;
-  tenant_id: string;
-  price_cents: number;
-  currency: string;
 };
 
 export async function POST(
@@ -55,9 +46,15 @@ export async function POST(
   }
 
   // Verify signature
-  const valid = verifyMercadoPagoSignature(req.headers, integration.webhook_secret, dataId);
+  // MP firma con el webhook secret app-level (configurable en MP Dev → Webhooks).
+  // Usamos MERCADOPAGO_WEBHOOK_SECRET (env var del founder) como fuente primaria;
+  // si no está, caemos al integration.webhook_secret (legacy/per-tenant).
+  const platformSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  const secretToUse = platformSecret || integration.webhook_secret;
+  const valid = verifyMercadoPagoSignature(req.headers, secretToUse, dataId);
   if (!valid) {
-    // In dev MP often doesn't send signatures for IPN, allow if explicit allow flag
+    // En dev/setup MP a veces no firma o el secret todavía no fue configurado.
+    // Bypass explícito con MP_SKIP_SIG_CHECK=1.
     if (process.env.MP_SKIP_SIG_CHECK !== '1') {
       return NextResponse.json({ error: 'bad_signature' }, { status: 401 });
     }
@@ -83,112 +80,14 @@ export async function POST(
     return NextResponse.json({ ok: true, note: `ignored type ${body.type}` });
   }
 
-  // Fetch full payment
-  let payment;
-  try {
-    payment = await getPayment(dataId, integration.access_token_enc);
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'fetch_failed';
-    return NextResponse.json({ error: msg }, { status: 502 });
+  const result = await processMpPayment({
+    tenantId,
+    paymentId: dataId,
+    accessToken: integration.access_token_enc
+  });
+
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: 502 });
   }
-
-  // Insert sale (idempotent on external_provider,external_id)
-  const buyerEmail = payment.payer?.email ?? null;
-  const courseIdFromMeta = (payment.metadata?.course_id as string | undefined) ?? null;
-
-  let courseId: string | null = courseIdFromMeta;
-  let resolvedCourse: CourseLookup | null = null;
-  if (courseId) {
-    const { data: c } = await svc
-      .from('courses')
-      .select('id, tenant_id, price_cents, currency')
-      .eq('id', courseId)
-      .eq('tenant_id', tenantId)
-      .maybeSingle<CourseLookup>();
-    if (c) resolvedCourse = c;
-  }
-
-  // Find buyer profile by email (if known)
-  let buyerUserId: string | null = (payment.metadata?.buyer_user_id as string | undefined) ?? null;
-  if (!buyerUserId && buyerEmail) {
-    const { data: prof } = await svc
-      .from('profiles')
-      .select('id')
-      .eq('email', buyerEmail)
-      .maybeSingle<{ id: string }>();
-    buyerUserId = prof?.id ?? null;
-  }
-
-  const status = payment.status === 'approved' ? 'paid'
-    : payment.status === 'refunded' ? 'refunded'
-    : payment.status === 'pending' ? 'pending'
-    : payment.status;
-
-  // Buyer info que mandamos en metadata desde /api/checkout. Si MP no la
-  // devolvió (caso raro), caemos al email del payer.
-  const meta = payment.metadata ?? {};
-  const buyerName     = (meta.buyer_name     as string | null | undefined) ?? null;
-  const buyerDni      = (meta.buyer_dni      as string | null | undefined) ?? null;
-  const buyerLocation = (meta.buyer_location as string | null | undefined) ?? null;
-  const buyerPhone    = (meta.buyer_phone    as string | null | undefined) ?? null;
-  const buyerEmailForRow =
-    (meta.buyer_email as string | null | undefined) ?? buyerEmail;
-
-  const salePayload = {
-    tenant_id: tenantId,
-    course_id: resolvedCourse?.id ?? null,
-    buyer_user_id: buyerUserId,
-    external_provider: 'mercadopago',
-    external_id: String(payment.id),
-    amount_gross_cents: Math.round(payment.transaction_amount * 100),
-    amount_net_cents: Math.round(payment.transaction_amount * 100),
-    currency: payment.currency_id,
-    status,
-    raw_payload: payment,
-    occurred_at: payment.date_approved ?? payment.date_created,
-    buyer_name:     buyerName,
-    buyer_dni:      buyerDni,
-    buyer_location: buyerLocation,
-    buyer_email:    buyerEmailForRow,
-    buyer_phone:    buyerPhone
-  };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: saleRow, error: saleErr } = await (svc.from('sales') as any)
-    .insert(salePayload)
-    .select('id')
-    .single();
-  if (saleErr && !saleErr.message.includes('duplicate')) {
-    return NextResponse.json({ error: saleErr.message }, { status: 500 });
-  }
-
-  // Auto-enroll on approved payment if we know buyer + course
-  if (payment.status === 'approved' && resolvedCourse && buyerUserId) {
-    const enrollPayload = {
-      tenant_id: tenantId,
-      course_id: resolvedCourse.id,
-      user_id: buyerUserId,
-      source: 'direct',
-      sale_id: (saleRow as { id?: string } | null)?.id ?? null,
-      status: 'active',
-      buyer_name:     buyerName,
-      buyer_dni:      buyerDni,
-      buyer_location: buyerLocation,
-      buyer_email:    buyerEmailForRow,
-      buyer_phone:    buyerPhone
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (svc.from('enrollments') as any).insert(enrollPayload);
-  }
-
-  // Accrue commission as owner debt + affiliate commissions (only on paid sales)
-  if (payment.status === 'approved' && saleRow) {
-    const saleId = (saleRow as { id?: string }).id;
-    if (saleId) {
-      await accrueCommissionForSale(saleId);
-      const affLinkId = (payment.metadata?.affiliate_link_id as string | null | undefined) ?? null;
-      await accrueAffiliateCommissionsForSale({ saleId, linkId: affLinkId });
-    }
-  }
-
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, saleId: result.saleId, reused: result.reused });
 }

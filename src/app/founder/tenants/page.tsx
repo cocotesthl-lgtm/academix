@@ -2,6 +2,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { setTenantStatusAction, impersonateTenantAction } from "@/lib/founder/actions";
 import { DeleteTenantButton } from "@/components/founder/DeleteTenantButton";
 import { SettleDebtButton } from "@/components/founder/SettleDebtButton";
+import { ReprocessPaymentButton } from "@/components/founder/ReprocessPaymentButton";
 
 export const dynamic = "force-dynamic";
 
@@ -130,6 +131,7 @@ export default async function FounderTenants() {
                         tenantSlug={t.slug}
                         balanceCents={balancesByTenant.get(t.id) ?? 0}
                       />
+                      <ReprocessPaymentButton tenantId={t.id} />
                       <form action={impersonateTenantAction}>
                         <input type="hidden" name="slug" value={t.slug} />
                         <button className="text-xs rounded border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300 px-2 py-1 hover:bg-fuchsia-500/20">
