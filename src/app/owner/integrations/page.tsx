@@ -42,6 +42,11 @@ export default async function IntegrationsPage({
   const shopify = byProvider.get('shopify');
   const drive = byProvider.get('google_drive');
 
+  // ¿La plataforma está configurada para hacer OAuth con MP? Sin estas env
+  // vars el botón "Conectar" sólo lleva al error_handler, así que mejor
+  // lo deshabilitamos visualmente para no frustrar al owner.
+  const mpPlatformReady = !!process.env.MERCADOPAGO_CLIENT_ID && !!process.env.MERCADOPAGO_CLIENT_SECRET;
+
   // ¿Cuenta conectada en modo TEST o LIVE? lo marca MP en el callback
   const mpLiveMode = mp?.metadata && typeof (mp.metadata as { live_mode?: unknown }).live_mode === 'boolean'
     ? (mp.metadata as { live_mode: boolean }).live_mode
@@ -120,12 +125,21 @@ export default async function IntegrationsPage({
             </p>
           </div>
           {!mp ? (
-            <a
-              href="/api/oauth/mercadopago/start"
-              className="rounded-md bg-white text-black px-4 py-2 text-sm font-medium hover:bg-white/90 whitespace-nowrap"
-            >
-              Conectar MercadoPago
-            </a>
+            mpPlatformReady ? (
+              <a
+                href="/api/oauth/mercadopago/start"
+                className="rounded-md bg-white text-black px-4 py-2 text-sm font-medium hover:bg-white/90 whitespace-nowrap"
+              >
+                Conectar MercadoPago
+              </a>
+            ) : (
+              <span
+                title="Esperando que el admin de Curplat configure las credenciales de MP"
+                className="rounded-md bg-white/10 text-white/40 border border-white/15 px-4 py-2 text-sm font-medium whitespace-nowrap cursor-not-allowed select-none"
+              >
+                Conectar MercadoPago
+              </span>
+            )
           ) : (
             <form action={disconnectIntegrationAction}>
               <input type="hidden" name="provider" value="mercadopago" />
