@@ -54,6 +54,11 @@ export default async function CourseDetailPage({
 
   if (!course || course.status !== 'published') notFound();
 
+  // Resolvemos el user logueado una sola vez (lo usamos para tracking de
+  // afiliados y como default del email en el form de checkout).
+  const supabaseAuth = await createSupabaseServerClient();
+  const { data: { user: currentUser } } = await supabaseAuth.auth.getUser();
+
   // Affiliate click tracking + cookie set on first ?ref= visit
   if (ref) {
     const h = await headers();
@@ -63,15 +68,13 @@ export default async function CourseDetailPage({
       '0.0.0.0';
     const ua = h.get('user-agent') ?? '';
     const referer = h.get('referer') ?? '';
-    const supabaseAuth = await createSupabaseServerClient();
-    const { data: { user } } = await supabaseAuth.auth.getUser();
     await trackClick({
       code: ref,
       tenantId,
       ip,
       userAgent: ua,
       referer,
-      currentUserId: user?.id ?? null
+      currentUserId: currentUser?.id ?? null
     });
   }
 
@@ -184,6 +187,7 @@ export default async function CourseDetailPage({
               priceCents={course.price_cents}
               currency={course.currency}
               primary={primary}
+              defaultEmail={currentUser?.email ?? ''}
             />
             <p className="text-xs text-center text-black/40">
               Pago seguro vía MercadoPago

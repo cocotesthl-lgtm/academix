@@ -18,6 +18,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/site">Editor de sitio</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/branding">Branding</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/courses">Cursos</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/students">Alumnos</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/categories">Categorías</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/coupons">Cupones</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/integrations">Integraciones</a>

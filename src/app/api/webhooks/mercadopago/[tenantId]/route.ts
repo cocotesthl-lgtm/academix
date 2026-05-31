@@ -124,6 +124,16 @@ export async function POST(
     : payment.status === 'pending' ? 'pending'
     : payment.status;
 
+  // Buyer info que mandamos en metadata desde /api/checkout. Si MP no la
+  // devolvió (caso raro), caemos al email del payer.
+  const meta = payment.metadata ?? {};
+  const buyerName     = (meta.buyer_name     as string | null | undefined) ?? null;
+  const buyerDni      = (meta.buyer_dni      as string | null | undefined) ?? null;
+  const buyerLocation = (meta.buyer_location as string | null | undefined) ?? null;
+  const buyerPhone    = (meta.buyer_phone    as string | null | undefined) ?? null;
+  const buyerEmailForRow =
+    (meta.buyer_email as string | null | undefined) ?? buyerEmail;
+
   const salePayload = {
     tenant_id: tenantId,
     course_id: resolvedCourse?.id ?? null,
@@ -135,7 +145,12 @@ export async function POST(
     currency: payment.currency_id,
     status,
     raw_payload: payment,
-    occurred_at: payment.date_approved ?? payment.date_created
+    occurred_at: payment.date_approved ?? payment.date_created,
+    buyer_name:     buyerName,
+    buyer_dni:      buyerDni,
+    buyer_location: buyerLocation,
+    buyer_email:    buyerEmailForRow,
+    buyer_phone:    buyerPhone
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: saleRow, error: saleErr } = await (svc.from('sales') as any)
@@ -154,7 +169,12 @@ export async function POST(
       user_id: buyerUserId,
       source: 'direct',
       sale_id: (saleRow as { id?: string } | null)?.id ?? null,
-      status: 'active'
+      status: 'active',
+      buyer_name:     buyerName,
+      buyer_dni:      buyerDni,
+      buyer_location: buyerLocation,
+      buyer_email:    buyerEmailForRow,
+      buyer_phone:    buyerPhone
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('enrollments') as any).insert(enrollPayload);

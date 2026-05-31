@@ -76,6 +76,22 @@ export async function POST(
   const couponCode = (form?.get('coupon') as string | null)
     ?? (new URL(req.url).searchParams.get('coupon'))
     ?? '';
+
+  // Buyer info pegada en el form de checkout (nombre/DNI/ubicación/email/celular)
+  // Es opcional para cursos gratis (ya tenemos el user_id). Para cursos pagos
+  // el front lo exige; el back es tolerante (no rechaza si falta).
+  const buyerNameRaw     = String(form?.get('buyer_name')     ?? '').trim().slice(0, 120);
+  const buyerDniRaw      = String(form?.get('buyer_dni')      ?? '').trim().slice(0, 20);
+  const buyerLocationRaw = String(form?.get('buyer_location') ?? '').trim().slice(0, 120);
+  const buyerEmailRaw    = String(form?.get('buyer_email')    ?? '').trim().slice(0, 200);
+  const buyerPhoneRaw    = String(form?.get('buyer_phone')    ?? '').trim().slice(0, 30);
+  const buyerInfo = {
+    name:     buyerNameRaw     || null,
+    dni:      buyerDniRaw      || null,
+    location: buyerLocationRaw || null,
+    email:    buyerEmailRaw    || null,
+    phone:    buyerPhoneRaw    || null
+  };
   let couponValid: Awaited<ReturnType<typeof validateCoupon>> | null = null;
   let finalPrice = course.price_cents;
   if (couponCode) {
@@ -100,7 +116,12 @@ export async function POST(
       course_id: course.id,
       user_id: user.id,
       source: 'direct',
-      status: 'active'
+      status: 'active',
+      buyer_name: buyerInfo.name,
+      buyer_dni: buyerInfo.dni,
+      buyer_location: buyerInfo.location,
+      buyer_email: buyerInfo.email ?? user.email ?? null,
+      buyer_phone: buyerInfo.phone
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('coupon_redemptions') as any).insert({
@@ -124,7 +145,9 @@ export async function POST(
       title: course.title,
       unitPriceCents: finalPrice,
       currency: course.currency,
-      buyerEmail: user?.email ?? undefined,
+      // Mandamos el email del buyer (si lo escribió en el form) para que MP
+      // lo pre-llene en el checkout. Fallback al email del user logueado.
+      buyerEmail: buyerInfo.email ?? user?.email ?? undefined,
       externalReference: `${course.id}::${user?.id ?? 'anon'}::${affLinkId ?? ''}`,
       notificationUrl: `${platformOrigin}/api/webhooks/mercadopago/${course.tenant_id}`,
       successUrl: `${origin}/learn`,
@@ -137,7 +160,14 @@ export async function POST(
         affiliate_link_id: affLinkId,
         coupon_id: couponValid?.id ?? null,
         coupon_code: couponValid?.code ?? null,
-        coupon_discount_cents: couponValid?.discount_cents ?? 0
+        coupon_discount_cents: couponValid?.discount_cents ?? 0,
+        // Datos del comprador: el webhook los lee y los guarda en
+        // sales + enrollments para que el owner pueda contactarlo.
+        buyer_name:     buyerInfo.name,
+        buyer_dni:      buyerInfo.dni,
+        buyer_location: buyerInfo.location,
+        buyer_email:    buyerInfo.email,
+        buyer_phone:    buyerInfo.phone
       }
     });
 
