@@ -105,8 +105,11 @@ export async function POST(
   const host = h.get('host') ?? `${tenant.slug}.localhost:3000`;
   const origin = `${proto}://${host}`;
 
-  // Webhook URL must point to PLATFORM origin (where /api/webhooks lives), not tenant subdomain
-  const platformOrigin = env.appUrl;
+  // Webhook URL DEBE apuntar al subdominio app.<rootDomain> (donde corren
+  // las API routes), NO al apex que podría estar configurado en appUrl
+  // para la landing marketing. Por eso usamos platformApiOrigin que
+  // siempre devuelve app.<rootDomain> en producción.
+  const platformOrigin = env.platformApiOrigin;
 
   // If coupon makes it free, auto-enroll on the spot and skip MP entirely
   if (finalPrice <= 0 && couponValid && user) {

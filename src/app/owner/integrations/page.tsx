@@ -35,7 +35,7 @@ export default async function IntegrationsPage({
   const integrations = (data ?? []) as IntegrationRow[];
   const byProvider = new Map(integrations.map((i) => [i.provider, i]));
 
-  const platformOrigin = env.appUrl;
+  const platformOrigin = env.platformApiOrigin;
   const mpWebhookUrl = `${platformOrigin}/api/webhooks/mercadopago/${tenant.id}`;
 
   const mp = byProvider.get('mercadopago');

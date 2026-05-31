@@ -24,10 +24,41 @@ function computeCookieDomain(): string | undefined {
   return `.${clean}`;
 }
 
+/**
+ * Origin canónico para URLs internas server-to-server (webhooks, OAuth
+ * callbacks, etc). SIEMPRE devuelve https://app.<rootDomain> en prod,
+ * porque ese es el subdominio donde corre la API y el dashboard del
+ * owner. En dev cae al appUrl.
+ *
+ * Importante: appUrl puede estar configurado al apex (ej: bzseguridad.store)
+ * para que la landing marketing funcione, pero el apex no necesariamente
+ * resuelve /api/* correctamente. Por eso esta función fuerza app.<root>.
+ */
+function computePlatformApiOrigin(): string {
+  const appUrlRaw = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com';
+  try {
+    const u = new URL(appUrlRaw);
+    if (u.hostname === 'localhost' || u.hostname.endsWith('.localhost')) {
+      // dev: appUrl es directamente la base
+      return appUrlRaw.replace(/\/$/, '');
+    }
+    // prod: forzar https://app.<rootDomain>
+    return `${u.protocol}//app.${root}`;
+  } catch {
+    return `https://app.${root}`;
+  }
+}
+
 export const env = {
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
   rootDomain: process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com',
   cookieDomain: computeCookieDomain(),
+  /**
+   * Origin de la API/dashboard de la plataforma (app.<root>).
+   * Usar SIEMPRE este para webhooks y callbacks, NUNCA appUrl directo.
+   */
+  platformApiOrigin: computePlatformApiOrigin(),
 
   supabase: {
     url: () => required('NEXT_PUBLIC_SUPABASE_URL'),
