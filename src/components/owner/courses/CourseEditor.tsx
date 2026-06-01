@@ -11,6 +11,7 @@ import {
   toggleLessonPreviewAction,
   type Result
 } from '@/lib/courses/actions';
+import { CoverPicker } from '@/components/owner/courses/CoverPicker';
 
 export type Course = {
   id: string;
@@ -76,29 +77,7 @@ export function CourseEditor({ course, modules, categories }: { course: Course; 
             />
           </div>
 
-          <div>
-            <label className="block text-sm mb-1.5 text-white/70">URL de la portada</label>
-            <div className="flex items-start gap-3">
-              <div className="shrink-0 w-32 h-20 rounded-md bg-white/5 border border-white/15 overflow-hidden flex items-center justify-center">
-                {course.cover_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={course.cover_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xs text-white/40">sin portada</span>
-                )}
-              </div>
-              <input
-                type="url"
-                name="cover_url"
-                defaultValue={course.cover_url ?? ''}
-                placeholder="https://… (pegá la URL de la imagen)"
-                className="flex-1 rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
-              />
-            </div>
-            <p className="text-xs text-white/50 mt-1">
-              📐 Recomendado: 1600×900px (16:9). Dejá vacío para quitar la portada.
-            </p>
-          </div>
+          <CoverPicker initial={course.cover_url} />
 
           <div className="grid grid-cols-2 gap-4">
             <div>

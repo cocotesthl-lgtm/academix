@@ -406,12 +406,12 @@ export async function duplicateSectionAction(formData: FormData): Promise<void> 
   redirect('/site');
 }
 
-export type ThemeKey = 'sample' | 'fitness' | 'tech' | 'business';
+export type ThemeKey = 'sample' | 'fitness' | 'tech' | 'business' | 'hotmart' | 'funnel';
 
 export async function applyThemeAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const theme = String(formData.get('theme') ?? '') as ThemeKey;
-  if (!['sample', 'fitness', 'tech', 'business'].includes(theme)) return;
+  if (!['sample', 'fitness', 'tech', 'business', 'hotmart', 'funnel'].includes(theme)) return;
 
   // 'sample' reescribe el config completo con el default rich (descarta cambios)
   if (theme === 'sample') {
@@ -453,8 +453,7 @@ export async function applyThemeAction(formData: FormData): Promise<void> {
     cfg.sections.testimonials.enabled = true;
     cfg.sections.faq.enabled = true;
     cfg.sections.cta_final.enabled = true;
-  } else {
-    // business
+  } else if (theme === 'business') {
     cfg.sections.hero.layout = 'gallery';
     cfg.sections.hero.subtitle = 'Capacitate para escalar tu negocio.';
     cfg.sections.trusted_by.enabled = true;
@@ -465,6 +464,77 @@ export async function applyThemeAction(formData: FormData): Promise<void> {
     cfg.sections.testimonials.enabled = true;
     cfg.sections.faq.enabled = true;
     cfg.sections.cta_final.enabled = true;
+  } else if (theme === 'hotmart') {
+    // Hotmart-style: página de producto. Hero con imagen + título + precio,
+    // bullets de qué vas a aprender, descripción, instructor, testimonios, FAQ.
+    // Foco en conversión rápida del curso individual.
+    cfg.sections.hero.layout = 'gallery';
+    cfg.sections.hero.eyebrow = '🔥 Promoción por tiempo limitado';
+    cfg.sections.hero.subtitle = 'Aprendé un método probado con resultados reales. Acceso inmediato, garantía 7 días.';
+    cfg.sections.hero.cta_label = 'Quiero el curso';
+    cfg.sections.hero.cta_label_2 = 'Ver qué incluye';
+    cfg.sections.hero.cta_href_2 = '#learn_points';
+    cfg.sections.hero.caption = '⭐ +2.400 alumnos · 4.9/5 puntaje · 30 días de garantía';
+    cfg.sections.trusted_by.enabled = false;
+    cfg.sections.learn_points.enabled = true;
+    cfg.sections.learn_points.title = 'Lo que vas a llevarte';
+    cfg.sections.about.enabled = true;
+    cfg.sections.about.title = 'Sobre este producto';
+    cfg.sections.instructor.enabled = true;
+    cfg.sections.instructor.title = 'Sobre el productor';
+    cfg.sections.instructor.display_mode = 'single';
+    cfg.sections.stats.enabled = true;
+    cfg.sections.features.enabled = false;
+    cfg.sections.pricing.enabled = true;
+    cfg.sections.pricing.title = 'Elegí tu plan';
+    cfg.sections.testimonials.enabled = true;
+    cfg.sections.testimonials.title = 'Lo que dicen los alumnos';
+    cfg.sections.faq.enabled = true;
+    cfg.sections.faq.title = '¿Tenés dudas?';
+    cfg.sections.offer.enabled = true;
+    cfg.sections.offer.title = '⏰ Oferta termina pronto';
+    cfg.sections.cta_final.enabled = true;
+    cfg.sections.cta_final.title = '¿Querés empezar hoy?';
+    cfg.sections.cta_final.cta_label = 'Inscribirme ahora';
+    // Orden tipo Hotmart product page
+    cfg.order = ['hero', 'learn_points', 'about', 'stats', 'instructor', 'pricing', 'testimonials', 'faq', 'offer', 'cta_final'];
+  } else if (theme === 'funnel') {
+    // ClickFunnels-style: landing larga, mucha repetición de CTA, social proof
+    // y urgencia. Empieza con headline fuerte, video opcional, beneficios,
+    // testimonios, garantía, oferta con countdown, CTA final.
+    cfg.sections.hero.layout = 'centered';
+    cfg.sections.hero.eyebrow = '⚠️ ATENCIÓN: lee esto antes de irte';
+    cfg.sections.hero.title = '';
+    cfg.sections.hero.subtitle = 'El método paso a paso que ya transformó +2.400 vidas. Sin teoría inútil. Solo lo que funciona.';
+    cfg.sections.hero.cta_label = '✅ Sí, lo quiero ahora';
+    cfg.sections.hero.cta_label_2 = '';
+    cfg.sections.hero.caption = '7 días de garantía · Sin tarjeta para empezar · Bonus por tiempo limitado';
+    cfg.sections.video.enabled = true;
+    cfg.sections.video.title = '🎥 Mirá esto antes de tomar tu decisión';
+    cfg.sections.trusted_by.enabled = true;
+    cfg.sections.trusted_by.title = 'Profesionales que confiaron en nosotros';
+    cfg.sections.stats.enabled = true;
+    cfg.sections.learn_points.enabled = true;
+    cfg.sections.learn_points.title = 'Esto es exactamente lo que vas a tener acceso';
+    cfg.sections.features.enabled = true;
+    cfg.sections.features.title = '¿Por qué este método funciona?';
+    cfg.sections.about.enabled = false;
+    cfg.sections.instructor.enabled = true;
+    cfg.sections.testimonials.enabled = true;
+    cfg.sections.testimonials.title = 'Mirá lo que dicen los que ya lo hicieron';
+    cfg.sections.before_after.enabled = true;
+    cfg.sections.pricing.enabled = true;
+    cfg.sections.pricing.title = 'Elegí el plan que mejor te conviene';
+    cfg.sections.faq.enabled = true;
+    cfg.sections.offer.enabled = true;
+    cfg.sections.offer.title = '⏰ Esta oferta termina en…';
+    cfg.sections.offer.subtitle = 'Si cerrás esta página, perdés el 50% off y los bonus.';
+    cfg.sections.cta_final.enabled = true;
+    cfg.sections.cta_final.title = 'Última oportunidad';
+    cfg.sections.cta_final.body = 'Esta es tu decisión. Hacés click ahora y entrás, o seguís en el mismo lugar dentro de 6 meses. Vos elegís.';
+    cfg.sections.cta_final.cta_label = '🚀 Quiero entrar AHORA';
+    // Orden tipo ClickFunnels: muchos CTAs distribuidos, urgencia al final
+    cfg.order = ['hero', 'video', 'stats', 'trusted_by', 'learn_points', 'features', 'before_after', 'testimonials', 'instructor', 'pricing', 'faq', 'offer', 'cta_final'];
   }
 
   await saveConfig(tenant.id, cfg);

@@ -98,12 +98,12 @@ export default async function SiteBuilderPage() {
 
       {/* Pre-built themes */}
       <div className="rounded-xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/5 to-purple-500/5 p-5">
-        <h2 className="text-lg font-bold mb-1">✨ Plantillas</h2>
+        <h2 className="text-lg font-bold mb-1">✨ Plantillas pre-armadas</h2>
         <p className="text-sm text-white/60 mb-4">
           La opción <strong className="text-white">Sitio completo</strong> reescribe todo con contenido de muestra (para arrancar con un sitio bonito y editar después).
-          Las otras solo encienden secciones del vertical sin pisar tu contenido.
+          Las otras solo encienden secciones del vertical sin pisar tu contenido. <strong className="text-fuchsia-300">Hotmart</strong> y <strong className="text-fuchsia-300">Funnel</strong> sí cambian el orden de las secciones (son layouts completos).
         </p>
-        <div className="grid md:grid-cols-4 gap-3">
+        <div className="grid md:grid-cols-3 gap-3">
           <form action={applyThemeAction}>
             <input type="hidden" name="theme" value="sample" />
             <button className="w-full text-left rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/10 p-4 hover:bg-fuchsia-500/20">
@@ -112,6 +112,24 @@ export default async function SiteBuilderPage() {
               <div className="text-xs text-white/60 mt-1">15 secciones llenas con textos, stats, FAQ y testimonios de muestra</div>
             </button>
           </form>
+          <form action={applyThemeAction}>
+            <input type="hidden" name="theme" value="hotmart" />
+            <button className="w-full text-left rounded-lg border border-orange-500/30 bg-orange-500/10 p-4 hover:bg-orange-500/20">
+              <div className="text-2xl mb-1">🛒</div>
+              <div className="font-semibold text-sm">Hotmart product page</div>
+              <div className="text-xs text-white/60 mt-1">Estilo marketplace: hero banner, qué incluye, productor, pricing, FAQ</div>
+            </button>
+          </form>
+          <form action={applyThemeAction}>
+            <input type="hidden" name="theme" value="funnel" />
+            <button className="w-full text-left rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 hover:bg-blue-500/20">
+              <div className="text-2xl mb-1">🎯</div>
+              <div className="font-semibold text-sm">Funnel ClickFunnels</div>
+              <div className="text-xs text-white/60 mt-1">Landing larga con VSL, social proof, CTAs múltiples y urgencia</div>
+            </button>
+          </form>
+        </div>
+        <div className="grid md:grid-cols-3 gap-3 mt-3">
           <form action={applyThemeAction}>
             <input type="hidden" name="theme" value="fitness" />
             <button className="w-full text-left rounded-lg border border-white/15 bg-white/[0.02] p-4 hover:bg-white/[0.05]">
