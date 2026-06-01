@@ -145,6 +145,66 @@ function HotmartPreview({
               </div>
             </div>
           )}
+
+          {/* Testimonios — solo primeros 2 en mini */}
+          {(config.testimonials ?? []).length > 0 && (
+            <div>
+              <div className="font-bold text-[10px] mb-1">Lo que dicen los alumnos</div>
+              <div className="grid grid-cols-2 gap-1">
+                {(config.testimonials ?? []).slice(0, 2).map((t, i) => (
+                  <div key={i} className="rounded border border-black/10 p-1.5">
+                    <div className="text-yellow-500 text-[8px]">{'★'.repeat(t.rating ?? 5)}</div>
+                    <p className="text-[8px] text-black/70 italic line-clamp-2 mt-0.5">"{t.text}"</p>
+                    <div className="flex items-center gap-1 mt-1 pt-1 border-t border-black/5">
+                      {t.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={t.photo_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full" style={{ background: `${primary}40` }} />
+                      )}
+                      <span className="text-[8px] font-semibold">{t.name}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {(config.testimonials ?? []).length > 2 && (
+                <p className="text-[7px] text-black/40 mt-0.5">+{(config.testimonials ?? []).length - 2} más en la landing real</p>
+              )}
+            </div>
+          )}
+
+          {/* Bonuses */}
+          {(config.bonuses ?? []).length > 0 && (
+            <div className="rounded border-2 border-dashed p-1.5" style={{ borderColor: `${primary}50`, background: `${primary}08` }}>
+              <div className="font-bold text-[10px] mb-1">🎁 Bonus que te llevás ({(config.bonuses ?? []).length})</div>
+              <ul className="space-y-0.5">
+                {(config.bonuses ?? []).slice(0, 3).map((b, i) => (
+                  <li key={i} className="text-[8px] text-black/70 line-clamp-1">• {b.title}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Offer */}
+          {config.offer_text && (
+            <div className="rounded bg-amber-50 border-2 border-amber-300 p-1.5 text-center">
+              <p className="text-[8px] text-amber-900 font-semibold line-clamp-2">{config.offer_text}</p>
+            </div>
+          )}
+
+          {/* FAQ count */}
+          {(config.faq ?? []).length > 0 && (
+            <div>
+              <div className="font-bold text-[10px] mb-1">❓ Preguntas frecuentes ({(config.faq ?? []).length})</div>
+              <div className="space-y-0.5">
+                {(config.faq ?? []).slice(0, 2).map((q, i) => (
+                  <div key={i} className="rounded border border-black/10 px-1.5 py-1 text-[8px] text-black/70 line-clamp-1">
+                    {q.q}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar sticky precio */}

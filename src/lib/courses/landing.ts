@@ -103,26 +103,106 @@ export const TEMPLATE_LABELS: Record<LandingTemplate, { label: string; emoji: st
 
 export const DEFAULT_LANDING_CONFIG: LandingConfig = {};
 
-/** Defaults razonables si el config viene vacío, por template. */
+/* Sample assets reutilizables (URLs externas - cero storage propio) */
+const SAMPLE_HERO_IMG = 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=2400&q=80&auto=format&fit=crop';
+const SAMPLE_INSTRUCTOR_IMG = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&q=80&auto=format&fit=crop';
+const SAMPLE_TESTI_1 = 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&q=80&auto=format&fit=crop';
+const SAMPLE_TESTI_2 = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&q=80&auto=format&fit=crop';
+const SAMPLE_TESTI_3 = 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&q=80&auto=format&fit=crop';
+
+/** Defaults razonables si el config viene vacío, por template.
+ *  El owner los puede sobreescribir por completo desde el editor.
+ */
 export function defaultsForTemplate(template: LandingTemplate, courseTitle: string): LandingConfig {
   switch (template) {
     case 'hotmart':
       return {
         eyebrow: '🔥 Promoción por tiempo limitado',
-        subtitle: 'Acceso inmediato. Garantía de 7 días sin preguntas.',
+        headline: '',
+        subtitle: 'Acceso inmediato. Garantía de 7 días sin preguntas. Acompañamiento directo y método probado.',
         cta_label: 'Quiero este curso',
         cta_caption: '⭐ Curso 4.9/5 · +2.400 alumnos · 7 días de garantía',
+        hero_image_url: SAMPLE_HERO_IMG,
+        about_body: 'Este curso fue diseñado para que vos puedas dominar la materia desde cero, sin importar tu nivel previo. Cubrimos todo lo que necesitás saber, con casos reales y ejercicios prácticos en cada módulo.\n\nLa metodología combina contenido grabado paso a paso, recursos descargables y soporte directo para resolver tus dudas. El objetivo: que apliques lo que aprendés desde la primera semana.',
+        learn_points: [
+          'Fundamentos completos desde cero — sin asumir conocimiento previo',
+          'Casos reales paso a paso del primer al último módulo',
+          'Recursos descargables: plantillas, checklists, ejemplos',
+          'Acceso a comunidad privada para resolver dudas',
+          'Certificado al finalizar el curso',
+          'Acceso de por vida + actualizaciones futuras incluidas'
+        ],
+        instructor_name: 'Tu nombre acá',
+        instructor_role: '+10 años de experiencia · +2.400 alumnos formados',
+        instructor_bio: 'Apasionado por enseñar y comprometido con que cada alumno termine el curso aplicando lo aprendido. Vengo del mundo profesional y traigo casos reales a cada clase, no solo teoría de libro.',
+        instructor_photo_url: SAMPLE_INSTRUCTOR_IMG,
         garantia_dias: 7,
-        garantia_text: 'Si no te gusta en los primeros 7 días, te devolvemos el 100%. Sin preguntas.',
-        trust_badges: ['Acceso de por vida', 'Certificado al finalizar', 'Soporte directo']
+        garantia_text: 'Si no te gusta en los primeros 7 días, te devolvemos el 100% del dinero. Sin preguntas, sin vueltas.',
+        trust_badges: ['Acceso de por vida', 'Certificado al finalizar', 'Soporte directo del instructor', 'Comunidad privada', 'Updates incluidos'],
+        testimonials: [
+          { name: 'María González', role: 'Estudiante · Buenos Aires', text: 'El mejor curso que tomé. Aprendí más en dos meses que en años buscando por mi cuenta. El soporte del instructor es increíble.', rating: 5, photo_url: SAMPLE_TESTI_1 },
+          { name: 'Juan Pérez', role: 'Profesional · Córdoba', text: 'Lo recomiendo 100%. El instructor sabe transmitir, los ejercicios son prácticos y siempre está disponible para responder dudas.', rating: 5, photo_url: SAMPLE_TESTI_2 },
+          { name: 'Laura Méndez', role: 'Emprendedora · Rosario', text: 'Cambió mi forma de trabajar. Volví a sentir pasión por lo que hago. La comunidad también es un plus enorme.', rating: 5, photo_url: SAMPLE_TESTI_3 }
+        ],
+        faq: [
+          { q: '¿Necesito conocimientos previos?', a: 'No. Empezamos desde cero y vamos avanzando a tu ritmo. Todos los conceptos se explican paso a paso para que no quedes atrás.' },
+          { q: '¿Cuánto dura el curso?', a: 'El acceso es de por vida, así que lo hacés a tu ritmo. La mayoría completa el contenido en 6 a 8 semanas dedicando 30 minutos al día.' },
+          { q: '¿Puedo pedir reembolso?', a: 'Sí. Tenés 7 días desde la compra para pedir devolución sin necesidad de justificar. Te devolvemos el 100% sin preguntas.' },
+          { q: '¿Cómo recibo el certificado?', a: 'Al completar el 100% de las lecciones lo descargás automáticamente desde tu perfil. Lo podés compartir en LinkedIn.' },
+          { q: '¿En qué dispositivos puedo verlo?', a: 'Funciona en cualquier dispositivo: PC, Mac, tablet, celular. Solo necesitás internet y un browser moderno.' }
+        ],
+        bonuses: [
+          { title: '🎁 Plantillas premium descargables', description: 'Material listo para usar en tus propios proyectos: 12 plantillas profesionales editables.', value: 'Valor $50' },
+          { title: '🎯 Sesión grupal mensual en vivo', description: 'Una clase Q&A en vivo todos los meses donde resolvemos dudas en grupo.', value: 'Valor $200/año' },
+          { title: '📚 Acceso a biblioteca de casos reales', description: '+50 casos analizados paso a paso que sumamos cada mes a la plataforma.', value: 'Valor $150' }
+        ],
+        offer_text: '⏰ Esta oferta termina pronto. Después vuelve al precio normal sin bonus.',
+        offer_ends_at: null
       };
     case 'funnel':
       return {
-        eyebrow: '⚠️ ATENCIÓN: lee esto antes de cerrar',
-        subtitle: 'El método paso a paso que ya transformó +2.400 vidas. Sin teoría inútil.',
+        eyebrow: '⚠️ ATENCIÓN: lee esto antes de cerrar la página',
+        headline: '',
+        subtitle: 'El método paso a paso que ya transformó +2.400 vidas. Sin teoría inútil. Solo lo que funciona en la práctica.',
         cta_label: '✅ Sí, lo quiero ahora',
         cta_caption: '7 días de garantía · Sin tarjeta para empezar · Bonus por tiempo limitado',
-        garantia_dias: 7
+        hero_image_url: SAMPLE_HERO_IMG,
+        about_body: 'Si llegaste hasta acá es porque sabés que algo tiene que cambiar. Llevás meses (¿años?) intentando solo. Probando métodos que te prometen el cielo. Acumulando frustración.\n\nLo entiendo. Yo pasé exactamente por eso. Hasta que descubrí UN cambio simple que multiplicó todo. Hoy te lo voy a contar.',
+        learn_points: [
+          '✅ El método exacto que usé para llegar a donde estoy',
+          '✅ Los 3 errores que cometés y no te das cuenta',
+          '✅ Cómo acortar 6 meses de aprendizaje en 6 semanas',
+          '✅ Plantillas para que no empieces desde cero',
+          '✅ Mi sistema personal de seguimiento y revisión',
+          '✅ Acceso a grupo privado de quienes ya lo hicieron'
+        ],
+        instructor_name: 'Tu nombre acá',
+        instructor_role: 'Fundador · +10 años en la industria',
+        instructor_bio: 'Empecé como vos. Sin contactos, sin método, equivocándome. Hoy ayudo a otros a no pasar por los mismos errores. Este curso es exactamente lo que me hubiese gustado tener cuando empecé.',
+        instructor_photo_url: SAMPLE_INSTRUCTOR_IMG,
+        garantia_dias: 7,
+        garantia_text: '100% reembolsable si no te sirve. Tomate los 7 días, mirá las primeras clases y si no es para vos te devolvemos hasta el último peso.',
+        trust_badges: ['Acceso de por vida', 'Soporte 7 días/semana', 'Comunidad privada', 'Sin letra chica'],
+        testimonials: [
+          { name: 'María González', role: 'Empezó hace 3 meses', text: 'Pensaba que era otro curso más. Me equivoqué. Las primeras 2 semanas ya estaba aplicando todo. Mi vida cambió.', rating: 5, photo_url: SAMPLE_TESTI_1 },
+          { name: 'Juan Pérez', role: 'Empezó hace 6 meses', text: 'Si lo hubiese encontrado antes me ahorraba años. El instructor responde mensajes a las 11 de la noche. Increíble.', rating: 5, photo_url: SAMPLE_TESTI_2 },
+          { name: 'Laura Méndez', role: 'Recién egresada', text: 'Probé de todo. Esto fue lo único que funcionó. Recomendado 100%.', rating: 5, photo_url: SAMPLE_TESTI_3 }
+        ],
+        faq: [
+          { q: '¿Y si soy 100% principiante?', a: 'Mejor todavía. El curso está pensado desde cero. Si ya sabés algo, las primeras lecciones las pasás rápido.' },
+          { q: '¿Cuánto tiempo necesito por día?', a: 'Entre 20 y 40 minutos. La mayoría dedica eso y termina el curso en 6-8 semanas aplicando todo.' },
+          { q: '¿De verdad puedo pedir reembolso?', a: 'Sí. Mandás un mail, te devolvemos el 100% en 24-48hs. Sin justificar, sin trámites raros. Si no te sirve, no nos quedamos con tu plata.' },
+          { q: '¿Funciona si no tengo plata para invertir?', a: 'Sí. El método es práctico y no requiere inversión inicial. Empezás aplicando con lo que ya tenés.' },
+          { q: '¿Qué pasa si no entiendo algo?', a: 'Tenés acceso al grupo privado y al instructor por mensaje directo. No te quedás solo nunca.' }
+        ],
+        bonuses: [
+          { title: '🎁 BONUS #1: Plantillas premium', description: 'Las mismas que uso yo todos los días. Te ahorran horas de trabajo.', value: 'Valor $97 — HOY GRATIS' },
+          { title: '🎁 BONUS #2: Acceso a calls grupales', description: 'Una vez al mes resolvemos dudas en vivo en zoom.', value: 'Valor $297/año — HOY GRATIS' },
+          { title: '🎁 BONUS #3: Comunidad privada', description: 'Conectate con gente que está en tu mismo camino.', value: 'Valor incalculable — HOY GRATIS' },
+          { title: '🎁 BONUS #4: Updates de por vida', description: 'Cada nuevo módulo que sumamos en el futuro lo tenés gratis.', value: 'HOY GRATIS' }
+        ],
+        offer_text: '⏰ Esta oferta y los 4 bonus terminan pronto. Después vuelve al precio normal SIN bonus.',
+        offer_ends_at: null
       };
     case 'vsl':
       return {

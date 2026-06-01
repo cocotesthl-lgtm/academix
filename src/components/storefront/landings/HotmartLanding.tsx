@@ -75,6 +75,8 @@ export function HotmartLanding({
   const instructorPhoto = config.instructor_photo_url;
   const testimonials = config.testimonials ?? [];
   const faq = config.faq ?? [];
+  const bonuses = config.bonuses ?? [];
+  const offerText = config.offer_text?.trim();
 
   return (
     <article>
@@ -225,6 +227,36 @@ export function HotmartLanding({
                   </div>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* Bonuses */}
+          {bonuses.length > 0 && (
+            <section className="rounded-2xl p-6 border-2 border-dashed" style={{ borderColor: `${primary}40`, background: `${primary}05` }}>
+              <h2 className="text-2xl font-bold mb-1">🎁 Bonus que te llevás</h2>
+              <p className="text-sm text-black/60 mb-4">Por comprar hoy, además del curso recibís:</p>
+              <div className="space-y-3">
+                {bonuses.map((b, i) => (
+                  <div key={i} className="rounded-lg bg-white border border-black/10 p-4 flex gap-4 items-start">
+                    <div className="flex-1">
+                      <div className="font-bold">{b.title}</div>
+                      <p className="text-sm text-black/65 mt-1">{b.description}</p>
+                    </div>
+                    {b.value && (
+                      <div className="shrink-0 text-xs font-bold px-2.5 py-1.5 rounded text-white" style={{ background: primary }}>
+                        {b.value}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Offer / urgencia */}
+          {offerText && (
+            <section className="rounded-xl bg-amber-50 border-2 border-amber-300 p-4 text-center">
+              <p className="text-amber-900 font-semibold">{offerText}</p>
             </section>
           )}
 
