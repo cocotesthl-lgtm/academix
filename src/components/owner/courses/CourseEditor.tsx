@@ -49,7 +49,7 @@ export type Module = {
   lessons: Lesson[];
 };
 
-export function CourseEditor({ course, modules, categories }: { course: Course; modules: Module[]; categories: Category[] }) {
+export function CourseEditor({ course, modules, categories, primaryColor = '#0a0a0a' }: { course: Course; modules: Module[]; categories: Category[]; primaryColor?: string }) {
   const [updateState, updateAction, updatePending] = useActionState<Result | null, FormData>(
     updateCourseAction,
     null
@@ -175,6 +175,10 @@ export function CourseEditor({ course, modules, categories }: { course: Course; 
           courseTitle={course.title}
           initialTemplate={(course.landing_template ?? 'classic') as LandingTemplate}
           initialConfig={(course.landing_config ?? {}) as LandingConfig}
+          courseCoverUrl={course.cover_url}
+          coursePriceCents={course.price_cents}
+          courseCurrency={course.currency}
+          primaryColor={primaryColor}
         />
       </section>
 

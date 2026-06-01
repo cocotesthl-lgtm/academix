@@ -9,6 +9,7 @@ import {
   TEMPLATE_LABELS,
   defaultsForTemplate
 } from '@/lib/courses/landing';
+import { LandingPreview } from '@/components/owner/courses/LandingPreview';
 
 /**
  * Editor de la landing del curso. Permite:
@@ -23,12 +24,22 @@ export function LandingEditor({
   courseId,
   courseTitle,
   initialTemplate,
-  initialConfig
+  initialConfig,
+  courseCoverUrl,
+  coursePriceCents,
+  courseCurrency,
+  primaryColor
 }: {
   courseId: string;
   courseTitle: string;
   initialTemplate: LandingTemplate;
   initialConfig: LandingConfig;
+  /** Datos del curso que el preview muestra como base */
+  courseCoverUrl: string | null;
+  coursePriceCents: number;
+  courseCurrency: string;
+  /** Brand primary color del tenant */
+  primaryColor: string;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -80,7 +91,8 @@ export function LandingEditor({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="grid lg:grid-cols-[1fr_360px] gap-6">
+      <div className="space-y-6">
       {/* Selector de template */}
       <div>
         <h3 className="text-sm font-bold text-white/80 mb-2">Plantilla de la landing</h3>
@@ -218,12 +230,20 @@ export function LandingEditor({
         {saved && (
           <span className="text-sm text-emerald-400">✓ Landing actualizada</span>
         )}
-        <a
-          href={`/c/${courseTitle ? '' : ''}`}
-          className="text-xs text-white/40 ml-auto underline-offset-2 hover:underline"
-        >
-          Ver vista previa →
-        </a>
+      </div>
+      </div>
+
+      {/* ─── Preview en vivo ─── */}
+      <div>
+        <LandingPreview
+          template={template}
+          config={config}
+          courseTitle={courseTitle}
+          coverUrl={courseCoverUrl}
+          priceCents={coursePriceCents}
+          currency={courseCurrency}
+          primary={primaryColor}
+        />
       </div>
     </div>
   );

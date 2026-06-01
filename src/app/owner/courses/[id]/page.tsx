@@ -27,6 +27,14 @@ export default async function CourseEditPage({
 
   if (!course) notFound();
 
+  // Branding color del tenant para el preview de landing
+  const { data: tenantRow } = await svc
+    .from("tenants")
+    .select("brand")
+    .eq("id", tenant.id)
+    .maybeSingle<{ brand: { primary_color?: string } | null }>();
+  const primaryColor = tenantRow?.brand?.primary_color ?? '#0a0a0a';
+
   const { data: cats } = await svc
     .from("course_categories")
     .select("id, name")
@@ -94,7 +102,7 @@ export default async function CourseEditPage({
         </form>
       </div>
 
-      <CourseEditor course={course} modules={modules} categories={categories} />
+      <CourseEditor course={course} modules={modules} categories={categories} primaryColor={primaryColor} />
 
       <section className="max-w-3xl pt-8 border-t border-white/10">
         <h2 className="text-lg font-semibold mb-1">Conceder acceso manual</h2>
