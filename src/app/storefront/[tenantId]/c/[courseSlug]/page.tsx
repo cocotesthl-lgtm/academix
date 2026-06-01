@@ -5,6 +5,8 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { trackClick } from "@/lib/affiliates/tracking";
 import { CouponInput } from "@/components/storefront/CouponInput";
+import type { LandingConfig, LandingTemplate } from "@/lib/courses/landing";
+import { HotmartLanding } from "@/components/storefront/landings/HotmartLanding";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,8 @@ type CourseDetail = {
   price_cents: number;
   currency: string;
   status: string;
+  landing_template: LandingTemplate | null;
+  landing_config: LandingConfig | null;
 };
 
 type ModuleWithLessons = {
@@ -47,7 +51,7 @@ export default async function CourseDetailPage({
   const svc = getServiceClient();
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, landing_template, landing_config")
     .eq("tenant_id", tenantId)
     .eq("slug", courseSlug)
     .maybeSingle<CourseDetail>();
@@ -110,6 +114,27 @@ export default async function CourseDetailPage({
   const totalLessons = lessonRows.length;
   const previewLesson = lessonRows.find((l) => l.is_preview && l.drive_embed_url);
 
+  // ─── Branching por landing template ───
+  // 'classic' (o null) → seguimos con el render histórico de abajo.
+  // 'hotmart' → renderer dedicado tipo página de producto.
+  // 'funnel' / 'vsl' → todavía caen al classic (Sprint B).
+  const tpl: LandingTemplate = (course.landing_template ?? 'classic') as LandingTemplate;
+  if (tpl === 'hotmart') {
+    return (
+      <HotmartLanding
+        course={course}
+        modules={modules}
+        previewLessonEmbed={previewLesson?.drive_embed_url ?? null}
+        previewLessonTitle={previewLesson?.title ?? null}
+        totalLessons={totalLessons}
+        primary={primary}
+        config={(course.landing_config ?? {}) as LandingConfig}
+        buyerEmail={currentUser?.email ?? ''}
+      />
+    );
+  }
+
+  // Default: classic landing (la histórica de Curplat)
   return (
     <article className="max-w-5xl mx-auto px-6 py-10">
       <div className="grid md:grid-cols-3 gap-8">

@@ -12,6 +12,8 @@ import {
   type Result
 } from '@/lib/courses/actions';
 import { CoverPicker } from '@/components/owner/courses/CoverPicker';
+import { LandingEditor } from '@/components/owner/courses/LandingEditor';
+import type { LandingConfig, LandingTemplate } from '@/lib/courses/landing';
 
 export type Course = {
   id: string;
@@ -25,6 +27,8 @@ export type Course = {
   affiliate_enabled: boolean;
   is_featured: boolean;
   category_id: string | null;
+  landing_template?: 'classic' | 'hotmart' | 'funnel' | 'vsl';
+  landing_config?: Record<string, unknown> | null;
 };
 
 export type Category = { id: string; name: string };
@@ -156,6 +160,22 @@ export function CourseEditor({ course, modules, categories }: { course: Course; 
             )}
           </div>
         </form>
+      </section>
+
+      {/* Landing page del curso (template + overrides) */}
+      <section>
+        <h2 className="text-lg font-semibold mb-1">Landing page del curso</h2>
+        <p className="text-sm text-white/55 mb-4">
+          Cada curso tiene su propia landing pública (lo que ven los visitantes en{' '}
+          <code className="text-xs bg-white/5 px-1.5 py-0.5 rounded">/c/{course.slug}</code>).
+          Elegí una plantilla y customizá el contenido.
+        </p>
+        <LandingEditor
+          courseId={course.id}
+          courseTitle={course.title}
+          initialTemplate={(course.landing_template ?? 'classic') as LandingTemplate}
+          initialConfig={(course.landing_config ?? {}) as LandingConfig}
+        />
       </section>
 
       {/* Modules + Lessons */}

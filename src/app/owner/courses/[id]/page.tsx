@@ -20,7 +20,7 @@ export default async function CourseEditPage({
 
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
     .maybeSingle<Course>();

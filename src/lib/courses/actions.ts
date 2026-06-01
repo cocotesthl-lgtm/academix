@@ -122,6 +122,12 @@ export async function updateCourseAction(
 
   if (!title) return { ok: false, error: 'El título es obligatorio.' };
 
+  // Landing template + config (estructura de la landing del curso). Sólo
+  // se actualiza si el form lo manda explícitamente, así otros saves
+  // (Guardar info básica) no resetean la landing config.
+  const landingTemplateRaw = String(formData.get('landing_template') ?? '').trim();
+  const landingConfigRaw = String(formData.get('landing_config') ?? '').trim();
+
   const payload: Record<string, unknown> = {
     title,
     description,
@@ -134,6 +140,16 @@ export async function updateCourseAction(
   // Solo actualizamos cover_url si llegó algo (string vacío también permite limpiar)
   if (formData.has('cover_url')) {
     payload.cover_url = safeImageUrl(coverUrlRaw);
+  }
+  if (formData.has('landing_template') && ['classic', 'hotmart', 'funnel', 'vsl'].includes(landingTemplateRaw)) {
+    payload.landing_template = landingTemplateRaw;
+  }
+  if (formData.has('landing_config') && landingConfigRaw) {
+    try {
+      payload.landing_config = JSON.parse(landingConfigRaw);
+    } catch {
+      // si el JSON viene roto lo ignoramos en silencio
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
