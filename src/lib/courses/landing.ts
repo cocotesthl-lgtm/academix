@@ -82,6 +82,16 @@ export type LandingConfig = {
   /** Ocultar el footer del storefront. */
   hide_footer?: boolean;
 
+  // === Colores override (universal — overridea el brand del tenant solo
+  // para esta landing puntual) ===
+  /** Color de fondo de la landing. Default: blanco. Para VSL: negro. */
+  bg_color?: string;
+  /** Color de texto principal. Default: negro. Para VSL: blanco. */
+  text_color?: string;
+  /** Color acento (botones, badges, gating bar). Default: el primary del
+   *  tenant. Para VSL: dorado. */
+  accent_color?: string;
+
   // === Multistep form (VSL gated) ===
   multistep_form?: Array<{
     label: string;
@@ -251,44 +261,81 @@ export function defaultsForTemplate(template: LandingTemplate, courseTitle: stri
         offer_ends_at: null
       };
     case 'vsl':
+      // VSL default = "look profesional" estilo Hormozi / Vasco:
+      //  - Fondo negro, acento dorado, texto blanco
+      //  - Nav y footer ocultos (landing pura, cero distracciones)
+      //  - Video Vimeo precargado (template de IA / empleo del futuro)
+      //  - Todas las secciones gateadas hasta que termine el video (5:48 = 348s)
+      //  - Form multipaso + CTA aparecen recién al terminar el video
       return {
-        eyebrow: '▶ MIRÁ EL VIDEO ANTES DE CERRAR',
-        headline: '',
-        subtitle: `Mirá el video completo. Al terminar, te muestro cómo entrar a ${courseTitle}.`,
-        cta_label: '✅ Reservar mi lugar',
-        cta_caption: 'Acceso inmediato · Garantía 7 días · Plazas limitadas',
-        // El owner pega su video ID acá. No usamos placeholder porque YouTube
-        // suele bloquear embeds aleatorios y queda peor que vacío.
-        vsl_video_id: '',
-        vsl_video_provider: 'youtube',
-        vsl_unlock_seconds: 60,
+        // Colores estilo VSL premium
+        bg_color: '#0a0a0a',
+        text_color: '#ffffff',
+        accent_color: '#d4af37',
+        // Sin distracciones por default
+        hide_nav: true,
+        hide_footer: true,
+
+        eyebrow: '⚠ INFORMACIÓN URGENTE PARA QUIEN MIRA ESTO',
+        headline: 'La IA no te va a reemplazar. Te va a reemplazar quien sí la sepa usar.',
+        subtitle: 'Mirá este video corto. Te muestro paso a paso cómo aprovechar la IA hoy para no quedarte sin empleo mañana — sin saber programar, sin ser técnico.',
+        cta_label: '✅ Quiero reservar mi lugar',
+        cta_caption: 'Acceso inmediato · 7 días de garantía · Plazas limitadas por cohorte',
+
+        // Video de IA (Vimeo, 5:48 de duración → 348 segundos)
+        vsl_video_id: 'https://vimeo.com/1128387404',
+        vsl_video_provider: 'vimeo',
+        vsl_unlock_seconds: 348,
         vsl_form_after_watch: true,
+        vsl_block_pause: true,
+
+        // Todas las secciones se revelan al terminar el video (gated estricto)
+        section_unlocks: {
+          form: 348,
+          testimonials: 348,
+          bonuses: 348,
+          faq: 348,
+          cta: 348
+        },
+
         multistep_form: [
           { label: '¿Cuál es tu nombre y apellido?', name: 'name', type: 'text', required: true },
-          { label: '¿A qué email te mandamos toda la info?', name: 'email', type: 'email', required: true },
-          { label: '¿Cuál es tu WhatsApp? (te avisamos novedades)', name: 'phone', type: 'tel', required: true },
-          { label: '¿En qué situación estás hoy?', name: 'situation', type: 'select',
+          { label: '¿A qué email te mando el acceso?', name: 'email', type: 'email', required: true },
+          { label: '¿Cuál es tu WhatsApp? (te aviso cuando empezamos)', name: 'phone', type: 'tel', required: true },
+          { label: '¿A qué te dedicás hoy?', name: 'occupation', type: 'select',
             options: [
-              'Recién estoy empezando, no sé por dónde',
-              'Probé por mi cuenta y me frustré',
-              'Ya tengo algo de experiencia pero quiero más',
-              'Es un tema 100% nuevo para mí'
+              'Trabajo en relación de dependencia',
+              'Soy freelance / independiente',
+              'Tengo mi propio emprendimiento',
+              'Estoy buscando empleo',
+              'Soy estudiante'
             ], required: true },
-          { label: '¿Qué tan en serio querés esto?', name: 'commitment', type: 'select',
-            options: ['Quiero empezar YA', 'Estoy evaluando', 'Solo curiosidad'], required: true }
+          { label: '¿Cuánto sabés de IA hoy?', name: 'ai_level', type: 'select',
+            options: [
+              'Nada, recién la estoy escuchando nombrar',
+              'Probé ChatGPT alguna vez',
+              'La uso seguido pero sin método',
+              'Ya laburo con IA en mi día a día'
+            ], required: true },
+          { label: '¿Qué tan en serio querés tomártelo?', name: 'commitment', type: 'select',
+            options: ['Quiero empezar YA esta semana', 'Estoy decidiéndome', 'Solo quiero info por ahora'], required: true }
         ],
+
         garantia_dias: 7,
-        garantia_text: 'Si no te gusta en los primeros 7 días, te devolvemos el 100% del dinero. Sin preguntas.',
+        garantia_text: 'Si en 7 días no aprendiste a usar IA para algo concreto de tu trabajo, te devuelvo el 100% del dinero. Sin preguntas.',
+
         testimonials: [
-          { name: 'María González', role: 'Buenos Aires', text: 'El video me hizo entender que era para mí. Después del form me llegó todo y arranqué al día siguiente.', rating: 5, photo_url: SAMPLE_TESTI_1 },
-          { name: 'Juan Pérez', role: 'Córdoba', text: 'Mejor inversión del año. La metodología es clarísima y el soporte responde rápido.', rating: 5, photo_url: SAMPLE_TESTI_2 },
-          { name: 'Laura Méndez', role: 'Rosario', text: 'Probé otros cursos antes. Este es diferente, hay seguimiento real del instructor.', rating: 5, photo_url: SAMPLE_TESTI_3 }
+          { name: 'María González', role: 'Ejecutiva · Buenos Aires', text: 'Pensé que era marketing barato. Es real. En 2 semanas automaticé 4 hs de mi día con IA. Mi jefe me ascendió.', rating: 5, photo_url: SAMPLE_TESTI_1 },
+          { name: 'Juan Pérez', role: 'Freelance · Córdoba', text: 'Triplicé mi tarifa porque ahora ofrezco servicios con IA que mis competidores no saben hacer. Insano.', rating: 5, photo_url: SAMPLE_TESTI_2 },
+          { name: 'Laura Méndez', role: 'Contadora · Rosario', text: 'A los 47 años pensé que la IA me dejaba afuera. Hoy soy yo la que les enseña a los pibes del estudio.', rating: 5, photo_url: SAMPLE_TESTI_3 }
         ],
+
         faq: [
-          { q: '¿Cuánto tiempo tengo que ver el video?', a: 'Un minuto te alcanza para entender de qué va. Después podés cerrarlo y completar el form.' },
-          { q: '¿Para qué me piden mis datos?', a: 'Para mandarte la info del programa al mail/WhatsApp y reservar tu lugar. No los compartimos con terceros.' },
-          { q: '¿Cuánto cuesta el curso?', a: 'El precio aparece después del formulario. Tenés 7 días de garantía si no te convence.' },
-          { q: '¿Cuándo empieza?', a: 'Acceso inmediato. Una vez que pagás, entrás a todo el contenido sin esperar.' }
+          { q: '¿Necesito saber programar?', a: 'No. El curso está pensado para personas sin background técnico. Trabajamos con herramientas visuales y prompts en español.' },
+          { q: '¿Sirve para mi rubro?', a: 'Aplicamos IA en marketing, atención al cliente, ventas, administración, contenido, RRHH y operaciones. Si tu trabajo tiene tareas repetitivas, te sirve.' },
+          { q: '¿Por qué me piden mis datos antes de mostrarme el precio?', a: 'Para reservar tu lugar en la próxima cohorte y mandarte el material al mail/WhatsApp. No compartimos tus datos con nadie.' },
+          { q: '¿Cuánto cuesta?', a: 'El precio aparece después del formulario. Tenés 7 días de garantía total una vez que entrás.' },
+          { q: '¿Y si no tengo tiempo?', a: 'El programa está diseñado para hacerlo a tu ritmo. La mayoría dedica 30 min/día y ve resultados en 2 semanas.' }
         ]
       };
     default:

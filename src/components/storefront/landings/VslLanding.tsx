@@ -45,6 +45,13 @@ export function VslLanding({
   const headline = config.headline?.trim() || course.title;
   const subtitle = config.subtitle?.trim();
   const eyebrow = config.eyebrow?.trim();
+
+  // Colores override (defaults VSL: negro+dorado+blanco). Si el config no
+  // los define, caemos al brand del tenant (primary) y al blanco/negro
+  // estándar del storefront.
+  const bg = config.bg_color || '#ffffff';
+  const text = config.text_color || '#0a0a0a';
+  const accent = config.accent_color || primary;
   const unlockSeconds = Math.max(5, config.vsl_unlock_seconds ?? 60);
   const formAfterWatch = config.vsl_form_after_watch ?? true;
   // Parseamos lo que haya en vsl_video_id (puede ser una URL completa o ID raw)
@@ -136,13 +143,13 @@ export function VslLanding({
   }, [videoId, videoProvider, blockPause, playClicked]);
 
   return (
-    <article className="bg-white min-h-screen">
+    <article className="min-h-screen" style={{ background: bg, color: text }}>
       <LandingChrome hideNav={config.hide_nav} hideFooter={config.hide_footer} />
       {/* Hero compacto */}
       <section className="px-6 pt-12 pb-6 text-center">
         <div className="max-w-3xl mx-auto">
           {eyebrow && (
-            <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full" style={{ background: `${primary}15`, color: primary }}>
+            <span className="inline-block text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full" style={{ background: `${accent}15`, color: accent }}>
               {eyebrow}
             </span>
           )}
@@ -169,11 +176,11 @@ export function VslLanding({
                   }}
                   className="absolute inset-0 w-full h-full flex items-center justify-center group bg-black"
                   style={{
-                    backgroundImage: `linear-gradient(135deg, ${primary}30 0%, ${primary}05 100%)`
+                    backgroundImage: `linear-gradient(135deg, ${accent}30 0%, ${accent}05 100%)`
                   }}
                 >
                   <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/95 flex items-center justify-center shadow-2xl group-hover:scale-110 transition">
-                    <div className="text-3xl md:text-4xl ml-1" style={{ color: primary }}>▶</div>
+                    <div className="text-3xl md:text-4xl ml-1" style={{ color: accent }}>▶</div>
                   </div>
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm font-semibold drop-shadow">
                     Click para reproducir
@@ -206,8 +213,8 @@ export function VslLanding({
             </div>
 
             {!formUnlocked && (
-              <div className="mt-4 rounded-xl border-2 p-4 text-center" style={{ borderColor: `${primary}50`, background: `${primary}08` }}>
-                <div className="text-sm font-semibold" style={{ color: primary }}>
+              <div className="mt-4 rounded-xl border-2 p-4 text-center" style={{ borderColor: `${accent}50`, background: `${accent}08` }}>
+                <div className="text-sm font-semibold" style={{ color: accent }}>
                   🔒 {videoStarted
                     ? `Desbloqueando en ${secondsLeftForm}s — mirá el video completo`
                     : 'Mirá el video para desbloquear el contenido'}
@@ -217,7 +224,7 @@ export function VslLanding({
                     className="h-full transition-all duration-1000"
                     style={{
                       width: `${((formUnlockAt - secondsLeftForm) / formUnlockAt) * 100}%`,
-                      background: primary
+                      background: accent
                     }}
                   />
                 </div>
@@ -265,7 +272,7 @@ export function VslLanding({
               tenantId={course.tenant_id}
               courseId={course.id}
               prefilledEmail={buyerEmail}
-              primary={primary}
+              primary={accent}
               onComplete={(data) => {
                 setFormData(data);
                 setFormSubmitted(true);
@@ -290,7 +297,7 @@ export function VslLanding({
                 courseId={course.id}
                 priceCents={course.price_cents}
                 currency={course.currency}
-                primary={primary}
+                primary={accent}
                 defaultEmail={formData.email || buyerEmail}
                 buyLabel={ctaLabel}
               />
@@ -321,7 +328,7 @@ export function VslLanding({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={t.photo_url} alt={t.name} className="w-9 h-9 rounded-full object-cover" />
                     ) : (
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: primary }}>
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: accent }}>
                         {t.name.slice(0, 1).toUpperCase()}
                       </div>
                     )}
@@ -432,7 +439,7 @@ function VslMultiStepForm({
   }
 
   return (
-    <div className="rounded-2xl border-2 bg-white shadow-xl p-6" style={{ borderColor: primary }}>
+    <div className="rounded-2xl border-2 bg-white shadow-xl p-6 text-black" style={{ borderColor: primary }}>
       <div className="flex items-center justify-between mb-4 text-xs text-black/55">
         <span>Paso {stepIdx + 1} de {steps.length}</span>
         <div className="flex gap-1">

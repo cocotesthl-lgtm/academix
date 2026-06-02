@@ -61,6 +61,9 @@ export function LandingEditor({
 
   const [variants, setVariants] = useState<VariantsMap>(initialVariants ?? {});
 
+  // Modal "vacía vs con muestra" cuando el owner cambia el template
+  const [pendingTemplate, setPendingTemplate] = useState<LandingTemplate | null>(null);
+
   // El editor edita siempre la variante activa
   const currentTemplate = activeVariant === 'A' ? template : (variants[activeVariant]?.template ?? 'hotmart');
   const currentConfig = activeVariant === 'A' ? config : (variants[activeVariant]?.config ?? {});
@@ -68,6 +71,26 @@ export function LandingEditor({
   function setCurrentTemplate(t: LandingTemplate) {
     if (activeVariant === 'A') setTemplate(t);
     else setVariants((vs) => ({ ...vs, [activeVariant]: { template: t, config: vs[activeVariant]?.config ?? {} } }));
+  }
+
+  /** Cuando el owner clickea una plantilla, abrimos un modal preguntando si
+   *  la quiere vacía o con contenido de muestra precargado.
+   *  Si es la misma que ya tiene, no preguntamos. */
+  function chooseTemplate(t: LandingTemplate) {
+    if (t === currentTemplate) return;
+    setPendingTemplate(t);
+  }
+  function applyPendingBlank() {
+    if (!pendingTemplate) return;
+    setCurrentTemplate(pendingTemplate);
+    setCurrentConfig({});                  // vacía
+    setPendingTemplate(null);
+  }
+  function applyPendingWithSample() {
+    if (!pendingTemplate) return;
+    setCurrentTemplate(pendingTemplate);
+    setCurrentConfig(defaultsForTemplate(pendingTemplate, courseTitle));
+    setPendingTemplate(null);
   }
 
   function setCurrentConfig(newConfig: LandingConfig | ((c: LandingConfig) => LandingConfig)) {
@@ -86,10 +109,12 @@ export function LandingEditor({
     setCurrentConfig((c) => ({ ...c, [key]: value }));
   }
 
+  // (legacy) kept for backwards compat — el botón fue reemplazado por el modal.
   function applyTemplateDefaults() {
     const defaults = defaultsForTemplate(currentTemplate, courseTitle);
     setCurrentConfig(defaults);
   }
+  void applyTemplateDefaults;
 
   function enableVariant(key: 'B' | 'C') {
     // Cuando habilitan B o C por primera vez, pre-cargamos con defaults
@@ -188,7 +213,7 @@ export function LandingEditor({
                 <button
                   key={k}
                   type="button"
-                  onClick={() => setCurrentTemplate(k)}
+                  onClick={() => chooseTemplate(k)}
                   className={`text-left rounded-lg border p-3 transition ${
                     tplForView === k
                       ? 'border-fuchsia-400 bg-fuchsia-500/10'
@@ -204,14 +229,7 @@ export function LandingEditor({
               );
             })}
           </div>
-          <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={applyTemplateDefaults}
-              className="text-xs rounded border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200 px-3 py-1.5 hover:bg-fuchsia-500/20"
-            >
-              🪄 Cargar contenido de muestra
-            </button>
+          <div className="flex items-center justify-end mt-2">
             <a
               href={`${storefrontOrigin}/c/${courseSlug}${activeVariant === 'A' ? '' : `?v=${activeVariant}`}`}
               target="_blank"
@@ -222,6 +240,61 @@ export function LandingEditor({
             </a>
           </div>
         </div>
+
+        {/* Modal "vacía vs con muestra" cuando el owner clickea cambiar template */}
+        {pendingTemplate && (
+          <div
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setPendingTemplate(null)}
+          >
+            <div
+              className="w-full max-w-md rounded-xl border border-white/15 bg-[#111] shadow-2xl p-5 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div>
+                <h2 className="text-lg font-bold">
+                  {TEMPLATE_LABELS[pendingTemplate].emoji} Cambiar a {TEMPLATE_LABELS[pendingTemplate].label}
+                </h2>
+                <p className="text-sm text-white/65 mt-2 leading-relaxed">
+                  ¿Cómo querés arrancar esta plantilla? Cualquier opción reemplaza el contenido
+                  que tenés ahora en esta variante.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={applyPendingWithSample}
+                  className="w-full text-left rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-4 hover:bg-emerald-500/20"
+                >
+                  <div className="font-semibold text-sm flex items-center gap-2">
+                    ✨ Con contenido de muestra <span className="text-[10px] text-emerald-300 ml-auto">recomendado</span>
+                  </div>
+                  <p className="text-xs text-white/65 mt-1.5">
+                    Llena todos los campos con textos, testimonios, FAQ, bonus y colores listos
+                    para que solo cambies nombres. Lo más rápido para empezar.
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={applyPendingBlank}
+                  className="w-full text-left rounded-lg border border-white/15 bg-white/[0.02] p-4 hover:bg-white/[0.05]"
+                >
+                  <div className="font-semibold text-sm">📄 Vacía</div>
+                  <p className="text-xs text-white/55 mt-1.5">
+                    Solo cambia la plantilla. Empezás con todos los campos vacíos para llenar a tu gusto.
+                  </p>
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPendingTemplate(null)}
+                className="w-full text-sm text-white/50 hover:text-white py-2"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Visibilidad universal (todos los templates) */}
         <Section title="👁 Visibilidad del header/footer del storefront">
@@ -245,6 +318,19 @@ export function LandingEditor({
             Ideal para landings sin distracciones (tipo VSL o funnel directo a venta). Solo afecta
             esta landing puntual, no el resto del storefront.
           </p>
+        </Section>
+
+        {/* Colores (override del brand del tenant solo para esta landing) */}
+        <Section title="🎨 Colores de esta landing">
+          <p className="text-xs text-white/55 leading-snug mb-2">
+            Estos colores reemplazan los del storefront solo para esta landing puntual. Útil
+            para VSLs que necesitan look diferente al resto del sitio (ej: negro + dorado).
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <ColorPicker label="Fondo" value={cfgForView.bg_color ?? ''} onChange={(v) => field('bg_color', v)} defaultColor="#ffffff" />
+            <ColorPicker label="Texto" value={cfgForView.text_color ?? ''} onChange={(v) => field('text_color', v)} defaultColor="#0a0a0a" />
+            <ColorPicker label="Acento (CTAs)" value={cfgForView.accent_color ?? ''} onChange={(v) => field('accent_color', v)} defaultColor="#a855f7" />
+          </div>
         </Section>
 
         {tplForView === 'classic' && (
@@ -734,6 +820,51 @@ function SectionUnlocksEditor({
         Ejemplo: dejá form en 60s, testimonios en 90s, bonus en 150s, FAQ en 180s, CTA en 240s
         para revelar todo progresivamente mientras se reproduce el video.
       </p>
+    </div>
+  );
+}
+
+/* ─────────── Color picker (con default reseteable) ─────────── */
+
+function ColorPicker({
+  label,
+  value,
+  onChange,
+  defaultColor
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  defaultColor: string;
+}) {
+  const active = value || defaultColor;
+  return (
+    <div>
+      <label className="block text-xs text-white/60 mb-1">{label}</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={active}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-10 h-8 rounded bg-transparent border border-white/15 cursor-pointer shrink-0"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={defaultColor}
+          className="flex-1 min-w-0 rounded bg-white/5 border border-white/15 px-2 py-1 text-xs font-mono"
+        />
+      </div>
+      {value && value !== defaultColor && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          className="text-[10px] text-white/40 hover:text-white mt-1"
+        >
+          ↺ default ({defaultColor})
+        </button>
+      )}
     </div>
   );
 }

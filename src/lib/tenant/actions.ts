@@ -146,6 +146,24 @@ export async function createTenantAction(
       created_by: user.id,
       landing_template: 'hotmart',
       landing_config: defaultsForTemplate('hotmart', 'Masterclass intensiva')
+    },
+    {
+      // VSL demo: landing tipo VSL con video real (5:48), todo gated hasta
+      // que termine el video. Look negro + dorado. El owner edita el video
+      // y los textos para hacerlo suyo.
+      tenant_id: tenant.id,
+      slug: 'domina-ia',
+      title: 'Domina la IA antes que la IA te domine',
+      description: 'Programa intensivo para profesionales que quieren usar IA en su trabajo y multiplicar su productividad — sin saber programar.',
+      price_cents: 49900 * 100,
+      currency: 'ARS',
+      status: 'published',
+      is_featured: true,
+      featured_position: 3,
+      affiliate_enabled: true,
+      created_by: user.id,
+      landing_template: 'vsl',
+      landing_config: defaultsForTemplate('vsl', 'Domina la IA antes que la IA te domine')
     }
   ];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
