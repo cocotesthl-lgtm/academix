@@ -223,6 +223,30 @@ export function LandingEditor({
           </div>
         </div>
 
+        {/* Visibilidad universal (todos los templates) */}
+        <Section title="👁 Visibilidad del header/footer del storefront">
+          <label className="flex items-center gap-2 text-sm text-white/85 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={cfgForView.hide_nav ?? false}
+              onChange={(e) => field('hide_nav', e.target.checked)}
+            />
+            Ocultar menú/nav superior en esta landing
+          </label>
+          <label className="flex items-center gap-2 text-sm text-white/85 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={cfgForView.hide_footer ?? false}
+              onChange={(e) => field('hide_footer', e.target.checked)}
+            />
+            Ocultar footer en esta landing
+          </label>
+          <p className="text-[10px] text-white/40 leading-snug">
+            Ideal para landings sin distracciones (tipo VSL o funnel directo a venta). Solo afecta
+            esta landing puntual, no el resto del storefront.
+          </p>
+        </Section>
+
         {tplForView === 'classic' && (
           <p className="text-sm text-white/55 rounded border border-white/10 bg-white/[0.02] p-4">
             La plantilla <strong>Clásica</strong> usa la info básica del curso (título, descripción,
@@ -273,6 +297,17 @@ export function LandingEditor({
               <MultiStepFormEditor
                 items={cfgForView.multistep_form ?? []}
                 onChange={(arr) => field('multistep_form', arr)}
+              />
+            </Section>
+
+            <Section title="🎚️ Gating progresivo (revelar secciones en el tiempo)">
+              <p className="text-xs text-white/55 leading-snug mb-2">
+                Cada sección aparece cuando el visitante lleva X segundos viendo el video.
+                Dejar vacío (o 0) = la sección es visible desde el inicio (sin gating).
+              </p>
+              <SectionUnlocksEditor
+                unlocks={cfgForView.section_unlocks ?? {}}
+                onChange={(u) => field('section_unlocks', u)}
               />
             </Section>
 
@@ -634,6 +669,71 @@ function BonusEditor({ items, onChange }: { items: Bonus[]; onChange: (arr: Bonu
       <button type="button" onClick={() => onChange([...items, { title: '', description: '', value: '' }])} className="text-xs rounded border border-white/15 bg-white/5 text-white/70 px-3 py-1.5 hover:bg-white/10">
         + Agregar bonus
       </button>
+    </div>
+  );
+}
+
+/* ─────────── Section unlocks (gating progresivo VSL) ─────────── */
+
+type UnlocksMap = NonNullable<LandingConfig['section_unlocks']>;
+type UnlockKey = 'form' | 'testimonials' | 'bonuses' | 'faq' | 'cta';
+
+const UNLOCK_LABELS: Record<UnlockKey, { label: string; emoji: string; hint: string }> = {
+  form:         { emoji: '📝', label: 'Formulario multipaso', hint: 'cuándo aparece el form después del video' },
+  testimonials: { emoji: '⭐', label: 'Testimonios',          hint: 'cuándo se revelan las opiniones' },
+  bonuses:      { emoji: '🎁', label: 'Bonus stack',           hint: 'cuándo aparece la sección de bonus' },
+  faq:          { emoji: '❓', label: 'FAQ',                   hint: 'cuándo se muestran las preguntas frecuentes' },
+  cta:          { emoji: '🛒', label: 'Botón de compra',       hint: 'cuándo aparece el CTA de pago final' }
+};
+
+function SectionUnlocksEditor({
+  unlocks,
+  onChange
+}: {
+  unlocks: UnlocksMap;
+  onChange: (u: UnlocksMap) => void;
+}) {
+  function set(key: UnlockKey, value: number | undefined) {
+    const next = { ...unlocks };
+    if (value === undefined || value === 0 || Number.isNaN(value)) {
+      delete next[key];
+    } else {
+      next[key] = value;
+    }
+    onChange(next);
+  }
+  return (
+    <div className="space-y-2">
+      {(Object.keys(UNLOCK_LABELS) as UnlockKey[]).map((k) => {
+        const meta = UNLOCK_LABELS[k];
+        const cur = unlocks[k];
+        return (
+          <div key={k} className="flex items-center gap-3 rounded border border-white/10 bg-white/[0.02] px-3 py-2">
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5 text-sm">
+                <span>{meta.emoji}</span>
+                <span className="font-semibold">{meta.label}</span>
+              </div>
+              <p className="text-[10px] text-white/40 mt-0.5">{meta.hint}</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                min={0}
+                value={cur ?? ''}
+                onChange={(e) => set(k, parseInt(e.target.value, 10))}
+                placeholder="—"
+                className="w-20 rounded bg-white/5 border border-white/15 px-2 py-1 text-sm text-right font-mono"
+              />
+              <span className="text-xs text-white/40">seg</span>
+            </div>
+          </div>
+        );
+      })}
+      <p className="text-[10px] text-white/40">
+        Ejemplo: dejá form en 60s, testimonios en 90s, bonus en 150s, FAQ en 180s, CTA en 240s
+        para revelar todo progresivamente mientras se reproduce el video.
+      </p>
     </div>
   );
 }

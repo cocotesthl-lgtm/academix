@@ -70,6 +70,17 @@ export type LandingConfig = {
   /** Modo VSL bloqueado: oculta controles + iframe pointer-events-none +
    *  overlay clickeable que bloquea pause. Default true. */
   vsl_block_pause?: boolean;
+  /** Gating progresivo (VSL): cada sección se revela cuando el contador
+   *  global de elapsed-since-play alcanza X segundos. Undefined = siempre
+   *  visible (sin gating). Solo aplica al template VSL.
+   *  Keys posibles: 'form' | 'testimonials' | 'bonuses' | 'faq' | 'cta' */
+  section_unlocks?: Partial<Record<'form' | 'testimonials' | 'bonuses' | 'faq' | 'cta', number>>;
+
+  // === Visibilidad del wrapper del storefront (universal) ===
+  /** Ocultar el header/nav del storefront (logo + menu + iniciar sesión). */
+  hide_nav?: boolean;
+  /** Ocultar el footer del storefront. */
+  hide_footer?: boolean;
 
   // === Multistep form (VSL gated) ===
   multistep_form?: Array<{

@@ -1,5 +1,6 @@
 import { CouponInput } from '@/components/storefront/CouponInput';
 import type { LandingConfig } from '@/lib/courses/landing';
+import { LandingChrome } from '@/components/storefront/landings/LandingChrome';
 
 type CourseInfo = {
   id: string;
@@ -94,6 +95,7 @@ export function FunnelLanding({
 
   return (
     <article className="bg-white">
+      <LandingChrome hideNav={config.hide_nav} hideFooter={config.hide_footer} />
       {/* URGENCIA BAR */}
       {offerText && (
         <div className="sticky top-0 z-40 text-center text-sm font-semibold py-2 px-4 text-white" style={{ background: primary }}>

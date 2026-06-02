@@ -1,5 +1,6 @@
 import { CouponInput } from '@/components/storefront/CouponInput';
 import type { LandingConfig } from '@/lib/courses/landing';
+import { LandingChrome } from '@/components/storefront/landings/LandingChrome';
 
 type CourseInfo = {
   id: string;
@@ -80,6 +81,7 @@ export function HotmartLanding({
 
   return (
     <article>
+      <LandingChrome hideNav={config.hide_nav} hideFooter={config.hide_footer} />
       {/* ─── Banner ─── */}
       <section className="relative">
         <div className="relative h-[55vh] min-h-[400px] max-h-[600px] overflow-hidden">

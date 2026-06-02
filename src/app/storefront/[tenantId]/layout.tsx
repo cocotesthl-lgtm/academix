@@ -60,7 +60,7 @@ export default async function StorefrontLayout({
         ['--brand-accent' as string]: accent
       }}
     >
-      <header className="border-b border-black/10 bg-white sticky top-0 z-50">
+      <header data-storefront-header className="storefront-header border-b border-black/10 bg-white sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <a href="/" className="flex items-center gap-3">
             {logoLayout === 'horizontal' && brand.logo_url ? (
@@ -102,7 +102,7 @@ export default async function StorefrontLayout({
 
       <main>{children}</main>
 
-      <footer className="border-t border-black/10 mt-16 py-10">
+      <footer data-storefront-footer className="storefront-footer border-t border-black/10 mt-16 py-10">
         <div className="max-w-5xl mx-auto px-6 text-center space-y-4">
           <p className="text-sm text-black/70 whitespace-pre-line">
             {cfg.footer.text || `© ${new Date().getFullYear()} ${tenant.name}`}

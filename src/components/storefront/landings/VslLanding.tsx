@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { CouponInput } from '@/components/storefront/CouponInput';
 import { parseVideoUrl, type LandingConfig } from '@/lib/courses/landing';
+import { LandingChrome } from '@/components/storefront/landings/LandingChrome';
 
 type CourseInfo = {
   id: string;
@@ -65,29 +66,44 @@ export function VslLanding({
   // todo desde el inicio para que el form y el CTA se vean igual.
   const hasVideo = Boolean(videoId);
 
-  // Timer de gating
-  const [secondsLeft, setSecondsLeft] = useState(unlockSeconds);
-  const [unlocked, setUnlocked] = useState(!hasVideo); // ← auto-unlock si no hay video
-  const [videoStarted, setVideoStarted] = useState(false);
+  // Contador global "elapsed" desde que arrancó el video. Lo usamos para:
+  //  - desbloquear el form (cuando elapsed >= vsl_unlock_seconds)
+  //  - desbloquear cada sección configurada en section_unlocks
+  // Si no hay video, elapsed se considera muy grande (todo unlocked).
+  const [elapsed, setElapsed] = useState(0);
+  const [videoStarted, setVideoStarted] = useState(!hasVideo);
 
   // Form state
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>({});
 
-  // Tick del contador (solo después de play del video)
   useEffect(() => {
-    if (!hasVideo || !videoStarted || unlocked) return;
-    if (secondsLeft <= 0) {
-      setUnlocked(true);
-      return;
-    }
-    const t = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [hasVideo, videoStarted, secondsLeft, unlocked]);
+    if (!videoStarted) return;
+    const t = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(t);
+  }, [videoStarted]);
+
+  // Helpers de gating
+  const formUnlockAt = config.section_unlocks?.form ?? unlockSeconds;
+  const formUnlocked = !hasVideo || elapsed >= formUnlockAt;
+  const secondsLeftForm = Math.max(0, formUnlockAt - elapsed);
+
+  function sectionReady(key: 'testimonials' | 'bonuses' | 'faq' | 'cta'): boolean {
+    const unlockAt = config.section_unlocks?.[key];
+    if (unlockAt === undefined || unlockAt === null) return true; // no gating → visible
+    if (!hasVideo) return true;                                    // sin video → visible
+    return elapsed >= unlockAt;
+  }
+  function secondsLeftFor(key: 'testimonials' | 'bonuses' | 'faq' | 'cta'): number {
+    const unlockAt = config.section_unlocks?.[key];
+    if (unlockAt === undefined) return 0;
+    return Math.max(0, unlockAt - elapsed);
+  }
 
   // Auto-unlock si el owner no configuró formAfterWatch + no hay form
-  const showForm = unlocked && formAfterWatch && !formSubmitted && (config.multistep_form ?? []).length > 0;
-  const showBuyCTA = unlocked && (!formAfterWatch || formSubmitted || (config.multistep_form ?? []).length === 0);
+  const showForm = formUnlocked && formAfterWatch && !formSubmitted && (config.multistep_form ?? []).length > 0;
+  const showBuyCTAByForm = formUnlocked && (!formAfterWatch || formSubmitted || (config.multistep_form ?? []).length === 0);
+  const showBuyCTA = showBuyCTAByForm && sectionReady('cta');
 
   // Modo VSL "locked": oculta controles + bloquea pause via overlay.
   // Por default activado (el caso de uso de VSL es "tienen que ver el
@@ -121,6 +137,7 @@ export function VslLanding({
 
   return (
     <article className="bg-white min-h-screen">
+      <LandingChrome hideNav={config.hide_nav} hideFooter={config.hide_footer} />
       {/* Hero compacto */}
       <section className="px-6 pt-12 pb-6 text-center">
         <div className="max-w-3xl mx-auto">
@@ -188,35 +205,26 @@ export function VslLanding({
               )}
             </div>
 
-            {!unlocked && (
+            {!formUnlocked && (
               <div className="mt-4 rounded-xl border-2 p-4 text-center" style={{ borderColor: `${primary}50`, background: `${primary}08` }}>
                 <div className="text-sm font-semibold" style={{ color: primary }}>
                   🔒 {videoStarted
-                    ? `Desbloqueando en ${secondsLeft}s — mirá el video completo para acceder al formulario`
-                    : 'Mirá el video para desbloquear el formulario'}
+                    ? `Desbloqueando en ${secondsLeftForm}s — mirá el video completo`
+                    : 'Mirá el video para desbloquear el contenido'}
                 </div>
                 <div className="mt-2 h-1.5 rounded-full bg-black/10 overflow-hidden">
                   <div
                     className="h-full transition-all duration-1000"
                     style={{
-                      width: `${((unlockSeconds - secondsLeft) / unlockSeconds) * 100}%`,
+                      width: `${((formUnlockAt - secondsLeftForm) / formUnlockAt) * 100}%`,
                       background: primary
                     }}
                   />
                 </div>
-                {!videoStarted && (
-                  <button
-                    type="button"
-                    onClick={() => setVideoStarted(true)}
-                    className="mt-3 text-xs text-black/60 hover:text-black underline-offset-2 hover:underline"
-                  >
-                    Ya empecé a verlo, iniciar contador →
-                  </button>
-                )}
               </div>
             )}
 
-            {unlocked && (
+            {formUnlocked && (
               <div className="mt-4 rounded-xl border-2 border-emerald-400 bg-emerald-50 p-3 text-center">
                 <div className="text-sm font-semibold text-emerald-800">
                   ✓ ¡Acceso desbloqueado!
@@ -299,7 +307,7 @@ export function VslLanding({
       )}
 
       {/* Testimonios */}
-      {testimonials.length > 0 && (
+      {testimonials.length > 0 && sectionReady('testimonials') && (
         <section className="px-6 py-12 bg-black/[0.02]">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">Lo que dicen los que ya entraron</h2>
@@ -330,7 +338,7 @@ export function VslLanding({
       )}
 
       {/* FAQ */}
-      {faq.length > 0 && (
+      {faq.length > 0 && sectionReady('faq') && (
         <section className="px-6 py-12">
           <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold text-center mb-6">Preguntas frecuentes</h2>
