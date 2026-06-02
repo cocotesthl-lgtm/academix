@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { CouponInput } from '@/components/storefront/CouponInput';
-import type { LandingConfig } from '@/lib/courses/landing';
+import { parseVideoUrl, type LandingConfig } from '@/lib/courses/landing';
 
 type CourseInfo = {
   id: string;
@@ -46,8 +46,14 @@ export function VslLanding({
   const eyebrow = config.eyebrow?.trim();
   const unlockSeconds = Math.max(5, config.vsl_unlock_seconds ?? 60);
   const formAfterWatch = config.vsl_form_after_watch ?? true;
-  const videoId = config.vsl_video_id?.trim();
-  const videoProvider = config.vsl_video_provider ?? 'youtube';
+  // Parseamos lo que haya en vsl_video_id (puede ser una URL completa o ID raw)
+  // — el editor ahora pide la URL pero datos viejos pueden tener ID raw.
+  const parsedVideo = useMemo(
+    () => parseVideoUrl(config.vsl_video_id ?? ''),
+    [config.vsl_video_id]
+  );
+  const videoId = parsedVideo?.id;
+  const videoProvider = parsedVideo?.provider ?? config.vsl_video_provider ?? 'youtube';
   const garantiaDias = config.garantia_dias ?? 7;
   const garantiaText = config.garantia_text?.trim();
   const testimonials = config.testimonials ?? [];

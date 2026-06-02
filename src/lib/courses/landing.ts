@@ -103,6 +103,38 @@ export const TEMPLATE_LABELS: Record<LandingTemplate, { label: string; emoji: st
 
 export const DEFAULT_LANDING_CONFIG: LandingConfig = {};
 
+/**
+ * Parsea una URL de video (YouTube o Vimeo) y extrae el ID + provider.
+ * Acepta varios formatos:
+ *  - https://www.youtube.com/watch?v=ABC123
+ *  - https://youtu.be/ABC123
+ *  - https://www.youtube.com/embed/ABC123
+ *  - https://www.youtube.com/shorts/ABC123
+ *  - https://vimeo.com/123456
+ *  - https://player.vimeo.com/video/123456
+ *  - O directamente el ID raw (legacy, por si alguien pega solo el ID)
+ *
+ * Devuelve null si no reconoce el formato.
+ */
+export function parseVideoUrl(input: string): { id: string; provider: 'youtube' | 'vimeo' } | null {
+  if (!input) return null;
+  const v = input.trim();
+
+  // YouTube — todas las variantes
+  const yt = v.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/live\/)([a-zA-Z0-9_-]{11})/);
+  if (yt) return { id: yt[1], provider: 'youtube' };
+
+  // Vimeo
+  const vm = v.match(/(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)(\d+)/);
+  if (vm) return { id: vm[1], provider: 'vimeo' };
+
+  // Raw ID (legacy): 11 chars alfanuméricos → asumimos YouTube; solo dígitos → Vimeo
+  if (/^[a-zA-Z0-9_-]{11}$/.test(v)) return { id: v, provider: 'youtube' };
+  if (/^\d{5,}$/.test(v)) return { id: v, provider: 'vimeo' };
+
+  return null;
+}
+
 /* Sample assets reutilizables (URLs externas - cero storage propio) */
 const SAMPLE_HERO_IMG = 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=2400&q=80&auto=format&fit=crop';
 const SAMPLE_INSTRUCTOR_IMG = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&q=80&auto=format&fit=crop';

@@ -7,7 +7,8 @@ import {
   type LandingTemplate,
   type LandingConfig,
   TEMPLATE_LABELS,
-  defaultsForTemplate
+  defaultsForTemplate,
+  parseVideoUrl
 } from '@/lib/courses/landing';
 import { LandingPreview } from '@/components/owner/courses/LandingPreview';
 
@@ -233,24 +234,16 @@ export function LandingEditor({
         {tplForView === 'vsl' && (
           <div className="space-y-3">
             <Section title="🎥 Video + gating VSL" defaultOpen>
-              <div className="grid grid-cols-[1fr_120px] gap-3">
-                <FieldText label="ID del video" value={cfgForView.vsl_video_id ?? ''} onChange={(v) => field('vsl_video_id', v)} placeholder="dQw4w9WgXcQ (solo el ID)" />
-                <div>
-                  <label className="block text-xs text-white/60 mb-1">Proveedor</label>
-                  <select
-                    value={cfgForView.vsl_video_provider ?? 'youtube'}
-                    onChange={(e) => field('vsl_video_provider', e.target.value as 'youtube' | 'vimeo')}
-                    className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm"
-                  >
-                    <option value="youtube">YouTube</option>
-                    <option value="vimeo">Vimeo</option>
-                  </select>
-                </div>
-              </div>
-              <p className="text-[10px] text-white/40 mt-1">
-                Pegá solo el ID. Para YouTube es lo que va después de <code>v=</code>:
-                en <code>youtube.com/watch?v=<strong>dQw4w9WgXcQ</strong></code> el ID es <code>dQw4w9WgXcQ</code>.
-              </p>
+              <VideoUrlField
+                value={cfgForView.vsl_video_id ?? ''}
+                onChange={(url, parsed) => {
+                  // Guardamos la URL completa en vsl_video_id (el render parsea
+                  // de vuelta para sacar el ID). Provider se guarda explícito
+                  // por si querés overridear.
+                  field('vsl_video_id', url);
+                  if (parsed) field('vsl_video_provider', parsed.provider);
+                }}
+              />
               <FieldNumber label="Desbloquear después de (segundos)" value={cfgForView.vsl_unlock_seconds ?? 60} onChange={(v) => field('vsl_unlock_seconds', v)} />
               <label className="flex items-center gap-2 text-sm text-white/80 cursor-pointer">
                 <input
@@ -627,6 +620,51 @@ function BonusEditor({ items, onChange }: { items: Bonus[]; onChange: (arr: Bonu
       <button type="button" onClick={() => onChange([...items, { title: '', description: '', value: '' }])} className="text-xs rounded border border-white/15 bg-white/5 text-white/70 px-3 py-1.5 hover:bg-white/10">
         + Agregar bonus
       </button>
+    </div>
+  );
+}
+
+/* ─────────── Video URL con auto-parse YouTube/Vimeo ─────────── */
+
+function VideoUrlField({
+  value,
+  onChange
+}: {
+  value: string;
+  onChange: (url: string, parsed: ReturnType<typeof parseVideoUrl>) => void;
+}) {
+  const parsed = parseVideoUrl(value);
+  const providerLabel = parsed?.provider === 'youtube' ? 'YouTube' : parsed?.provider === 'vimeo' ? 'Vimeo' : null;
+  return (
+    <div>
+      <label className="block text-xs text-white/60 mb-1">URL del video</label>
+      <input
+        type="url"
+        value={value}
+        onChange={(e) => {
+          const v = e.target.value;
+          onChange(v, parseVideoUrl(v));
+        }}
+        placeholder="https://www.youtube.com/watch?v=…  o  https://vimeo.com/…"
+        className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm font-mono"
+      />
+      <div className="mt-1.5 flex items-center justify-between text-[10px]">
+        <p className="text-white/40">
+          Pegá la URL completa de YouTube o Vimeo. Aceptamos cualquier formato:{' '}
+          <code>youtu.be/abc</code>, <code>watch?v=abc</code>, <code>vimeo.com/123</code>, etc.
+        </p>
+        {value.trim() && (
+          parsed ? (
+            <span className="text-emerald-400 font-semibold shrink-0 ml-2">
+              ✓ {providerLabel}
+            </span>
+          ) : (
+            <span className="text-red-300 font-semibold shrink-0 ml-2">
+              ❌ URL no reconocida
+            </span>
+          )
+        )}
+      </div>
     </div>
   );
 }
