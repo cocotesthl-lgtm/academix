@@ -63,10 +63,13 @@ export type LandingConfig = {
   offer_text?: string;
 
   // === VSL específico ===
-  vsl_video_id?: string;          // youtube/vimeo id
+  vsl_video_id?: string;          // URL completa de YouTube/Vimeo o ID raw (legacy)
   vsl_video_provider?: 'youtube' | 'vimeo';
   vsl_unlock_seconds?: number;    // 0 = siempre visible
   vsl_form_after_watch?: boolean;
+  /** Modo VSL bloqueado: oculta controles + iframe pointer-events-none +
+   *  overlay clickeable que bloquea pause. Default true. */
+  vsl_block_pause?: boolean;
 
   // === Multistep form (VSL gated) ===
   multistep_form?: Array<{

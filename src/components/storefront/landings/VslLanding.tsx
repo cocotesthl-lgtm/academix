@@ -89,14 +89,35 @@ export function VslLanding({
   const showForm = unlocked && formAfterWatch && !formSubmitted && (config.multistep_form ?? []).length > 0;
   const showBuyCTA = unlocked && (!formAfterWatch || formSubmitted || (config.multistep_form ?? []).length === 0);
 
-  // URL del embed
+  // Modo VSL "locked": oculta controles + bloquea pause via overlay.
+  // Por default activado (el caso de uso de VSL es "tienen que ver el
+  // video sin distracciones"). Owner puede desactivar con vsl_block_pause=false.
+  const blockPause = config.vsl_block_pause ?? true;
+
+  // Estado de "play iniciado por user" (autoplay browsers requiere gesture)
+  const [playClicked, setPlayClicked] = useState(false);
+
+  // URL del embed. Params para ocultar UI tanto como se pueda.
+  // YouTube: controls=0 oculta barra; disablekb=1 desactiva teclas EXCEPTO
+  //   spacebar (limitación pública del embed); rel=0 minimiza related;
+  //   modestbranding=1 reduce logo (deprecado pero por las dudas);
+  //   iv_load_policy=3 oculta annotations; fs=0 desactiva fullscreen;
+  //   playsinline=1 evita fullscreen en mobile iOS.
+  // Vimeo: controls=0 + keyboard=0 + pip=0 oculta todo + desactiva teclas.
   const embedUrl = useMemo(() => {
     if (!videoId) return null;
+    const ap = playClicked ? '1' : '0';
     if (videoProvider === 'vimeo') {
-      return `https://player.vimeo.com/video/${videoId}?autoplay=0`;
+      const params = blockPause
+        ? `autoplay=${ap}&controls=0&keyboard=0&pip=0&title=0&byline=0&portrait=0`
+        : `autoplay=${ap}`;
+      return `https://player.vimeo.com/video/${videoId}?${params}`;
     }
-    return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
-  }, [videoId, videoProvider]);
+    const params = blockPause
+      ? `autoplay=${ap}&controls=0&disablekb=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&playsinline=1`
+      : `autoplay=${ap}&rel=0&modestbranding=1`;
+    return `https://www.youtube.com/embed/${videoId}?${params}`;
+  }, [videoId, videoProvider, blockPause, playClicked]);
 
   return (
     <article className="bg-white min-h-screen">
@@ -120,18 +141,51 @@ export function VslLanding({
         <section className="px-6 mb-8">
           <div className="max-w-3xl mx-auto">
             <div className="rounded-2xl overflow-hidden shadow-2xl bg-black aspect-video relative">
-              <iframe
-                src={embedUrl ?? undefined}
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-                title="VSL"
-                onLoad={() => {
-                  /* Heurística: marcamos started al cargar el iframe.
-                     Sin acceso al state real del player el conteo arranca al cargar. */
-                  setVideoStarted(true);
-                }}
-              />
+              {/* Estado inicial: fake poster + botón ▶ que dispara autoplay
+                  (los browsers permiten autoplay solo si el user gestureó) */}
+              {!playClicked ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPlayClicked(true);
+                    setVideoStarted(true);
+                  }}
+                  className="absolute inset-0 w-full h-full flex items-center justify-center group bg-black"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, ${primary}30 0%, ${primary}05 100%)`
+                  }}
+                >
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/95 flex items-center justify-center shadow-2xl group-hover:scale-110 transition">
+                    <div className="text-3xl md:text-4xl ml-1" style={{ color: primary }}>▶</div>
+                  </div>
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm font-semibold drop-shadow">
+                    Click para reproducir
+                  </div>
+                </button>
+              ) : (
+                <>
+                  <iframe
+                    src={embedUrl ?? undefined}
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen={!blockPause}
+                    /* pointer-events-none cuando blockPause: el iframe no recibe
+                       clicks (no se puede pausar). El overlay de abajo capta los
+                       clicks. Limitación: spacebar sigue funcionando si el iframe
+                       tiene foco — los browsers no permiten al parent bloquear
+                       teclado de un iframe cross-origin. */
+                    className={`w-full h-full ${blockPause ? 'pointer-events-none' : ''}`}
+                    title="VSL"
+                  />
+                  {blockPause && (
+                    <div
+                      className="absolute inset-0"
+                      aria-hidden="true"
+                      title="Mirá el video completo para continuar"
+                      onClick={(e) => e.preventDefault()}
+                    />
+                  )}
+                </>
+              )}
             </div>
 
             {!unlocked && (

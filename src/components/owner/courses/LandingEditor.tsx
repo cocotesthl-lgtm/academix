@@ -253,6 +253,20 @@ export function LandingEditor({
                 />
                 Después del video, mostrar form multipaso antes del CTA
               </label>
+              <label className="flex items-center gap-2 text-sm text-white/80 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={cfgForView.vsl_block_pause ?? true}
+                  onChange={(e) => field('vsl_block_pause', e.target.checked)}
+                />
+                Modo VSL bloqueado (oculta controles + bloquea pause con click)
+              </label>
+              <p className="text-[10px] text-white/40 leading-snug">
+                ⚠️ En YouTube el spacebar igual pausa (limitación pública). Para 100% control
+                usá Vimeo Plus, Wistia o Bunny Stream. Con el modo bloqueado activo, hay un
+                botón ▶ inicial (los browsers exigen click del usuario para autoplay) y después
+                del play no se puede clickear el video.
+              </p>
             </Section>
 
             <Section title="📝 Form multipaso (campos)">
