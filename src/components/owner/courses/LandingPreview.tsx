@@ -35,8 +35,8 @@ export function LandingPreview({
       <div className="rounded-xl border border-white/15 bg-white text-black overflow-hidden shadow-xl">
         {template === 'hotmart' && <HotmartPreview config={config} courseTitle={courseTitle} coverUrl={coverUrl} priceCents={priceCents} currency={currency} primary={primary} />}
         {template === 'classic' && <ClassicPreview courseTitle={courseTitle} coverUrl={coverUrl} priceCents={priceCents} currency={currency} primary={primary} />}
-        {template === 'funnel' && <PlaceholderPreview label="Funnel ClickFunnels" message="Render real en Sprint B. Por ahora cae al Classic." primary={primary} />}
-        {template === 'vsl' && <PlaceholderPreview label="VSL gated" message="Próximamente. Requiere implementación de video gating + form multi-paso." primary={primary} />}
+        {template === 'funnel' && <FunnelPreview config={config} courseTitle={courseTitle} coverUrl={coverUrl} priceCents={priceCents} currency={currency} primary={primary} />}
+        {template === 'vsl' && <VslPreview config={config} courseTitle={courseTitle} priceCents={priceCents} currency={currency} primary={primary} />}
       </div>
     </div>
   );
@@ -284,14 +284,155 @@ function ClassicPreview({
   );
 }
 
-/* ─────────── Placeholder ─────────── */
+/* ─────────── Funnel preview ─────────── */
 
-function PlaceholderPreview({ label, message, primary }: { label: string; message: string; primary: string }) {
+function FunnelPreview({
+  config, courseTitle, coverUrl, priceCents, currency, primary
+}: {
+  config: LandingConfig;
+  courseTitle: string;
+  coverUrl: string | null;
+  priceCents: number;
+  currency: string;
+  primary: string;
+}) {
+  const headline = config.headline?.trim() || courseTitle;
+  const eyebrow = config.eyebrow?.trim();
+  const ctaLabel = config.cta_label?.trim() || 'Quiero entrar AHORA';
+  const heroImg = config.hero_image_url || coverUrl;
   return (
-    <div className="p-4 text-center">
-      <div className="text-3xl mb-2" style={{ color: primary }}>🎨</div>
-      <div className="font-bold text-sm">{label}</div>
-      <div className="text-[10px] text-black/55 mt-1">{message}</div>
+    <div className="text-[10px]">
+      {/* Urgencia bar */}
+      {config.offer_text && (
+        <div className="text-white text-center py-1 px-2 text-[8px] font-bold" style={{ background: primary }}>
+          {config.offer_text.slice(0, 50)}
+        </div>
+      )}
+      {/* Hero centered */}
+      <div className="p-3 text-center">
+        {eyebrow && (
+          <span className="inline-block text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase" style={{ background: `${primary}15`, color: primary }}>
+            {eyebrow.slice(0, 30)}
+          </span>
+        )}
+        <div className="mt-1.5 text-sm font-black leading-tight">{headline}</div>
+        <div className="mt-2 rounded text-white text-[9px] py-1.5 font-bold" style={{ background: primary }}>{ctaLabel}</div>
+      </div>
+      {/* Video placeholder */}
+      {heroImg && (
+        <div className="mx-3 mb-2 aspect-video rounded overflow-hidden relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="w-6 h-6 rounded-full bg-white/95 flex items-center justify-center" style={{ color: primary }}>▶</div>
+          </div>
+        </div>
+      )}
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-1 px-3 py-2 border-y border-black/10 bg-black/[0.02] text-center">
+        {['+2.400 alumnos', '4.9★', `${config.garantia_dias ?? 7}d garantía`].map((s, i) => (
+          <div key={i}>
+            <div className="text-[10px] font-black" style={{ color: primary }}>{s.split(' ')[0]}</div>
+            <div className="text-[7px] text-black/55">{s.split(' ').slice(1).join(' ')}</div>
+          </div>
+        ))}
+      </div>
+      {/* Bullets */}
+      <div className="p-3 space-y-1">
+        {(config.learn_points ?? []).slice(0, 3).map((p, i) => (
+          <div key={i} className="flex gap-1 text-[8px]">
+            <span className="shrink-0 mt-0.5 w-2.5 h-2.5 rounded-full text-white text-[6px] flex items-center justify-center" style={{ background: primary }}>✓</span>
+            <span className="text-black/75 line-clamp-1">{p}</span>
+          </div>
+        ))}
+        <div className="rounded text-white text-[8px] py-1 mt-2 text-center font-bold" style={{ background: primary }}>
+          {ctaLabel.slice(0, 24)}
+        </div>
+      </div>
+      {/* Bonuses */}
+      {(config.bonuses ?? []).length > 0 && (
+        <div className="mx-3 mb-3 rounded border-2 border-dashed p-1.5" style={{ borderColor: `${primary}50` }}>
+          <div className="text-[9px] font-bold">🎁 {(config.bonuses ?? []).length} bonus incluidos</div>
+        </div>
+      )}
+      {/* CTA final */}
+      <div className="text-white text-center p-3 mt-2" style={{ background: primary }}>
+        <div className="text-[10px] font-black">🚀 Última oportunidad</div>
+        <div className="text-[8px] text-white/90 mt-0.5">
+          {priceCents === 0 ? 'GRATIS' : `$${(priceCents / 100).toLocaleString('es-AR')} ${currency}`}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── VSL preview ─────────── */
+
+function VslPreview({
+  config, courseTitle, priceCents, currency, primary
+}: {
+  config: LandingConfig;
+  courseTitle: string;
+  priceCents: number;
+  currency: string;
+  primary: string;
+}) {
+  const headline = config.headline?.trim() || courseTitle;
+  const eyebrow = config.eyebrow?.trim();
+  const unlockS = config.vsl_unlock_seconds ?? 60;
+  const steps = config.multistep_form ?? [];
+  return (
+    <div className="text-[10px]">
+      {/* Hero compacto */}
+      <div className="p-3 text-center">
+        {eyebrow && (
+          <span className="inline-block text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full" style={{ background: `${primary}15`, color: primary }}>
+            {eyebrow.slice(0, 32)}
+          </span>
+        )}
+        <div className="mt-1.5 text-sm font-black leading-tight line-clamp-2">{headline}</div>
+      </div>
+      {/* Video placeholder */}
+      <div className="mx-3 mb-2 aspect-video rounded bg-black flex items-center justify-center">
+        <div className="text-white text-2xl">▶</div>
+      </div>
+      {/* Gating bar */}
+      <div className="mx-3 rounded p-2 mb-3" style={{ background: `${primary}10`, border: `1px solid ${primary}40` }}>
+        <div className="text-[8px] font-bold flex items-center gap-1" style={{ color: primary }}>
+          🔒 Desbloqueando en {unlockS}s…
+        </div>
+        <div className="h-1 rounded-full bg-black/10 mt-1 overflow-hidden">
+          <div className="h-full" style={{ width: '30%', background: primary }} />
+        </div>
+      </div>
+      {/* Form multistep preview */}
+      {steps.length > 0 && (
+        <div className="mx-3 mb-3 rounded border-2 p-2" style={{ borderColor: primary }}>
+          <div className="flex items-center justify-between text-[8px] text-black/55 mb-1.5">
+            <span>Paso 1 de {steps.length}</span>
+            <div className="flex gap-0.5">
+              {steps.map((_, i) => (
+                <div key={i} className="w-3 h-0.5 rounded" style={{ background: i === 0 ? primary : '#0001' }} />
+              ))}
+            </div>
+          </div>
+          <div className="text-[9px] font-bold mb-1.5">{steps[0]?.label ?? '¿Cuál es tu nombre?'}</div>
+          <div className="h-6 rounded border border-black/15 bg-white" />
+          <div className="rounded text-white text-[8px] py-1 mt-1.5 text-center font-bold" style={{ background: primary }}>
+            Siguiente →
+          </div>
+        </div>
+      )}
+      {/* CTA preview */}
+      <div className="mx-3 mb-3 rounded border-2 border-black/15 p-2 text-center">
+        <div className="text-base font-black">
+          {priceCents === 0 ? 'Gratis' : `$${(priceCents / 100).toLocaleString('es-AR')}`}
+        </div>
+        <div className="text-[7px] text-black/55">{currency} · pago único</div>
+        <div className="rounded text-white text-[8px] py-1 mt-1.5 font-bold" style={{ background: primary }}>
+          {(config.cta_label ?? 'Reservar mi lugar').slice(0, 24)}
+        </div>
+      </div>
     </div>
   );
 }

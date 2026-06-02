@@ -183,25 +183,20 @@ export function LandingEditor({
           </h3>
           <div className="grid md:grid-cols-2 gap-2">
             {(Object.entries(TEMPLATE_LABELS) as Array<[LandingTemplate, typeof TEMPLATE_LABELS[LandingTemplate]]>).map(([k, meta]) => {
-              const disabled = k === 'vsl';
               return (
                 <button
                   key={k}
                   type="button"
-                  disabled={disabled}
                   onClick={() => setCurrentTemplate(k)}
                   className={`text-left rounded-lg border p-3 transition ${
                     tplForView === k
                       ? 'border-fuchsia-400 bg-fuchsia-500/10'
-                      : disabled
-                        ? 'border-white/10 bg-white/[0.02] opacity-50 cursor-not-allowed'
-                        : 'border-white/15 bg-white/[0.02] hover:bg-white/[0.05]'
+                      : 'border-white/15 bg-white/[0.02] hover:bg-white/[0.05]'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{meta.emoji}</span>
                     <span className="font-semibold text-sm">{meta.label}</span>
-                    {disabled && <span className="text-[10px] text-white/40 ml-auto">próximamente</span>}
                   </div>
                   <p className="text-xs text-white/55 mt-1.5 leading-snug">{meta.description}</p>
                 </button>
@@ -234,11 +229,70 @@ export function LandingEditor({
           </p>
         )}
 
+        {/* Editor específico de VSL */}
         {tplForView === 'vsl' && (
-          <p className="text-sm text-amber-200 rounded border border-amber-500/30 bg-amber-500/5 p-4">
-            ⚠️ La plantilla VSL (video sales letter con gating + form multi-paso) viene en el próximo
-            sprint. Ya quedó la estructura en DB lista para cuando se implemente el render.
-          </p>
+          <div className="space-y-3">
+            <Section title="🎥 Video + gating VSL" defaultOpen>
+              <div className="grid grid-cols-[1fr_120px] gap-3">
+                <FieldText label="ID del video" value={cfgForView.vsl_video_id ?? ''} onChange={(v) => field('vsl_video_id', v)} placeholder="dQw4w9WgXcQ (solo el ID)" />
+                <div>
+                  <label className="block text-xs text-white/60 mb-1">Proveedor</label>
+                  <select
+                    value={cfgForView.vsl_video_provider ?? 'youtube'}
+                    onChange={(e) => field('vsl_video_provider', e.target.value as 'youtube' | 'vimeo')}
+                    className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm"
+                  >
+                    <option value="youtube">YouTube</option>
+                    <option value="vimeo">Vimeo</option>
+                  </select>
+                </div>
+              </div>
+              <p className="text-[10px] text-white/40 mt-1">
+                Pegá solo el ID. Para YouTube es lo que va después de <code>v=</code>:
+                en <code>youtube.com/watch?v=<strong>dQw4w9WgXcQ</strong></code> el ID es <code>dQw4w9WgXcQ</code>.
+              </p>
+              <FieldNumber label="Desbloquear después de (segundos)" value={cfgForView.vsl_unlock_seconds ?? 60} onChange={(v) => field('vsl_unlock_seconds', v)} />
+              <label className="flex items-center gap-2 text-sm text-white/80 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={cfgForView.vsl_form_after_watch ?? true}
+                  onChange={(e) => field('vsl_form_after_watch', e.target.checked)}
+                />
+                Después del video, mostrar form multipaso antes del CTA
+              </label>
+            </Section>
+
+            <Section title="📝 Form multipaso (campos)">
+              <MultiStepFormEditor
+                items={cfgForView.multistep_form ?? []}
+                onChange={(arr) => field('multistep_form', arr)}
+              />
+            </Section>
+
+            {/* Compartimos los mismos editores que hotmart/funnel para hero, testimonios, FAQ, garantía */}
+            <Section title="🎯 Hero (texto arriba del video)">
+              <FieldText label="Eyebrow" value={cfgForView.eyebrow ?? ''} onChange={(v) => field('eyebrow', v)} />
+              <FieldText label="Headline custom (vacío = título del curso)" value={cfgForView.headline ?? ''} onChange={(v) => field('headline', v)} placeholder={courseTitle} />
+              <FieldTextarea label="Subtítulo" value={cfgForView.subtitle ?? ''} onChange={(v) => field('subtitle', v)} rows={2} />
+              <FieldText label="Texto del CTA final" value={cfgForView.cta_label ?? ''} onChange={(v) => field('cta_label', v)} placeholder="Reservar mi lugar" />
+              <FieldText label="Caption bajo el CTA" value={cfgForView.cta_caption ?? ''} onChange={(v) => field('cta_caption', v)} placeholder="Acceso inmediato · 7 días garantía" />
+            </Section>
+
+            <Section title="🛡️ Garantía">
+              <div className="grid grid-cols-2 gap-3">
+                <FieldNumber label="Días" value={cfgForView.garantia_dias ?? 7} onChange={(v) => field('garantia_dias', v)} />
+                <FieldText label="Texto" value={cfgForView.garantia_text ?? ''} onChange={(v) => field('garantia_text', v)} />
+              </div>
+            </Section>
+
+            <Section title="⭐ Testimonios">
+              <TestimonialsEditor items={cfgForView.testimonials ?? []} onChange={(arr) => field('testimonials', arr)} />
+            </Section>
+
+            <Section title="❓ FAQ">
+              <FaqEditor items={cfgForView.faq ?? []} onChange={(arr) => field('faq', arr)} />
+            </Section>
+          </div>
         )}
 
         {/* Todos los editores cuando NO es classic ni vsl */}
@@ -573,6 +627,89 @@ function BonusEditor({ items, onChange }: { items: Bonus[]; onChange: (arr: Bonu
       <button type="button" onClick={() => onChange([...items, { title: '', description: '', value: '' }])} className="text-xs rounded border border-white/15 bg-white/5 text-white/70 px-3 py-1.5 hover:bg-white/10">
         + Agregar bonus
       </button>
+    </div>
+  );
+}
+
+/* ─────────── Multistep form (campos del VSL) ─────────── */
+
+type FormStep = NonNullable<LandingConfig['multistep_form']>[number];
+
+function MultiStepFormEditor({ items, onChange }: { items: FormStep[]; onChange: (arr: FormStep[]) => void }) {
+  function update(idx: number, patch: Partial<FormStep>) {
+    const arr = [...items]; arr[idx] = { ...arr[idx], ...patch }; onChange(arr);
+  }
+  function remove(idx: number) {
+    const arr = [...items]; arr.splice(idx, 1); onChange(arr);
+  }
+  function move(idx: number, dir: -1 | 1) {
+    const arr = [...items];
+    const ni = idx + dir;
+    if (ni < 0 || ni >= arr.length) return;
+    [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
+    onChange(arr);
+  }
+  return (
+    <div className="space-y-3">
+      {items.map((s, i) => (
+        <div key={i} className="rounded border border-white/10 p-3 space-y-2 bg-white/[0.02]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-white/50">Paso {i + 1}</span>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="text-xs text-white/40 hover:text-white disabled:opacity-30">↑</button>
+              <button type="button" onClick={() => move(i, 1)} disabled={i === items.length - 1} className="text-xs text-white/40 hover:text-white disabled:opacity-30">↓</button>
+              <button type="button" onClick={() => remove(i)} className="text-xs text-red-300/70 hover:text-red-300">Eliminar</button>
+            </div>
+          </div>
+          <FieldText label="Etiqueta (lo que ve el visitante)" value={s.label} onChange={(v) => update(i, { label: v })} placeholder="¿Cuál es tu nombre?" />
+          <div className="grid grid-cols-[1fr_120px] gap-2">
+            <FieldText label="Nombre del campo (interno)" value={s.name} onChange={(v) => update(i, { name: v.replace(/\s/g, '_').toLowerCase() })} placeholder="name / email / situation" />
+            <div>
+              <label className="block text-xs text-white/60 mb-1">Tipo</label>
+              <select
+                value={s.type}
+                onChange={(e) => update(i, { type: e.target.value as FormStep['type'] })}
+                className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm"
+              >
+                <option value="text">Texto</option>
+                <option value="email">Email</option>
+                <option value="tel">Teléfono</option>
+                <option value="select">Selección</option>
+              </select>
+            </div>
+          </div>
+          {s.type === 'select' && (
+            <div>
+              <label className="block text-xs text-white/60 mb-1">Opciones (una por línea)</label>
+              <textarea
+                value={(s.options ?? []).join('\n')}
+                onChange={(e) => update(i, { options: e.target.value.split('\n').map((x) => x.trim()).filter(Boolean) })}
+                rows={4}
+                placeholder="Recién empiezo&#10;Estoy intentando solo&#10;Ya probé y no funcionó"
+                className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm font-mono"
+              />
+            </div>
+          )}
+          <label className="flex items-center gap-2 text-xs text-white/70">
+            <input
+              type="checkbox"
+              checked={s.required ?? true}
+              onChange={(e) => update(i, { required: e.target.checked })}
+            />
+            Campo obligatorio
+          </label>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange([...items, { label: '', name: `campo_${items.length + 1}`, type: 'text', required: true }])}
+        className="text-xs rounded border border-white/15 bg-white/5 text-white/70 px-3 py-1.5 hover:bg-white/10"
+      >
+        + Agregar paso
+      </button>
+      <p className="text-[10px] text-white/40">
+        Los leads se guardan en la DB y los podés ver desde el panel del owner (en una próxima versión).
+      </p>
     </div>
   );
 }

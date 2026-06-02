@@ -97,7 +97,7 @@ export const TEMPLATE_LABELS: Record<LandingTemplate, { label: string; emoji: st
   vsl: {
     emoji: '🎥',
     label: 'VSL gated',
-    description: 'Video sales letter que desbloquea un form multipaso después de cierto tiempo viendo. Próximamente.'
+    description: 'Video sales letter: el visitante mira un video, después de X segundos se desbloquea un form multipaso, y al completar accede al CTA de compra. Genera leads aunque no compren.'
   }
 };
 
@@ -206,15 +206,41 @@ export function defaultsForTemplate(template: LandingTemplate, courseTitle: stri
       };
     case 'vsl':
       return {
-        eyebrow: '▶ Mirá el video antes de seguir',
-        subtitle: `Te explico todo sobre ${courseTitle} en este video corto.`,
+        eyebrow: '▶ MIRÁ EL VIDEO ANTES DE CERRAR',
+        headline: '',
+        subtitle: `Mirá el video completo. Al terminar, te muestro cómo entrar a ${courseTitle}.`,
+        cta_label: '✅ Reservar mi lugar',
+        cta_caption: 'Acceso inmediato · Garantía 7 días · Plazas limitadas',
+        vsl_video_id: 'dQw4w9WgXcQ',           // placeholder YouTube
+        vsl_video_provider: 'youtube',
         vsl_unlock_seconds: 60,
         vsl_form_after_watch: true,
         multistep_form: [
-          { label: '¿Cuál es tu nombre?', name: 'name', type: 'text', required: true },
-          { label: '¿A qué email te mandamos info?', name: 'email', type: 'email', required: true },
+          { label: '¿Cuál es tu nombre y apellido?', name: 'name', type: 'text', required: true },
+          { label: '¿A qué email te mandamos toda la info?', name: 'email', type: 'email', required: true },
+          { label: '¿Cuál es tu WhatsApp? (te avisamos novedades)', name: 'phone', type: 'tel', required: true },
           { label: '¿En qué situación estás hoy?', name: 'situation', type: 'select',
-            options: ['Recién empiezo', 'Estoy intentando solo', 'Ya probé y no funcionó'], required: true }
+            options: [
+              'Recién estoy empezando, no sé por dónde',
+              'Probé por mi cuenta y me frustré',
+              'Ya tengo algo de experiencia pero quiero más',
+              'Es un tema 100% nuevo para mí'
+            ], required: true },
+          { label: '¿Qué tan en serio querés esto?', name: 'commitment', type: 'select',
+            options: ['Quiero empezar YA', 'Estoy evaluando', 'Solo curiosidad'], required: true }
+        ],
+        garantia_dias: 7,
+        garantia_text: 'Si no te gusta en los primeros 7 días, te devolvemos el 100% del dinero. Sin preguntas.',
+        testimonials: [
+          { name: 'María González', role: 'Buenos Aires', text: 'El video me hizo entender que era para mí. Después del form me llegó todo y arranqué al día siguiente.', rating: 5, photo_url: SAMPLE_TESTI_1 },
+          { name: 'Juan Pérez', role: 'Córdoba', text: 'Mejor inversión del año. La metodología es clarísima y el soporte responde rápido.', rating: 5, photo_url: SAMPLE_TESTI_2 },
+          { name: 'Laura Méndez', role: 'Rosario', text: 'Probé otros cursos antes. Este es diferente, hay seguimiento real del instructor.', rating: 5, photo_url: SAMPLE_TESTI_3 }
+        ],
+        faq: [
+          { q: '¿Cuánto tiempo tengo que ver el video?', a: 'Un minuto te alcanza para entender de qué va. Después podés cerrarlo y completar el form.' },
+          { q: '¿Para qué me piden mis datos?', a: 'Para mandarte la info del programa al mail/WhatsApp y reservar tu lugar. No los compartimos con terceros.' },
+          { q: '¿Cuánto cuesta el curso?', a: 'El precio aparece después del formulario. Tenés 7 días de garantía si no te convence.' },
+          { q: '¿Cuándo empieza?', a: 'Acceso inmediato. Una vez que pagás, entrás a todo el contenido sin esperar.' }
         ]
       };
     default:

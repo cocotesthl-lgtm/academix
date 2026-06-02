@@ -8,6 +8,7 @@ import { CouponInput } from "@/components/storefront/CouponInput";
 import type { LandingConfig, LandingTemplate } from "@/lib/courses/landing";
 import { HotmartLanding } from "@/components/storefront/landings/HotmartLanding";
 import { FunnelLanding } from "@/components/storefront/landings/FunnelLanding";
+import { VslLanding } from "@/components/storefront/landings/VslLanding";
 
 export const dynamic = "force-dynamic";
 
@@ -160,8 +161,18 @@ export default async function CourseDetailPage({
       />
     );
   }
+  if (tpl === 'vsl') {
+    return (
+      <VslLanding
+        course={{ ...course, tenant_id: tenantId }}
+        primary={primary}
+        config={tplConfig}
+        buyerEmail={currentUser?.email ?? ''}
+      />
+    );
+  }
 
-  // Default: classic landing (la histórica de Curplat). VSL todavía cae acá.
+  // Default: classic landing (la histórica de Curplat).
   return (
     <article className="max-w-5xl mx-auto px-6 py-10">
       <div className="grid md:grid-cols-3 gap-8">
