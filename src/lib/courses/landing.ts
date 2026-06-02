@@ -211,7 +211,9 @@ export function defaultsForTemplate(template: LandingTemplate, courseTitle: stri
         subtitle: `Mirá el video completo. Al terminar, te muestro cómo entrar a ${courseTitle}.`,
         cta_label: '✅ Reservar mi lugar',
         cta_caption: 'Acceso inmediato · Garantía 7 días · Plazas limitadas',
-        vsl_video_id: 'dQw4w9WgXcQ',           // placeholder YouTube
+        // El owner pega su video ID acá. No usamos placeholder porque YouTube
+        // suele bloquear embeds aleatorios y queda peor que vacío.
+        vsl_video_id: '',
         vsl_video_provider: 'youtube',
         vsl_unlock_seconds: 60,
         vsl_form_after_watch: true,

@@ -55,9 +55,13 @@ export function VslLanding({
   const ctaLabel = config.cta_label?.trim() || 'Reservar mi lugar';
   const ctaCaption = config.cta_caption?.trim();
 
+  // Si no hay video configurado no tiene sentido el gating — desbloqueamos
+  // todo desde el inicio para que el form y el CTA se vean igual.
+  const hasVideo = Boolean(videoId);
+
   // Timer de gating
   const [secondsLeft, setSecondsLeft] = useState(unlockSeconds);
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState(!hasVideo); // ← auto-unlock si no hay video
   const [videoStarted, setVideoStarted] = useState(false);
 
   // Form state
@@ -66,14 +70,14 @@ export function VslLanding({
 
   // Tick del contador (solo después de play del video)
   useEffect(() => {
-    if (!videoStarted || unlocked) return;
+    if (!hasVideo || !videoStarted || unlocked) return;
     if (secondsLeft <= 0) {
       setUnlocked(true);
       return;
     }
     const t = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
     return () => clearTimeout(t);
-  }, [videoStarted, secondsLeft, unlocked]);
+  }, [hasVideo, videoStarted, secondsLeft, unlocked]);
 
   // Auto-unlock si el owner no configuró formAfterWatch + no hay form
   const showForm = unlocked && formAfterWatch && !formSubmitted && (config.multistep_form ?? []).length > 0;
@@ -105,13 +109,13 @@ export function VslLanding({
         </div>
       </section>
 
-      {/* Video gated */}
-      <section className="px-6 mb-8">
-        <div className="max-w-3xl mx-auto">
-          {embedUrl ? (
+      {/* Video gated — sólo si el owner configuró un video */}
+      {hasVideo && (
+        <section className="px-6 mb-8">
+          <div className="max-w-3xl mx-auto">
             <div className="rounded-2xl overflow-hidden shadow-2xl bg-black aspect-video relative">
               <iframe
-                src={embedUrl}
+                src={embedUrl ?? undefined}
                 allow="autoplay; encrypted-media; picture-in-picture"
                 allowFullScreen
                 className="w-full h-full"
@@ -123,49 +127,66 @@ export function VslLanding({
                 }}
               />
             </div>
-          ) : (
-            <div className="rounded-2xl bg-black/5 border-2 border-dashed border-black/15 aspect-video flex items-center justify-center text-black/40 text-sm">
-              ▶ El owner aún no configuró el video del VSL
-            </div>
-          )}
 
-          {!unlocked && (
-            <div className="mt-4 rounded-xl border-2 p-4 text-center" style={{ borderColor: `${primary}50`, background: `${primary}08` }}>
-              <div className="text-sm font-semibold" style={{ color: primary }}>
-                🔒 {videoStarted
-                  ? `Desbloqueando en ${secondsLeft}s — mirá el video completo para acceder al formulario`
-                  : 'Mirá el video para desbloquear el formulario'}
+            {!unlocked && (
+              <div className="mt-4 rounded-xl border-2 p-4 text-center" style={{ borderColor: `${primary}50`, background: `${primary}08` }}>
+                <div className="text-sm font-semibold" style={{ color: primary }}>
+                  🔒 {videoStarted
+                    ? `Desbloqueando en ${secondsLeft}s — mirá el video completo para acceder al formulario`
+                    : 'Mirá el video para desbloquear el formulario'}
+                </div>
+                <div className="mt-2 h-1.5 rounded-full bg-black/10 overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-1000"
+                    style={{
+                      width: `${((unlockSeconds - secondsLeft) / unlockSeconds) * 100}%`,
+                      background: primary
+                    }}
+                  />
+                </div>
+                {!videoStarted && (
+                  <button
+                    type="button"
+                    onClick={() => setVideoStarted(true)}
+                    className="mt-3 text-xs text-black/60 hover:text-black underline-offset-2 hover:underline"
+                  >
+                    Ya empecé a verlo, iniciar contador →
+                  </button>
+                )}
               </div>
-              <div className="mt-2 h-1.5 rounded-full bg-black/10 overflow-hidden">
-                <div
-                  className="h-full transition-all duration-1000"
-                  style={{
-                    width: `${((unlockSeconds - secondsLeft) / unlockSeconds) * 100}%`,
-                    background: primary
-                  }}
-                />
-              </div>
-              {!videoStarted && embedUrl && (
-                <button
-                  type="button"
-                  onClick={() => setVideoStarted(true)}
-                  className="mt-3 text-xs text-black/60 hover:text-black underline-offset-2 hover:underline"
-                >
-                  Ya empecé a verlo, iniciar contador →
-                </button>
-              )}
-            </div>
-          )}
+            )}
 
-          {unlocked && (
-            <div className="mt-4 rounded-xl border-2 border-emerald-400 bg-emerald-50 p-3 text-center">
-              <div className="text-sm font-semibold text-emerald-800">
-                ✓ ¡Acceso desbloqueado!
+            {unlocked && (
+              <div className="mt-4 rounded-xl border-2 border-emerald-400 bg-emerald-50 p-3 text-center">
+                <div className="text-sm font-semibold text-emerald-800">
+                  ✓ ¡Acceso desbloqueado!
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </section>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Empty state cuando NO hay video — solo visible para el owner viendo
+          su propia landing antes de configurarla. El visitante normal
+          probablemente nunca lo va a ver porque el owner lo configura
+          antes de publicar. */}
+      {!hasVideo && (
+        <section className="px-6 mb-8">
+          <div className="max-w-3xl mx-auto rounded-2xl bg-amber-50 border-2 border-dashed border-amber-300 p-8 text-center">
+            <div className="text-4xl mb-3">🎥</div>
+            <div className="font-bold text-amber-900">Configurá tu video VSL</div>
+            <p className="text-sm text-amber-800/85 mt-2 leading-snug max-w-md mx-auto">
+              Andá a <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">Editar curso</code> → tab{' '}
+              <strong>Landing page</strong> → sección <strong>🎥 Video + gating VSL</strong> y pegá el
+              ID de tu video de YouTube o Vimeo.
+            </p>
+            <p className="text-xs text-amber-800/60 mt-3">
+              Mientras tanto, el form y el CTA están desbloqueados por default.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Form multi-paso */}
       {showForm && (
