@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { env, RESERVED_SLUGS } from '@/lib/env';
 import { DEFAULT_SITE_CONFIG } from '@/lib/site/types';
+import { defaultsForTemplate } from '@/lib/courses/landing';
 
 export type OnboardingResult =
   | { ok: true; tenantId: string; slug: string; redirectTo: string }
@@ -95,7 +96,11 @@ export async function createTenantAction(
   await svc.from('audit_log').insert(auditPayload as any);
 
   // Sample courses para que el catálogo del storefront no se vea vacío.
-  // El owner puede editarlos o borrarlos desde /owner/courses.
+  // Cada uno viene con landing_template='hotmart' y landing_config con
+  // contenido de muestra realista pre-cargado, así el owner ve algo bonito
+  // de entrada (sin tener que clickear "Cargar muestra"). Para variar,
+  // el segundo course usa template 'funnel' para que el owner vea ambos
+  // estilos disponibles.
   const sampleCourses = [
     {
       tenant_id: tenant.id,
@@ -108,7 +113,9 @@ export async function createTenantAction(
       is_featured: true,
       featured_position: 0,
       affiliate_enabled: true,
-      created_by: user.id
+      created_by: user.id,
+      landing_template: 'hotmart',
+      landing_config: defaultsForTemplate('hotmart', 'Curso de bienvenida (gratis)')
     },
     {
       tenant_id: tenant.id,
@@ -121,7 +128,9 @@ export async function createTenantAction(
       is_featured: true,
       featured_position: 1,
       affiliate_enabled: true,
-      created_by: user.id
+      created_by: user.id,
+      landing_template: 'funnel',
+      landing_config: defaultsForTemplate('funnel', 'Curso completo')
     },
     {
       tenant_id: tenant.id,
@@ -134,7 +143,9 @@ export async function createTenantAction(
       is_featured: false,
       featured_position: 2,
       affiliate_enabled: true,
-      created_by: user.id
+      created_by: user.id,
+      landing_template: 'hotmart',
+      landing_config: defaultsForTemplate('hotmart', 'Masterclass intensiva')
     }
   ];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

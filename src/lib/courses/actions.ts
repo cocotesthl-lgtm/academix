@@ -127,6 +127,7 @@ export async function updateCourseAction(
   // (Guardar info básica) no resetean la landing config.
   const landingTemplateRaw = String(formData.get('landing_template') ?? '').trim();
   const landingConfigRaw = String(formData.get('landing_config') ?? '').trim();
+  const landingVariantsRaw = String(formData.get('landing_variants') ?? '').trim();
 
   const payload: Record<string, unknown> = {
     title,
@@ -149,6 +150,13 @@ export async function updateCourseAction(
       payload.landing_config = JSON.parse(landingConfigRaw);
     } catch {
       // si el JSON viene roto lo ignoramos en silencio
+    }
+  }
+  if (formData.has('landing_variants')) {
+    try {
+      payload.landing_variants = landingVariantsRaw ? JSON.parse(landingVariantsRaw) : null;
+    } catch {
+      // JSON inválido → no tocamos
     }
   }
 

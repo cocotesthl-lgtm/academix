@@ -7,6 +7,7 @@ import { trackClick } from "@/lib/affiliates/tracking";
 import { CouponInput } from "@/components/storefront/CouponInput";
 import type { LandingConfig, LandingTemplate } from "@/lib/courses/landing";
 import { HotmartLanding } from "@/components/storefront/landings/HotmartLanding";
+import { FunnelLanding } from "@/components/storefront/landings/FunnelLanding";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ type CourseDetail = {
   status: string;
   landing_template: LandingTemplate | null;
   landing_config: LandingConfig | null;
+  landing_variants: Record<string, { template: LandingTemplate; config: LandingConfig }> | null;
 };
 
 type ModuleWithLessons = {
@@ -41,17 +43,17 @@ export default async function CourseDetailPage({
   searchParams
 }: {
   params: Promise<{ tenantId: string; courseSlug: string }>;
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string; v?: string }>;
 }) {
   const { tenantId, courseSlug } = await params;
-  const { ref } = await searchParams;
+  const { ref, v: variantParam } = await searchParams;
   const tenant = await getTenantById(tenantId);
   const primary = tenant?.brand?.primary_color ?? '#0a0a0a';
 
   const svc = getServiceClient();
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status, landing_template, landing_config")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, landing_template, landing_config, landing_variants")
     .eq("tenant_id", tenantId)
     .eq("slug", courseSlug)
     .maybeSingle<CourseDetail>();
@@ -114,11 +116,25 @@ export default async function CourseDetailPage({
   const totalLessons = lessonRows.length;
   const previewLesson = lessonRows.find((l) => l.is_preview && l.drive_embed_url);
 
+  // ─── A/B/C variants ───
+  // El query param ?v=B|C activa una variante alternativa (la que el
+  // afiliado eligió en su link). Si no existe la variante o no hay query,
+  // usamos el template/config principal (la versión "visible" del owner).
+  const variantKey = (variantParam ?? '').toUpperCase();
+  const useVariant =
+    variantKey &&
+    course.landing_variants &&
+    typeof course.landing_variants === 'object' &&
+    course.landing_variants[variantKey];
+
+  const tpl: LandingTemplate = (useVariant
+    ? useVariant.template
+    : (course.landing_template ?? 'classic')) as LandingTemplate;
+  const tplConfig: LandingConfig = (useVariant
+    ? useVariant.config
+    : (course.landing_config ?? {})) as LandingConfig;
+
   // ─── Branching por landing template ───
-  // 'classic' (o null) → seguimos con el render histórico de abajo.
-  // 'hotmart' → renderer dedicado tipo página de producto.
-  // 'funnel' / 'vsl' → todavía caen al classic (Sprint B).
-  const tpl: LandingTemplate = (course.landing_template ?? 'classic') as LandingTemplate;
   if (tpl === 'hotmart') {
     return (
       <HotmartLanding
@@ -128,13 +144,24 @@ export default async function CourseDetailPage({
         previewLessonTitle={previewLesson?.title ?? null}
         totalLessons={totalLessons}
         primary={primary}
-        config={(course.landing_config ?? {}) as LandingConfig}
+        config={tplConfig}
+        buyerEmail={currentUser?.email ?? ''}
+      />
+    );
+  }
+  if (tpl === 'funnel') {
+    return (
+      <FunnelLanding
+        course={course}
+        modules={modules}
+        primary={primary}
+        config={tplConfig}
         buyerEmail={currentUser?.email ?? ''}
       />
     );
   }
 
-  // Default: classic landing (la histórica de Curplat)
+  // Default: classic landing (la histórica de Curplat). VSL todavía cae acá.
   return (
     <article className="max-w-5xl mx-auto px-6 py-10">
       <div className="grid md:grid-cols-3 gap-8">

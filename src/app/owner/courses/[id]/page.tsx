@@ -20,7 +20,7 @@ export default async function CourseEditPage({
 
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config, landing_variants")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
     .maybeSingle<Course>();
@@ -102,7 +102,20 @@ export default async function CourseEditPage({
         </form>
       </div>
 
-      <CourseEditor course={course} modules={modules} categories={categories} primaryColor={primaryColor} />
+      <CourseEditor
+        course={course}
+        modules={modules}
+        categories={categories}
+        primaryColor={primaryColor}
+        storefrontOrigin={(() => {
+          const u = new URL(env.appUrl);
+          const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
+          const host = isLocal
+            ? `${tenant.slug}.localhost${u.port ? ':' + u.port : ''}`
+            : `${tenant.slug}.${env.rootDomain}`;
+          return `${u.protocol}//${host}`;
+        })()}
+      />
 
       <section className="max-w-3xl pt-8 border-t border-white/10">
         <h2 className="text-lg font-semibold mb-1">Conceder acceso manual</h2>

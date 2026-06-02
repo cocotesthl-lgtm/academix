@@ -29,6 +29,7 @@ export type Course = {
   category_id: string | null;
   landing_template?: 'classic' | 'hotmart' | 'funnel' | 'vsl';
   landing_config?: Record<string, unknown> | null;
+  landing_variants?: Record<string, { template: 'classic' | 'hotmart' | 'funnel' | 'vsl'; config: Record<string, unknown> }> | null;
 };
 
 export type Category = { id: string; name: string };
@@ -49,7 +50,7 @@ export type Module = {
   lessons: Lesson[];
 };
 
-export function CourseEditor({ course, modules, categories, primaryColor = '#0a0a0a' }: { course: Course; modules: Module[]; categories: Category[]; primaryColor?: string }) {
+export function CourseEditor({ course, modules, categories, primaryColor = '#0a0a0a', storefrontOrigin = '' }: { course: Course; modules: Module[]; categories: Category[]; primaryColor?: string; storefrontOrigin?: string }) {
   const [updateState, updateAction, updatePending] = useActionState<Result | null, FormData>(
     updateCourseAction,
     null
@@ -173,12 +174,15 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
         <LandingEditor
           courseId={course.id}
           courseTitle={course.title}
+          courseSlug={course.slug}
           initialTemplate={(course.landing_template ?? 'classic') as LandingTemplate}
           initialConfig={(course.landing_config ?? {}) as LandingConfig}
+          initialVariants={(course.landing_variants ?? null) as Parameters<typeof LandingEditor>[0]['initialVariants']}
           courseCoverUrl={course.cover_url}
           coursePriceCents={course.price_cents}
           courseCurrency={course.currency}
           primaryColor={primaryColor}
+          storefrontOrigin={storefrontOrigin}
         />
       </section>
 
