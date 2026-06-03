@@ -3,10 +3,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { AffiliateLinkButton } from "@/components/storefront/AffiliateLinkButton";
-import { signupAsAffiliateAction, markBroadcastReadAction } from "@/lib/affiliates/panel";
+import { signupAsAffiliateAction, markBroadcastReadAction, ensureAffiliateMembership } from "@/lib/affiliates/panel";
 import { NETWORK_EMOJI } from "@/lib/affiliates/networks";
 import { buildCourseUrl } from "@/lib/affiliates/url";
-import { getMembership } from "@/lib/auth/guards";
 import { tenantOrigin } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -48,12 +47,19 @@ export default async function AffiliateDashboard({
   if (!user) redirect("/login?next=/affiliate");
 
   const svc = getServiceClient();
-  const membership = await getMembership(tenantId, user.id);
 
-  // Si NO es afiliado, mostrar pantalla de inscripción
-  if (!membership.isAffiliate) {
+  // Afiliado platform-level (Curplat)? Si no lo es, ofrecemos signup.
+  const { data: profile } = await svc
+    .from('profiles').select('is_affiliate').eq('id', user.id)
+    .maybeSingle<{ is_affiliate: boolean }>();
+
+  if (!profile?.is_affiliate) {
     return <AffiliateJoin tenantId={tenantId} tenantName={tenant.name} primary={primary} />;
   }
+
+  // Es afiliado de Curplat — autocreamos su membership en este tenant para
+  // que el owner lo vea entre sus afiliados.
+  await ensureAffiliateMembership({ tenantId, userId: user.id });
 
   // Cursos disponibles + mis links + comisiones (lo que ya teníamos)
   const [
@@ -332,9 +338,9 @@ function AffiliateJoin({ tenantId, tenantName, primary }: { tenantId: string; te
       <div className="text-5xl mb-4">💼</div>
       <h1 className="text-3xl font-bold">Sumate al programa de afiliados</h1>
       <p className="text-black/60 mt-3 max-w-md mx-auto">
-        Promocioná los cursos de <strong>{tenantName}</strong> y ganá una comisión por cada venta
-        que traés. Te damos link único por curso, material promocional, acceso a comunidades
-        privadas y reportes en tiempo real.
+        Te registrás como afiliado de <strong>Curplat</strong> y podés promocionar cursos de{' '}
+        <strong>{tenantName}</strong> y de cualquier otra academia de la plataforma. Te damos
+        link único por curso, material promocional y comisión por cada venta.
       </p>
       <form action={signupAsAffiliateAction} className="mt-8">
         <input type="hidden" name="tenant_id" value={tenantId} />
@@ -345,7 +351,9 @@ function AffiliateJoin({ tenantId, tenantName, primary }: { tenantId: string; te
           ✅ Quiero ser afiliado
         </button>
       </form>
-      <p className="text-xs text-black/40 mt-4">Aprobación inmediata. Gratis. Sin compromiso.</p>
+      <p className="text-xs text-black/40 mt-4">
+        Aprobación inmediata · Gratis · 1 cuenta para todas las academias
+      </p>
     </div>
   );
 }

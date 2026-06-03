@@ -61,16 +61,31 @@ export default async function BuscarAcademiasPage() {
           isLocal={isLocal}
         />
 
-        <div className="mt-12 rounded-xl border border-white/10 bg-white/[0.02] p-6 text-center">
-          <p className="text-sm text-white/60">
-            ¿Sos creador y querés tener tu propia academia?
-          </p>
-          <Link
-            href="/signup"
-            className="inline-block mt-3 rounded-md bg-white text-black px-5 py-2 font-medium hover:bg-white/90"
-          >
-            Crear mi academia gratis →
-          </Link>
+        <div className="mt-12 grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6 text-center">
+            <p className="text-sm text-white/60">
+              ¿Sos creador y querés tener tu propia academia?
+            </p>
+            <Link
+              href="/signup"
+              className="inline-block mt-3 rounded-md bg-white text-black px-5 py-2 font-medium hover:bg-white/90"
+            >
+              Crear mi academia gratis →
+            </Link>
+          </div>
+
+          {/* CTA afiliados — registro platform-level (Curplat) */}
+          <div className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-6 text-center">
+            <p className="text-sm text-white/70">
+              💼 ¿Querés promocionar cursos y ganar comisión?
+            </p>
+            <Link
+              href="/affiliate"
+              className="inline-block mt-3 rounded-md bg-fuchsia-500 text-white px-5 py-2 font-semibold hover:bg-fuchsia-400"
+            >
+              Ser afiliado de Curplat →
+            </Link>
+          </div>
         </div>
       </main>
     </div>

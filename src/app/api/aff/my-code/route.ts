@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
-import { getMembership } from '@/lib/auth/guards';
 import { getOrCreateAffiliateLink } from '@/lib/affiliates/links';
+import { ensureAffiliateMembership } from '@/lib/affiliates/panel';
 import { resolveTenantIdBySlug } from '@/lib/tenant/resolve';
 
 export const dynamic = 'force-dynamic';
@@ -29,25 +29,30 @@ export async function GET(req: NextRequest) {
   const tenantId = await resolveTenantIdBySlug(tenantSlug);
   if (!tenantId) return NextResponse.json({ error: 'tenant_not_found' }, { status: 404 });
 
-  // Membership + course en paralelo (ambos son independientes)
+  // Profile (is_affiliate) + course en paralelo
   const svc = getServiceClient();
-  const [membership, courseRes] = await Promise.all([
-    getMembership(tenantId, user.id),
+  const [profileRes, courseRes] = await Promise.all([
+    svc.from('profiles').select('is_affiliate').eq('id', user.id)
+      .maybeSingle<{ is_affiliate: boolean }>(),
     svc.from('courses')
       .select('id, affiliate_enabled')
-      .eq('tenant_id', tenantId)
-      .eq('slug', slug)
+      .eq('tenant_id', tenantId).eq('slug', slug)
       .maybeSingle<{ id: string; affiliate_enabled: boolean }>()
   ]);
 
-  if (!membership.isAffiliate) return NextResponse.json({ error: 'not_affiliate' }, { status: 403 });
+  if (!profileRes.data?.is_affiliate) {
+    return NextResponse.json({ error: 'not_affiliate' }, { status: 403 });
+  }
   const course = courseRes.data;
   if (!course) return NextResponse.json({ error: 'course_not_found' }, { status: 404 });
   if (!course.affiliate_enabled) return NextResponse.json({ error: 'affiliate_disabled' }, { status: 409 });
 
-  const result = await getOrCreateAffiliateLink({
-    tenantId, courseId: course.id, affiliateUserId: user.id
-  });
-  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 500 });
-  return NextResponse.json({ code: result.code });
+  // Asegurar membership tenant (autocrea si es el 1er link para este tenant)
+  // y generar/recuperar el código en paralelo.
+  const [, linkResult] = await Promise.all([
+    ensureAffiliateMembership({ tenantId, userId: user.id }),
+    getOrCreateAffiliateLink({ tenantId, courseId: course.id, affiliateUserId: user.id })
+  ]);
+  if (!linkResult.ok) return NextResponse.json({ error: linkResult.error }, { status: 500 });
+  return NextResponse.json({ code: linkResult.code });
 }

@@ -17,6 +17,22 @@ export default function LoginPage() {
             <LoginForm />
           </Suspense>
         </div>
+
+        {/* CTA afiliados — los lleva al registro de afiliado en marketplace */}
+        <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5 text-center">
+          <div className="text-2xl mb-1">💼</div>
+          <h2 className="font-bold">¿Querés promocionar cursos y ganar comisión?</h2>
+          <p className="text-sm text-white/65 mt-1 leading-snug">
+            Registrate como afiliado de Curplat. Una cuenta para promocionar
+            cursos de todas las academias.
+          </p>
+          <Link
+            href="/affiliate"
+            className="inline-block mt-3 rounded-md bg-fuchsia-500 text-white px-5 py-2 text-sm font-semibold hover:bg-fuchsia-400"
+          >
+            Quiero ser afiliado →
+          </Link>
+        </div>
       </div>
     </main>
   );

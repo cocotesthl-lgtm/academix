@@ -23,53 +23,91 @@ function revalidateAffiliatePanels(): void {
   revalidateAffiliatePanels();
 }
 
-/* ─────────── Affiliate signup (público, desde el storefront) ─────────── */
+/* ─────────── Afiliados platform-level (Curplat) ─────────── */
 
 /**
- * Crea (o reactiva) la membresía 'affiliate' del user actual en el tenant.
- * Mode 'auto' aprueba al toque. Si el tenant tiene approval flow se queda
- * en pending (no implementado todavía, por ahora todos quedan active).
+ * Marca al user logueado como afiliado de Curplat (platform-level).
+ * Setea profiles.is_affiliate = true. La membership por tenant se autocrea
+ * después, cuando genera el primer link en alguna academia.
+ *
+ * `redirectTo` opcional: a dónde mandar después de afiliarse (default /affiliate).
  */
-export async function signupAsAffiliateAction(formData: FormData): Promise<void> {
-  const tenantId = String(formData.get('tenant_id') ?? '');
-  if (!tenantId) return;
-
+export async function becomeAffiliateAction(formData: FormData): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    // Mandamos al login storefront con next a /affiliate
-    redirect('/login?next=/affiliate');
+    const next = String(formData.get('next') ?? '/affiliate');
+    redirect(`/login?next=${encodeURIComponent(next)}`);
   }
 
   const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('profiles') as any)
+    .update({
+      is_affiliate: true,
+      affiliate_signup_at: new Date().toISOString()
+    })
+    .eq('id', user.id);
 
-  // ¿Ya tiene membresía?
+  const redirectTo = String(formData.get('redirect_to') ?? '/affiliate');
+  redirect(redirectTo);
+}
+
+/**
+ * Asegura que existe membership(role='affiliate', status='active') para el
+ * (user, tenant). Idempotente. Usado al generar el primer affiliate link
+ * en cada academia — el owner ve al afiliado entre los suyos.
+ */
+export async function ensureAffiliateMembership(opts: {
+  tenantId: string; userId: string;
+}): Promise<void> {
+  const svc = getServiceClient();
   const { data: existing } = await svc
     .from('memberships')
-    .select('id, role, status')
-    .eq('tenant_id', tenantId)
-    .eq('user_id', user.id)
+    .select('id, status')
+    .eq('tenant_id', opts.tenantId)
+    .eq('user_id', opts.userId)
     .eq('role', 'affiliate')
-    .maybeSingle<{ id: string; role: string; status: string }>();
+    .maybeSingle<{ id: string; status: string }>();
 
   if (existing) {
     if (existing.status !== 'active') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (svc.from('memberships') as any)
-        .update({ status: 'active' })
-        .eq('id', existing.id);
+      await (svc.from('memberships') as any).update({ status: 'active' }).eq('id', existing.id);
     }
-    redirect('/affiliate');
+    return;
   }
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('memberships') as any).insert({
-    tenant_id: tenantId,
-    user_id: user.id,
+    tenant_id: opts.tenantId,
+    user_id: opts.userId,
     role: 'affiliate',
     status: 'active'
   });
+}
 
+/**
+ * @deprecated Use becomeAffiliateAction + ensureAffiliateMembership.
+ * Mantenida para que el form viejo de "Quiero ser afiliado" del storefront
+ * siga funcionando (ahora hace ambas cosas: flag global + membership tenant).
+ */
+export async function signupAsAffiliateAction(formData: FormData): Promise<void> {
+  const tenantId = String(formData.get('tenant_id') ?? '');
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login?next=/affiliate');
+
+  const svc = getServiceClient();
+  // Marcar flag platform-level
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('profiles') as any)
+    .update({ is_affiliate: true, affiliate_signup_at: new Date().toISOString() })
+    .eq('id', user.id);
+
+  // Autocrear membership del tenant si vino tenant_id
+  if (tenantId) {
+    await ensureAffiliateMembership({ tenantId, userId: user.id });
+  }
   redirect('/affiliate');
 }
 

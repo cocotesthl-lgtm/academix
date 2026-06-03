@@ -1,7 +1,6 @@
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getMembership } from "@/lib/auth/guards";
 import { mergeConfig } from "@/lib/site/types";
 import { AffiliateBar } from "@/components/storefront/AffiliateBar";
 
@@ -55,13 +54,18 @@ export default async function StorefrontLayout({
     .single<{ site_config: unknown }>();
   const cfg = mergeConfig(tenantRow?.site_config);
 
-  // ¿El user logueado es afiliado activo de este tenant?
-  // Si sí, mostramos la barra superior de afiliado (con A/B/C variants
-  // en course pages).
+  // ¿El user logueado es afiliado PLATFORM-LEVEL (de Curplat)?
+  // Si sí, mostramos la barra superior — puede afiliarse a este tenant
+  // generando un link (la membership se autocrea ahí).
   const supabaseAuth = await createSupabaseServerClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
-  const membership = user ? await getMembership(tenantId, user.id) : null;
-  const isAffiliate = membership?.isAffiliate ?? false;
+  let isAffiliate = false;
+  if (user) {
+    const { data: profile } = await svc
+      .from('profiles').select('is_affiliate').eq('id', user.id)
+      .maybeSingle<{ is_affiliate: boolean }>();
+    isAffiliate = !!profile?.is_affiliate;
+  }
 
   return (
     <div
