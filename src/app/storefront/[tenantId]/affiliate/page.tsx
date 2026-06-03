@@ -3,6 +3,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { AffiliateLinkButton } from "@/components/storefront/AffiliateLinkButton";
+import { signupAsAffiliateAction, markBroadcastReadAction } from "@/lib/affiliates/panel";
+import { NETWORK_EMOJI } from "@/lib/affiliates/networks";
+import { buildCourseUrl } from "@/lib/affiliates/url";
+import { getMembership } from "@/lib/auth/guards";
+import { tenantOrigin } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +18,19 @@ type CourseRow = {
   price_cents: number;
   currency: string;
   affiliate_enabled: boolean;
+};
+
+type PromoRow = {
+  id: string; type: string; title: string; description: string | null;
+  asset_url: string | null; copy_text: string | null; thumbnail_url: string | null;
+};
+
+type CommunityRow = {
+  id: string; network: string; label: string; url: string; description: string | null;
+};
+
+type BroadcastRow = {
+  id: string; subject: string; body: string; pinned: boolean; created_at: string;
 };
 
 export default async function AffiliateDashboard({
@@ -30,81 +48,204 @@ export default async function AffiliateDashboard({
   if (!user) redirect("/login?next=/affiliate");
 
   const svc = getServiceClient();
+  const membership = await getMembership(tenantId, user.id);
 
-  // Courses available for affiliation in this tenant
-  const { data: courses } = await svc
-    .from("courses")
-    .select("id, slug, title, price_cents, currency, affiliate_enabled")
-    .eq("tenant_id", tenantId)
-    .eq("status", "published")
-    .eq("affiliate_enabled", true)
-    .order("created_at", { ascending: false });
+  // Si NO es afiliado, mostrar pantalla de inscripción
+  if (!membership.isAffiliate) {
+    return <AffiliateJoin tenantId={tenantId} tenantName={tenant.name} primary={primary} />;
+  }
+
+  // Cursos disponibles + mis links + comisiones (lo que ya teníamos)
+  const [
+    { data: courses },
+    { data: links },
+    { data: commissionsRaw },
+    { data: promoRaw },
+    { data: communitiesRaw },
+    { data: broadcastsRaw },
+    { data: readsRaw }
+  ] = await Promise.all([
+    svc.from("courses")
+      .select("id, slug, title, price_cents, currency, affiliate_enabled")
+      .eq("tenant_id", tenantId).eq("status", "published").eq("affiliate_enabled", true)
+      .order("created_at", { ascending: false }),
+    svc.from("affiliate_links")
+      .select("course_id, code")
+      .eq("affiliate_user_id", user.id).eq("tenant_id", tenantId),
+    svc.from("affiliate_commissions")
+      .select("id, level, amount_cents, status, created_at")
+      .eq("user_id", user.id).eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false }).limit(20),
+    svc.from("promo_materials")
+      .select("id, type, title, description, asset_url, copy_text, thumbnail_url")
+      .eq("tenant_id", tenantId).order("position", { ascending: true }),
+    svc.from("community_links")
+      .select("id, network, label, url, description")
+      .eq("tenant_id", tenantId).in("audience", ['affiliates', 'all'])
+      .order("position", { ascending: true }),
+    svc.from("affiliate_broadcasts")
+      .select("id, subject, body, pinned, created_at")
+      .eq("tenant_id", tenantId)
+      .order("pinned", { ascending: false }).order("created_at", { ascending: false })
+      .limit(20),
+    svc.from("affiliate_message_reads")
+      .select("message_id").eq("affiliate_user_id", user.id)
+  ]);
+
   const courseRows = (courses ?? []) as CourseRow[];
-
-  // Existing links for this user
-  const { data: links } = await svc
-    .from("affiliate_links")
-    .select("course_id, code")
-    .eq("affiliate_user_id", user.id)
-    .eq("tenant_id", tenantId);
   const byCourse = new Map<string, string>(
     ((links ?? []) as Array<{ course_id: string; code: string }>).map((l) => [l.course_id, l.code])
   );
-
-  // Commissions earned by this user in this tenant
-  const { data: commissionsRaw } = await svc
-    .from("affiliate_commissions")
-    .select("id, level, amount_cents, status, created_at, courses:sale_id ( id )")
-    .eq("user_id", user.id)
-    .eq("tenant_id", tenantId)
-    .order("created_at", { ascending: false })
-    .limit(20);
   const commissionRows = (commissionsRaw ?? []) as Array<{
-    id: string;
-    level: number;
-    amount_cents: number;
-    status: string;
-    created_at: string;
+    id: string; level: number; amount_cents: number; status: string; created_at: string;
   }>;
-  const accruedTotal = commissionRows
-    .filter((c) => c.status === 'accrued')
-    .reduce((s, c) => s + Number(c.amount_cents), 0);
-  const paidTotal = commissionRows
-    .filter((c) => c.status === 'paid')
-    .reduce((s, c) => s + Number(c.amount_cents), 0);
+  const promoRows = (promoRaw ?? []) as PromoRow[];
+  const communityRows = (communitiesRaw ?? []) as CommunityRow[];
+  const broadcastRows = (broadcastsRaw ?? []) as BroadcastRow[];
+  const readIds = new Set(((readsRaw ?? []) as Array<{ message_id: string }>).map((r) => r.message_id));
+  const unreadCount = broadcastRows.filter((b) => !readIds.has(b.id)).length;
 
-  function urlFor(courseSlug: string, code: string) {
-    return `http://${tenant!.slug}.localhost:3000/c/${courseSlug}?ref=${code}`;
-  }
+  const accruedTotal = commissionRows.filter((c) => c.status === 'accrued').reduce((s, c) => s + Number(c.amount_cents), 0);
+  const paidTotal = commissionRows.filter((c) => c.status === 'paid').reduce((s, c) => s + Number(c.amount_cents), 0);
+
+  const origin = tenantOrigin(tenant!.slug);
+  const urlFor = (courseSlug: string, code: string) =>
+    buildCourseUrl({ origin, courseSlug, ref: code });
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+    <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
       <div>
-        <h1 className="text-3xl font-bold">Programa de afiliados</h1>
+        <h1 className="text-3xl font-bold">Panel de afiliado</h1>
         <p className="text-black/60 mt-2">
-          Generá un link único por curso y empezá a ganar comisión por cada venta que traés.
+          Tus links, tus comisiones, material promocional y mensajes del owner de <strong>{tenant.name}</strong>.
         </p>
       </div>
 
-      {/* My commissions */}
-      <section className="grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-black/10 p-5">
-          <div className="text-xs text-black/50 uppercase tracking-wider">Acumulado (pendiente)</div>
-          <div className="text-3xl font-bold mt-1">
-            ${(accruedTotal / 100).toLocaleString('es-AR')}
-          </div>
-        </div>
-        <div className="rounded-xl border border-black/10 p-5">
-          <div className="text-xs text-black/50 uppercase tracking-wider">Cobrado</div>
-          <div className="text-3xl font-bold mt-1">
-            ${(paidTotal / 100).toLocaleString('es-AR')}
-          </div>
-        </div>
+      {/* Stats */}
+      <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Stat label="Acumulado (pendiente)" value={`$${(accruedTotal / 100).toLocaleString('es-AR')}`} />
+        <Stat label="Cobrado" value={`$${(paidTotal / 100).toLocaleString('es-AR')}`} />
+        <Stat label="Cursos disponibles" value={courseRows.length.toString()} />
       </section>
 
+      {/* Mensajes del owner */}
+      {broadcastRows.length > 0 && (
+        <section>
+          <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
+            📬 Mensajes del owner
+            {unreadCount > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-red-500 text-white font-semibold">
+                {unreadCount} nuevo{unreadCount > 1 ? 's' : ''}
+              </span>
+            )}
+          </h2>
+          <div className="space-y-2">
+            {broadcastRows.map((m) => {
+              const isUnread = !readIds.has(m.id);
+              return (
+                <details
+                  key={m.id}
+                  className={`rounded-lg border px-4 py-3 ${
+                    isUnread ? 'border-amber-300 bg-amber-50' : 'border-black/10 bg-white'
+                  }`}
+                >
+                  <summary className="cursor-pointer flex items-center justify-between gap-3 font-medium">
+                    <span className="flex items-center gap-2">
+                      {m.pinned && <span title="Fijado">📌</span>}
+                      {isUnread && <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />}
+                      {m.subject}
+                    </span>
+                    <span className="text-xs text-black/40 shrink-0">
+                      {new Date(m.created_at).toLocaleDateString('es-AR')}
+                    </span>
+                  </summary>
+                  <p className="mt-3 text-sm text-black/75 whitespace-pre-line">{m.body}</p>
+                  {isUnread && (
+                    <form action={markBroadcastReadAction} className="mt-3">
+                      <input type="hidden" name="message_id" value={m.id} />
+                      <button className="text-xs rounded border border-black/15 px-3 py-1 hover:bg-black/5">
+                        ✓ Marcar como leído
+                      </button>
+                    </form>
+                  )}
+                </details>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Comunidades */}
+      {communityRows.length > 0 && (
+        <section>
+          <h2 className="text-xl font-bold mb-3">💬 Comunidades y grupos</h2>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {communityRows.map((c) => (
+              <a
+                key={c.id}
+                href={c.url}
+                target="_blank"
+                rel="noopener"
+                className="flex items-center gap-3 rounded-lg border border-black/10 p-4 hover:border-black/30 hover:bg-black/[0.02] transition"
+              >
+                <div className="text-2xl shrink-0">{NETWORK_EMOJI[c.network] ?? '🔗'}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold">{c.label}</div>
+                  {c.description && <p className="text-xs text-black/55 mt-0.5 line-clamp-2">{c.description}</p>}
+                </div>
+                <span className="text-xs text-black/40 shrink-0">→</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Material promocional */}
+      {promoRows.length > 0 && (
+        <section>
+          <h2 className="text-xl font-bold mb-1">🎨 Material promocional</h2>
+          <p className="text-sm text-black/60 mb-4">Banners, videos, copys listos para usar en tus redes y mails.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {promoRows.map((p) => (
+              <div key={p.id} className="rounded-lg border border-black/10 p-4 space-y-2">
+                {p.thumbnail_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.thumbnail_url} alt="" className="w-full aspect-video object-cover rounded" />
+                )}
+                <div>
+                  <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-black/40 font-semibold">
+                    {p.type}
+                  </div>
+                  <div className="font-semibold mt-0.5">{p.title}</div>
+                  {p.description && <p className="text-xs text-black/60 mt-1">{p.description}</p>}
+                </div>
+                {p.copy_text && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-black/55 hover:text-black">📝 Ver copy sugerido</summary>
+                    <pre className="mt-2 p-2 bg-black/[0.03] rounded text-[11px] whitespace-pre-wrap font-sans">{p.copy_text}</pre>
+                  </details>
+                )}
+                {p.asset_url && (
+                  <a
+                    href={p.asset_url}
+                    target="_blank"
+                    rel="noopener"
+                    className="block text-center text-xs rounded text-white px-3 py-1.5 font-semibold"
+                    style={{ background: primary }}
+                  >
+                    Ver / descargar
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Comisiones recientes */}
       {commissionRows.length > 0 && (
         <section>
-          <h2 className="text-lg font-bold mb-3">Comisiones recientes</h2>
+          <h2 className="text-xl font-bold mb-3">💰 Comisiones recientes</h2>
           <div className="rounded-xl border border-black/10 overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-black/[0.02] text-black/50 text-xs uppercase">
@@ -132,36 +273,79 @@ export default async function AffiliateDashboard({
         </section>
       )}
 
-      {courseRows.length === 0 ? (
-        <div className="rounded-xl border border-black/10 p-10 text-center text-black/50">
-          Esta academia todavía no tiene cursos disponibles para afiliación.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {courseRows.map((c) => {
-            const existingCode = byCourse.get(c.id);
-            return (
-              <div key={c.id} className="rounded-xl border border-black/10 p-5">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
-                    <h3 className="font-semibold">{c.title}</h3>
-                    <p className="text-sm text-black/60">
-                      Precio: {c.price_cents === 0 ? 'Gratis' : `${(c.price_cents/100).toLocaleString('es-AR')} ${c.currency}`}
-                    </p>
+      {/* Mis links */}
+      <section>
+        <h2 className="text-xl font-bold mb-3">🔗 Tus links de afiliado</h2>
+        <p className="text-sm text-black/60 mb-4">
+          Compartí tu link único de cada curso. Cuando alguien compre desde tu link, ganás comisión.
+          Tip: mientras navegás el storefront vas a ver una barra arriba con un selector A/B/C de variantes.
+        </p>
+        {courseRows.length === 0 ? (
+          <div className="rounded-xl border border-black/10 p-10 text-center text-black/50">
+            Esta academia todavía no tiene cursos disponibles para afiliación.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {courseRows.map((c) => {
+              const existingCode = byCourse.get(c.id);
+              return (
+                <div key={c.id} className="rounded-xl border border-black/10 p-5">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div>
+                      <h3 className="font-semibold">{c.title}</h3>
+                      <p className="text-sm text-black/60">
+                        {c.price_cents === 0 ? 'Gratis' : `$${(c.price_cents / 100).toLocaleString('es-AR')} ${c.currency}`}
+                      </p>
+                    </div>
                   </div>
+                  <AffiliateLinkButton
+                    courseId={c.id}
+                    tenantSlug={tenant.slug}
+                    initialCode={existingCode ?? null}
+                    initialUrl={existingCode ? urlFor(c.slug, existingCode) : null}
+                    primary={primary}
+                  />
                 </div>
-                <AffiliateLinkButton
-                  courseId={c.id}
-                  tenantSlug={tenant.slug}
-                  initialCode={existingCode ?? null}
-                  initialUrl={existingCode ? urlFor(c.slug, existingCode) : null}
-                  primary={primary}
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* ─────────── Sub-componentes ─────────── */
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-black/10 p-5">
+      <div className="text-xs text-black/50 uppercase tracking-wider">{label}</div>
+      <div className="text-2xl md:text-3xl font-bold mt-1 font-mono">{value}</div>
+    </div>
+  );
+}
+
+function AffiliateJoin({ tenantId, tenantName, primary }: { tenantId: string; tenantName: string; primary: string }) {
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-16 text-center">
+      <div className="text-5xl mb-4">💼</div>
+      <h1 className="text-3xl font-bold">Sumate al programa de afiliados</h1>
+      <p className="text-black/60 mt-3 max-w-md mx-auto">
+        Promocioná los cursos de <strong>{tenantName}</strong> y ganá una comisión por cada venta
+        que traés. Te damos link único por curso, material promocional, acceso a comunidades
+        privadas y reportes en tiempo real.
+      </p>
+      <form action={signupAsAffiliateAction} className="mt-8">
+        <input type="hidden" name="tenant_id" value={tenantId} />
+        <button
+          className="rounded-lg px-6 py-3 font-semibold text-white"
+          style={{ background: primary }}
+        >
+          ✅ Quiero ser afiliado
+        </button>
+      </form>
+      <p className="text-xs text-black/40 mt-4">Aprobación inmediata. Gratis. Sin compromiso.</p>
     </div>
   );
 }

@@ -76,6 +76,25 @@ export const env = {
   }
 };
 
+/**
+ * Origin público del storefront de un tenant.
+ * Prod: https://<slug>.<rootDomain> · Dev: http://<slug>.localhost:<port>
+ * Centraliza la lógica que estaba duplicada en 5+ archivos.
+ */
+export function tenantOrigin(slug: string): string {
+  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com';
+  try {
+    const u = new URL(env.appUrl);
+    const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
+    if (isLocal) {
+      return `${u.protocol}//${slug}.localhost${u.port ? ':' + u.port : ''}`;
+    }
+    return `${u.protocol}//${slug}.${root}`;
+  } catch {
+    return `https://${slug}.${root}`;
+  }
+}
+
 export const RESERVED_SLUGS = new Set([
   'admin', 'app', 'www', 'api', 'static', 'cdn', 'assets',
   'auth', 'login', 'signup', 'help', 'support', 'docs',

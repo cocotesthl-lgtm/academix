@@ -4,6 +4,37 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { IMPERSONATE_COOKIE } from '@/lib/founder/constants';
 
+/**
+ * Devuelve los roles activos de un user en un tenant.
+ * Reemplaza el patrón duplicado de queries puntuales por rol.
+ * Llamadores típicos: storefront layout (¿es affiliate?), endpoints de aff.
+ */
+export type MembershipInfo = {
+  roles: Set<'owner' | 'instructor' | 'student' | 'affiliate'>;
+  isOwner: boolean;
+  isAffiliate: boolean;
+  isStudent: boolean;
+  isInstructor: boolean;
+};
+
+export async function getMembership(tenantId: string, userId: string): Promise<MembershipInfo> {
+  const svc = getServiceClient();
+  const { data } = await svc
+    .from('memberships')
+    .select('role')
+    .eq('tenant_id', tenantId)
+    .eq('user_id', userId)
+    .eq('status', 'active');
+  const roles = new Set(((data ?? []) as Array<{ role: string }>).map((m) => m.role) as Array<'owner' | 'instructor' | 'student' | 'affiliate'>);
+  return {
+    roles,
+    isOwner: roles.has('owner'),
+    isAffiliate: roles.has('affiliate'),
+    isStudent: roles.has('student'),
+    isInstructor: roles.has('instructor')
+  };
+}
+
 export async function getCurrentUser() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();

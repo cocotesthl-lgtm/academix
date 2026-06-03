@@ -80,16 +80,11 @@ export function LandingEditor({
     if (t === currentTemplate) return;
     setPendingTemplate(t);
   }
-  function applyPendingBlank() {
+  /** Aplica el template pendiente con (sample=true) o sin (sample=false) contenido de muestra. */
+  function applyPending(withSample: boolean) {
     if (!pendingTemplate) return;
     setCurrentTemplate(pendingTemplate);
-    setCurrentConfig({});                  // vacía
-    setPendingTemplate(null);
-  }
-  function applyPendingWithSample() {
-    if (!pendingTemplate) return;
-    setCurrentTemplate(pendingTemplate);
-    setCurrentConfig(defaultsForTemplate(pendingTemplate, courseTitle));
+    setCurrentConfig(withSample ? defaultsForTemplate(pendingTemplate, courseTitle) : {});
     setPendingTemplate(null);
   }
 
@@ -108,13 +103,6 @@ export function LandingEditor({
   function field<K extends keyof LandingConfig>(key: K, value: LandingConfig[K]) {
     setCurrentConfig((c) => ({ ...c, [key]: value }));
   }
-
-  // (legacy) kept for backwards compat — el botón fue reemplazado por el modal.
-  function applyTemplateDefaults() {
-    const defaults = defaultsForTemplate(currentTemplate, courseTitle);
-    setCurrentConfig(defaults);
-  }
-  void applyTemplateDefaults;
 
   function enableVariant(key: 'B' | 'C') {
     // Cuando habilitan B o C por primera vez, pre-cargamos con defaults
@@ -263,7 +251,7 @@ export function LandingEditor({
               <div className="space-y-2">
                 <button
                   type="button"
-                  onClick={applyPendingWithSample}
+                  onClick={() => applyPending(true)}
                   className="w-full text-left rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-4 hover:bg-emerald-500/20"
                 >
                   <div className="font-semibold text-sm flex items-center gap-2">
@@ -276,7 +264,7 @@ export function LandingEditor({
                 </button>
                 <button
                   type="button"
-                  onClick={applyPendingBlank}
+                  onClick={() => applyPending(false)}
                   className="w-full text-left rounded-lg border border-white/15 bg-white/[0.02] p-4 hover:bg-white/[0.05]"
                 >
                   <div className="font-semibold text-sm">📄 Vacía</div>

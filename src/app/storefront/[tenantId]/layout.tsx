@@ -1,6 +1,9 @@
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getMembership } from "@/lib/auth/guards";
 import { mergeConfig } from "@/lib/site/types";
+import { AffiliateBar } from "@/components/storefront/AffiliateBar";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +55,14 @@ export default async function StorefrontLayout({
     .single<{ site_config: unknown }>();
   const cfg = mergeConfig(tenantRow?.site_config);
 
+  // ¿El user logueado es afiliado activo de este tenant?
+  // Si sí, mostramos la barra superior de afiliado (con A/B/C variants
+  // en course pages).
+  const supabaseAuth = await createSupabaseServerClient();
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  const membership = user ? await getMembership(tenantId, user.id) : null;
+  const isAffiliate = membership?.isAffiliate ?? false;
+
   return (
     <div
       className="min-h-screen bg-white text-black"
@@ -60,6 +71,7 @@ export default async function StorefrontLayout({
         ['--brand-accent' as string]: accent
       }}
     >
+      {isAffiliate && <AffiliateBar primary={primary} tenantSlug={tenant.slug} />}
       <header data-storefront-header className="storefront-header border-b border-black/10 bg-white sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <a href="/" className="flex items-center gap-3">
