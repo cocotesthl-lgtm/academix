@@ -70,10 +70,23 @@ async function postAuthRedirect(userId: string): Promise<string> {
   return '/onboarding';
 }
 
+/**
+ * Sanitiza el `next` recibido del cliente. Solo aceptamos paths internos
+ * (empiezan con /) que NO sean protocol-relative (//evil.com).
+ */
+function sanitizeNext(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const v = raw.trim();
+  if (!v.startsWith('/') || v.startsWith('//')) return null;
+  if (v.length > 500) return null;
+  return v;
+}
+
 export async function signupAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const password = String(formData.get('password') ?? '');
   const displayName = String(formData.get('display_name') ?? '').trim();
+  const next = sanitizeNext(String(formData.get('next') ?? ''));
 
   if (!email || !password) {
     return { ok: false, error: 'Email y contraseña son obligatorios.' };
@@ -82,19 +95,27 @@ export async function signupAction(_prev: ActionResult | null, formData: FormDat
     return { ok: false, error: 'La contraseña debe tener al menos 8 caracteres.' };
   }
 
+  // Si viene del flow de afiliado, lo mandamos a /affiliate?activate=1 para
+  // auto-flippear el flag sin pasarle por el onboarding de academia.
+  const isAffiliate = !!next && next.startsWith('/affiliate');
+  const postAuthPath = isAffiliate ? '/affiliate?activate=1' : (next ?? '/onboarding');
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { display_name: displayName || email.split('@')[0] },
-      emailRedirectTo: callbackUrl('/onboarding')
+      emailRedirectTo: callbackUrl(postAuthPath)
     }
   });
 
   if (error) return { ok: false, error: error.message };
 
   if (data.session && data.user) {
+    // Si hay next explícito (ej: viene del flow afiliado), respetarlo —
+    // no pasar por postAuthRedirect que lo mandaría a /onboarding.
+    if (next) return { ok: true, redirectTo: postAuthPath };
     return { ok: true, redirectTo: await postAuthRedirect(data.user.id) };
   }
 

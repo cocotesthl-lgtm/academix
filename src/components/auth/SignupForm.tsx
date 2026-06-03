@@ -1,10 +1,13 @@
 'use client';
 
 import { useActionState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signupAction, type ActionResult } from '@/lib/auth/actions';
 
 export function SignupForm() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') ?? '';
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(signupAction, null);
 
   useEffect(() => {
@@ -29,6 +32,7 @@ export function SignupForm() {
 
   return (
     <form action={formAction} className="space-y-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <div>
         <label className="block text-sm mb-1.5 text-white/70" htmlFor="display_name">
           Tu nombre

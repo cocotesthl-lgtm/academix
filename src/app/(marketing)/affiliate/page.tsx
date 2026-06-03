@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
@@ -11,7 +12,12 @@ type TenantBrand = { primary_color?: string; logo_url?: string } | null;
 type TenantRow = { id: string; slug: string; name: string; brand: TenantBrand };
 type MembershipRow = { tenant_id: string };
 
-export default async function AffiliateGlobalPage() {
+export default async function AffiliateGlobalPage({
+  searchParams
+}: {
+  searchParams: Promise<{ activate?: string }>;
+}) {
+  const { activate } = await searchParams;
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -22,12 +28,23 @@ export default async function AffiliateGlobalPage() {
 
   const svc = getServiceClient();
   const { data: profile } = await svc
-    .from('profiles').select('is_affiliate, full_name').eq('id', user.id)
-    .maybeSingle<{ is_affiliate: boolean; full_name: string | null }>();
+    .from('profiles').select('is_affiliate, display_name').eq('id', user.id)
+    .maybeSingle<{ is_affiliate: boolean; display_name: string | null }>();
 
-  // (2) Logueado pero no afiliado → form para serlo
+  // (2a) Logueado + !is_affiliate + ?activate=1 → auto-flip y limpiar URL.
+  // Esto es lo que dispara el signup-as-affiliate: en vez de mostrar otro
+  // botón "activar", lo flippeamos ahí mismo.
+  if (!profile?.is_affiliate && activate === '1') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('profiles') as any)
+      .update({ is_affiliate: true, affiliate_signup_at: new Date().toISOString() })
+      .eq('id', user.id);
+    redirect('/affiliate');
+  }
+
+  // (2b) Logueado pero no afiliado y no pidió activar → form para serlo
   if (!profile?.is_affiliate) {
-    return <BecomeAffiliate fullName={profile?.full_name ?? null} />;
+    return <BecomeAffiliate displayName={profile?.display_name ?? null} />;
   }
 
   // (3) Ya es afiliado → panel cross-tenant
@@ -384,7 +401,7 @@ function NotLoggedIn() {
   );
 }
 
-function BecomeAffiliate({ fullName }: { fullName: string | null }) {
+function BecomeAffiliate({ displayName }: { displayName: string | null }) {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/40 border-b border-white/10">
@@ -395,7 +412,7 @@ function BecomeAffiliate({ fullName }: { fullName: string | null }) {
       <main className="max-w-2xl mx-auto px-6 py-20 text-center">
         <div className="text-5xl mb-4">💼</div>
         <h1 className="text-3xl md:text-4xl font-bold">
-          {fullName ? `Hola ${fullName.split(' ')[0]}, ` : ''}sumate como afiliado
+          {displayName ? `Hola ${displayName.split(' ')[0]}, ` : ''}sumate como afiliado
         </h1>
         <p className="text-white/65 mt-4 max-w-md mx-auto">
           Activá tu cuenta de afiliado de <strong>Curplat</strong>. Vas a poder promocionar

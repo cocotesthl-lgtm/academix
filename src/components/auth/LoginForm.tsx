@@ -103,8 +103,11 @@ export function LoginForm({
       {!hideCreateAccount && (
         <p className={linkParaCls}>
           ¿Todavía no tenés cuenta?{' '}
-          <Link href="/signup" className={linkCls}>
-            Crear academia
+          <Link
+            href={next ? `/signup?next=${encodeURIComponent(next)}` : '/signup'}
+            className={linkCls}
+          >
+            {next?.startsWith('/affiliate') ? 'Registrarme como afiliado' : 'Crear academia'}
           </Link>
         </p>
       )}
