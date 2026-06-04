@@ -36,7 +36,7 @@ export default async function OwnerFinance() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
 
-  const [balance, { data: ledger }, { data: sales }] = await Promise.all([
+  const [balance, { data: ledger }, { data: sales }, { data: subsRaw }] = await Promise.all([
     getOwnerBalance(tenant.id),
     svc.from("owner_debt_ledger")
       .select("id, type, amount_cents, balance_after_cents, commission_rate_applied, status, created_at, sale_id")
@@ -47,11 +47,28 @@ export default async function OwnerFinance() {
       .select("id, external_id, amount_gross_cents, currency, status, occurred_at")
       .eq("tenant_id", tenant.id)
       .order("occurred_at", { ascending: false })
-      .limit(10)
+      .limit(10),
+    svc.from("subscriptions")
+      .select("id, status, frequency, amount_cents, currency, course_id, user_id, started_at, next_billing_at")
+      .eq("tenant_id", tenant.id)
+      .order("created_at", { ascending: false })
+      .limit(50)
   ]);
 
   const ledgerRows = (ledger ?? []) as LedgerRow[];
   const salesRows = (sales ?? []) as SaleRow[];
+  const subs = (subsRaw ?? []) as Array<{
+    id: string; status: string; frequency: 'monthly' | 'yearly';
+    amount_cents: number; currency: string; course_id: string;
+    user_id: string | null; started_at: string; next_billing_at: string | null;
+  }>;
+
+  // MRR estimado: sumamos amount_cents normalizado a mes de las subs authorized.
+  const activeSubs = subs.filter((s) => s.status === 'authorized');
+  const mrrCents = activeSubs.reduce((sum, s) =>
+    sum + (s.frequency === 'monthly' ? s.amount_cents : Math.round(s.amount_cents / 12)),
+    0
+  );
 
   const showReminder = balance >= REMINDER_THRESHOLD && balance < COLLECTION_THRESHOLD;
   const showCollection = balance >= COLLECTION_THRESHOLD;
@@ -77,11 +94,53 @@ export default async function OwnerFinance() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-4 gap-4">
         <Stat label="Saldo a pagar" value={ars(balance)} highlight />
+        <Stat label="MRR estimado" value={ars(mrrCents)} />
+        <Stat label="Suscripciones activas" value={activeSubs.length.toString()} />
         <Stat label="Ventas (últimas 10)" value={salesRows.length.toString()} />
-        <Stat label="Movimientos de ledger" value={ledgerRows.length.toString()} />
       </div>
+
+      {subs.length > 0 && (
+        <section>
+          <h2 className="text-lg font-semibold mb-3">Suscripciones</h2>
+          <div className="rounded-xl border border-white/10 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-white/[0.03] text-white/50 text-xs uppercase">
+                <tr>
+                  <th className="text-left px-3 py-2">Estado</th>
+                  <th className="text-left px-3 py-2">Frecuencia</th>
+                  <th className="text-right px-3 py-2">Monto</th>
+                  <th className="text-left px-3 py-2">Próximo cobro</th>
+                  <th className="text-left px-3 py-2">Inicio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subs.map((s) => (
+                  <tr key={s.id} className="border-t border-white/5">
+                    <td className="px-3 py-2">
+                      <span className={`text-xs px-2 py-0.5 rounded ${
+                        s.status === 'authorized' ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                        : s.status === 'paused' ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                        : s.status === 'cancelled' ? 'bg-red-500/10 text-red-300 border border-red-500/30'
+                        : 'bg-white/5 text-white/50 border border-white/15'
+                      }`}>{s.status}</span>
+                    </td>
+                    <td className="px-3 py-2 text-white/70">{s.frequency === 'monthly' ? 'Mensual' : 'Anual'}</td>
+                    <td className="px-3 py-2 text-right font-mono">{ars(s.amount_cents, s.currency)}</td>
+                    <td className="px-3 py-2 text-white/70">
+                      {s.next_billing_at ? new Date(s.next_billing_at).toLocaleDateString('es-AR') : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-white/70">
+                      {s.started_at ? new Date(s.started_at).toLocaleDateString('es-AR') : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {balance > 0 && <CryptoPayoutCard balanceCents={balance} />}
 

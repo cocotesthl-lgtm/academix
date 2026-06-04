@@ -8,6 +8,7 @@ import { GrantEnrollmentForm } from "@/components/owner/courses/GrantEnrollmentF
 import { deleteCourseAction } from "@/lib/courses/actions";
 import { CourseCheckoutOverride } from "@/components/owner/checkout/CourseCheckoutOverride";
 import { CourseCalendarConfig } from "@/components/owner/courses/CourseCalendarConfig";
+import { CourseSubscriptionConfig } from "@/components/owner/courses/CourseSubscriptionConfig";
 import { mergeCheckoutConfig } from "@/lib/checkout/types";
 import type { CalendarMode } from "@/lib/calendar/types";
 
@@ -24,7 +25,7 @@ export default async function CourseEditPage({
 
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config, landing_variants, checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config, landing_variants, checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days, pricing_mode, subscription_frequency, subscription_trial_days")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
     .maybeSingle<Course & {
@@ -33,6 +34,9 @@ export default async function CourseEditPage({
       calendar_label: string | null;
       calendar_required: boolean | null;
       calendar_horizon_days: number | null;
+      pricing_mode: 'one_time' | 'subscription' | null;
+      subscription_frequency: 'monthly' | 'yearly' | null;
+      subscription_trial_days: number | null;
     }>();
 
   if (!course) notFound();
@@ -134,6 +138,22 @@ export default async function CourseEditPage({
           return `${u.protocol}//${host}`;
         })()}
       />
+
+      <section className="max-w-3xl pt-8 border-t border-white/10">
+        <h2 className="text-lg font-semibold mb-1">Modelo de cobro</h2>
+        <p className="text-sm text-white/60 mb-4">
+          Cobrá una vez o seteá una suscripción recurrente (mensual o anual)
+          via MercadoPago. El monto sale del precio del curso.
+        </p>
+        <CourseSubscriptionConfig
+          courseId={course.id}
+          initialMode={(course.pricing_mode ?? 'one_time') as 'one_time' | 'subscription'}
+          initialFrequency={course.subscription_frequency}
+          initialTrialDays={course.subscription_trial_days ?? 0}
+          priceCents={course.price_cents}
+          currency={course.currency}
+        />
+      </section>
 
       <section className="max-w-3xl pt-8 border-t border-white/10">
         <h2 className="text-lg font-semibold mb-1">Checkout — calendario / fecha</h2>

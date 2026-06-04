@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers, cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
-import { createPreference } from '@/lib/payments/mercadopago';
+import { createPreference, createPreapproval } from '@/lib/payments/mercadopago';
 import { verifyAffiliateCookie, cookieName } from '@/lib/affiliates/cookie';
 import { validateCoupon } from '@/lib/coupons/actions';
 import { env } from '@/lib/env';
@@ -18,6 +18,9 @@ type Course = {
   price_cents: number;
   currency: string;
   status: string;
+  pricing_mode: 'one_time' | 'subscription' | null;
+  subscription_frequency: 'monthly' | 'yearly' | null;
+  subscription_trial_days: number | null;
 };
 
 export async function POST(
@@ -30,7 +33,7 @@ export async function POST(
   // Resolve course
   const { data: course } = await svc
     .from('courses')
-    .select('id, tenant_id, slug, title, price_cents, currency, status')
+    .select('id, tenant_id, slug, title, price_cents, currency, status, pricing_mode, subscription_frequency, subscription_trial_days')
     .eq('id', courseId)
     .maybeSingle<Course>();
   if (!course || course.status !== 'published') {
@@ -281,6 +284,54 @@ export async function POST(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('coupons') as any).update({ redemption_count: (c?.redemption_count ?? 0) + 1 }).eq('id', couponValid.id);
     return NextResponse.redirect(`${origin}/learn`, { status: 303 });
+  }
+
+  // ─── Suscripción recurrente (MP Preapproval) ───
+  // Si el curso es pricing_mode='subscription', creamos un preapproval
+  // en vez de una preference. MP cobra recurrente y notifica via
+  // /api/webhooks/mercadopago-preapproval/[tenantId].
+  if (course.pricing_mode === 'subscription' && course.subscription_frequency) {
+    const subWebhookUrl = `${env.platformApiOrigin}/api/webhooks/mercadopago-preapproval/${course.tenant_id}`;
+    const payerEmail = buyerInfo.email ?? user?.email;
+    if (!payerEmail) {
+      return NextResponse.redirect(
+        `${origin}/c/${course.slug}?error=email_required_for_subscription`,
+        { status: 303 }
+      );
+    }
+    try {
+      const pre = await createPreapproval({
+        accessToken: integration.access_token_enc,
+        reason: `Suscripción ${course.subscription_frequency === 'monthly' ? 'mensual' : 'anual'} a ${course.title}`,
+        amountCents: course.price_cents,
+        currency: course.currency,
+        frequency: course.subscription_frequency,
+        payerEmail,
+        backUrl: `${origin}/learn`,
+        externalReference: `${course.id}::${buyerUserId ?? 'anon'}::${affLinkId ?? ''}`,
+        notificationUrl: subWebhookUrl,
+        trialDays: course.subscription_trial_days ?? 0
+      });
+      // Guardar subscription pending para que el webhook después la
+      // matchee por preapproval_id y la confirme.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('subscriptions') as any).insert({
+        tenant_id: course.tenant_id,
+        course_id: course.id,
+        user_id: buyerUserId,
+        external_provider: 'mercadopago',
+        preapproval_id: pre.id,
+        status: 'pending',
+        frequency: course.subscription_frequency,
+        amount_cents: course.price_cents,
+        currency: course.currency
+      });
+      return NextResponse.redirect(pre.init_point, { status: 303 });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'preapproval_failed';
+      console.error('[checkout] createPreapproval failed', msg);
+      return NextResponse.json({ error: msg }, { status: 502 });
+    }
   }
 
   // Log para diagnosticar problemas de webhook: vemos la URL exacta que

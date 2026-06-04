@@ -152,3 +152,88 @@ export async function getPayment(paymentId: string | number, accessToken: string
   if (!res.ok) throw new Error(`MP getPayment ${paymentId} failed: ${res.status}`);
   return res.json();
 }
+
+/* ────────────────── Suscripciones / Preapproval ──────────────────
+ * Docs: https://www.mercadopago.com.ar/developers/es/docs/subscriptions/
+ * /preapproval crea una suscripción que el comprador autoriza
+ * (puede usar tarjeta dentro del flow MP). Después MP cobra recurrente
+ * y notifica via webhook topic=authorized_payment cada cobro confirmado.
+ */
+
+export type CreatePreapprovalInput = {
+  accessToken: string;
+  reason: string;            // ej: "Suscripción mensual a Curso X"
+  amountCents: number;
+  currency: string;          // ARS, etc
+  frequency: 'monthly' | 'yearly';
+  payerEmail: string;        // REQUIRED por MP
+  backUrl: string;           // URL a la que vuelve el comprador
+  externalReference: string; // mismo formato que one-time: courseId::userId::affLinkId
+  notificationUrl?: string;
+  trialDays?: number;
+};
+
+export type Preapproval = {
+  id: string;
+  status: string;
+  init_point: string;
+};
+
+export async function createPreapproval(input: CreatePreapprovalInput): Promise<Preapproval> {
+  const startDate = new Date();
+  if (input.trialDays && input.trialDays > 0) {
+    startDate.setDate(startDate.getDate() + input.trialDays);
+  }
+  const body = {
+    reason: input.reason,
+    external_reference: input.externalReference,
+    payer_email: input.payerEmail,
+    back_url: input.backUrl,
+    auto_recurring: {
+      frequency: 1,
+      frequency_type: input.frequency === 'yearly' ? 'months' : 'months',
+      // Si quieren yearly, lo cobramos cada 12 meses (MP no soporta 'years' nativo
+      // para preapproval; usamos frequency=12 + frequency_type=months).
+      ...(input.frequency === 'yearly' ? { frequency: 12 } : {}),
+      transaction_amount: input.amountCents / 100,
+      currency_id: input.currency,
+      start_date: startDate.toISOString()
+    },
+    notification_url: input.notificationUrl
+  };
+  const res = await fetch(`${MP_API}/preapproval`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${input.accessToken}`
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`MP createPreapproval failed: ${res.status} ${txt}`);
+  }
+  return res.json();
+}
+
+export type PreapprovalDetail = {
+  id: string;
+  status: string;            // pending|authorized|paused|cancelled
+  external_reference: string | null;
+  payer_email: string | null;
+  auto_recurring: {
+    transaction_amount: number;
+    currency_id: string;
+    frequency: number;
+    frequency_type: string;
+  };
+  next_payment_date: string | null;
+};
+
+export async function getPreapproval(id: string, accessToken: string): Promise<PreapprovalDetail> {
+  const res = await fetch(`${MP_API}/preapproval/${id}`, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  if (!res.ok) throw new Error(`MP getPreapproval ${id} failed: ${res.status}`);
+  return res.json();
+}
