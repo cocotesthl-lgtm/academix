@@ -1,62 +1,73 @@
 'use client';
 
-import { useTransition, useState, useEffect } from 'react';
+import { useTransition, useState, useEffect, useRef } from 'react';
 
 /**
- * Color picker que auto-aplica al elegir, sin botón "Aplicar".
- * Cualquier cambio en el `<input type="color">` dispara debounce → action.
- * El owner pickea y listo, sin click extra que olvidarse.
+ * Color picker que auto-aplica al elegir, con DEBOUNCE.
  *
- * Recibe la action directo (form action), el nombre del campo, el value
- * inicial guardado, y un label para mostrar al lado.
+ * Por qué debounce: el `<input type="color">` dispara onChange por cada
+ * pixel que se mueve el cursor mientras el owner navega la rueda de
+ * colores. Sin debounce, eso genera 20+ saves seguidos a Supabase y la
+ * UI termina mostrando un color intermedio (el que estaba seleccionado
+ * cuando el último save se terminó de procesar) en vez del color final
+ * que el owner realmente quería.
+ *
+ * Con 400ms de debounce: el owner mueve el cursor libremente y solo el
+ * color final (cuando se queda quieto) se postea.
  */
 export function ColorAutoSave({
   label,
   fieldName,
   sectionKey,
   initial,
-  action,
-  onReset
+  action
 }: {
   label: string;
   fieldName: 'bg_color' | 'text_color';
   sectionKey: string;
   initial: string | null;
   action: (fd: FormData) => Promise<void>;
-  onReset?: () => void;
 }) {
-  // Estado controlado del picker → sobrevive re-renders y sincroniza con
-  // el valor guardado (initial). Usamos un default seguro cuando initial
-  // es null para no confundir al browser nativo.
   const [value, setValue] = useState(initial ?? defaultForField(fieldName));
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Si el server re-renderiza con otro initial (después de un save), sync.
   useEffect(() => {
     setValue(initial ?? defaultForField(fieldName));
   }, [initial, fieldName]);
 
-  function save(newColor: string) {
-    setValue(newColor);
+  // Cleanup del timer al desmontar
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  function handlePick(newColor: string) {
+    setValue(newColor);            // UI optimista: el swatch refleja al toque
     setSaved(false);
-    start(async () => {
-      const fd = new FormData();
-      fd.set('section', sectionKey);
-      fd.set(fieldName, newColor);
-      await action(fd);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1500);
-    });
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      start(async () => {
+        const fd = new FormData();
+        fd.set('section', sectionKey);
+        fd.set(fieldName, newColor);
+        await action(fd);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 1500);
+      });
+    }, 400);
   }
 
   function reset() {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     start(async () => {
       const fd = new FormData();
       fd.set('section', sectionKey);
       fd.set(fieldName, '');
       await action(fd);
-      if (onReset) onReset();
     });
   }
 
@@ -66,9 +77,8 @@ export function ColorAutoSave({
       <input
         type="color"
         value={value}
-        onChange={(e) => save(e.target.value)}
-        disabled={pending}
-        className="w-7 h-7 rounded bg-transparent border border-white/15 cursor-pointer disabled:opacity-50"
+        onChange={(e) => handlePick(e.target.value)}
+        className="w-7 h-7 rounded bg-transparent border border-white/15 cursor-pointer"
       />
       {pending && <span className="text-[10px] text-white/40">…</span>}
       {saved && !pending && <span className="text-[10px] text-emerald-300">✓</span>}
