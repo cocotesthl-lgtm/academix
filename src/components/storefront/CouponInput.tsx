@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import type { CheckoutConfig, CheckoutField } from '@/lib/checkout/types';
 import { DEFAULT_CHECKOUT_CONFIG } from '@/lib/checkout/types';
+import type { BookingSlot, CalendarMode } from '@/lib/calendar/types';
+import { CalendarPicker } from './CalendarPicker';
 
 /**
  * Form de compra. Renderiza dinámicamente los campos según `checkoutConfig`:
@@ -22,7 +24,11 @@ export function CouponInput({
   freeLabel = 'Inscribirme gratis',
   buyLabel = 'Continuar al pago',
   defaultEmail = '',
-  checkoutConfig
+  checkoutConfig,
+  calendarMode = 'none',
+  calendarLabel = null,
+  calendarRequired = true,
+  calendarSlots
 }: {
   courseId: string;
   priceCents: number;
@@ -32,6 +38,10 @@ export function CouponInput({
   buyLabel?: string;
   defaultEmail?: string;
   checkoutConfig?: CheckoutConfig;
+  calendarMode?: CalendarMode;
+  calendarLabel?: string | null;
+  calendarRequired?: boolean;
+  calendarSlots?: BookingSlot[];
 }) {
   const cfg = checkoutConfig ?? DEFAULT_CHECKOUT_CONFIG;
   const [showCoupon, setShowCoupon] = useState(false);
@@ -186,6 +196,17 @@ export function CouponInput({
               onChange={(v) => setExtra(f.id, v)}
             />
           ))}
+
+          {/* ─── Calendario ─── */}
+          {calendarMode !== 'none' && (
+            <CalendarPicker
+              mode={calendarMode}
+              label={calendarLabel ?? (calendarMode === 'start_date' ? '¿Cuándo querés empezar?' : 'Elegí tu sesión')}
+              required={calendarRequired}
+              primary={primary}
+              slots={calendarSlots}
+            />
+          )}
 
           {/* ─── Password si no está logueado ─── */}
           {!isLoggedIn && (

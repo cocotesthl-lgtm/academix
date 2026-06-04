@@ -50,7 +50,11 @@ export function HotmartLanding({
   primary,
   config,
   buyerEmail,
-  checkoutConfig
+  checkoutConfig,
+  calendarMode,
+  calendarLabel,
+  calendarRequired,
+  calendarSlots
 }: {
   course: CourseInfo;
   modules: ModuleWithLessons[];
@@ -61,6 +65,10 @@ export function HotmartLanding({
   config: LandingConfig;
   buyerEmail: string;
   checkoutConfig?: import('@/lib/checkout/types').CheckoutConfig;
+  calendarMode?: import('@/lib/calendar/types').CalendarMode;
+  calendarLabel?: string | null;
+  calendarRequired?: boolean;
+  calendarSlots?: import('@/lib/calendar/types').BookingSlot[];
 }) {
   const headline = config.headline?.trim() || course.title;
   const subtitle = config.subtitle?.trim();
@@ -303,6 +311,10 @@ export function HotmartLanding({
               defaultEmail={buyerEmail}
               buyLabel={config.cta_label || 'Continuar al pago'}
               checkoutConfig={checkoutConfig}
+              calendarMode={calendarMode}
+              calendarLabel={calendarLabel}
+              calendarRequired={calendarRequired}
+              calendarSlots={calendarSlots}
             />
             {ctaCaption && (
               <p className="text-xs text-center text-black/60">{ctaCaption}</p>

@@ -7,7 +7,9 @@ import { CourseEditor, type Course, type Module, type Lesson, type Category } fr
 import { GrantEnrollmentForm } from "@/components/owner/courses/GrantEnrollmentForm";
 import { deleteCourseAction } from "@/lib/courses/actions";
 import { CourseCheckoutOverride } from "@/components/owner/checkout/CourseCheckoutOverride";
+import { CourseCalendarConfig } from "@/components/owner/courses/CourseCalendarConfig";
 import { mergeCheckoutConfig } from "@/lib/checkout/types";
+import type { CalendarMode } from "@/lib/calendar/types";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +24,16 @@ export default async function CourseEditPage({
 
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config, landing_variants, checkout_config")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config, landing_variants, checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
-    .maybeSingle<Course & { checkout_config: unknown }>();
+    .maybeSingle<Course & {
+      checkout_config: unknown;
+      calendar_mode: CalendarMode | null;
+      calendar_label: string | null;
+      calendar_required: boolean | null;
+      calendar_horizon_days: number | null;
+    }>();
 
   if (!course) notFound();
 
@@ -126,6 +134,20 @@ export default async function CourseEditPage({
           return `${u.protocol}//${host}`;
         })()}
       />
+
+      <section className="max-w-3xl pt-8 border-t border-white/10">
+        <h2 className="text-lg font-semibold mb-1">Checkout — calendario / fecha</h2>
+        <p className="text-sm text-white/60 mb-4">
+          Pedile al comprador una fecha de inicio o un slot puntual de mentoría / clase en vivo.
+        </p>
+        <CourseCalendarConfig
+          courseId={course.id}
+          initialMode={(course.calendar_mode ?? 'none') as CalendarMode}
+          initialLabel={course.calendar_label ?? null}
+          initialRequired={course.calendar_required ?? true}
+          initialHorizon={course.calendar_horizon_days ?? 30}
+        />
+      </section>
 
       <section className="max-w-3xl pt-8 border-t border-white/10">
         <h2 className="text-lg font-semibold mb-1">Checkout — campos que se piden al comprar</h2>

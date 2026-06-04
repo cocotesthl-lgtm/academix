@@ -10,6 +10,7 @@ import { HotmartLanding } from "@/components/storefront/landings/HotmartLanding"
 import { FunnelLanding } from "@/components/storefront/landings/FunnelLanding";
 import { VslLanding } from "@/components/storefront/landings/VslLanding";
 import { resolveCheckoutConfig } from "@/lib/checkout/types";
+import { generateSlots, type AvailabilityRule, type BookingSlot, type CalendarMode } from "@/lib/calendar/types";
 
 export const dynamic = "force-dynamic";
 
@@ -55,10 +56,16 @@ export default async function CourseDetailPage({
   const svc = getServiceClient();
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status, landing_template, landing_config, landing_variants, checkout_config")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, landing_template, landing_config, landing_variants, checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days")
     .eq("tenant_id", tenantId)
     .eq("slug", courseSlug)
-    .maybeSingle<CourseDetail & { checkout_config: unknown }>();
+    .maybeSingle<CourseDetail & {
+      checkout_config: unknown;
+      calendar_mode: CalendarMode | null;
+      calendar_label: string | null;
+      calendar_required: boolean | null;
+      calendar_horizon_days: number | null;
+    }>();
 
   if (!course || course.status !== 'published') notFound();
 
@@ -71,6 +78,30 @@ export default async function CourseDetailPage({
     tenantConfig: tenantCheckoutRow?.checkout_config,
     courseConfig: course.checkout_config
   });
+
+  // ─── Calendario: si el curso tiene mentorship_slot, calculamos los slots
+  // disponibles desde las reglas del tenant menos los ya tomados ───
+  const calendarMode = (course.calendar_mode ?? 'none') as CalendarMode;
+  let calendarSlots: BookingSlot[] = [];
+  if (calendarMode === 'mentorship_slot') {
+    const horizon = course.calendar_horizon_days ?? 30;
+    const horizonDate = new Date();
+    horizonDate.setDate(horizonDate.getDate() + horizon);
+    const [{ data: rulesRaw }, { data: takenRaw }] = await Promise.all([
+      svc.from('availability_rules')
+        .select('id, tenant_id, weekday, start_min, end_min, slot_duration_min, timezone')
+        .eq('tenant_id', tenantId),
+      svc.from('bookings')
+        .select('slot_start')
+        .eq('tenant_id', tenantId)
+        .neq('status', 'cancelled')
+        .gte('slot_start', new Date().toISOString())
+        .lte('slot_start', horizonDate.toISOString())
+    ]);
+    const rules = (rulesRaw ?? []) as AvailabilityRule[];
+    const takenSet = new Set(((takenRaw ?? []) as Array<{ slot_start: string }>).map((b) => b.slot_start));
+    calendarSlots = generateSlots({ rules, takenSlotStarts: takenSet, horizonDays: horizon });
+  }
 
   // Resolvemos el user logueado una sola vez (lo usamos para tracking de
   // afiliados y como default del email en el form de checkout).
@@ -159,6 +190,10 @@ export default async function CourseDetailPage({
         config={tplConfig}
         buyerEmail={currentUser?.email ?? ''}
         checkoutConfig={checkoutConfig}
+        calendarMode={calendarMode}
+        calendarLabel={course.calendar_label}
+        calendarRequired={course.calendar_required ?? true}
+        calendarSlots={calendarSlots}
       />
     );
   }
@@ -171,6 +206,10 @@ export default async function CourseDetailPage({
         config={tplConfig}
         buyerEmail={currentUser?.email ?? ''}
         checkoutConfig={checkoutConfig}
+        calendarMode={calendarMode}
+        calendarLabel={course.calendar_label}
+        calendarRequired={course.calendar_required ?? true}
+        calendarSlots={calendarSlots}
       />
     );
   }
@@ -182,6 +221,10 @@ export default async function CourseDetailPage({
         config={tplConfig}
         buyerEmail={currentUser?.email ?? ''}
         checkoutConfig={checkoutConfig}
+        calendarMode={calendarMode}
+        calendarLabel={course.calendar_label}
+        calendarRequired={course.calendar_required ?? true}
+        calendarSlots={calendarSlots}
       />
     );
   }
@@ -266,6 +309,10 @@ export default async function CourseDetailPage({
               primary={primary}
               defaultEmail={currentUser?.email ?? ''}
               checkoutConfig={checkoutConfig}
+        calendarMode={calendarMode}
+        calendarLabel={course.calendar_label}
+        calendarRequired={course.calendar_required ?? true}
+        calendarSlots={calendarSlots}
             />
             <p className="text-xs text-center text-black/40">
               Pago seguro vía MercadoPago

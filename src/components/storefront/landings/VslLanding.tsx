@@ -36,13 +36,21 @@ export function VslLanding({
   primary,
   config,
   buyerEmail,
-  checkoutConfig
+  checkoutConfig,
+  calendarMode,
+  calendarLabel,
+  calendarRequired,
+  calendarSlots
 }: {
   course: CourseInfo;
   primary: string;
   config: LandingConfig;
   buyerEmail: string;
   checkoutConfig?: import('@/lib/checkout/types').CheckoutConfig;
+  calendarMode?: import('@/lib/calendar/types').CalendarMode;
+  calendarLabel?: string | null;
+  calendarRequired?: boolean;
+  calendarSlots?: import('@/lib/calendar/types').BookingSlot[];
 }) {
   const headline = config.headline?.trim() || course.title;
   const subtitle = config.subtitle?.trim();
@@ -303,6 +311,10 @@ export function VslLanding({
                 defaultEmail={formData.email || buyerEmail}
                 buyLabel={ctaLabel}
                 checkoutConfig={checkoutConfig}
+                calendarMode={calendarMode}
+                calendarLabel={calendarLabel}
+                calendarRequired={calendarRequired}
+                calendarSlots={calendarSlots}
               />
               {ctaCaption && <p className="text-xs text-center text-black/55">{ctaCaption}</p>}
               <div className="rounded-lg bg-black/[0.04] p-3 text-xs space-y-1.5 text-center">

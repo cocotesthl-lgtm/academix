@@ -17,6 +17,8 @@ type EnrollmentRow = {
   buyer_email: string | null;
   buyer_phone: string | null;
   buyer_extra: Record<string, unknown> | null;
+  booking_date: string | null;
+  booking_id: string | null;
 };
 
 type CourseRow = { id: string; title: string };
@@ -37,7 +39,7 @@ export default async function OwnerStudentsPage({
   // Traemos enrollments del tenant + datos de comprador
   let query = svc
     .from('enrollments')
-    .select('id, course_id, user_id, source, status, created_at, buyer_name, buyer_dni, buyer_location, buyer_email, buyer_phone, buyer_extra')
+    .select('id, course_id, user_id, source, status, created_at, buyer_name, buyer_dni, buyer_location, buyer_email, buyer_phone, buyer_extra, booking_date, booking_id')
     .eq('tenant_id', tenant.id)
     .order('created_at', { ascending: false });
 
@@ -47,6 +49,19 @@ export default async function OwnerStudentsPage({
 
   const { data: enrollmentsRaw } = await query.limit(500);
   const enrollments = (enrollmentsRaw ?? []) as EnrollmentRow[];
+
+  // Bookings linkeados (slot_start para mostrar al lado de cada inscripción)
+  const bookingIds = enrollments.map((e) => e.booking_id).filter(Boolean) as string[];
+  const bookingMap = new Map<string, { slot_start: string; slot_end: string }>();
+  if (bookingIds.length > 0) {
+    const { data: bkRaw } = await svc
+      .from('bookings')
+      .select('id, slot_start, slot_end')
+      .in('id', bookingIds);
+    for (const b of ((bkRaw ?? []) as Array<{ id: string; slot_start: string; slot_end: string }>)) {
+      bookingMap.set(b.id, { slot_start: b.slot_start, slot_end: b.slot_end });
+    }
+  }
 
   // Cursos para el filtro
   const { data: coursesRaw } = await svc
@@ -213,20 +228,48 @@ export default async function OwnerStudentsPage({
                       }} />
                     </td>
                   </tr>
-                  {e.buyer_extra && Object.keys(e.buyer_extra).length > 0 && (
-                    <tr key={`${e.id}-extras`} className="border-t border-white/5">
-                      <td colSpan={9} className="px-3 py-2 text-xs text-white/55 bg-white/[0.01]">
-                        <span className="text-white/40 mr-2">Campos extra:</span>
-                        {Object.entries(e.buyer_extra).map(([k, v], i, arr) => (
-                          <span key={k}>
-                            <strong className="text-white/70">{k}</strong>:{' '}
-                            {typeof v === 'boolean' ? (v ? '✓' : '✗') : String(v)}
-                            {i < arr.length - 1 ? ' · ' : ''}
-                          </span>
-                        ))}
-                      </td>
-                    </tr>
-                  )}</>
+                  {(() => {
+                    const bk = e.booking_id ? bookingMap.get(e.booking_id) : null;
+                    const hasExtras = e.buyer_extra && Object.keys(e.buyer_extra).length > 0;
+                    if (!bk && !e.booking_date && !hasExtras) return null;
+                    return (
+                      <tr key={`${e.id}-extras`} className="border-t border-white/5">
+                        <td colSpan={9} className="px-3 py-2 text-xs text-white/55 bg-white/[0.01] space-y-1">
+                          {bk && (
+                            <div>
+                              <span className="text-white/40 mr-2">🗓️ Reserva:</span>
+                              <strong className="text-emerald-300">
+                                {new Date(bk.slot_start).toLocaleString('es-AR', {
+                                  weekday: 'short', day: '2-digit', month: 'short',
+                                  hour: '2-digit', minute: '2-digit'
+                                })}
+                              </strong>
+                            </div>
+                          )}
+                          {e.booking_date && !bk && (
+                            <div>
+                              <span className="text-white/40 mr-2">📅 Fecha de inicio:</span>
+                              <strong className="text-emerald-300">
+                                {new Date(e.booking_date + 'T12:00:00').toLocaleDateString('es-AR')}
+                              </strong>
+                            </div>
+                          )}
+                          {hasExtras && (
+                            <div>
+                              <span className="text-white/40 mr-2">Campos extra:</span>
+                              {Object.entries(e.buyer_extra!).map(([k, v], i, arr) => (
+                                <span key={k}>
+                                  <strong className="text-white/70">{k}</strong>:{' '}
+                                  {typeof v === 'boolean' ? (v ? '✓' : '✗') : String(v)}
+                                  {i < arr.length - 1 ? ' · ' : ''}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })()}</>
                 );
               })}
             </tbody>

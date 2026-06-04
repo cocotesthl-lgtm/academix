@@ -93,6 +93,13 @@ export async function processMpPayment(opts: {
     (meta.buyer_extra && typeof meta.buyer_extra === 'object')
       ? meta.buyer_extra as Record<string, unknown>
       : {};
+  // Calendario:
+  // - booking_id: id de un booking 'pending' que el checkout endpoint creó
+  //   pre-MP (mentorship_slot). Lo confirmamos + linkeamos al enrollment.
+  // - booking_date: fecha simple de inicio (modo start_date). Va directo
+  //   al enrollment.
+  const bookingId = (meta.booking_id as string | null | undefined) ?? null;
+  const bookingDate = (meta.booking_date as string | null | undefined) ?? null;
 
   // Insert sale (idempotente: UNIQUE en external_provider+external_id)
   const salePayload = {
@@ -164,10 +171,24 @@ export async function processMpPayment(opts: {
         buyer_location: buyerLocation,
         buyer_email:    buyerEmailForRow,
         buyer_phone:    buyerPhone,
-        buyer_extra:    buyerExtra
+        buyer_extra:    buyerExtra,
+        booking_date:   bookingDate,
+        booking_id:     bookingId
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (svc.from('enrollments') as any).insert(enrollPayload);
+      const { data: createdEnroll } = await (svc.from('enrollments') as any)
+        .insert(enrollPayload).select('id').single();
+      // Si había una reserva pending de mentorship_slot, la confirmamos
+      // y la linkeamos al enrollment recién creado.
+      if (bookingId && createdEnroll) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (svc.from('bookings') as any)
+          .update({
+            status: 'confirmed',
+            enrollment_id: (createdEnroll as { id: string }).id
+          })
+          .eq('id', bookingId);
+      }
     }
   }
 

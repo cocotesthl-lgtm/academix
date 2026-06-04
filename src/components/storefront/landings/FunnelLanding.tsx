@@ -50,7 +50,11 @@ export function FunnelLanding({
   primary,
   config,
   buyerEmail,
-  checkoutConfig
+  checkoutConfig,
+  calendarMode,
+  calendarLabel,
+  calendarRequired,
+  calendarSlots
 }: {
   course: CourseInfo;
   modules: ModuleWithLessons[];
@@ -59,6 +63,10 @@ export function FunnelLanding({
   totalLessons?: number;
   primary: string;
   checkoutConfig?: import('@/lib/checkout/types').CheckoutConfig;
+  calendarMode?: import('@/lib/calendar/types').CalendarMode;
+  calendarLabel?: string | null;
+  calendarRequired?: boolean;
+  calendarSlots?: import('@/lib/calendar/types').BookingSlot[];
   config: LandingConfig;
   buyerEmail: string;
 }) {
@@ -90,6 +98,10 @@ export function FunnelLanding({
         primary={primary}
         defaultEmail={buyerEmail}
         checkoutConfig={checkoutConfig}
+        calendarMode={calendarMode}
+        calendarLabel={calendarLabel}
+        calendarRequired={calendarRequired}
+        calendarSlots={calendarSlots}
         buyLabel={label ?? ctaLabel}
       />
       {ctaCaption && <p className="text-xs text-black/55 mt-2 max-w-md mx-auto">{ctaCaption}</p>}
@@ -131,6 +143,10 @@ export function FunnelLanding({
               primary={primary}
               defaultEmail={buyerEmail}
         checkoutConfig={checkoutConfig}
+        calendarMode={calendarMode}
+        calendarLabel={calendarLabel}
+        calendarRequired={calendarRequired}
+        calendarSlots={calendarSlots}
               buyLabel={ctaLabel}
             />
             {ctaCaption && <p className="text-xs text-black/55 mt-2.5">{ctaCaption}</p>}
@@ -356,6 +372,10 @@ export function FunnelLanding({
               primary={primary}
               defaultEmail={buyerEmail}
         checkoutConfig={checkoutConfig}
+        calendarMode={calendarMode}
+        calendarLabel={calendarLabel}
+        calendarRequired={calendarRequired}
+        calendarSlots={calendarSlots}
               buyLabel={ctaLabel}
             />
             <p className="text-xs text-black/55 mt-2">{ctaCaption ?? 'Pago seguro vía MercadoPago'}</p>

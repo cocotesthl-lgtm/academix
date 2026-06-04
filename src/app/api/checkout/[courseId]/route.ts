@@ -117,6 +117,18 @@ export async function POST(
     }
   }
 
+  // Calendario (modo start_date o mentorship_slot).
+  // - booking_date: yyyy-mm-dd para start_date.
+  // - booking_slot_start: ISO datetime para mentorship_slot.
+  const bookingDateRaw = String(form?.get('booking_date') ?? '').trim();
+  const bookingSlotStartRaw = String(form?.get('booking_slot_start') ?? '').trim();
+  const bookingDate = /^\d{4}-\d{2}-\d{2}$/.test(bookingDateRaw) ? bookingDateRaw : null;
+  const bookingSlotStart = (() => {
+    if (!bookingSlotStartRaw) return null;
+    const d = new Date(bookingSlotStartRaw);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  })();
+
   // Si el comprador NO está logueado pero mandó email + password, creamos
   // (o logueamos) su cuenta acá antes de redirigir a MP. Así cuando vuelve
   // post-pago aterriza ya logueado en /learn — sin pasar por la pantalla
@@ -175,6 +187,54 @@ export async function POST(
     if (couponValid) finalPrice = couponValid.final_cents;
   }
 
+  // ─── Reservar booking si el comprador picó slot (mentorship_slot) ───
+  // Lo hacemos PRE-MP así el UNIQUE index del DB previene double-booking.
+  // El webhook después lo marca confirmed + linkea al enrollment_id.
+  // Si MP falla / no vuelve, el booking queda 'pending' (limpiable luego).
+  let createdBookingId: string | null = null;
+  if (bookingSlotStart) {
+    // Computar slot_end a partir de la rule matching del tenant
+    const slotDate = new Date(bookingSlotStart);
+    const wd = slotDate.getDay();
+    const startMin = slotDate.getHours() * 60 + slotDate.getMinutes();
+    const { data: rules } = await svc
+      .from('availability_rules')
+      .select('start_min, end_min, slot_duration_min')
+      .eq('tenant_id', course.tenant_id)
+      .eq('weekday', wd);
+    const rule = ((rules ?? []) as Array<{ start_min: number; end_min: number; slot_duration_min: number }>)
+      .find((r) => startMin >= r.start_min && startMin < r.end_min);
+    const slotDurMin = rule?.slot_duration_min ?? 60;
+    const slotEnd = new Date(slotDate.getTime() + slotDurMin * 60 * 1000).toISOString();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: booking, error: bkErr } = await (svc.from('bookings') as any)
+      .insert({
+        tenant_id: course.tenant_id,
+        course_id: course.id,
+        user_id: buyerUserId,
+        slot_start: bookingSlotStart,
+        slot_end: slotEnd,
+        status: 'pending',
+        buyer_email: buyerInfo.email ?? user?.email ?? null,
+        buyer_name: buyerInfo.name
+      })
+      .select('id')
+      .single();
+    if (bkErr) {
+      // Probablemente UNIQUE violation: otro comprador acaba de tomar
+      // ese slot. Mostramos error claro.
+      const msg = bkErr.message.toLowerCase().includes('duplicate')
+        ? 'slot_taken'
+        : 'booking_failed';
+      return NextResponse.redirect(
+        `${origin}/c/${course.slug}?error=${msg}`,
+        { status: 303 }
+      );
+    }
+    createdBookingId = (booking as { id: string }).id;
+  }
+
   // Webhook URL DEBE apuntar al subdominio app.<rootDomain> (donde corren
   // las API routes), NO al apex que podría estar configurado en appUrl
   // para la landing marketing. Por eso usamos platformApiOrigin que
@@ -184,7 +244,8 @@ export async function POST(
   // If coupon makes it free, auto-enroll on the spot and skip MP entirely
   if (finalPrice <= 0 && couponValid && buyerUserId) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (svc.from('enrollments') as any).insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: enrollFree } = await (svc.from('enrollments') as any).insert({
       tenant_id: course.tenant_id,
       course_id: course.id,
       user_id: buyerUserId,
@@ -195,8 +256,17 @@ export async function POST(
       buyer_location: buyerInfo.location,
       buyer_email: buyerInfo.email ?? user?.email ?? null,
       buyer_phone: buyerInfo.phone,
-      buyer_extra: buyerExtra
-    });
+      buyer_extra: buyerExtra,
+      booking_date: bookingDate,
+      booking_id: createdBookingId
+    }).select('id').single();
+    // Si había booking pending, confirmamos + linkeamos al enrollment.
+    if (createdBookingId && enrollFree) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('bookings') as any)
+        .update({ status: 'confirmed', enrollment_id: (enrollFree as { id: string }).id })
+        .eq('id', createdBookingId);
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('coupon_redemptions') as any).insert({
       coupon_id: couponValid.id,
@@ -256,7 +326,11 @@ export async function POST(
         buyer_phone:    buyerInfo.phone,
         // Extras custom (talle, talla, comentario, etc.) → jsonb opaco
         // que el webhook copia tal cual a sales/enrollments.
-        buyer_extra:    buyerExtra
+        buyer_extra:    buyerExtra,
+        // Calendario: el webhook usa booking_id para confirmar la reserva
+        // y linkearla al enrollment. booking_date va directo a enrollment.
+        booking_id:     createdBookingId,
+        booking_date:   bookingDate
       }
     });
 
