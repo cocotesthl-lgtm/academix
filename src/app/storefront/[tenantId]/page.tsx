@@ -71,19 +71,37 @@ export default async function StorefrontHome({
     ? allCourses.filter((c) => c.category_id === selectedCat.id)
     : allCourses;
 
-  // Si el owner setea un bg_color oscuro en una sección, marcamos
-  // data-section-theme="dark" para que el CSS de globals.css invierta
-  // text-black/XX → text-white/XX automáticamente. Si no, sin atributo.
-  const themeAttr = (color: string | null | undefined): Record<string, string> =>
-    isDarkColor(color) ? { 'data-section-theme': 'dark' } : {};
+  // CSS emitido para overrides de color manual de texto por sección.
+  // Si el owner picó un color de texto explícito en /owner/site, gana sobre
+  // el auto-flip por luminancia. Si no, cae al data-section-theme="dark".
+  const manualTextCss = cfg.order
+    .filter((k) => cfg.sections[k].enabled && cfg.sections[k].text_color)
+    .map((k) => {
+      const c = (cfg.sections[k].text_color ?? '').replace(/[^#0-9a-fA-F]/g, '');
+      if (!c) return '';
+      return `
+        [data-sec="${k}"]{color:${c}}
+        [data-sec="${k}"] .text-black,
+        [data-sec="${k}"] [class*="text-black/"]{color:${c} !important}
+      `;
+    })
+    .join('\n');
+
+  const attrsFor = (key: SectionKey, bgVal: string | null): Record<string, string> => {
+    if (cfg.sections[key].text_color) return { 'data-sec': key };
+    return isDarkColor(bgVal) ? { 'data-section-theme': 'dark' } : {};
+  };
 
   return (
     <div>
+      {manualTextCss && (
+        <style dangerouslySetInnerHTML={{ __html: manualTextCss }} />
+      )}
       {cfg.order.map((key: SectionKey) => {
         const s = cfg.sections[key];
         if (!s?.enabled) return null;
         const bg = s.bg_color ?? null;
-        const dt = themeAttr(bg);
+        const dt = attrsFor(key, bg);
 
         switch (key) {
           case 'hero': {

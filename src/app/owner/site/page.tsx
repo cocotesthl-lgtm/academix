@@ -6,6 +6,7 @@ import {
   toggleSectionAction,
   moveSectionAction,
   setSectionBgColorAction,
+  setSectionTextColorAction,
   applyThemeAction
 } from "@/lib/site/actions";
 import {
@@ -156,6 +157,7 @@ export default async function SiteBuilderPage() {
             desc={meta.desc}
             enabled={cfg.sections[key].enabled}
             bgColor={cfg.sections[key].bg_color ?? null}
+            textColor={cfg.sections[key].text_color ?? null}
             isFirst={isFirst}
             isLast={isLast}
             position={idx + 1}
@@ -381,9 +383,10 @@ export default async function SiteBuilderPage() {
 }
 
 function Section({
-  title, desc, enabled, sectionKey, bgColor, children, isFirst, isLast, position, total
+  title, desc, enabled, sectionKey, bgColor, textColor, children, isFirst, isLast, position, total
 }: {
-  title: string; desc: string; enabled: boolean; sectionKey: string; bgColor: string | null;
+  title: string; desc: string; enabled: boolean; sectionKey: string;
+  bgColor: string | null; textColor: string | null;
   children: React.ReactNode; isFirst: boolean; isLast: boolean; position: number; total: number;
 }) {
   return (
@@ -427,6 +430,26 @@ function Section({
             <form action={setSectionBgColorAction}>
               <input type="hidden" name="section" value={sectionKey} />
               <input type="hidden" name="bg_color" value="" />
+              <button className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5 text-white/50">Reset</button>
+            </form>
+          )}
+          {/* Color picker de texto — gemelo del de fondo. Si lo dejás vacío,
+              el storefront usa color automático según el bg. */}
+          <form action={setSectionTextColorAction} className="flex items-center gap-1">
+            <input type="hidden" name="section" value={sectionKey} />
+            <label className="text-xs text-white/50">Texto:</label>
+            <input
+              name="text_color"
+              type="color"
+              defaultValue={textColor ?? '#000000'}
+              className="w-7 h-7 rounded bg-transparent border border-white/15 cursor-pointer"
+            />
+            <button className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5">Aplicar</button>
+          </form>
+          {textColor && (
+            <form action={setSectionTextColorAction}>
+              <input type="hidden" name="section" value={sectionKey} />
+              <input type="hidden" name="text_color" value="" />
               <button className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5 text-white/50">Reset</button>
             </form>
           )}

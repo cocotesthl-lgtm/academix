@@ -80,6 +80,7 @@ export type SectionKey =
 type SectionBase = {
   enabled: boolean;
   bg_color?: string | null;   // hex like '#fafafa' or null to use default
+  text_color?: string | null; // hex; null = auto (text-black default, o text-white si bg oscuro)
 };
 
 export type SiteConfig = {

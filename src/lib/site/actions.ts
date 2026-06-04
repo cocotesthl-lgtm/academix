@@ -106,6 +106,17 @@ export async function setSectionBgColorAction(formData: FormData): Promise<void>
   revalidatePath('/site');
 }
 
+export async function setSectionTextColorAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const key = String(formData.get('section') ?? '') as SectionKey;
+  const color = String(formData.get('text_color') ?? '').trim();
+  if (!(key in DEFAULT_SITE_CONFIG.sections)) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections[key].text_color = color === '' || color.toLowerCase() === 'null' ? null : color;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
 /* ===== Generic fields ===== */
 
 export async function updateSectionFieldsAction(formData: FormData): Promise<void> {
