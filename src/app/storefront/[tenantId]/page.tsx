@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
 import { mergeConfig, type SectionKey } from "@/lib/site/types";
-import { isDarkColor } from "@/lib/site/contrast";
 import { AnimatedCounter } from "@/components/storefront/AnimatedCounter";
 import { FadeIn } from "@/components/storefront/FadeIn";
 
@@ -71,9 +70,10 @@ export default async function StorefrontHome({
     ? allCourses.filter((c) => c.category_id === selectedCat.id)
     : allCourses;
 
-  // CSS emitido para overrides de color manual de texto por sección.
-  // Si el owner picó un color de texto explícito en /owner/site, gana sobre
-  // el auto-flip por luminancia. Si no, cae al data-section-theme="dark".
+  // CSS emitido para overrides de color de texto por sección. Si el owner
+  // picó un color en /owner/site (input "Texto:"), se aplica acá pisando
+  // los text-black/XX hardcodeados con !important. Si no, cero magia: el
+  // texto queda como esté declarado en cada componente.
   const manualTextCss = cfg.order
     .filter((k) => cfg.sections[k].enabled && cfg.sections[k].text_color)
     .map((k) => {
@@ -87,11 +87,6 @@ export default async function StorefrontHome({
     })
     .join('\n');
 
-  const attrsFor = (key: SectionKey, bgVal: string | null): Record<string, string> => {
-    if (cfg.sections[key].text_color) return { 'data-sec': key };
-    return isDarkColor(bgVal) ? { 'data-section-theme': 'dark' } : {};
-  };
-
   return (
     <div>
       {manualTextCss && (
@@ -101,7 +96,7 @@ export default async function StorefrontHome({
         const s = cfg.sections[key];
         if (!s?.enabled) return null;
         const bg = s.bg_color ?? null;
-        const dt = attrsFor(key, bg);
+        const dt: Record<string, string> = s.text_color ? { 'data-sec': key } : {};
 
         switch (key) {
           case 'hero': {

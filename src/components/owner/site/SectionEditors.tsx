@@ -143,11 +143,16 @@ function UrlPicker({
   );
 }
 
+/**
+ * Frame de preview. Marcado con data-pf para que el CSS scoped en
+ * /owner/site page (data-sec-editor → data-pf) pise los gradients
+ * internos y aplique el bg_color / text_color elegidos por el owner.
+ */
 function PreviewFrame({ children, label }: { children: React.ReactNode; label?: string }) {
   return (
     <div>
       <div className="text-xs text-white/40 uppercase tracking-wider mb-2">{label ?? 'Preview en vivo'}</div>
-      <div className="rounded-xl border border-white/10 bg-white text-black overflow-hidden">{children}</div>
+      <div data-pf className="rounded-xl border border-white/10 bg-white text-black overflow-hidden">{children}</div>
     </div>
   );
 }

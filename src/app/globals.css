@@ -39,61 +39,7 @@ html, body {
   to { transform: translateX(-50%); }
 }
 
-/* ───────────────────────────────────────────────────────────────────
-   Storefront section theming.
-   Cuando una <section> del storefront recibe data-section-theme="dark"
-   (porque el owner eligió un bg color oscuro), invertimos automáticamente
-   los text-black/XX, bg-white, border-black/XX y placeholders para que el
-   contenido siga siendo legible sin tocar cada componente.
-
-   Solo aplica a descendientes de [data-section-theme="dark"] — los
-   módulos default (bg claro o sin override) no se ven afectados.
-   ──────────────────────────────────────────────────────────────────── */
-[data-section-theme="dark"] {
-  color: #fff;
-}
-
-/* Textos */
-[data-section-theme="dark"] .text-black { color: #fff; }
-[data-section-theme="dark"] .text-black\/90 { color: rgb(255 255 255 / 0.9); }
-[data-section-theme="dark"] .text-black\/80 { color: rgb(255 255 255 / 0.85); }
-[data-section-theme="dark"] .text-black\/75 { color: rgb(255 255 255 / 0.8); }
-[data-section-theme="dark"] .text-black\/70 { color: rgb(255 255 255 / 0.75); }
-[data-section-theme="dark"] .text-black\/65 { color: rgb(255 255 255 / 0.7); }
-[data-section-theme="dark"] .text-black\/60 { color: rgb(255 255 255 / 0.65); }
-[data-section-theme="dark"] .text-black\/55 { color: rgb(255 255 255 / 0.6); }
-[data-section-theme="dark"] .text-black\/50 { color: rgb(255 255 255 / 0.55); }
-[data-section-theme="dark"] .text-black\/45 { color: rgb(255 255 255 / 0.5); }
-[data-section-theme="dark"] .text-black\/40 { color: rgb(255 255 255 / 0.45); }
-[data-section-theme="dark"] .text-black\/30 { color: rgb(255 255 255 / 0.35); }
-
-/* Tarjetas blancas: pasan a translúcidas con backdrop */
-[data-section-theme="dark"] .bg-white { background-color: rgb(255 255 255 / 0.06); }
-
-/* Borders */
-[data-section-theme="dark"] .border-black\/5  { border-color: rgb(255 255 255 / 0.08); }
-[data-section-theme="dark"] .border-black\/10 { border-color: rgb(255 255 255 / 0.12); }
-[data-section-theme="dark"] .border-black\/15 { border-color: rgb(255 255 255 / 0.18); }
-[data-section-theme="dark"] .border-black\/20 { border-color: rgb(255 255 255 / 0.22); }
-
-/* Hover states de bordes */
-[data-section-theme="dark"] .hover\:border-black\/30:hover { border-color: rgb(255 255 255 / 0.35); }
-[data-section-theme="dark"] .hover\:bg-black\/\[0\.02\]:hover { background-color: rgb(255 255 255 / 0.04); }
-[data-section-theme="dark"] .hover\:bg-black\/\[0\.03\]:hover { background-color: rgb(255 255 255 / 0.05); }
-
-/* Inputs (forms tipo newsletter/contact) — borde y bg sobre dark */
-[data-section-theme="dark"] input,
-[data-section-theme="dark"] textarea {
-  background-color: rgb(255 255 255 / 0.08);
-  border-color: rgb(255 255 255 / 0.2);
-  color: #fff;
-}
-[data-section-theme="dark"] input::placeholder,
-[data-section-theme="dark"] textarea::placeholder {
-  color: rgb(255 255 255 / 0.5);
-}
-
-/* Bg de placeholders/decorativos */
-[data-section-theme="dark"] .bg-black\/5  { background-color: rgb(255 255 255 / 0.06); }
-[data-section-theme="dark"] .bg-black\/\[0\.02\] { background-color: rgb(255 255 255 / 0.04); }
-[data-section-theme="dark"] .bg-black\/\[0\.03\] { background-color: rgb(255 255 255 / 0.05); }
+/* Storefront — color de texto manual por sección.
+   Cuando el owner setea text_color en /owner/site, la página storefront
+   emite un <style> inline con overrides [data-sec="<key>"] que pisan los
+   text-black/XX hardcodeados. Ver src/app/storefront/[tenantId]/page.tsx. */

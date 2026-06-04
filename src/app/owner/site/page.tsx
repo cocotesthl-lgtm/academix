@@ -70,6 +70,27 @@ export default async function SiteBuilderPage() {
   const cfg = mergeConfig(tenantRow?.site_config);
   const primary = tenantRow?.brand?.primary_color ?? '#a855f7';
 
+  // CSS para que las previews del editor reflejen los colores reales.
+  // Cada Section envuelve sus children con data-sec-editor={key}.
+  // Si el owner picó text_color o bg_color, esos ganan en el preview también.
+  const previewCss = cfg.order
+    .filter((k) => cfg.sections[k].text_color || cfg.sections[k].bg_color)
+    .map((k) => {
+      const text = (cfg.sections[k].text_color ?? '').replace(/[^#0-9a-fA-F]/g, '');
+      const bg = (cfg.sections[k].bg_color ?? '').replace(/[^#0-9a-fA-F]/g, '');
+      const rules: string[] = [];
+      if (text) {
+        rules.push(`[data-sec-editor="${k}"] [data-pf]{color:${text}}`);
+        rules.push(`[data-sec-editor="${k}"] [data-pf] .text-black, [data-sec-editor="${k}"] [data-pf] [class*="text-black/"]{color:${text} !important}`);
+      }
+      if (bg) {
+        // Pisa los gradients hardcodeados de los previews internos
+        rules.push(`[data-sec-editor="${k}"] [data-pf]>*{background:${bg} !important}`);
+      }
+      return rules.join('\n');
+    })
+    .join('\n');
+
   const u = new URL(env.appUrl);
   const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
   const publicHost = isLocal
@@ -79,6 +100,9 @@ export default async function SiteBuilderPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
+      {previewCss && (
+        <style dangerouslySetInnerHTML={{ __html: previewCss }} />
+      )}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Editor de sitio</h1>
@@ -464,7 +488,7 @@ function Section({
           </form>
         </div>
       </div>
-      {enabled && <div className="p-5">{children}</div>}
+      {enabled && <div className="p-5" data-sec-editor={sectionKey}>{children}</div>}
     </div>
   );
 }
