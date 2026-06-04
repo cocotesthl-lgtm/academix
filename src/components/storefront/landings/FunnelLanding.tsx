@@ -49,7 +49,8 @@ export function FunnelLanding({
   modules,
   primary,
   config,
-  buyerEmail
+  buyerEmail,
+  checkoutConfig
 }: {
   course: CourseInfo;
   modules: ModuleWithLessons[];
@@ -57,6 +58,7 @@ export function FunnelLanding({
   previewLessonTitle?: string | null;
   totalLessons?: number;
   primary: string;
+  checkoutConfig?: import('@/lib/checkout/types').CheckoutConfig;
   config: LandingConfig;
   buyerEmail: string;
 }) {
@@ -87,6 +89,7 @@ export function FunnelLanding({
         currency={course.currency}
         primary={primary}
         defaultEmail={buyerEmail}
+        checkoutConfig={checkoutConfig}
         buyLabel={label ?? ctaLabel}
       />
       {ctaCaption && <p className="text-xs text-black/55 mt-2 max-w-md mx-auto">{ctaCaption}</p>}
@@ -127,6 +130,7 @@ export function FunnelLanding({
               currency={course.currency}
               primary={primary}
               defaultEmail={buyerEmail}
+        checkoutConfig={checkoutConfig}
               buyLabel={ctaLabel}
             />
             {ctaCaption && <p className="text-xs text-black/55 mt-2.5">{ctaCaption}</p>}
@@ -351,6 +355,7 @@ export function FunnelLanding({
               currency={course.currency}
               primary={primary}
               defaultEmail={buyerEmail}
+        checkoutConfig={checkoutConfig}
               buyLabel={ctaLabel}
             />
             <p className="text-xs text-black/55 mt-2">{ctaCaption ?? 'Pago seguro vía MercadoPago'}</p>

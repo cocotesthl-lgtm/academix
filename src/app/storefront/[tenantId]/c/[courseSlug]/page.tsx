@@ -9,6 +9,7 @@ import type { LandingConfig, LandingTemplate } from "@/lib/courses/landing";
 import { HotmartLanding } from "@/components/storefront/landings/HotmartLanding";
 import { FunnelLanding } from "@/components/storefront/landings/FunnelLanding";
 import { VslLanding } from "@/components/storefront/landings/VslLanding";
+import { resolveCheckoutConfig } from "@/lib/checkout/types";
 
 export const dynamic = "force-dynamic";
 
@@ -54,12 +55,22 @@ export default async function CourseDetailPage({
   const svc = getServiceClient();
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status, landing_template, landing_config, landing_variants")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, landing_template, landing_config, landing_variants, checkout_config")
     .eq("tenant_id", tenantId)
     .eq("slug", courseSlug)
-    .maybeSingle<CourseDetail>();
+    .maybeSingle<CourseDetail & { checkout_config: unknown }>();
 
   if (!course || course.status !== 'published') notFound();
+
+  // Resolver checkout config efectiva: override del curso si existe, sino
+  // el default del tenant.
+  const { data: tenantCheckoutRow } = await svc
+    .from('tenants').select('checkout_config').eq('id', tenantId)
+    .maybeSingle<{ checkout_config: unknown }>();
+  const checkoutConfig = resolveCheckoutConfig({
+    tenantConfig: tenantCheckoutRow?.checkout_config,
+    courseConfig: course.checkout_config
+  });
 
   // Resolvemos el user logueado una sola vez (lo usamos para tracking de
   // afiliados y como default del email en el form de checkout).
@@ -147,6 +158,7 @@ export default async function CourseDetailPage({
         primary={primary}
         config={tplConfig}
         buyerEmail={currentUser?.email ?? ''}
+        checkoutConfig={checkoutConfig}
       />
     );
   }
@@ -158,6 +170,7 @@ export default async function CourseDetailPage({
         primary={primary}
         config={tplConfig}
         buyerEmail={currentUser?.email ?? ''}
+        checkoutConfig={checkoutConfig}
       />
     );
   }
@@ -168,6 +181,7 @@ export default async function CourseDetailPage({
         primary={primary}
         config={tplConfig}
         buyerEmail={currentUser?.email ?? ''}
+        checkoutConfig={checkoutConfig}
       />
     );
   }
@@ -251,6 +265,7 @@ export default async function CourseDetailPage({
               currency={course.currency}
               primary={primary}
               defaultEmail={currentUser?.email ?? ''}
+              checkoutConfig={checkoutConfig}
             />
             <p className="text-xs text-center text-black/40">
               Pago seguro vía MercadoPago

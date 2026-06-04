@@ -87,6 +87,12 @@ export async function processMpPayment(opts: {
   const buyerPhone    = (meta.buyer_phone    as string | null | undefined) ?? null;
   const buyerEmailForRow =
     (meta.buyer_email as string | null | undefined) ?? buyerEmail;
+  // Campos extra custom (definidos por el owner en checkout_config) — el
+  // checkout endpoint los manda como meta.buyer_extra (jsonb opaco).
+  const buyerExtra =
+    (meta.buyer_extra && typeof meta.buyer_extra === 'object')
+      ? meta.buyer_extra as Record<string, unknown>
+      : {};
 
   // Insert sale (idempotente: UNIQUE en external_provider+external_id)
   const salePayload = {
@@ -105,7 +111,8 @@ export async function processMpPayment(opts: {
     buyer_dni:      buyerDni,
     buyer_location: buyerLocation,
     buyer_email:    buyerEmailForRow,
-    buyer_phone:    buyerPhone
+    buyer_phone:    buyerPhone,
+    buyer_extra:    buyerExtra
   };
 
   let saleId: string | null = null;
@@ -156,7 +163,8 @@ export async function processMpPayment(opts: {
         buyer_dni:      buyerDni,
         buyer_location: buyerLocation,
         buyer_email:    buyerEmailForRow,
-        buyer_phone:    buyerPhone
+        buyer_phone:    buyerPhone,
+        buyer_extra:    buyerExtra
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (svc.from('enrollments') as any).insert(enrollPayload);

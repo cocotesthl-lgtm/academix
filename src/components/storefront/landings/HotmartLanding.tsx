@@ -49,7 +49,8 @@ export function HotmartLanding({
   totalLessons,
   primary,
   config,
-  buyerEmail
+  buyerEmail,
+  checkoutConfig
 }: {
   course: CourseInfo;
   modules: ModuleWithLessons[];
@@ -59,6 +60,7 @@ export function HotmartLanding({
   primary: string;
   config: LandingConfig;
   buyerEmail: string;
+  checkoutConfig?: import('@/lib/checkout/types').CheckoutConfig;
 }) {
   const headline = config.headline?.trim() || course.title;
   const subtitle = config.subtitle?.trim();
@@ -300,6 +302,7 @@ export function HotmartLanding({
               primary={primary}
               defaultEmail={buyerEmail}
               buyLabel={config.cta_label || 'Continuar al pago'}
+              checkoutConfig={checkoutConfig}
             />
             {ctaCaption && (
               <p className="text-xs text-center text-black/60">{ctaCaption}</p>

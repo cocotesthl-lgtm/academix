@@ -16,6 +16,7 @@ type EnrollmentRow = {
   buyer_location: string | null;
   buyer_email: string | null;
   buyer_phone: string | null;
+  buyer_extra: Record<string, unknown> | null;
 };
 
 type CourseRow = { id: string; title: string };
@@ -36,7 +37,7 @@ export default async function OwnerStudentsPage({
   // Traemos enrollments del tenant + datos de comprador
   let query = svc
     .from('enrollments')
-    .select('id, course_id, user_id, source, status, created_at, buyer_name, buyer_dni, buyer_location, buyer_email, buyer_phone')
+    .select('id, course_id, user_id, source, status, created_at, buyer_name, buyer_dni, buyer_location, buyer_email, buyer_phone, buyer_extra')
     .eq('tenant_id', tenant.id)
     .order('created_at', { ascending: false });
 
@@ -163,6 +164,7 @@ export default async function OwnerStudentsPage({
                 const displayEmail = e.buyer_email ?? profile?.email ?? '—';
                 const course = courseMap.get(e.course_id);
                 return (
+                  <>
                   <tr key={e.id} className="border-t border-white/5">
                     <td className="px-3 py-2.5 font-medium">{displayName}</td>
                     <td className="px-3 py-2.5 text-white/70 font-mono text-xs">{e.buyer_dni ?? '—'}</td>
@@ -211,6 +213,20 @@ export default async function OwnerStudentsPage({
                       }} />
                     </td>
                   </tr>
+                  {e.buyer_extra && Object.keys(e.buyer_extra).length > 0 && (
+                    <tr key={`${e.id}-extras`} className="border-t border-white/5">
+                      <td colSpan={9} className="px-3 py-2 text-xs text-white/55 bg-white/[0.01]">
+                        <span className="text-white/40 mr-2">Campos extra:</span>
+                        {Object.entries(e.buyer_extra).map(([k, v], i, arr) => (
+                          <span key={k}>
+                            <strong className="text-white/70">{k}</strong>:{' '}
+                            {typeof v === 'boolean' ? (v ? '✓' : '✗') : String(v)}
+                            {i < arr.length - 1 ? ' · ' : ''}
+                          </span>
+                        ))}
+                      </td>
+                    </tr>
+                  )}</>
                 );
               })}
             </tbody>

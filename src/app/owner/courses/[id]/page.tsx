@@ -6,6 +6,8 @@ import { env } from "@/lib/env";
 import { CourseEditor, type Course, type Module, type Lesson, type Category } from "@/components/owner/courses/CourseEditor";
 import { GrantEnrollmentForm } from "@/components/owner/courses/GrantEnrollmentForm";
 import { deleteCourseAction } from "@/lib/courses/actions";
+import { CourseCheckoutOverride } from "@/components/owner/checkout/CourseCheckoutOverride";
+import { mergeCheckoutConfig } from "@/lib/checkout/types";
 
 export const dynamic = "force-dynamic";
 
@@ -20,20 +22,28 @@ export default async function CourseEditPage({
 
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config, landing_variants")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config, landing_variants, checkout_config")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
-    .maybeSingle<Course>();
+    .maybeSingle<Course & { checkout_config: unknown }>();
 
   if (!course) notFound();
 
-  // Branding color del tenant para el preview de landing
+  // Branding color del tenant + checkout default del tenant (para fallback
+  // del editor de override por curso)
   const { data: tenantRow } = await svc
     .from("tenants")
-    .select("brand")
+    .select("brand, checkout_config")
     .eq("id", tenant.id)
-    .maybeSingle<{ brand: { primary_color?: string } | null }>();
+    .maybeSingle<{ brand: { primary_color?: string } | null; checkout_config: unknown }>();
   const primaryColor = tenantRow?.brand?.primary_color ?? '#0a0a0a';
+  const tenantCheckoutCfg = mergeCheckoutConfig(tenantRow?.checkout_config);
+  const courseHasOverride = !!course.checkout_config &&
+    typeof course.checkout_config === 'object' &&
+    Object.keys(course.checkout_config as object).length > 0;
+  const courseCheckoutCfg = courseHasOverride
+    ? mergeCheckoutConfig(course.checkout_config)
+    : tenantCheckoutCfg;
 
   const { data: cats } = await svc
     .from("course_categories")
@@ -116,6 +126,19 @@ export default async function CourseEditPage({
           return `${u.protocol}//${host}`;
         })()}
       />
+
+      <section className="max-w-3xl pt-8 border-t border-white/10">
+        <h2 className="text-lg font-semibold mb-1">Checkout — campos que se piden al comprar</h2>
+        <p className="text-sm text-white/60 mb-4">
+          Por default usa la config global de tu academia. Activá el override
+          si este curso necesita campos diferentes.
+        </p>
+        <CourseCheckoutOverride
+          courseId={course.id}
+          hasOverride={courseHasOverride}
+          config={courseCheckoutCfg}
+        />
+      </section>
 
       <section className="max-w-3xl pt-8 border-t border-white/10">
         <h2 className="text-lg font-semibold mb-1">Conceder acceso manual</h2>

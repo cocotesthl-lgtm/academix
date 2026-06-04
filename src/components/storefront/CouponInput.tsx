@@ -1,18 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import type { CheckoutConfig, CheckoutField } from '@/lib/checkout/types';
+import { DEFAULT_CHECKOUT_CONFIG } from '@/lib/checkout/types';
 
 /**
- * Form de compra con datos del comprador (URL del formulario).
- * - Si el curso es gratis o el cupón lo deja en 0, ocultamos los datos de
- *   pago — pero el flujo libre igual no necesita esos datos para MP.
- * - Si hay precio > 0, antes de redirigir a MP pedimos: nombre/apellido,
- *   DNI, ubicación, email y celular. Estos datos persisten en sales +
- *   enrollments para que el owner pueda contactar al alumno e impartir
- *   la clase aunque MP tarde en confirmar.
+ * Form de compra. Renderiza dinámicamente los campos según `checkoutConfig`:
+ *  - base_fields enabled → name/dni/phone/location (toggleables + required configurable)
+ *  - extra_fields → campos custom del owner (text/email/tel/textarea/select/checkbox/date/number)
+ * Email + password siempre se piden cuando el comprador no está logueado
+ * (son necesarios para crear su cuenta y darle acceso al curso).
  *
- * El form sigue siendo POST nativo (no usa fetch) para que funcione sin
- * JS y para que MP redirija con un 303.
+ * El form sigue siendo POST nativo para que funcione sin JS y para que MP
+ * pueda redirigir con 303.
  */
 export function CouponInput({
   courseId,
@@ -21,7 +21,8 @@ export function CouponInput({
   primary,
   freeLabel = 'Inscribirme gratis',
   buyLabel = 'Continuar al pago',
-  defaultEmail = ''
+  defaultEmail = '',
+  checkoutConfig
 }: {
   courseId: string;
   priceCents: number;
@@ -30,12 +31,13 @@ export function CouponInput({
   freeLabel?: string;
   buyLabel?: string;
   defaultEmail?: string;
+  checkoutConfig?: CheckoutConfig;
 }) {
+  const cfg = checkoutConfig ?? DEFAULT_CHECKOUT_CONFIG;
   const [showCoupon, setShowCoupon] = useState(false);
   const [code, setCode] = useState('');
   const [expanded, setExpanded] = useState(false);
 
-  // Validación liviana en cliente: el server hace validación real.
   const [name, setName] = useState('');
   const [dni, setDni] = useState('');
   const [location, setLocation] = useState('');
@@ -44,22 +46,32 @@ export function CouponInput({
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
 
+  // Estado de los campos extra custom. Map { fieldId → string|boolean }.
+  const [extras, setExtras] = useState<Record<string, string | boolean>>({});
+  const setExtra = (id: string, v: string | boolean) =>
+    setExtras((s) => ({ ...s, [id]: v }));
+
   const isFree = priceCents === 0;
   const isLoggedIn = defaultEmail.length > 0;
-
   const passwordOk = isLoggedIn || (password.length >= 6 && password === password2);
 
-  const dataReady =
-    name.trim().length >= 3 &&
-    dni.trim().length >= 6 &&
-    location.trim().length >= 2 &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
-    phone.trim().length >= 6 &&
-    passwordOk;
+  const baseValid =
+    (!cfg.base_fields.name.enabled     || !cfg.base_fields.name.required     || name.trim().length >= 3) &&
+    (!cfg.base_fields.dni.enabled      || !cfg.base_fields.dni.required      || dni.trim().length >= 6) &&
+    (!cfg.base_fields.phone.enabled    || !cfg.base_fields.phone.required    || phone.trim().length >= 6) &&
+    (!cfg.base_fields.location.enabled || !cfg.base_fields.location.required || location.trim().length >= 2);
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const extrasValid = cfg.extra_fields.every((f) => {
+    if (!f.required) return true;
+    const v = extras[f.id];
+    if (f.type === 'checkbox') return v === true;
+    return typeof v === 'string' && v.trim().length > 0;
+  });
+  const dataReady = baseValid && emailValid && passwordOk && extrasValid;
 
   return (
     <form action={`/api/checkout/${courseId}`} method="post" className="space-y-3">
-      {/* Curso gratis: botón directo sin pedir datos (igual quedan inscriptos por user_id) */}
+      {/* Curso gratis: botón directo (no se piden datos extra; se asume user_id) */}
       {isFree && (
         <button
           type="submit"
@@ -70,7 +82,7 @@ export function CouponInput({
         </button>
       )}
 
-      {/* Curso pago: primero un botón para expandir el form */}
+      {/* Curso pago: botón para expandir el form */}
       {!isFree && !expanded && (
         <button
           type="button"
@@ -84,137 +96,134 @@ export function CouponInput({
 
       {!isFree && expanded && (
         <div className="space-y-3 rounded-lg border border-black/15 bg-black/[0.02] p-4">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="font-semibold text-sm">Datos para la inscripción</h3>
-              <button
-                type="button"
-                onClick={() => setExpanded(false)}
-                className="text-xs text-black/40 hover:text-black/70"
-              >
-                ✕
-              </button>
-            </div>
-            <p className="text-xs text-black/55 mb-3">
-              Necesitamos estos datos para inscribirte y enviarte el acceso al curso.
-            </p>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="font-semibold text-sm">Datos para la inscripción</h3>
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              className="text-xs text-black/40 hover:text-black/70"
+            >
+              ✕
+            </button>
           </div>
 
-          <div>
-            <label className="block text-xs text-black/60 mb-1">Nombre y apellido *</label>
-            <input
+          {/* ─── Campos base ─── */}
+          {cfg.base_fields.name.enabled && (
+            <BaseInput
+              label="Nombre y apellido"
+              required={cfg.base_fields.name.required}
               name="buyer_name"
               type="text"
-              required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={setName}
               maxLength={120}
               placeholder="Ej: Juan Pérez"
-              className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
             />
-          </div>
+          )}
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-xs text-black/60 mb-1">DNI / Documento *</label>
-              <input
-                name="buyer_dni"
-                type="text"
-                required
-                inputMode="numeric"
-                value={dni}
-                onChange={(e) => setDni(e.target.value.replace(/\s/g, ''))}
-                maxLength={20}
-                placeholder="Ej: 30123456"
-                className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
-              />
+          {(cfg.base_fields.dni.enabled || cfg.base_fields.phone.enabled) && (
+            <div className="grid grid-cols-2 gap-2">
+              {cfg.base_fields.dni.enabled && (
+                <BaseInput
+                  label="DNI / Documento"
+                  required={cfg.base_fields.dni.required}
+                  name="buyer_dni"
+                  type="text"
+                  inputMode="numeric"
+                  value={dni}
+                  onChange={(v) => setDni(v.replace(/\s/g, ''))}
+                  maxLength={20}
+                  placeholder="Ej: 30123456"
+                />
+              )}
+              {cfg.base_fields.phone.enabled && (
+                <BaseInput
+                  label="Celular"
+                  required={cfg.base_fields.phone.required}
+                  name="buyer_phone"
+                  type="tel"
+                  inputMode="tel"
+                  value={phone}
+                  onChange={setPhone}
+                  maxLength={30}
+                  placeholder="+54 9 11 5555-5555"
+                />
+              )}
             </div>
-            <div>
-              <label className="block text-xs text-black/60 mb-1">Celular *</label>
-              <input
-                name="buyer_phone"
-                type="tel"
-                required
-                inputMode="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                maxLength={30}
-                placeholder="Ej: +54 9 11 5555-5555"
-                className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
-              />
-            </div>
-          </div>
+          )}
 
-          <div>
-            <label className="block text-xs text-black/60 mb-1">Ubicación *</label>
-            <input
+          {cfg.base_fields.location.enabled && (
+            <BaseInput
+              label="Ubicación"
+              required={cfg.base_fields.location.required}
               name="buyer_location"
               type="text"
-              required
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={setLocation}
               maxLength={120}
               placeholder="Ciudad / Provincia / País"
-              className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
             />
-          </div>
+          )}
 
-          <div>
-            <label className="block text-xs text-black/60 mb-1">Email *</label>
-            <input
-              name="buyer_email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              maxLength={200}
-              placeholder="vos@email.com"
-              className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
+          {/* ─── Email siempre on ─── */}
+          <BaseInput
+            label="Email"
+            required={true}
+            name="buyer_email"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            maxLength={200}
+            placeholder="vos@email.com"
+          />
+
+          {/* ─── Campos extra custom ─── */}
+          {cfg.extra_fields.map((f) => (
+            <ExtraInput
+              key={f.id}
+              field={f}
+              value={extras[f.id]}
+              onChange={(v) => setExtra(f.id, v)}
             />
-          </div>
+          ))}
 
+          {/* ─── Password si no está logueado ─── */}
           {!isLoggedIn && (
             <>
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-black/10">
-                <div>
-                  <label className="block text-xs text-black/60 mb-1">Contraseña *</label>
-                  <input
-                    name="buyer_password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    minLength={6}
-                    maxLength={120}
-                    placeholder="Mínimo 6 caracteres"
-                    className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-black/60 mb-1">Repetir contraseña *</label>
-                  <input
-                    type="password"
-                    required
-                    value={password2}
-                    onChange={(e) => setPassword2(e.target.value)}
-                    minLength={6}
-                    maxLength={120}
-                    placeholder="Repetir"
-                    className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
-                  />
-                </div>
+                <BaseInput
+                  label="Contraseña"
+                  required={true}
+                  name="buyer_password"
+                  type="password"
+                  value={password}
+                  onChange={setPassword}
+                  minLength={6}
+                  maxLength={120}
+                  placeholder="Mínimo 6 caracteres"
+                />
+                <BaseInput
+                  label="Repetir contraseña"
+                  required={true}
+                  type="password"
+                  value={password2}
+                  onChange={setPassword2}
+                  minLength={6}
+                  maxLength={120}
+                  placeholder="Repetir"
+                />
               </div>
               <p className="text-[11px] text-black/55">
-                🔐 Vamos a crear tu cuenta con estos datos. Con ese email y contraseña vas a poder
-                entrar siempre que quieras a ver tus cursos. Si ya tenés cuenta acá, usá la misma
-                contraseña y vamos a loguearte directo.
+                🔐 Vamos a crear tu cuenta con estos datos. Con ese email y contraseña
+                vas a poder entrar siempre a ver tus cursos. Si ya tenés cuenta acá,
+                usá la misma contraseña y te logueamos directo.
               </p>
             </>
           )}
 
           <p className="text-[11px] text-black/45 leading-snug">
-            Vamos a usar estos datos sólo para inscribirte, enviarte el acceso al curso y
-            contactarte si hace falta. No los compartimos con terceros.
+            Vamos a usar estos datos sólo para inscribirte, enviarte el acceso al curso
+            y contactarte si hace falta. No los compartimos con terceros.
           </p>
 
           <button
@@ -231,7 +240,7 @@ export function CouponInput({
                 ? 'Las contraseñas no coinciden.'
                 : !isLoggedIn && password.length > 0 && password.length < 6
                   ? 'La contraseña tiene que tener al menos 6 caracteres.'
-                  : 'Completá todos los campos para continuar.'}
+                  : 'Completá los campos obligatorios para continuar.'}
             </p>
           )}
         </div>
@@ -265,5 +274,142 @@ export function CouponInput({
         </div>
       )}
     </form>
+  );
+}
+
+/* ─────────── Sub-componentes ─────────── */
+
+function BaseInput({
+  label, required, name, type, value, onChange, maxLength, minLength,
+  placeholder, inputMode
+}: {
+  label: string;
+  required: boolean;
+  name?: string;
+  type: string;
+  value: string;
+  onChange: (v: string) => void;
+  maxLength?: number;
+  minLength?: number;
+  placeholder?: string;
+  inputMode?: 'numeric' | 'tel' | 'email' | 'text';
+}) {
+  return (
+    <div>
+      <label className="block text-xs text-black/60 mb-1">
+        {label}{required && <span className="text-red-500"> *</span>}
+      </label>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        inputMode={inputMode}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        maxLength={maxLength}
+        minLength={minLength}
+        placeholder={placeholder}
+        className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
+      />
+    </div>
+  );
+}
+
+function ExtraInput({
+  field, value, onChange
+}: {
+  field: CheckoutField;
+  value: string | boolean | undefined;
+  onChange: (v: string | boolean) => void;
+}) {
+  // El campo va al backend como `extra_${key}` para que NO colisione con
+  // los campos base buyer_*.
+  const inputName = `extra_${field.key}`;
+  const reqStar = field.required && <span className="text-red-500"> *</span>;
+  const helper = field.helper && <p className="text-[10px] text-black/45 mt-1">{field.helper}</p>;
+
+  if (field.type === 'checkbox') {
+    return (
+      <div>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            name={inputName}
+            type="checkbox"
+            checked={value === true}
+            onChange={(e) => onChange(e.target.checked)}
+            value="on"
+            required={field.required}
+            className="mt-0.5"
+          />
+          <span>{field.label}{reqStar}</span>
+        </label>
+        {helper}
+      </div>
+    );
+  }
+
+  if (field.type === 'textarea') {
+    return (
+      <div>
+        <label className="block text-xs text-black/60 mb-1">{field.label}{reqStar}</label>
+        <textarea
+          name={inputName}
+          required={field.required}
+          value={(value as string) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          maxLength={1000}
+          placeholder={field.placeholder}
+          rows={3}
+          className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
+        />
+        {helper}
+      </div>
+    );
+  }
+
+  if (field.type === 'select') {
+    return (
+      <div>
+        <label className="block text-xs text-black/60 mb-1">{field.label}{reqStar}</label>
+        <select
+          name={inputName}
+          required={field.required}
+          value={(value as string) ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
+        >
+          <option value="">{field.placeholder ?? 'Elegí una opción…'}</option>
+          {(field.options ?? []).map((o) => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
+        {helper}
+      </div>
+    );
+  }
+
+  // text / email / tel / date / number
+  const htmlType =
+    field.type === 'number' ? 'number'
+    : field.type === 'date' ? 'date'
+    : field.type === 'email' ? 'email'
+    : field.type === 'tel' ? 'tel'
+    : 'text';
+
+  return (
+    <div>
+      <label className="block text-xs text-black/60 mb-1">{field.label}{reqStar}</label>
+      <input
+        name={inputName}
+        type={htmlType}
+        required={field.required}
+        value={(value as string) ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        maxLength={200}
+        placeholder={field.placeholder}
+        className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm focus:outline-none focus:border-black/40"
+      />
+      {helper}
+    </div>
   );
 }

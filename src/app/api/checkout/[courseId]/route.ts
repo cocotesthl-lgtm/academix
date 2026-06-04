@@ -102,6 +102,21 @@ export async function POST(
     phone:    buyerPhoneRaw    || null
   };
 
+  // Campos extra custom (definidos por el owner en /owner/checkout o en el
+  // override del curso). Llegan al form como `extra_${key}`. Los juntamos
+  // todos en un solo jsonb que se guarda en sales.buyer_extra y
+  // enrollments.buyer_extra, así el owner los puede consultar después.
+  const buyerExtra: Record<string, string | boolean> = {};
+  if (form) {
+    for (const [k, v] of form.entries()) {
+      if (!k.startsWith('extra_')) continue;
+      const key = k.slice(6).slice(0, 40);
+      if (!key) continue;
+      const value = typeof v === 'string' ? v.slice(0, 1000) : '';
+      buyerExtra[key] = value === 'on' ? true : value;
+    }
+  }
+
   // Si el comprador NO está logueado pero mandó email + password, creamos
   // (o logueamos) su cuenta acá antes de redirigir a MP. Así cuando vuelve
   // post-pago aterriza ya logueado en /learn — sin pasar por la pantalla
@@ -179,7 +194,8 @@ export async function POST(
       buyer_dni: buyerInfo.dni,
       buyer_location: buyerInfo.location,
       buyer_email: buyerInfo.email ?? user?.email ?? null,
-      buyer_phone: buyerInfo.phone
+      buyer_phone: buyerInfo.phone,
+      buyer_extra: buyerExtra
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('coupon_redemptions') as any).insert({
@@ -237,7 +253,10 @@ export async function POST(
         buyer_dni:      buyerInfo.dni,
         buyer_location: buyerInfo.location,
         buyer_email:    buyerInfo.email,
-        buyer_phone:    buyerInfo.phone
+        buyer_phone:    buyerInfo.phone,
+        // Extras custom (talle, talla, comentario, etc.) → jsonb opaco
+        // que el webhook copia tal cual a sales/enrollments.
+        buyer_extra:    buyerExtra
       }
     });
 
