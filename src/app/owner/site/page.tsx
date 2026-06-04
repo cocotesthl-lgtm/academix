@@ -33,6 +33,7 @@ import {
   NavEditor,
   FooterEditor
 } from "@/components/owner/site/SectionEditors";
+import { ColorAutoSave } from "@/components/owner/site/ColorAutoSave";
 
 export const dynamic = "force-dynamic";
 
@@ -437,46 +438,23 @@ function Section({
             <p className="text-xs text-white/50 mt-0.5">{desc}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Color picker per section */}
-          <form action={setSectionBgColorAction} className="flex items-center gap-1">
-            <input type="hidden" name="section" value={sectionKey} />
-            <label className="text-xs text-white/50">Fondo:</label>
-            <input
-              name="bg_color"
-              type="color"
-              defaultValue={bgColor ?? '#ffffff'}
-              className="w-7 h-7 rounded bg-transparent border border-white/15 cursor-pointer"
-            />
-            <button className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5">Aplicar</button>
-          </form>
-          {bgColor && (
-            <form action={setSectionBgColorAction}>
-              <input type="hidden" name="section" value={sectionKey} />
-              <input type="hidden" name="bg_color" value="" />
-              <button className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5 text-white/50">Reset</button>
-            </form>
-          )}
-          {/* Color picker de texto — gemelo del de fondo. Si lo dejás vacío,
-              el storefront usa color automático según el bg. */}
-          <form action={setSectionTextColorAction} className="flex items-center gap-1">
-            <input type="hidden" name="section" value={sectionKey} />
-            <label className="text-xs text-white/50">Texto:</label>
-            <input
-              name="text_color"
-              type="color"
-              defaultValue={textColor ?? '#000000'}
-              className="w-7 h-7 rounded bg-transparent border border-white/15 cursor-pointer"
-            />
-            <button className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5">Aplicar</button>
-          </form>
-          {textColor && (
-            <form action={setSectionTextColorAction}>
-              <input type="hidden" name="section" value={sectionKey} />
-              <input type="hidden" name="text_color" value="" />
-              <button className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5 text-white/50">Reset</button>
-            </form>
-          )}
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Color pickers — auto-aplican al elegir, sin botón Aplicar.
+              Se guarda + revalida apenas el owner pica un color en la rueda. */}
+          <ColorAutoSave
+            label="Fondo"
+            fieldName="bg_color"
+            sectionKey={sectionKey}
+            initial={bgColor}
+            action={setSectionBgColorAction}
+          />
+          <ColorAutoSave
+            label="Texto"
+            fieldName="text_color"
+            sectionKey={sectionKey}
+            initial={textColor}
+            action={setSectionTextColorAction}
+          />
           <form action={toggleSectionAction}>
             <input type="hidden" name="section" value={sectionKey} />
             <button
