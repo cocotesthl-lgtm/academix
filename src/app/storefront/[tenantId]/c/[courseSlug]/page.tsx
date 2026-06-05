@@ -54,53 +54,72 @@ export default async function CourseDetailPage({
   const primary = tenant?.brand?.primary_color ?? '#0a0a0a';
 
   const svc = getServiceClient();
+  // Query base — SIN columnas nuevas (sobrevive a falta de migrations).
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status, landing_template, landing_config, landing_variants, checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, landing_template, landing_config, landing_variants")
     .eq("tenant_id", tenantId)
     .eq("slug", courseSlug)
-    .maybeSingle<CourseDetail & {
-      checkout_config: unknown;
-      calendar_mode: CalendarMode | null;
-      calendar_label: string | null;
-      calendar_required: boolean | null;
-      calendar_horizon_days: number | null;
-    }>();
+    .maybeSingle<CourseDetail>();
 
   if (!course || course.status !== 'published') notFound();
 
-  // Resolver checkout config efectiva: override del curso si existe, sino
-  // el default del tenant.
-  const { data: tenantCheckoutRow } = await svc
-    .from('tenants').select('checkout_config').eq('id', tenantId)
-    .maybeSingle<{ checkout_config: unknown }>();
+  // Query separada para columnas nuevas (checkout + calendar). Si la
+  // migration todavía no corrió, falla silencioso y caemos a defaults.
+  type CourseExtras = {
+    checkout_config: unknown;
+    calendar_mode: CalendarMode | null;
+    calendar_label: string | null;
+    calendar_required: boolean | null;
+    calendar_horizon_days: number | null;
+  };
+  let courseExtras: CourseExtras | null = null;
+  try {
+    const { data, error } = await svc
+      .from("courses")
+      .select("checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days")
+      .eq("id", course.id)
+      .maybeSingle<CourseExtras>();
+    if (!error && data) courseExtras = data;
+  } catch { /* migration no corrida — defaults */ }
+
+  let tenantCheckoutCfg: unknown = null;
+  try {
+    const { data, error } = await svc
+      .from('tenants').select('checkout_config').eq('id', tenantId)
+      .maybeSingle<{ checkout_config: unknown }>();
+    if (!error && data) tenantCheckoutCfg = data.checkout_config;
+  } catch { /* idem */ }
+
   const checkoutConfig = resolveCheckoutConfig({
-    tenantConfig: tenantCheckoutRow?.checkout_config,
-    courseConfig: course.checkout_config
+    tenantConfig: tenantCheckoutCfg,
+    courseConfig: courseExtras?.checkout_config ?? null
   });
 
   // ─── Calendario: si el curso tiene mentorship_slot, calculamos los slots
   // disponibles desde las reglas del tenant menos los ya tomados ───
-  const calendarMode = (course.calendar_mode ?? 'none') as CalendarMode;
+  const calendarMode = (courseExtras?.calendar_mode ?? 'none') as CalendarMode;
   let calendarSlots: BookingSlot[] = [];
   if (calendarMode === 'mentorship_slot') {
-    const horizon = course.calendar_horizon_days ?? 30;
+    const horizon = courseExtras?.calendar_horizon_days ?? 30;
     const horizonDate = new Date();
     horizonDate.setDate(horizonDate.getDate() + horizon);
-    const [{ data: rulesRaw }, { data: takenRaw }] = await Promise.all([
-      svc.from('availability_rules')
-        .select('id, tenant_id, weekday, start_min, end_min, slot_duration_min, timezone')
-        .eq('tenant_id', tenantId),
-      svc.from('bookings')
-        .select('slot_start')
-        .eq('tenant_id', tenantId)
-        .neq('status', 'cancelled')
-        .gte('slot_start', new Date().toISOString())
-        .lte('slot_start', horizonDate.toISOString())
-    ]);
-    const rules = (rulesRaw ?? []) as AvailabilityRule[];
-    const takenSet = new Set(((takenRaw ?? []) as Array<{ slot_start: string }>).map((b) => b.slot_start));
-    calendarSlots = generateSlots({ rules, takenSlotStarts: takenSet, horizonDays: horizon });
+    try {
+      const [rulesRes, takenRes] = await Promise.all([
+        svc.from('availability_rules')
+          .select('id, tenant_id, weekday, start_min, end_min, slot_duration_min, timezone')
+          .eq('tenant_id', tenantId),
+        svc.from('bookings')
+          .select('slot_start')
+          .eq('tenant_id', tenantId)
+          .neq('status', 'cancelled')
+          .gte('slot_start', new Date().toISOString())
+          .lte('slot_start', horizonDate.toISOString())
+      ]);
+      const rules = (rulesRes.data ?? []) as AvailabilityRule[];
+      const takenSet = new Set(((takenRes.data ?? []) as Array<{ slot_start: string }>).map((b) => b.slot_start));
+      calendarSlots = generateSlots({ rules, takenSlotStarts: takenSet, horizonDays: horizon });
+    } catch { /* idem */ }
   }
 
   // Resolvemos el user logueado una sola vez (lo usamos para tracking de
@@ -191,8 +210,8 @@ export default async function CourseDetailPage({
         buyerEmail={currentUser?.email ?? ''}
         checkoutConfig={checkoutConfig}
         calendarMode={calendarMode}
-        calendarLabel={course.calendar_label}
-        calendarRequired={course.calendar_required ?? true}
+        calendarLabel={courseExtras?.calendar_label ?? null}
+        calendarRequired={courseExtras?.calendar_required ?? true}
         calendarSlots={calendarSlots}
       />
     );
@@ -207,8 +226,8 @@ export default async function CourseDetailPage({
         buyerEmail={currentUser?.email ?? ''}
         checkoutConfig={checkoutConfig}
         calendarMode={calendarMode}
-        calendarLabel={course.calendar_label}
-        calendarRequired={course.calendar_required ?? true}
+        calendarLabel={courseExtras?.calendar_label ?? null}
+        calendarRequired={courseExtras?.calendar_required ?? true}
         calendarSlots={calendarSlots}
       />
     );
@@ -222,8 +241,8 @@ export default async function CourseDetailPage({
         buyerEmail={currentUser?.email ?? ''}
         checkoutConfig={checkoutConfig}
         calendarMode={calendarMode}
-        calendarLabel={course.calendar_label}
-        calendarRequired={course.calendar_required ?? true}
+        calendarLabel={courseExtras?.calendar_label ?? null}
+        calendarRequired={courseExtras?.calendar_required ?? true}
         calendarSlots={calendarSlots}
       />
     );
@@ -310,8 +329,8 @@ export default async function CourseDetailPage({
               defaultEmail={currentUser?.email ?? ''}
               checkoutConfig={checkoutConfig}
         calendarMode={calendarMode}
-        calendarLabel={course.calendar_label}
-        calendarRequired={course.calendar_required ?? true}
+        calendarLabel={courseExtras?.calendar_label ?? null}
+        calendarRequired={courseExtras?.calendar_required ?? true}
         calendarSlots={calendarSlots}
             />
             <p className="text-xs text-center text-black/40">

@@ -36,7 +36,7 @@ export default async function OwnerFinance() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
 
-  const [balance, { data: ledger }, { data: sales }, { data: subsRaw }] = await Promise.all([
+  const [balance, { data: ledger }, { data: sales }] = await Promise.all([
     getOwnerBalance(tenant.id),
     svc.from("owner_debt_ledger")
       .select("id, type, amount_cents, balance_after_cents, commission_rate_applied, status, created_at, sale_id")
@@ -47,13 +47,24 @@ export default async function OwnerFinance() {
       .select("id, external_id, amount_gross_cents, currency, status, occurred_at")
       .eq("tenant_id", tenant.id)
       .order("occurred_at", { ascending: false })
-      .limit(10),
-    svc.from("subscriptions")
+      .limit(10)
+  ]);
+
+  // Subscriptions opcional — si la migration 0013 no corrió, vacío.
+  type SubRow = {
+    id: string; status: string; frequency: 'monthly' | 'yearly';
+    amount_cents: number; currency: string; course_id: string;
+    user_id: string | null; started_at: string; next_billing_at: string | null;
+  };
+  let subsRaw: SubRow[] | null = null;
+  try {
+    const { data, error } = await svc.from("subscriptions")
       .select("id, status, frequency, amount_cents, currency, course_id, user_id, started_at, next_billing_at")
       .eq("tenant_id", tenant.id)
       .order("created_at", { ascending: false })
-      .limit(50)
-  ]);
+      .limit(50);
+    if (!error) subsRaw = (data ?? []) as SubRow[];
+  } catch { /* tabla no existe */ }
 
   const ledgerRows = (ledger ?? []) as LedgerRow[];
   const salesRows = (sales ?? []) as SaleRow[];

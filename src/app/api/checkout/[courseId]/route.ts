@@ -30,18 +30,38 @@ export async function POST(
   const { courseId } = await params;
   const svc = getServiceClient();
 
-  // Resolve course
-  const { data: course } = await svc
+  // Resolve course (base — sin columnas nuevas para sobrevivir migrations pendientes)
+  const { data: courseBase } = await svc
     .from('courses')
-    .select('id, tenant_id, slug, title, price_cents, currency, status, pricing_mode, subscription_frequency, subscription_trial_days')
+    .select('id, tenant_id, slug, title, price_cents, currency, status')
     .eq('id', courseId)
-    .maybeSingle<Course>();
-  if (!course || course.status !== 'published') {
+    .maybeSingle<Omit<Course, 'pricing_mode' | 'subscription_frequency' | 'subscription_trial_days'>>();
+  if (!courseBase || courseBase.status !== 'published') {
     return NextResponse.json({ error: 'course_not_available' }, { status: 404 });
   }
-  if (course.price_cents <= 0) {
+  if (courseBase.price_cents <= 0) {
     return NextResponse.json({ error: 'free_course_no_checkout' }, { status: 400 });
   }
+  // Subscription columns (opcional — migration 0013)
+  type SubCfg = {
+    pricing_mode: 'one_time' | 'subscription' | null;
+    subscription_frequency: 'monthly' | 'yearly' | null;
+    subscription_trial_days: number | null;
+  };
+  let subscriptionCfg: SubCfg | null = null;
+  try {
+    const { data, error } = await svc
+      .from('courses')
+      .select('pricing_mode, subscription_frequency, subscription_trial_days')
+      .eq('id', courseId).maybeSingle<SubCfg>();
+    if (!error && data) subscriptionCfg = data;
+  } catch { /* migration no corrida — asume one_time */ }
+  const course: Course = {
+    ...courseBase,
+    pricing_mode: subscriptionCfg?.pricing_mode ?? 'one_time',
+    subscription_frequency: subscriptionCfg?.subscription_frequency ?? null,
+    subscription_trial_days: subscriptionCfg?.subscription_trial_days ?? 0
+  };
 
   // Resolve tenant slug for redirect URLs
   const { data: tenant } = await svc

@@ -21,12 +21,35 @@ const TZ_OPTIONS = [
 export default async function AvailabilityPage() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
-  const { data: rulesRaw } = await svc
-    .from('availability_rules')
-    .select('id, tenant_id, weekday, start_min, end_min, slot_duration_min, timezone')
-    .eq('tenant_id', tenant.id)
-    .order('weekday', { ascending: true }).order('start_min', { ascending: true });
-  const rules = (rulesRaw ?? []) as AvailabilityRule[];
+  let rules: AvailabilityRule[] = [];
+  let migrationMissing = false;
+  try {
+    const { data, error } = await svc
+      .from('availability_rules')
+      .select('id, tenant_id, weekday, start_min, end_min, slot_duration_min, timezone')
+      .eq('tenant_id', tenant.id)
+      .order('weekday', { ascending: true }).order('start_min', { ascending: true });
+    if (error) migrationMissing = true;
+    else rules = (data ?? []) as AvailabilityRule[];
+  } catch {
+    migrationMissing = true;
+  }
+
+  if (migrationMissing) {
+    return (
+      <div className="max-w-2xl space-y-4">
+        <h1 className="text-2xl font-bold">Disponibilidad</h1>
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-200">
+          <p className="font-semibold mb-2">⚠️ Migración pendiente</p>
+          <p className="text-sm">
+            Falta correr la migración 0012_calendar.sql en Supabase.
+            Pegá <code className="bg-black/30 px-1 rounded">src/db/migrations/RUN_THIS_NOW.sql</code> en
+            el SQL Editor de tu proyecto Supabase y dale RUN. Después recargá esta página.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Bookings activos (próximos 60 días) para que el owner los vea
   const horizon = new Date();

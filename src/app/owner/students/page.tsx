@@ -39,6 +39,8 @@ export default async function OwnerStudentsPage({
   // Traemos enrollments del tenant + datos de comprador
   let query = svc
     .from('enrollments')
+    // Selects base + nuevos. Si falla porque la migration no corrió, hacemos
+    // fallback a select base sin las columnas nuevas (catch debajo).
     .select('id, course_id, user_id, source, status, created_at, buyer_name, buyer_dni, buyer_location, buyer_email, buyer_phone, buyer_extra, booking_date, booking_id')
     .eq('tenant_id', tenant.id)
     .order('created_at', { ascending: false });
@@ -47,20 +49,36 @@ export default async function OwnerStudentsPage({
     query = query.eq('course_id', filterCourse);
   }
 
-  const { data: enrollmentsRaw } = await query.limit(500);
+  let { data: enrollmentsRaw, error: enrollErr } = await query.limit(500);
+  // Fallback: si la migration 0011/0012 no corrió, reintentamos sin las
+  // columnas nuevas (buyer_extra, booking_date, booking_id).
+  if (enrollErr) {
+    const baseQuery = svc
+      .from('enrollments')
+      .select('id, course_id, user_id, source, status, created_at, buyer_name, buyer_dni, buyer_location, buyer_email, buyer_phone')
+      .eq('tenant_id', tenant.id)
+      .order('created_at', { ascending: false });
+    if (filterCourse) baseQuery.eq('course_id', filterCourse);
+    const fallback = await baseQuery.limit(500);
+    enrollmentsRaw = fallback.data;
+  }
   const enrollments = (enrollmentsRaw ?? []) as EnrollmentRow[];
 
-  // Bookings linkeados (slot_start para mostrar al lado de cada inscripción)
+  // Bookings linkeados (slot_start para mostrar). Si tabla no existe → vacío.
   const bookingIds = enrollments.map((e) => e.booking_id).filter(Boolean) as string[];
   const bookingMap = new Map<string, { slot_start: string; slot_end: string }>();
   if (bookingIds.length > 0) {
-    const { data: bkRaw } = await svc
-      .from('bookings')
-      .select('id, slot_start, slot_end')
-      .in('id', bookingIds);
-    for (const b of ((bkRaw ?? []) as Array<{ id: string; slot_start: string; slot_end: string }>)) {
-      bookingMap.set(b.id, { slot_start: b.slot_start, slot_end: b.slot_end });
-    }
+    try {
+      const { data: bkRaw, error: bkErr } = await svc
+        .from('bookings')
+        .select('id, slot_start, slot_end')
+        .in('id', bookingIds);
+      if (!bkErr) {
+        for (const b of ((bkRaw ?? []) as Array<{ id: string; slot_start: string; slot_end: string }>)) {
+          bookingMap.set(b.id, { slot_start: b.slot_start, slot_end: b.slot_end });
+        }
+      }
+    } catch { /* tabla bookings no existe */ }
   }
 
   // Cursos para el filtro

@@ -23,38 +23,66 @@ export default async function CourseEditPage({
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
 
+  // Query base — sin las columnas nuevas (sobrevive a migrations pendientes)
   const { data: course } = await svc
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config, landing_variants, checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days, pricing_mode, subscription_frequency, subscription_trial_days")
+    .select("id, slug, title, description, cover_url, price_cents, currency, status, affiliate_enabled, is_featured, category_id, landing_template, landing_config, landing_variants")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
-    .maybeSingle<Course & {
-      checkout_config: unknown;
-      calendar_mode: CalendarMode | null;
-      calendar_label: string | null;
-      calendar_required: boolean | null;
-      calendar_horizon_days: number | null;
-      pricing_mode: 'one_time' | 'subscription' | null;
-      subscription_frequency: 'monthly' | 'yearly' | null;
-      subscription_trial_days: number | null;
-    }>();
+    .maybeSingle<Course>();
 
   if (!course) notFound();
 
-  // Branding color del tenant + checkout default del tenant (para fallback
-  // del editor de override por curso)
-  const { data: tenantRow } = await svc
-    .from("tenants")
-    .select("brand, checkout_config")
-    .eq("id", tenant.id)
-    .maybeSingle<{ brand: { primary_color?: string } | null; checkout_config: unknown }>();
-  const primaryColor = tenantRow?.brand?.primary_color ?? '#0a0a0a';
-  const tenantCheckoutCfg = mergeCheckoutConfig(tenantRow?.checkout_config);
-  const courseHasOverride = !!course.checkout_config &&
-    typeof course.checkout_config === 'object' &&
-    Object.keys(course.checkout_config as object).length > 0;
+  // Query separada para nuevos campos (checkout/calendar/subscription) —
+  // si la migration no corrió, cae a defaults sin romper.
+  type CourseExtras = {
+    checkout_config: unknown;
+    calendar_mode: CalendarMode | null;
+    calendar_label: string | null;
+    calendar_required: boolean | null;
+    calendar_horizon_days: number | null;
+    pricing_mode: 'one_time' | 'subscription' | null;
+    subscription_frequency: 'monthly' | 'yearly' | null;
+    subscription_trial_days: number | null;
+  };
+  let courseExtras: CourseExtras | null = null;
+  try {
+    const { data, error } = await svc
+      .from("courses")
+      .select("checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days, pricing_mode, subscription_frequency, subscription_trial_days")
+      .eq("id", course.id)
+      .maybeSingle<CourseExtras>();
+    if (!error && data) courseExtras = data;
+  } catch { /* migration no corrida */ }
+
+  // Branding color del tenant + checkout default del tenant (para fallback)
+  let tenantBrand: { primary_color?: string } | null = null;
+  let tenantCheckoutRaw: unknown = null;
+  try {
+    const { data, error } = await svc
+      .from("tenants").select("brand, checkout_config").eq("id", tenant.id)
+      .maybeSingle<{ brand: { primary_color?: string } | null; checkout_config: unknown }>();
+    if (!error && data) {
+      tenantBrand = data.brand;
+      tenantCheckoutRaw = data.checkout_config;
+    } else if (error) {
+      // checkout_config no existe → traemos solo brand
+      const { data: justBrand } = await svc.from("tenants").select("brand").eq("id", tenant.id)
+        .maybeSingle<{ brand: { primary_color?: string } | null }>();
+      tenantBrand = justBrand?.brand ?? null;
+    }
+  } catch {
+    const { data: justBrand } = await svc.from("tenants").select("brand").eq("id", tenant.id)
+      .maybeSingle<{ brand: { primary_color?: string } | null }>();
+    tenantBrand = justBrand?.brand ?? null;
+  }
+  const primaryColor = tenantBrand?.primary_color ?? '#0a0a0a';
+  const tenantCheckoutCfg = mergeCheckoutConfig(tenantCheckoutRaw);
+  const courseHasOverride = !!courseExtras?.checkout_config &&
+    typeof courseExtras.checkout_config === 'object' &&
+    Object.keys(courseExtras.checkout_config as object).length > 0;
   const courseCheckoutCfg = courseHasOverride
-    ? mergeCheckoutConfig(course.checkout_config)
+    ? mergeCheckoutConfig(courseExtras!.checkout_config)
     : tenantCheckoutCfg;
 
   const { data: cats } = await svc
@@ -147,9 +175,9 @@ export default async function CourseEditPage({
         </p>
         <CourseSubscriptionConfig
           courseId={course.id}
-          initialMode={(course.pricing_mode ?? 'one_time') as 'one_time' | 'subscription'}
-          initialFrequency={course.subscription_frequency}
-          initialTrialDays={course.subscription_trial_days ?? 0}
+          initialMode={(courseExtras?.pricing_mode ?? 'one_time') as 'one_time' | 'subscription'}
+          initialFrequency={courseExtras?.subscription_frequency ?? null}
+          initialTrialDays={courseExtras?.subscription_trial_days ?? 0}
           priceCents={course.price_cents}
           currency={course.currency}
         />
@@ -162,10 +190,10 @@ export default async function CourseEditPage({
         </p>
         <CourseCalendarConfig
           courseId={course.id}
-          initialMode={(course.calendar_mode ?? 'none') as CalendarMode}
-          initialLabel={course.calendar_label ?? null}
-          initialRequired={course.calendar_required ?? true}
-          initialHorizon={course.calendar_horizon_days ?? 30}
+          initialMode={(courseExtras?.calendar_mode ?? 'none') as CalendarMode}
+          initialLabel={courseExtras?.calendar_label ?? null}
+          initialRequired={courseExtras?.calendar_required ?? true}
+          initialHorizon={courseExtras?.calendar_horizon_days ?? 30}
         />
       </section>
 
