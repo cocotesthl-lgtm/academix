@@ -4,6 +4,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { mergeConfig, type SectionKey } from "@/lib/site/types";
 import { AnimatedCounter } from "@/components/storefront/AnimatedCounter";
 import { FadeIn } from "@/components/storefront/FadeIn";
+import { CatalogFilter } from "@/components/storefront/CatalogFilter";
 
 export const dynamic = "force-dynamic";
 
@@ -492,34 +493,14 @@ export default async function StorefrontHome({
           case 'catalog':
             return (
               <section key={key} {...dt} id="cursos" className="px-6 py-16" style={bg ? { background: bg } : undefined}>
-                <div className="max-w-6xl mx-auto">
-                  <h2 className="text-2xl md:text-3xl font-bold mb-6">{cfg.sections.catalog.title}</h2>
-                  {cfg.sections.catalog.show_filters && categories.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      <Link href="/"
-                        className={`text-sm px-3 py-1.5 rounded-full border ${!selectedCat ? 'bg-black text-white border-black' : 'border-black/15 text-black/70 hover:bg-black/[0.03]'}`}>
-                        Todos
-                      </Link>
-                      {categories.map((c) => (
-                        <Link key={c.id} href={`/?cat=${c.slug}`}
-                          className={`text-sm px-3 py-1.5 rounded-full border ${selectedCat?.id === c.id ? 'bg-black text-white border-black' : 'border-black/15 text-black/70 hover:bg-black/[0.03]'}`}>
-                          {c.name}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                  {catalog.length === 0 ? (
-                    <div className="rounded-xl border border-black/10 p-12 text-center text-black/50">
-                      {selectedCat ? `No hay cursos en "${selectedCat.name}" todavía.` : 'Todavía no hay cursos publicados.'}
-                    </div>
-                  ) : (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {catalog.map((c) => (
-                        <CourseCard key={c.id} c={c} primary={primary} category={c.category_id ? catById.get(c.category_id) : null} />
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <CatalogFilter
+                  title={cfg.sections.catalog.title}
+                  showFilters={cfg.sections.catalog.show_filters}
+                  courses={allCourses}
+                  categories={categories}
+                  primary={primary}
+                  initialCatSlug={selectedCatSlug ?? null}
+                />
               </section>
             );
 
