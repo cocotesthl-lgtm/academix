@@ -29,6 +29,7 @@ type Category = { id: string; name: string; slug: string };
 export function CatalogFilter({
   title,
   showFilters,
+  maxVisible,
   courses,
   categories,
   primary,
@@ -36,12 +37,14 @@ export function CatalogFilter({
 }: {
   title: string;
   showFilters: boolean;
+  maxVisible: number;
   courses: Course[];
   categories: Category[];
   primary: string;
   initialCatSlug: string | null;
 }) {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(initialCatSlug);
+  const [expanded, setExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [fadeKey, setFadeKey] = useState(0);
 
@@ -50,10 +53,15 @@ export function CatalogFilter({
     [selectedSlug, categories]
   );
 
-  const catalog = useMemo(() => {
+  const fullCatalog = useMemo(() => {
     if (!selectedCat) return courses;
     return courses.filter((c) => c.category_id === selectedCat.id);
   }, [selectedCat, courses]);
+
+  // Aplicamos paginación: por default mostramos solo los primeros N. Si el
+  // owner clickea "Ver más" mostramos todos. Cambiar de filtro resetea.
+  const catalog = expanded ? fullCatalog : fullCatalog.slice(0, maxVisible);
+  const hiddenCount = Math.max(0, fullCatalog.length - catalog.length);
 
   const catById = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),
@@ -70,7 +78,13 @@ export function CatalogFilter({
 
   function selectCategory(slug: string | null) {
     setSelectedSlug(slug);
-    setFadeKey((k) => k + 1);  // bump key para re-disparar la animación
+    setExpanded(false);          // colapsar al cambiar filtro
+    setFadeKey((k) => k + 1);    // bump key para re-disparar la animación
+  }
+
+  function showMore() {
+    setExpanded(true);
+    setFadeKey((k) => k + 1);
   }
 
   return (
@@ -112,19 +126,32 @@ export function CatalogFilter({
           {selectedCat ? `No hay cursos en "${selectedCat.name}" todavía.` : 'Todavía no hay cursos publicados.'}
         </div>
       ) : (
-        <div
-          key={fadeKey}
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 catalog-fade-in"
-        >
-          {catalog.map((c) => (
-            <CourseCard
-              key={c.id}
-              c={c}
-              primary={primary}
-              category={c.category_id ? catById.get(c.category_id) : null}
-            />
-          ))}
-        </div>
+        <>
+          <div
+            key={fadeKey}
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 catalog-fade-in"
+          >
+            {catalog.map((c) => (
+              <CourseCard
+                key={c.id}
+                c={c}
+                primary={primary}
+                category={c.category_id ? catById.get(c.category_id) : null}
+              />
+            ))}
+          </div>
+          {hiddenCount > 0 && (
+            <div className="text-center mt-8">
+              <button
+                type="button"
+                onClick={showMore}
+                className="rounded-full border border-black/15 px-6 py-2.5 text-sm font-medium hover:bg-black/[0.03] transition"
+              >
+                Ver más ({hiddenCount} {hiddenCount === 1 ? 'curso' : 'cursos'} más)
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       <style>{`

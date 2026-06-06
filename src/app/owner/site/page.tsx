@@ -260,6 +260,7 @@ export default async function SiteBuilderPage() {
               <CatalogEditor
                 initialTitle={cfg.sections.catalog.title}
                 initialShowFilters={cfg.sections.catalog.show_filters}
+                initialMaxVisible={cfg.sections.catalog.max_visible ?? 3}
                 primary={primary}
               />
             )}

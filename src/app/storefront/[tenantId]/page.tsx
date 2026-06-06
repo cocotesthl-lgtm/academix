@@ -496,6 +496,7 @@ export default async function StorefrontHome({
                 <CatalogFilter
                   title={cfg.sections.catalog.title}
                   showFilters={cfg.sections.catalog.show_filters}
+                  maxVisible={cfg.sections.catalog.max_visible ?? 3}
                   courses={allCourses}
                   categories={categories}
                   primary={primary}

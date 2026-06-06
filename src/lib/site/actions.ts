@@ -132,6 +132,10 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
     if (formData.has(f)) section[f] = String(formData.get(f) ?? '');
   }
   if (formData.has('show_filters')) section.show_filters = formData.get('show_filters') === 'on';
+  if (formData.has('max_visible')) {
+    const n = parseInt(String(formData.get('max_visible') ?? '3'), 10);
+    section.max_visible = Math.min(48, Math.max(1, Number.isFinite(n) ? n : 3));
+  }
   if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
   if (formData.has('marquee')) section.marquee = formData.get('marquee') === 'on';
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');

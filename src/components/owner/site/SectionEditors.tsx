@@ -885,11 +885,12 @@ export function FeaturedEditor({ initialTitle, primary }: { initialTitle: string
  * CATALOG
  * ===================================================================== */
 
-export function CatalogEditor({ initialTitle, initialShowFilters, primary }: {
-  initialTitle: string; initialShowFilters: boolean; primary: string;
+export function CatalogEditor({ initialTitle, initialShowFilters, initialMaxVisible, primary }: {
+  initialTitle: string; initialShowFilters: boolean; initialMaxVisible: number; primary: string;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [showFilters, setShowFilters] = useState(initialShowFilters);
+  const [maxVisible, setMaxVisible] = useState(initialMaxVisible);
   const { pending, saved, fire } = useSave('catalog');
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -899,7 +900,20 @@ export function CatalogEditor({ initialTitle, initialShowFilters, primary }: {
           <input type="checkbox" checked={showFilters} onChange={(e) => setShowFilters(e.target.checked)} />
           Mostrar filtros por categoría
         </label>
-        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, show_filters: showFilters })} />
+        <div>
+          <label className="block text-xs text-white/60 mb-1.5">Cursos visibles al inicio</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1} max={48}
+              value={maxVisible}
+              onChange={(e) => setMaxVisible(Math.max(1, parseInt(e.target.value || '3', 10)))}
+              className="w-24 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+            />
+            <span className="text-xs text-white/45">cursos · resto detrás de "Ver más"</span>
+          </div>
+        </div>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, show_filters: showFilters, max_visible: String(maxVisible) })} />
       </div>
       <PreviewFrame>
         <div className="p-5">
