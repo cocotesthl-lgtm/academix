@@ -133,7 +133,7 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div>
             <button
               type="submit"
               disabled={updatePending}
@@ -141,26 +141,30 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
             >
               {updatePending ? 'Guardando…' : 'Guardar'}
             </button>
-
-            {course.status !== 'published' ? (
-              <form action={setCourseStatusAction}>
-                <input type="hidden" name="id" value={course.id} />
-                <input type="hidden" name="status" value="published" />
-                <button className="rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-5 py-2 font-medium hover:bg-emerald-500/20">
-                  Publicar
-                </button>
-              </form>
-            ) : (
-              <form action={setCourseStatusAction}>
-                <input type="hidden" name="id" value={course.id} />
-                <input type="hidden" name="status" value="draft" />
-                <button className="rounded-md border border-white/15 px-5 py-2 font-medium hover:bg-white/5">
-                  Despublicar
-                </button>
-              </form>
-            )}
           </div>
         </form>
+
+        {/* Publicar/Despublicar va FUERA del form principal — HTML no permite
+            forms anidados (el botón quedaba silencioso). */}
+        <div className="mt-3">
+          {course.status !== 'published' ? (
+            <form action={setCourseStatusAction}>
+              <input type="hidden" name="id" value={course.id} />
+              <input type="hidden" name="status" value="published" />
+              <button className="rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-5 py-2 font-medium hover:bg-emerald-500/20">
+                Publicar
+              </button>
+            </form>
+          ) : (
+            <form action={setCourseStatusAction}>
+              <input type="hidden" name="id" value={course.id} />
+              <input type="hidden" name="status" value="draft" />
+              <button className="rounded-md border border-white/15 px-5 py-2 font-medium hover:bg-white/5">
+                Despublicar
+              </button>
+            </form>
+          )}
+        </div>
       </section>
 
       {/* Landing page del curso (template + overrides) */}
