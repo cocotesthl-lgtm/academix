@@ -261,6 +261,7 @@ export default async function SiteBuilderPage() {
                 initialTitle={cfg.sections.catalog.title}
                 initialShowFilters={cfg.sections.catalog.show_filters}
                 initialMaxVisible={cfg.sections.catalog.max_visible ?? 3}
+                initialPaginationMode={cfg.sections.catalog.pagination_mode ?? 'show_more'}
                 primary={primary}
               />
             )}

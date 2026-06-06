@@ -18,18 +18,24 @@ type Course = {
 
 type Category = { id: string; name: string; slug: string };
 
+type PaginationMode = 'show_more' | 'paginated';
+
 /**
  * Catálogo con filtros client-side. Sin recarga, sin scroll-jump.
  * Cuando el user clickea una categoría, filtramos en memoria + actualizamos
- * la URL via history.replaceState (no scroll). Transición fade en las cards.
+ * la URL via history.replaceState (no scroll).
  *
- * Inicializa el filtro desde ?cat=<slug> en la URL para compatibilidad
- * con links externos.
+ * Dos modos de paginación, elegidos por el owner en /owner/site:
+ *  - 'show_more': muestra los primeros N, botón "Ver más" expande todo,
+ *    botón "Ver menos" colapsa de nuevo.
+ *  - 'paginated': muestra exactamente N por página + navegador ← 1 2 3 →
+ *    al final. Cambiar de filtro vuelve a página 1.
  */
 export function CatalogFilter({
   title,
   showFilters,
   maxVisible,
+  paginationMode,
   courses,
   categories,
   primary,
@@ -38,13 +44,15 @@ export function CatalogFilter({
   title: string;
   showFilters: boolean;
   maxVisible: number;
+  paginationMode: PaginationMode;
   courses: Course[];
   categories: Category[];
   primary: string;
   initialCatSlug: string | null;
 }) {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(initialCatSlug);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);   // solo modo 'show_more'
+  const [page, setPage] = useState(1);               // solo modo 'paginated'
   const containerRef = useRef<HTMLDivElement>(null);
   const [fadeKey, setFadeKey] = useState(0);
 
@@ -58,33 +66,52 @@ export function CatalogFilter({
     return courses.filter((c) => c.category_id === selectedCat.id);
   }, [selectedCat, courses]);
 
-  // Aplicamos paginación: por default mostramos solo los primeros N. Si el
-  // owner clickea "Ver más" mostramos todos. Cambiar de filtro resetea.
-  const catalog = expanded ? fullCatalog : fullCatalog.slice(0, maxVisible);
-  const hiddenCount = Math.max(0, fullCatalog.length - catalog.length);
+  const totalPages = Math.max(1, Math.ceil(fullCatalog.length / maxVisible));
+
+  const catalog = useMemo(() => {
+    if (paginationMode === 'paginated') {
+      const start = (page - 1) * maxVisible;
+      return fullCatalog.slice(start, start + maxVisible);
+    }
+    return expanded ? fullCatalog : fullCatalog.slice(0, maxVisible);
+  }, [paginationMode, page, maxVisible, expanded, fullCatalog]);
+
+  const hiddenCount = paginationMode === 'show_more'
+    ? Math.max(0, fullCatalog.length - catalog.length)
+    : 0;
 
   const catById = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),
     [categories]
   );
 
-  // Actualizar URL sin recargar ni scrollear
+  // Sync URL sin scroll
   useEffect(() => {
     const url = new URL(window.location.href);
     if (selectedSlug) url.searchParams.set('cat', selectedSlug);
     else url.searchParams.delete('cat');
+    if (paginationMode === 'paginated' && page > 1) url.searchParams.set('p', String(page));
+    else url.searchParams.delete('p');
     window.history.replaceState(null, '', url.toString());
-  }, [selectedSlug]);
+  }, [selectedSlug, page, paginationMode]);
 
   function selectCategory(slug: string | null) {
     setSelectedSlug(slug);
-    setExpanded(false);          // colapsar al cambiar filtro
-    setFadeKey((k) => k + 1);    // bump key para re-disparar la animación
+    setExpanded(false);
+    setPage(1);
+    setFadeKey((k) => k + 1);
   }
 
-  function showMore() {
-    setExpanded(true);
+  function goToPage(p: number) {
+    const clamped = Math.min(totalPages, Math.max(1, p));
+    setPage(clamped);
     setFadeKey((k) => k + 1);
+    // Scroll suave al inicio del catálogo (solo en paginated, donde el user
+    // cambia "de página")
+    const section = containerRef.current?.closest('section');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   return (
@@ -140,16 +167,71 @@ export function CatalogFilter({
               />
             ))}
           </div>
-          {hiddenCount > 0 && (
+
+          {/* ─── Modo show_more: Ver más / Ver menos ─── */}
+          {paginationMode === 'show_more' && (
             <div className="text-center mt-8">
+              {hiddenCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => { setExpanded(true); setFadeKey((k) => k + 1); }}
+                  className="rounded-full border border-black/15 px-6 py-2.5 text-sm font-medium hover:bg-black/[0.03] transition"
+                >
+                  Ver más ({hiddenCount} {hiddenCount === 1 ? 'curso' : 'cursos'} más)
+                </button>
+              ) : expanded && fullCatalog.length > maxVisible ? (
+                <button
+                  type="button"
+                  onClick={() => { setExpanded(false); setFadeKey((k) => k + 1); }}
+                  className="rounded-full border border-black/15 px-6 py-2.5 text-sm font-medium hover:bg-black/[0.03] transition"
+                >
+                  Ver menos
+                </button>
+              ) : null}
+            </div>
+          )}
+
+          {/* ─── Modo paginated: ← 1 2 3 → ─── */}
+          {paginationMode === 'paginated' && totalPages > 1 && (
+            <nav className="flex flex-wrap items-center justify-center gap-1.5 mt-8" aria-label="Paginación">
               <button
                 type="button"
-                onClick={showMore}
-                className="rounded-full border border-black/15 px-6 py-2.5 text-sm font-medium hover:bg-black/[0.03] transition"
+                onClick={() => goToPage(page - 1)}
+                disabled={page === 1}
+                className="h-9 w-9 rounded-full border border-black/15 text-sm hover:bg-black/[0.03] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                aria-label="Página anterior"
               >
-                Ver más ({hiddenCount} {hiddenCount === 1 ? 'curso' : 'cursos'} más)
+                ←
               </button>
-            </div>
+              {getPageNumbers(page, totalPages).map((p, idx) =>
+                p === '…' ? (
+                  <span key={`gap-${idx}`} className="px-2 text-black/40 text-sm">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => goToPage(p)}
+                    className={`h-9 min-w-[36px] px-3 rounded-full text-sm font-medium transition ${
+                      p === page
+                        ? 'bg-black text-white'
+                        : 'border border-black/15 hover:bg-black/[0.03]'
+                    }`}
+                    aria-current={p === page ? 'page' : undefined}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+              <button
+                type="button"
+                onClick={() => goToPage(page + 1)}
+                disabled={page === totalPages}
+                className="h-9 w-9 rounded-full border border-black/15 text-sm hover:bg-black/[0.03] disabled:opacity-30 disabled:cursor-not-allowed transition"
+                aria-label="Página siguiente"
+              >
+                →
+              </button>
+            </nav>
           )}
         </>
       )}
@@ -162,7 +244,6 @@ export function CatalogFilter({
         .catalog-fade-in > * {
           animation: catalogFadeIn 280ms ease-out both;
         }
-        /* Stagger sutil para que entren escalonadas */
         .catalog-fade-in > *:nth-child(1) { animation-delay: 0ms; }
         .catalog-fade-in > *:nth-child(2) { animation-delay: 40ms; }
         .catalog-fade-in > *:nth-child(3) { animation-delay: 80ms; }
@@ -173,6 +254,23 @@ export function CatalogFilter({
       `}</style>
     </div>
   );
+}
+
+/**
+ * Devuelve [1, 2, '…', 5, 6, 7, '…', 12] estilo Google.
+ * - Siempre mostramos primera y última.
+ * - Ventana de ±1 alrededor de la página actual.
+ */
+function getPageNumbers(current: number, total: number): Array<number | '…'> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const out: Array<number | '…'> = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) out.push('…');
+  for (let p = start; p <= end; p++) out.push(p);
+  if (end < total - 1) out.push('…');
+  out.push(total);
+  return out;
 }
 
 function CourseCard({

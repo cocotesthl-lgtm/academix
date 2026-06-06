@@ -885,12 +885,14 @@ export function FeaturedEditor({ initialTitle, primary }: { initialTitle: string
  * CATALOG
  * ===================================================================== */
 
-export function CatalogEditor({ initialTitle, initialShowFilters, initialMaxVisible, primary }: {
-  initialTitle: string; initialShowFilters: boolean; initialMaxVisible: number; primary: string;
+export function CatalogEditor({ initialTitle, initialShowFilters, initialMaxVisible, initialPaginationMode, primary }: {
+  initialTitle: string; initialShowFilters: boolean; initialMaxVisible: number;
+  initialPaginationMode: 'show_more' | 'paginated'; primary: string;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [showFilters, setShowFilters] = useState(initialShowFilters);
   const [maxVisible, setMaxVisible] = useState(initialMaxVisible);
+  const [paginationMode, setPaginationMode] = useState<'show_more' | 'paginated'>(initialPaginationMode);
   const { pending, saved, fire } = useSave('catalog');
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -901,7 +903,34 @@ export function CatalogEditor({ initialTitle, initialShowFilters, initialMaxVisi
           Mostrar filtros por categoría
         </label>
         <div>
-          <label className="block text-xs text-white/60 mb-1.5">Cursos visibles al inicio</label>
+          <label className="block text-xs text-white/60 mb-1.5">Modo de paginación</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setPaginationMode('show_more')}
+              className={`text-left rounded border p-3 text-xs ${
+                paginationMode === 'show_more' ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'
+              }`}
+            >
+              <div className="font-semibold">📜 Ver más / Ver menos</div>
+              <div className="text-white/50 mt-0.5">Botón expande el resto en la misma página.</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaginationMode('paginated')}
+              className={`text-left rounded border p-3 text-xs ${
+                paginationMode === 'paginated' ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'
+              }`}
+            >
+              <div className="font-semibold">🔢 Páginas numeradas</div>
+              <div className="text-white/50 mt-0.5">Navegador ← 1 2 3 → al final.</div>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-white/60 mb-1.5">
+            {paginationMode === 'show_more' ? 'Cursos visibles al inicio' : 'Cursos por página'}
+          </label>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -910,10 +939,19 @@ export function CatalogEditor({ initialTitle, initialShowFilters, initialMaxVisi
               onChange={(e) => setMaxVisible(Math.max(1, parseInt(e.target.value || '3', 10)))}
               className="w-24 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
             />
-            <span className="text-xs text-white/45">cursos · resto detrás de "Ver más"</span>
+            <span className="text-xs text-white/45">cursos</span>
           </div>
         </div>
-        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, show_filters: showFilters, max_visible: String(maxVisible) })} />
+        <SaveBar
+          pending={pending}
+          saved={saved}
+          onSave={() => fire({
+            title,
+            show_filters: showFilters,
+            max_visible: String(maxVisible),
+            pagination_mode: paginationMode
+          })}
+        />
       </div>
       <PreviewFrame>
         <div className="p-5">

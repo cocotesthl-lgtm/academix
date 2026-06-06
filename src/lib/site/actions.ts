@@ -136,6 +136,10 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
     const n = parseInt(String(formData.get('max_visible') ?? '3'), 10);
     section.max_visible = Math.min(48, Math.max(1, Number.isFinite(n) ? n : 3));
   }
+  if (formData.has('pagination_mode')) {
+    const v = String(formData.get('pagination_mode') ?? 'show_more');
+    section.pagination_mode = v === 'paginated' ? 'paginated' : 'show_more';
+  }
   if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
   if (formData.has('marquee')) section.marquee = formData.get('marquee') === 'on';
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
