@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function OwnerLayout({ children }: { children: React.ReactNode }) {
   const { tenant, impersonating } = await requireOwner();
   return (
-    <div className="min-h-screen flex bg-[#0a0a0a] text-white">
+    <div data-ui-theme="dark" className="min-h-screen flex bg-[#0a0a0a] text-white">
       <aside className="w-64 border-r border-white/10 p-4 flex flex-col">
         <div className="mb-6">
           <h2 className="font-bold text-lg">{tenant.name}</h2>

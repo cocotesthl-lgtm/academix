@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export default function MarketingHome() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Nav */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/40 border-b border-white/10">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">

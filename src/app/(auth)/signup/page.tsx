@@ -14,7 +14,7 @@ export default async function SignupPage({
   const isAffiliate = !!next && next.startsWith('/affiliate');
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6">
+    <main data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <Link href="/" className="text-2xl font-bold tracking-tight">Curplat</Link>

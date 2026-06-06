@@ -43,3 +43,21 @@ html, body {
    Cuando el owner setea text_color en /owner/site, la página storefront
    emite un <style> inline con overrides [data-sec="<key>"] que pisan los
    text-black/XX hardcodeados. Ver src/app/storefront/[tenantId]/page.tsx. */
+
+/* ────────────────────────────────────────────────────────────────
+   Selects en paneles con UI oscura (owner, founder, auth).
+   Por default los <option> heredan colores del sistema → texto blanco
+   sobre fondo blanco = ilegible hasta hover. Marcamos los wrappers
+   oscuros con data-ui-theme="dark" y aplicamos color-scheme + colores
+   explícitos a los <option>.
+
+   El storefront público no recibe el attr → conserva los defaults
+   nativos del browser (que funcionan bien sobre su bg claro).
+   ─────────────────────────────────────────────────────────────── */
+[data-ui-theme="dark"] select {
+  color-scheme: dark;
+}
+[data-ui-theme="dark"] select option {
+  background-color: #0a0a0a;
+  color: #ededed;
+}
