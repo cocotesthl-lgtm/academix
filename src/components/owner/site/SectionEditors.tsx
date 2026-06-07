@@ -2,6 +2,18 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { RichTextField } from './RichTextField';
+
+/**
+ * Helper para renderizar un string que puede ser HTML (del RichTextField)
+ * o texto plano legacy. Strippea el outer <p> cuando el contenedor es
+ * inline (h1, p, span). Usado en TODOS los previews del builder para que
+ * muestren formato real (negrita, color, italic) en vez de tags crudas.
+ */
+function richHtml(input: string | null | undefined, fallback = ''): { __html: string } {
+  const raw = (input ?? '').trim() || fallback;
+  const stripped = raw.replace(/^<p(\s[^>]*)?>([\s\S]*)<\/p>$/i, '$2');
+  return { __html: stripped };
+}
 import {
   updateSectionFieldsAction,
   setSectionImageUrlAction,
@@ -252,26 +264,32 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
           {layoutSel === 'centered' && (
             <div className="p-6 text-center" style={{ background: `linear-gradient(180deg, ${primary}15 0%, transparent 100%)` }}>
               {v.eyebrow && <span className="inline-block text-[9px] font-medium px-2 py-0.5 rounded-full border" style={{ borderColor: `${primary}50`, color: primary }}>{v.eyebrow}</span>}
-              <h1 className="text-2xl font-bold tracking-tight mt-2">{displayTitle}</h1>
-              {v.subtitle && <p className="mt-2 text-xs text-black/60">{v.subtitle}</p>}
+              <h1 className="text-2xl font-bold tracking-tight mt-2"
+                dangerouslySetInnerHTML={richHtml(v.title, displayTitle)} />
+              {v.subtitle && <div className="mt-2 text-xs text-black/60"
+                dangerouslySetInnerHTML={richHtml(v.subtitle)} />}
               <div className="mt-3 flex justify-center gap-2">
                 {v.cta_label && <span className="inline-block rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
                 {v.cta_label_2 && <span className="inline-block rounded px-3 py-1.5 text-xs font-semibold border" style={{ borderColor: primary, color: primary }}>{v.cta_label_2}</span>}
               </div>
-              {v.caption && <p className="text-[9px] text-black/40 mt-2">{v.caption}</p>}
+              {v.caption && <div className="text-[9px] text-black/40 mt-2"
+                dangerouslySetInnerHTML={richHtml(v.caption)} />}
             </div>
           )}
           {layoutSel === 'split' && (
             <div className="p-4 grid grid-cols-2 gap-3 items-center" style={{ background: `linear-gradient(135deg, ${primary}12 0%, transparent 60%)` }}>
               <div>
                 {v.eyebrow && <span className="inline-block text-[8px] font-medium px-1.5 py-0.5 rounded-full border" style={{ borderColor: `${primary}50`, color: primary }}>{v.eyebrow}</span>}
-                <h1 className="text-base font-bold tracking-tight mt-1.5">{displayTitle}</h1>
-                {v.subtitle && <p className="mt-1 text-[10px] text-black/60 line-clamp-3">{v.subtitle}</p>}
+                <h1 className="text-base font-bold tracking-tight mt-1.5"
+                  dangerouslySetInnerHTML={richHtml(v.title, displayTitle)} />
+                {v.subtitle && <div className="mt-1 text-[10px] text-black/60 line-clamp-3"
+                  dangerouslySetInnerHTML={richHtml(v.subtitle)} />}
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {v.cta_label && <span className="rounded px-2 py-1 text-[9px] font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
                   {v.cta_label_2 && <span className="rounded px-2 py-1 text-[9px] font-semibold border" style={{ borderColor: primary, color: primary }}>{v.cta_label_2}</span>}
                 </div>
-                {v.caption && <p className="text-[8px] text-black/40 mt-1.5">{v.caption}</p>}
+                {v.caption && <div className="text-[8px] text-black/40 mt-1.5"
+                  dangerouslySetInnerHTML={richHtml(v.caption)} />}
               </div>
               {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -301,8 +319,10 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
                       {v.eyebrow}
                     </span>
                   )}
-                  <h1 className="mt-1 text-sm font-bold leading-tight drop-shadow">{displayTitle}</h1>
-                  {v.subtitle && <p className="mt-1 text-[10px] text-white/85 line-clamp-2 drop-shadow">{v.subtitle}</p>}
+                  <h1 className="mt-1 text-sm font-bold leading-tight drop-shadow"
+                    dangerouslySetInnerHTML={richHtml(v.title, displayTitle)} />
+                  {v.subtitle && <div className="mt-1 text-[10px] text-white/85 line-clamp-2 drop-shadow"
+                    dangerouslySetInnerHTML={richHtml(v.subtitle)} />}
                   <div className="mt-2 flex gap-1.5">
                     {v.cta_label && <span className="rounded px-2 py-1 text-[9px] font-semibold text-white" style={{ background: primary }}>{v.cta_label}</span>}
                     {v.cta_label_2 && <span className="rounded px-2 py-1 text-[9px] font-semibold bg-white/10 backdrop-blur border border-white text-white">{v.cta_label_2}</span>}
@@ -457,8 +477,10 @@ export function AboutEditor({ initial, imageUrl, primary }: {
             <div className="rounded-lg w-full h-32 flex items-center justify-center text-3xl" style={{ background: `${primary}15` }}>👋</div>
           )}
           <div>
-            <h2 className="text-lg font-bold">{v.title || '—'}</h2>
-            <p className="text-xs text-black/60 mt-1 whitespace-pre-line line-clamp-4">{v.body || 'Tu texto aparece acá.'}</p>
+            <h2 className="text-lg font-bold"
+              dangerouslySetInnerHTML={richHtml(v.title, '—')} />
+            <div className="text-xs text-black/60 mt-1 whitespace-pre-line line-clamp-4"
+              dangerouslySetInnerHTML={richHtml(v.body, 'Tu texto aparece acá.')} />
           </div>
         </div>
       </PreviewFrame>

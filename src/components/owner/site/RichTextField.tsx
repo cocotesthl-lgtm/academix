@@ -234,11 +234,21 @@ function RichToolbar({ editor }: { editor: EditorLike }) {
       </label>
       <button
         type="button"
-        onClick={() => editor.chain().focus().unsetColor().run()}
-        className="text-[10px] text-white/40 hover:text-white px-1"
-        title="Quitar color (usa el de la sección)"
+        onClick={() => {
+          // Limpia TODO el formato del texto seleccionado: marks (bold,
+          // italic, underline, strike, color, font-size, spacing) +
+          // alineación del bloque.
+          editor.chain().focus()
+            .unsetAllMarks()
+            .setTextAlign('left')
+            .run();
+          setFontSize('');
+          setSpacing('');
+        }}
+        className="text-xs px-2 h-7 rounded border border-white/15 text-white/60 hover:bg-white/10 hover:text-white"
+        title="Limpiar todo el formato del texto seleccionado"
       >
-        ⊘
+        Limpiar
       </button>
 
       <span className="w-px h-5 bg-white/15 mx-1" />
