@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
+import { RichTextField } from './RichTextField';
 import {
   updateSectionFieldsAction,
   setSectionImageUrlAction,
@@ -221,8 +222,8 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-3">
           <Field label="Eyebrow (pill arriba del título, ej. '🟢 Beta abierta')" value={v.eyebrow} onChange={(x) => setV({ ...v, eyebrow: x })} />
-          <Field label="Título (vacío = nombre de la academia)" value={v.title} onChange={(x) => setV({ ...v, title: x })} placeholder={fallbackTitle} />
-          <Textarea label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} rows={3} />
+          <RichTextField label="Título (vacío = nombre de la academia)" value={v.title} onChange={(x) => setV({ ...v, title: x })} placeholder={fallbackTitle} />
+          <RichTextField label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} multiline />
           <div className="grid grid-cols-2 gap-3">
             <Field label="Botón principal" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
             <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
@@ -231,7 +232,7 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
             <Field label="Botón secundario (opcional)" value={v.cta_label_2} onChange={(x) => setV({ ...v, cta_label_2: x })} />
             <Field label="Destino (href)" value={v.cta_href_2} onChange={(x) => setV({ ...v, cta_href_2: x })} />
           </div>
-          <Field label="Caption (texto chico debajo de los CTAs)" value={v.caption} onChange={(x) => setV({ ...v, caption: x })} />
+          <RichTextField label="Caption (texto chico debajo de los CTAs)" value={v.caption} onChange={(x) => setV({ ...v, caption: x })} />
           <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, layout: layoutSel })} />
 
           {(layoutSel === 'split' || layoutSel === 'gallery') && (
@@ -433,8 +434,8 @@ export function AboutEditor({ initial, imageUrl, primary }: {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
-        <Textarea label="Texto" value={v.body} onChange={(x) => setV({ ...v, body: x })} rows={5} />
+        <RichTextField label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <RichTextField label="Texto" value={v.body} onChange={(x) => setV({ ...v, body: x })} multiline />
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
 
         <div className="pt-3 mt-3 border-t border-white/5">

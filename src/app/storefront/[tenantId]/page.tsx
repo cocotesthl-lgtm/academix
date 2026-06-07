@@ -6,6 +6,18 @@ import { AnimatedCounter } from "@/components/storefront/AnimatedCounter";
 import { FadeIn } from "@/components/storefront/FadeIn";
 import { CatalogFilter } from "@/components/storefront/CatalogFilter";
 
+/**
+ * Render de un string que puede ser texto plano (legacy) o HTML del
+ * RichTextField (TipTap). Si está vacío, devuelve el fallback como texto.
+ * Si es HTML envuelto en un solo <p>...</p>, lo desenvolvemos para que
+ * encaje cuando el contenedor es un elemento inline-friendly (h1, p, etc).
+ */
+function richHtml(input: string | null | undefined, fallback = ''): { __html: string } {
+  const raw = (input ?? '').trim() || fallback;
+  const stripped = raw.replace(/^<p(\s[^>]*)?>([\s\S]*)<\/p>$/i, '$2');
+  return { __html: stripped };
+}
+
 export const dynamic = "force-dynamic";
 
 type PublicCourse = {
@@ -189,15 +201,16 @@ export default async function StorefrontHome({
                     <FadeIn>
                       <div>
                         {eyebrowPill}
-                        <h1 className="mt-5 text-4xl md:text-6xl font-bold tracking-tight leading-tight">
-                          {heroTitle}
-                        </h1>
-                        {h.subtitle && <p className="mt-5 text-lg text-black/65 leading-relaxed max-w-lg">{h.subtitle}</p>}
+                        <h1 className="mt-5 text-4xl md:text-6xl font-bold tracking-tight leading-tight"
+                          dangerouslySetInnerHTML={richHtml(h.title, heroTitle)} />
+                        {h.subtitle && <div className="mt-5 text-lg text-black/65 leading-relaxed max-w-lg"
+                          dangerouslySetInnerHTML={richHtml(h.subtitle)} />}
                         <div className="mt-8 flex flex-wrap gap-3">
                           {cta1}
                           {cta2}
                         </div>
-                        {h.caption && <p className="mt-5 text-sm text-black/45">{h.caption}</p>}
+                        {h.caption && <div className="mt-5 text-sm text-black/45"
+                          dangerouslySetInnerHTML={richHtml(h.caption)} />}
                       </div>
                     </FadeIn>
 
@@ -261,13 +274,11 @@ export default async function StorefrontHome({
                                 {h.eyebrow}
                               </span>
                             )}
-                            <h1 className="mt-4 text-4xl md:text-6xl font-bold tracking-tight leading-tight drop-shadow-lg">
-                              {heroTitle}
-                            </h1>
+                            <h1 className="mt-4 text-4xl md:text-6xl font-bold tracking-tight leading-tight drop-shadow-lg"
+                              dangerouslySetInnerHTML={richHtml(h.title, heroTitle)} />
                             {h.subtitle && (
-                              <p className="mt-4 text-lg md:text-xl text-white/90 leading-relaxed max-w-xl drop-shadow">
-                                {h.subtitle}
-                              </p>
+                              <div className="mt-4 text-lg md:text-xl text-white/90 leading-relaxed max-w-xl drop-shadow"
+                                dangerouslySetInnerHTML={richHtml(h.subtitle)} />
                             )}
                             <div className="mt-7 flex flex-wrap gap-3">
                               {cta1}
@@ -278,7 +289,8 @@ export default async function StorefrontHome({
                                 </a>
                               )}
                             </div>
-                            {h.caption && <p className="mt-5 text-sm text-white/75">{h.caption}</p>}
+                            {h.caption && <div className="mt-5 text-sm text-white/75"
+                              dangerouslySetInnerHTML={richHtml(h.caption)} />}
                           </div>
                         </FadeIn>
                       </div>
@@ -295,13 +307,16 @@ export default async function StorefrontHome({
                 <FadeIn>
                   <div className="relative max-w-3xl mx-auto">
                     {eyebrowPill}
-                    <h1 className="mt-6 text-5xl md:text-7xl font-bold tracking-tight leading-tight">{heroTitle}</h1>
-                    {h.subtitle && <p className="mt-6 text-xl text-black/65 max-w-2xl mx-auto leading-relaxed">{h.subtitle}</p>}
+                    <h1 className="mt-6 text-5xl md:text-7xl font-bold tracking-tight leading-tight"
+                      dangerouslySetInnerHTML={richHtml(h.title, heroTitle)} />
+                    {h.subtitle && <div className="mt-6 text-xl text-black/65 max-w-2xl mx-auto leading-relaxed"
+                      dangerouslySetInnerHTML={richHtml(h.subtitle)} />}
                     <div className="mt-10 flex flex-wrap justify-center gap-3">
                       {cta1}
                       {cta2}
                     </div>
-                    {h.caption && <p className="mt-6 text-sm text-black/45">{h.caption}</p>}
+                    {h.caption && <div className="mt-6 text-sm text-black/45"
+                      dangerouslySetInnerHTML={richHtml(h.caption)} />}
                   </div>
                 </FadeIn>
               </section>
@@ -372,8 +387,10 @@ export default async function StorefrontHome({
                   <FadeIn delay={150}>
                     <div>
                       <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Sobre nosotros</div>
-                      <h2 className="text-3xl md:text-4xl font-bold mb-4">{a.title}</h2>
-                      <p className="text-black/70 whitespace-pre-line leading-relaxed text-lg">{a.body}</p>
+                      <h2 className="text-3xl md:text-4xl font-bold mb-4"
+                        dangerouslySetInnerHTML={richHtml(a.title)} />
+                      <div className="text-black/70 whitespace-pre-line leading-relaxed text-lg"
+                        dangerouslySetInnerHTML={richHtml(a.body)} />
                     </div>
                   </FadeIn>
                 </div>
