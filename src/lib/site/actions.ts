@@ -117,6 +117,31 @@ export async function setSectionTextColorAction(formData: FormData): Promise<voi
   revalidatePath('/site');
 }
 
+/**
+ * Setter genérico para cualquier campo de estilo opcional por sección
+ * (title_color, body_color, accent_color, card_bg_color, card_border_color,
+ * font_family, title_weight). String vacío = null (limpia override).
+ */
+const STYLE_FIELDS = new Set([
+  'title_color', 'body_color', 'accent_color',
+  'card_bg_color', 'card_border_color',
+  'font_family', 'title_weight'
+]);
+
+export async function setSectionStyleFieldAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const key = String(formData.get('section') ?? '') as SectionKey;
+  const field = String(formData.get('field') ?? '');
+  const raw = String(formData.get('value') ?? '').trim();
+  if (!(key in DEFAULT_SITE_CONFIG.sections)) return;
+  if (!STYLE_FIELDS.has(field)) return;
+  const cfg = await loadConfig(tenant.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (cfg.sections[key] as any)[field] = raw === '' || raw.toLowerCase() === 'null' ? null : raw.slice(0, 80);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
 /* ===== Generic fields ===== */
 
 export async function updateSectionFieldsAction(formData: FormData): Promise<void> {

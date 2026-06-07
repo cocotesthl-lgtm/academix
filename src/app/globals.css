@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* Fuentes precargadas para el personalizador del storefront.
+   El owner las elige por sección desde /owner/site → "🎨 Estilos". */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
   --background: #ffffff;
@@ -43,6 +46,15 @@ html, body {
    Cuando el owner setea text_color en /owner/site, la página storefront
    emite un <style> inline con overrides [data-sec="<key>"] que pisan los
    text-black/XX hardcodeados. Ver src/app/storefront/[tenantId]/page.tsx. */
+
+/* Familias de fuentes para el personalizador por sección.
+   data-font="serif" / "display" / "mono" en el <section> aplica la fuente
+   a todo el contenido. "sans" es el default — no se aplica nada (Inter ya
+   está en el body via tailwind). */
+[data-font="sans"]    { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+[data-font="serif"]   { font-family: 'Playfair Display', Georgia, serif; }
+[data-font="display"] { font-family: 'Bebas Neue', 'Arial Narrow', sans-serif; letter-spacing: 0.02em; }
+[data-font="mono"]    { font-family: 'JetBrains Mono', ui-monospace, monospace; }
 
 /* ────────────────────────────────────────────────────────────────
    Selects en paneles con UI oscura (owner, founder, auth).

@@ -79,8 +79,16 @@ export type SectionKey =
  */
 type SectionBase = {
   enabled: boolean;
-  bg_color?: string | null;   // hex like '#fafafa' or null to use default
-  text_color?: string | null; // hex; null = auto (text-black default, o text-white si bg oscuro)
+  bg_color?: string | null;          // fondo de la sección
+  text_color?: string | null;        // color de todos los texts (catch-all)
+  // ─ Personalización fina (todos opcionales, nulos = usa el default) ─
+  title_color?: string | null;       // h1/h2/h3 — overrides text_color para títulos
+  body_color?: string | null;        // p / texto chico — overrides text_color para body
+  accent_color?: string | null;      // botones y bordes destacados — overrides tenant primary
+  card_bg_color?: string | null;     // bg de las tarjetas internas (features, testimonials, etc)
+  card_border_color?: string | null; // borde de esas tarjetas
+  font_family?: string | null;       // 'sans' | 'serif' | 'display' | 'mono' | null=heredar
+  title_weight?: string | null;      // 'normal' | 'medium' | 'semibold' | 'bold' | 'extrabold' | 'black'
 };
 
 export type SiteConfig = {

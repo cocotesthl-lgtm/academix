@@ -71,21 +71,66 @@ export default async function StorefrontHome({
     ? allCourses.filter((c) => c.category_id === selectedCat.id)
     : allCourses;
 
-  // CSS emitido para overrides de color de texto por sección. Si el owner
-  // picó un color en /owner/site (input "Texto:"), se aplica acá pisando
-  // los text-black/XX hardcodeados con !important. Si no, cero magia: el
-  // texto queda como esté declarado en cada componente.
+  // CSS emitido para overrides de estilo por sección. El owner edita
+  // colores/fuentes/peso en /owner/site → "🎨 Estilos" de cada sección;
+  // acá los traducimos a reglas CSS scopeadas por data-sec.
+  //
+  // Orden de precedencia (lo más específico gana):
+  //   text_color (catch-all) < title_color / body_color (específicos)
+  //   font-weight default < title_weight
+  //   tenant primary < section.accent_color
+  const safeHex = (v: string | null | undefined): string =>
+    (v ?? '').replace(/[^#0-9a-fA-F]/g, '');
+  const safeWord = (v: string | null | undefined): string =>
+    (v ?? '').replace(/[^a-zA-Z0-9_-]/g, '');
+
   const manualTextCss = cfg.order
-    .filter((k) => cfg.sections[k].enabled && cfg.sections[k].text_color)
+    .filter((k) => cfg.sections[k].enabled)
     .map((k) => {
-      const c = (cfg.sections[k].text_color ?? '').replace(/[^#0-9a-fA-F]/g, '');
-      if (!c) return '';
-      return `
-        [data-sec="${k}"]{color:${c}}
-        [data-sec="${k}"] .text-black,
-        [data-sec="${k}"] [class*="text-black/"]{color:${c} !important}
-      `;
+      const s = cfg.sections[k];
+      const rules: string[] = [];
+      const text = safeHex(s.text_color);
+      const title = safeHex(s.title_color);
+      const body = safeHex(s.body_color);
+      const accent = safeHex(s.accent_color);
+      const cardBg = safeHex(s.card_bg_color);
+      const cardBorder = safeHex(s.card_border_color);
+      const weight = safeWord(s.title_weight);
+      const sel = `[data-sec="${k}"]`;
+
+      // Catch-all color
+      if (text) {
+        rules.push(`${sel}{color:${text}}`);
+        rules.push(`${sel} .text-black,${sel} [class*="text-black/"]{color:${text} !important}`);
+      }
+      // Título específico
+      if (title) {
+        rules.push(`${sel} h1,${sel} h2,${sel} h3{color:${title} !important}`);
+      }
+      // Body / párrafos / texto chico
+      if (body) {
+        rules.push(`${sel} p,${sel} li,${sel} span:not([class*="bg-"]):not([class*="text-white"]){color:${body}}`);
+      }
+      // Peso del título
+      if (weight) {
+        rules.push(`${sel} h1,${sel} h2,${sel} h3{font-weight:${weight} !important}`);
+      }
+      // Accent: botones, links destacados, badges con bg=primary
+      if (accent) {
+        rules.push(`${sel} button[style*="background"],${sel} a[style*="background"]{background:${accent} !important;border-color:${accent} !important}`);
+        rules.push(`${sel} [style*="color: var"],${sel} .text-\\[var\\(--brand-primary\\)\\]{color:${accent} !important}`);
+      }
+      // Tarjetas internas (features, testimonials, pricing usan bg-white)
+      if (cardBg) {
+        rules.push(`${sel} .bg-white{background-color:${cardBg} !important}`);
+      }
+      if (cardBorder) {
+        rules.push(`${sel} [class*="border-black/"],${sel} .border-black{border-color:${cardBorder} !important}`);
+      }
+
+      return rules.join('\n');
     })
+    .filter(Boolean)
     .join('\n');
 
   return (
@@ -97,7 +142,18 @@ export default async function StorefrontHome({
         const s = cfg.sections[key];
         if (!s?.enabled) return null;
         const bg = s.bg_color ?? null;
-        const dt: Record<string, string> = s.text_color ? { 'data-sec': key } : {};
+        // data-sec: si CUALQUIER override de estilo está seteado, lo emitimos
+        // para que las reglas CSS scopeadas le peguen a esta sección.
+        const hasStyleOverride = !!(
+          s.text_color || s.title_color || s.body_color || s.accent_color ||
+          s.card_bg_color || s.card_border_color || s.title_weight
+        );
+        const fontFamily = (s.font_family ?? '').replace(/[^a-z]/gi, '');
+        const dt: Record<string, string> = {};
+        if (hasStyleOverride) dt['data-sec'] = key;
+        if (fontFamily && ['sans', 'serif', 'display', 'mono'].includes(fontFamily)) {
+          dt['data-font'] = fontFamily;
+        }
 
         switch (key) {
           case 'hero': {

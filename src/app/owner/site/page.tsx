@@ -34,6 +34,7 @@ import {
   FooterEditor
 } from "@/components/owner/site/SectionEditors";
 import { ColorAutoSave } from "@/components/owner/site/ColorAutoSave";
+import { SectionStyleEditor } from "@/components/owner/site/SectionStyleEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -183,6 +184,15 @@ export default async function SiteBuilderPage() {
             enabled={cfg.sections[key].enabled}
             bgColor={cfg.sections[key].bg_color ?? null}
             textColor={cfg.sections[key].text_color ?? null}
+            styles={{
+              title_color:       cfg.sections[key].title_color       ?? null,
+              body_color:        cfg.sections[key].body_color        ?? null,
+              accent_color:      cfg.sections[key].accent_color      ?? null,
+              card_bg_color:     cfg.sections[key].card_bg_color     ?? null,
+              card_border_color: cfg.sections[key].card_border_color ?? null,
+              font_family:       cfg.sections[key].font_family       ?? null,
+              title_weight:      cfg.sections[key].title_weight      ?? null
+            }}
             isFirst={isFirst}
             isLast={isLast}
             position={idx + 1}
@@ -410,10 +420,15 @@ export default async function SiteBuilderPage() {
 }
 
 function Section({
-  title, desc, enabled, sectionKey, bgColor, textColor, children, isFirst, isLast, position, total
+  title, desc, enabled, sectionKey, bgColor, textColor, styles, children, isFirst, isLast, position, total
 }: {
   title: string; desc: string; enabled: boolean; sectionKey: string;
   bgColor: string | null; textColor: string | null;
+  styles: {
+    title_color: string | null; body_color: string | null; accent_color: string | null;
+    card_bg_color: string | null; card_border_color: string | null;
+    font_family: string | null; title_weight: string | null;
+  };
   children: React.ReactNode; isFirst: boolean; isLast: boolean; position: number; total: number;
 }) {
   return (
@@ -457,6 +472,7 @@ function Section({
             initial={textColor}
             action={setSectionTextColorAction}
           />
+          <SectionStyleEditor sectionKey={sectionKey} initial={styles} />
           <form action={toggleSectionAction}>
             <input type="hidden" name="section" value={sectionKey} />
             <button
