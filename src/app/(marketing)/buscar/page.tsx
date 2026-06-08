@@ -38,54 +38,61 @@ export default async function BuscarAcademiasPage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
           <Link href="/" className="text-xl font-bold tracking-tight">Curplat</Link>
           <div className="flex items-center gap-3">
+            <Link href="/login" className="text-sm text-white/80 hover:text-white">
+              Iniciar sesión
+            </Link>
             <Link href="/signup" className="text-sm rounded-md bg-white text-black px-4 py-2 font-medium hover:bg-white/90">
-              Empezar gratis
+              Crear cuenta
             </Link>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-6 py-16">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-            Encontrá tu academia
-          </h1>
-          <p className="mt-3 text-white/60">
-            Buscá la academia donde te inscribiste. Entrás a su sitio y desde ahí iniciás sesión.
+      <main className="max-w-3xl mx-auto px-6 py-12 space-y-12">
+        {/* ─── Bloque login: usuarios que YA tienen cuenta ─── */}
+        <div className="rounded-2xl border border-white/15 bg-white/[0.03] p-6 text-center">
+          <h2 className="text-lg font-semibold">¿Ya tenés cuenta en Curplat?</h2>
+          <p className="text-sm text-white/60 mt-1">
+            Si sos propietario, afiliado o instructor, entrá con tu email.
           </p>
+          <Link
+            href="/login"
+            className="inline-block mt-4 rounded-md bg-white text-black px-6 py-2.5 font-semibold hover:bg-white/90"
+          >
+            🔓 Iniciar sesión
+          </Link>
         </div>
 
-        <AcademiaSearch
-          academias={academias}
-          rootDomain={env.rootDomain}
-          isLocal={isLocal}
-        />
-
-        <div className="mt-12 grid gap-4 md:grid-cols-2">
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6 text-center">
-            <p className="text-sm text-white/60">
-              ¿Sos creador y querés tener tu propia academia?
+        {/* ─── Buscar academia (alumnos) ─── */}
+        <div>
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Encontrá tu academia
+            </h1>
+            <p className="mt-3 text-white/60">
+              ¿Sos alumno? Buscá la academia donde te inscribiste y entrá desde ahí.
             </p>
-            <Link
-              href="/signup"
-              className="inline-block mt-3 rounded-md bg-white text-black px-5 py-2 font-medium hover:bg-white/90"
-            >
-              Crear mi academia gratis →
-            </Link>
           </div>
 
-          {/* CTA afiliados — registro platform-level (Curplat) */}
-          <div className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-6 text-center">
-            <p className="text-sm text-white/70">
-              💼 ¿Querés promocionar cursos y ganar comisión?
-            </p>
-            <Link
-              href="/affiliate"
-              className="inline-block mt-3 rounded-md bg-fuchsia-500 text-white px-5 py-2 font-semibold hover:bg-fuchsia-400"
-            >
-              Ser afiliado de Curplat →
-            </Link>
-          </div>
+          <AcademiaSearch
+            academias={academias}
+            rootDomain={env.rootDomain}
+            isLocal={isLocal}
+          />
+        </div>
+
+        {/* ─── CTA crear cuenta (chooser) ─── */}
+        <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-6 text-center">
+          <h2 className="text-lg font-semibold">¿Todavía no tenés cuenta?</h2>
+          <p className="text-sm text-white/65 mt-1">
+            Creá tu cuenta en 30 segundos. Te preguntamos qué tipo querés.
+          </p>
+          <Link
+            href="/signup"
+            className="inline-block mt-4 rounded-md bg-fuchsia-500 text-white px-6 py-2.5 font-semibold hover:bg-fuchsia-400"
+          >
+            ✨ Crear cuenta gratis
+          </Link>
         </div>
       </main>
     </div>

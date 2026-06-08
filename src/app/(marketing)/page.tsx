@@ -19,7 +19,7 @@ export default function MarketingHome() {
           </div>
           <div className="flex items-center gap-3">
             <Link href="/buscar" className="text-sm text-white/80 hover:text-white">
-              🔍 Buscar mi academia
+              🔑 Acceder
             </Link>
             <Link
               href="/signup"
