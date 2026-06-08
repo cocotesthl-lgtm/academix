@@ -33,12 +33,51 @@ export function hhmmToMin(hhmm: string): number {
 }
 
 /**
- * Genera los slots disponibles a partir de las reglas + las reservas tomadas,
- * para los próximos N días. Marca taken=true en los que ya hay booking.
+ * Devuelve el offset (en minutos) de una timezone IANA en un momento dado.
+ * Positivo si la tz está ADELANTADA respecto a UTC, negativo si atrás.
+ * Ej: America/Argentina/Buenos_Aires (UTC-3) → -180.
  *
- * NOTA dev: usamos la timezone del rule para construir el slot_start. En prod
- * Argentina (UTC-3 todo el año) esto funciona bien. Para tenants con horario
- * de verano hay que ajustar.
+ * Usamos Intl.DateTimeFormat con timeZoneName: 'shortOffset' que en
+ * navegadores modernos (>=2022) devuelve strings tipo "GMT-3" o "GMT-03:00".
+ */
+function tzOffsetMinutes(tz: string, atUtc: Date): number {
+  try {
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      timeZoneName: 'shortOffset'
+    });
+    const parts = dtf.formatToParts(atUtc);
+    const offsetPart = parts.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT';
+    const match = offsetPart.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);
+    if (!match) return 0;
+    const sign = match[1] === '+' ? 1 : -1;
+    const h = parseInt(match[2], 10);
+    const m = parseInt(match[3] ?? '0', 10);
+    return sign * (h * 60 + m);
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Construye un Date UTC cuya hora-de-pared en la timezone `tz` coincide con
+ * year/month/day/hour/minute. Ej: si tz=Argentina, hour=9 → devuelve un
+ * Date que al formatearse en Argentina muestra 09:00, internamente 12:00Z.
+ */
+function utcFromWallTime(year: number, month: number, day: number, hour: number, minute: number, tz: string): Date {
+  const naive = Date.UTC(year, month - 1, day, hour, minute, 0);
+  const offsetMin = tzOffsetMinutes(tz, new Date(naive));
+  return new Date(naive - offsetMin * 60_000);
+}
+
+/**
+ * Genera los slots disponibles a partir de las reglas + las reservas tomadas,
+ * para los próximos N días.
+ *
+ * IMPORTANTE: respeta la timezone declarada en cada rule. Si el owner dice
+ * "lunes 9:00 Argentina", el slot UTC se construye correctamente y el
+ * cliente en cualquier parte del mundo lo verá en su hora local
+ * correspondiente (via toLocaleString del browser).
  */
 export function generateSlots(opts: {
   rules: AvailabilityRule[];
@@ -47,23 +86,33 @@ export function generateSlots(opts: {
   now?: Date;
 }): BookingSlot[] {
   const out: BookingSlot[] = [];
-  const start = opts.now ?? new Date();
-  start.setSeconds(0, 0);
+  const nowMs = (opts.now ?? new Date()).getTime();
 
   for (let dayOffset = 0; dayOffset < opts.horizonDays; dayOffset++) {
-    const day = new Date(start);
-    day.setDate(day.getDate() + dayOffset);
-    const weekday = day.getDay();
+    for (const rule of opts.rules) {
+      // Para cada rule, calculamos qué calendar-day cae hoy+dayOffset en SU tz
+      const targetMs = nowMs + dayOffset * 86_400_000;
+      const fmt = new Intl.DateTimeFormat('en-US', {
+        timeZone: rule.timezone,
+        year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short'
+      });
+      const parts = fmt.formatToParts(new Date(targetMs));
+      const year = parseInt(parts.find((p) => p.type === 'year')?.value ?? '0', 10);
+      const month = parseInt(parts.find((p) => p.type === 'month')?.value ?? '0', 10);
+      const day = parseInt(parts.find((p) => p.type === 'day')?.value ?? '0', 10);
+      const weekdayStr = parts.find((p) => p.type === 'weekday')?.value ?? '';
+      const weekdayMap: Record<string, number> = {
+        Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6
+      };
+      const weekdayInTz = weekdayMap[weekdayStr] ?? 0;
+      if (rule.weekday !== weekdayInTz) continue;
 
-    const dayRules = opts.rules.filter((r) => r.weekday === weekday);
-    for (const rule of dayRules) {
       for (let m = rule.start_min; m + rule.slot_duration_min <= rule.end_min; m += rule.slot_duration_min) {
-        const slotStart = new Date(day);
-        slotStart.setHours(Math.floor(m / 60), m % 60, 0, 0);
-        // Slots en el pasado (mismo día) los salteamos.
-        if (slotStart.getTime() <= Date.now()) continue;
-        const slotEnd = new Date(slotStart);
-        slotEnd.setMinutes(slotEnd.getMinutes() + rule.slot_duration_min);
+        const hour = Math.floor(m / 60);
+        const min = m % 60;
+        const slotStart = utcFromWallTime(year, month, day, hour, min, rule.timezone);
+        if (slotStart.getTime() <= nowMs) continue;
+        const slotEnd = new Date(slotStart.getTime() + rule.slot_duration_min * 60_000);
         const startIso = slotStart.toISOString();
         out.push({
           start: startIso,

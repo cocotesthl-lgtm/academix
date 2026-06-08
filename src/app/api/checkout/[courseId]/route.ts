@@ -216,18 +216,33 @@ export async function POST(
   // Si MP falla / no vuelve, el booking queda 'pending' (limpiable luego).
   let createdBookingId: string | null = null;
   if (bookingSlotStart) {
-    // Computar slot_end a partir de la rule matching del tenant
+    // Computar slot_end matcheando rule por timezone (sino server UTC
+    // distorsiona getHours/getDay y nunca matchea).
     const slotDate = new Date(bookingSlotStart);
-    const wd = slotDate.getDay();
-    const startMin = slotDate.getHours() * 60 + slotDate.getMinutes();
-    const { data: rules } = await svc
+    const { data: rulesRaw } = await svc
       .from('availability_rules')
-      .select('start_min, end_min, slot_duration_min')
-      .eq('tenant_id', course.tenant_id)
-      .eq('weekday', wd);
-    const rule = ((rules ?? []) as Array<{ start_min: number; end_min: number; slot_duration_min: number }>)
-      .find((r) => startMin >= r.start_min && startMin < r.end_min);
-    const slotDurMin = rule?.slot_duration_min ?? 60;
+      .select('weekday, start_min, end_min, slot_duration_min, timezone')
+      .eq('tenant_id', course.tenant_id);
+    const rules = (rulesRaw ?? []) as Array<{
+      weekday: number; start_min: number; end_min: number;
+      slot_duration_min: number; timezone: string;
+    }>;
+    const weekdayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const matchedRule = rules.find((r) => {
+      try {
+        const fmt = new Intl.DateTimeFormat('en-US', {
+          timeZone: r.timezone, hour: '2-digit', minute: '2-digit',
+          weekday: 'short', hour12: false
+        });
+        const parts = fmt.formatToParts(slotDate);
+        const wd = weekdayMap[parts.find((p) => p.type === 'weekday')?.value ?? ''] ?? -1;
+        const hh = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10);
+        const mm = parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
+        const startMin = hh * 60 + mm;
+        return r.weekday === wd && startMin >= r.start_min && startMin < r.end_min;
+      } catch { return false; }
+    });
+    const slotDurMin = matchedRule?.slot_duration_min ?? 60;
     const slotEnd = new Date(slotDate.getTime() + slotDurMin * 60 * 1000).toISOString();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

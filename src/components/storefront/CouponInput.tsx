@@ -80,7 +80,20 @@ export function CouponInput({
   const dataReady = baseValid && emailValid && passwordOk && extrasValid;
 
   return (
-    <form action={`/api/checkout/${courseId}`} method="post" className="space-y-3">
+    <form
+      action={`/api/checkout/${courseId}`}
+      method="post"
+      className="space-y-3"
+      onSubmit={(e) => {
+        // Safety net: bloqueamos el submit si el form de buyer info no está
+        // expandido o no está completo. Sin esto, Enter en el cupón saltaba
+        // directo a MP sin pedir buyer info.
+        if (!isFree && (!expanded || !dataReady)) {
+          e.preventDefault();
+          if (!expanded) setExpanded(true);
+        }
+      }}
+    >
       {/* Curso gratis: botón directo (no se piden datos extra; se asume user_id) */}
       {isFree && (
         <button
@@ -282,6 +295,8 @@ export function CouponInput({
             name="coupon"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
+            // Bloquear Enter para que no submita el form sin buyer info
+            onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
             placeholder="CÓDIGO"
             className="flex-1 rounded border border-black/15 px-3 py-2 text-sm font-mono uppercase"
           />
