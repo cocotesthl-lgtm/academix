@@ -216,19 +216,32 @@ export async function POST(
   // Si MP falla / no vuelve, el booking queda 'pending' (limpiable luego).
   let createdBookingId: string | null = null;
   if (bookingSlotStart) {
-    // Computar slot_end matcheando rule por timezone (sino server UTC
-    // distorsiona getHours/getDay y nunca matchea).
+    // Computar slot_end + asignar instructor (si el curso tiene asignados).
+    // Si dos instructores tienen el mismo slot, asignamos al PRIMERO que
+    // tenga la rule + el slot todavía libre (anti double-booking por DB).
     const slotDate = new Date(bookingSlotStart);
     const { data: rulesRaw } = await svc
       .from('availability_rules')
-      .select('weekday, start_min, end_min, slot_duration_min, timezone')
+      .select('weekday, start_min, end_min, slot_duration_min, timezone, instructor_user_id')
       .eq('tenant_id', course.tenant_id);
     const rules = (rulesRaw ?? []) as Array<{
       weekday: number; start_min: number; end_min: number;
-      slot_duration_min: number; timezone: string;
+      slot_duration_min: number; timezone: string; instructor_user_id: string | null;
     }>;
+    // Limitamos a rules de instructores asignados al curso (o tenant-wide)
+    const { data: assignedRaw } = await svc
+      .from('course_instructors')
+      .select('user_id')
+      .eq('tenant_id', course.tenant_id)
+      .eq('course_id', course.id);
+    const assignedSet = new Set(((assignedRaw ?? []) as Array<{ user_id: string }>).map((r) => r.user_id));
+    const eligibleRules = rules.filter((r) => {
+      if (assignedSet.size === 0) return r.instructor_user_id === null;
+      return r.instructor_user_id !== null && assignedSet.has(r.instructor_user_id);
+    });
+
     const weekdayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-    const matchedRule = rules.find((r) => {
+    const matchedRule = eligibleRules.find((r) => {
       try {
         const fmt = new Intl.DateTimeFormat('en-US', {
           timeZone: r.timezone, hour: '2-digit', minute: '2-digit',
@@ -243,6 +256,7 @@ export async function POST(
       } catch { return false; }
     });
     const slotDurMin = matchedRule?.slot_duration_min ?? 60;
+    const assignedInstructorId = matchedRule?.instructor_user_id ?? null;
     const slotEnd = new Date(slotDate.getTime() + slotDurMin * 60 * 1000).toISOString();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -251,6 +265,7 @@ export async function POST(
         tenant_id: course.tenant_id,
         course_id: course.id,
         user_id: buyerUserId,
+        instructor_user_id: assignedInstructorId,
         slot_start: bookingSlotStart,
         slot_end: slotEnd,
         status: 'pending',

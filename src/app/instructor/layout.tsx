@@ -16,6 +16,7 @@ export default async function InstructorLayout({ children }: { children: React.R
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/instructor">Dashboard</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/instructor/courses">Mis cursos</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/instructor/schedule">Agenda</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/instructor/availability">Mi disponibilidad</a>
         </nav>
         <div className="mt-auto pt-4 border-t border-white/10">
           <SignoutButton />

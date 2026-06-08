@@ -179,4 +179,32 @@ drop policy if exists "course_instructors: instructor self read" on public.cours
 create policy "course_instructors: instructor self read" on public.course_instructors
   for select using (user_id = auth.uid());
 
+-- ── 0015 Per-instructor availability ─────────────────────────
+alter table public.availability_rules
+  add column if not exists instructor_user_id uuid references auth.users(id) on delete cascade;
+create index if not exists availability_rules_instructor_idx
+  on public.availability_rules (tenant_id, instructor_user_id, weekday);
+
+alter table public.bookings
+  add column if not exists instructor_user_id uuid references auth.users(id) on delete set null;
+create index if not exists bookings_instructor_idx
+  on public.bookings (instructor_user_id, slot_start);
+
+drop index if exists public.bookings_no_double_booking;
+create unique index if not exists bookings_no_double_per_instructor
+  on public.bookings (tenant_id, coalesce(instructor_user_id::text, '_tenant'), slot_start)
+  where status <> 'cancelled';
+
+drop policy if exists "availability_rules: instructor self CRUD" on public.availability_rules;
+create policy "availability_rules: instructor self CRUD" on public.availability_rules
+  for all using (
+    instructor_user_id = auth.uid()
+    and exists (
+      select 1 from public.memberships m
+      where m.tenant_id = availability_rules.tenant_id
+        and m.user_id = auth.uid()
+        and m.role = 'instructor' and m.status = 'active'
+    )
+  );
+
 -- ✓ Listo. Recargá la app.

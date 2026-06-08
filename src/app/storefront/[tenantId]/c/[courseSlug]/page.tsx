@@ -105,21 +105,72 @@ export default async function CourseDetailPage({
     const horizonDate = new Date();
     horizonDate.setDate(horizonDate.getDate() + horizon);
     try {
+      // Si el curso tiene instructores asignados, usamos SUS reglas. Sino,
+      // caemos a las reglas tenant-wide (instructor_user_id IS NULL).
+      // Cada slot tomado bloquea ese instructor (anti double-booking por
+      // instructor + slot_start).
+      const { data: assignedRaw } = await svc
+        .from('course_instructors')
+        .select('user_id')
+        .eq('tenant_id', tenantId)
+        .eq('course_id', course.id);
+      const assignedIds = ((assignedRaw ?? []) as Array<{ user_id: string }>)
+        .map((r) => r.user_id);
+
+      let rulesQuery = svc.from('availability_rules')
+        .select('id, tenant_id, weekday, start_min, end_min, slot_duration_min, timezone, instructor_user_id')
+        .eq('tenant_id', tenantId);
+      if (assignedIds.length > 0) {
+        rulesQuery = rulesQuery.in('instructor_user_id', assignedIds);
+      } else {
+        rulesQuery = rulesQuery.is('instructor_user_id', null);
+      }
+
       const [rulesRes, takenRes] = await Promise.all([
-        svc.from('availability_rules')
-          .select('id, tenant_id, weekday, start_min, end_min, slot_duration_min, timezone')
-          .eq('tenant_id', tenantId),
+        rulesQuery,
         svc.from('bookings')
-          .select('slot_start')
+          .select('slot_start, instructor_user_id')
           .eq('tenant_id', tenantId)
           .neq('status', 'cancelled')
           .gte('slot_start', new Date().toISOString())
           .lte('slot_start', horizonDate.toISOString())
       ]);
-      const rules = (rulesRes.data ?? []) as AvailabilityRule[];
-      const takenSet = new Set(((takenRes.data ?? []) as Array<{ slot_start: string }>).map((b) => b.slot_start));
-      calendarSlots = generateSlots({ rules, takenSlotStarts: takenSet, horizonDays: horizon });
-    } catch { /* idem */ }
+      const rules = (rulesRes.data ?? []) as Array<AvailabilityRule & { instructor_user_id: string | null }>;
+      // Slots tomados: key por instructor (o "_tenant" si null) + start
+      const taken = (takenRes.data ?? []) as Array<{ slot_start: string; instructor_user_id: string | null }>;
+      const takenSet = new Set(taken.map((b) => `${b.instructor_user_id ?? '_tenant'}|${b.slot_start}`));
+
+      // Generamos slots por cada rule. Si un slot está tomado para ESE
+      // instructor, taken=true (aunque otros instructores lo tengan libre).
+      const allSlots: BookingSlot[] = [];
+      for (const rule of rules) {
+        const key = rule.instructor_user_id ?? '_tenant';
+        const ruleSlots = generateSlots({
+          rules: [rule],
+          takenSlotStarts: new Set(
+            [...takenSet]
+              .filter((t) => t.startsWith(`${key}|`))
+              .map((t) => t.split('|')[1])
+          ),
+          horizonDays: horizon
+        });
+        allSlots.push(...ruleSlots);
+      }
+      // Si dos instructores tienen el MISMO slot libre, lo unificamos:
+      // mostramos un solo botón. Si TODOS los instructores con ese slot
+      // lo tienen ocupado, marcamos taken=true.
+      const merged = new Map<string, BookingSlot>();
+      for (const s of allSlots) {
+        const prev = merged.get(s.start);
+        if (!prev) {
+          merged.set(s.start, { ...s });
+        } else {
+          // OR del taken: si CUALQUIERA está libre, queda libre
+          merged.set(s.start, { ...s, taken: prev.taken && s.taken });
+        }
+      }
+      calendarSlots = [...merged.values()].sort((a, b) => a.start.localeCompare(b.start));
+    } catch { /* migration 0012/0015 falta */ }
   }
 
   // Resolvemos el user logueado una sola vez (lo usamos para tracking de
