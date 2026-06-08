@@ -5,6 +5,8 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { becomeAffiliateAction } from "@/lib/affiliates/panel";
 import { tenantOrigin, env } from "@/lib/env";
 import { NETWORK_EMOJI } from "@/lib/affiliates/networks";
+import { TenantCard } from "@/components/affiliate/TenantCard";
+import { unblockTenantAction } from "@/lib/users/blocks";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +137,18 @@ export default async function AffiliateGlobalPage({
     tenant_id: string; tenants: { id: string; slug: string; name: string } | null;
   }>).filter((r) => r.tenants).map((r) => r.tenants!);
 
+  // Academias bloqueadas por el user (para mostrar en sección aparte)
+  let blockedTenants: Array<{ id: string; slug: string; name: string }> = [];
+  try {
+    const { data: blocksRaw } = await svc
+      .from('user_tenant_blocks')
+      .select('tenant_id, tenants ( id, slug, name )')
+      .eq('user_id', user.id);
+    blockedTenants = ((blocksRaw ?? []) as Array<{
+      tenant_id: string; tenants: { id: string; slug: string; name: string } | null;
+    }>).filter((r) => r.tenants).map((r) => r.tenants!);
+  } catch { /* migration 0016 falta */ }
+
   return (
     <div data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Nav */}
@@ -208,12 +222,8 @@ export default async function AffiliateGlobalPage({
                 const color = t.brand?.primary_color ?? '#a855f7';
                 const origin = tenantOrigin(t.slug);
                 return (
-                  <a
-                    key={t.id}
-                    href={`${origin}/affiliate`}
-                    className="block rounded-xl border border-white/10 bg-white/[0.02] p-5 hover:border-white/30 hover:bg-white/[0.04] transition"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
+                  <TenantCard key={t.id} tenant={t} href={`${origin}/affiliate`} accent={color}>
+                    <div className="flex items-center gap-3 mb-3 pr-8">
                       {t.brand?.logo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={t.brand.logo_url} alt={t.name} className="h-10 w-10 object-contain rounded" />
@@ -237,12 +247,38 @@ export default async function AffiliateGlobalPage({
                       </div>
                       <span className="text-xs text-white/40">Ir al panel →</span>
                     </div>
-                  </a>
+                  </TenantCard>
                 );
               })}
             </div>
           )}
         </section>
+
+        {/* Academias bloqueadas (sólo visibles para el user) */}
+        {blockedTenants.length > 0 && (
+          <section>
+            <h2 className="text-xl font-bold mb-1">🚫 Academias bloqueadas</h2>
+            <p className="text-xs text-white/55 mb-3">
+              No te pueden sumar como instructor ni te ven en ninguna lista. Desbloqueá si cambiaste de opinión.
+            </p>
+            <div className="space-y-2">
+              {blockedTenants.map((t) => (
+                <div key={t.id} className="rounded-lg border border-white/10 bg-white/[0.02] p-3 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{t.name}</div>
+                    <div className="text-xs text-white/40 font-mono truncate">{t.slug}</div>
+                  </div>
+                  <form action={unblockTenantAction}>
+                    <input type="hidden" name="tenant_id" value={t.id} />
+                    <button className="text-xs px-3 py-1.5 rounded border border-white/15 hover:bg-white/5 whitespace-nowrap">
+                      Desbloquear
+                    </button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Mensajes recientes de owners */}
         {broadcasts.length > 0 && (

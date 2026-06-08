@@ -207,4 +207,23 @@ create policy "availability_rules: instructor self CRUD" on public.availability_
     )
   );
 
+-- ── 0016 User blocks tenant ──────────────────────────────────
+create table if not exists public.user_tenant_blocks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  blocked_at timestamptz not null default now(),
+  reason text,
+  unique (user_id, tenant_id)
+);
+create index if not exists user_tenant_blocks_tenant_idx
+  on public.user_tenant_blocks (tenant_id);
+create index if not exists user_tenant_blocks_user_idx
+  on public.user_tenant_blocks (user_id);
+
+alter table public.user_tenant_blocks enable row level security;
+drop policy if exists "blocks: self CRUD" on public.user_tenant_blocks;
+create policy "blocks: self CRUD" on public.user_tenant_blocks
+  for all using (user_id = auth.uid());
+
 -- ✓ Listo. Recargá la app.

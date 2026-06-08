@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireOwner, requireInstructor } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
+import { isTenantBlockedBy } from '@/lib/users/blocks';
 
 /* ─────────── OWNER: alta de instructor + asignación de cursos ─────────── */
 
@@ -37,6 +38,13 @@ export async function addInstructorAction(formData: FormData): Promise<void> {
       return;
     }
     userId = profile.id;
+  }
+
+  // SILENCIOSO: si el user bloqueó a este tenant, devolvemos igual que
+  // si no existiera el email. La academia nunca sabe que fue bloqueada.
+  if (await isTenantBlockedBy(userId, tenant.id)) {
+    revalidatePath('/instructors');
+    return;
   }
 
   // Buscamos SI YA EXISTE específicamente la membership con role='instructor'
