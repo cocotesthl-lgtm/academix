@@ -102,3 +102,28 @@ export async function requireOwner(): Promise<OwnerContext> {
   if (!data?.tenants) redirect('/onboarding');
   return { userId: user.id, tenant: data.tenants };
 }
+
+export type InstructorContext = {
+  userId: string;
+  tenant: { id: string; slug: string; name: string };
+};
+
+/**
+ * Para el portal /instructor. Toma el primer tenant donde el user tiene
+ * membership(role='instructor', status='active'). Si no tiene ninguno,
+ * redirige al login.
+ */
+export async function requireInstructor(): Promise<InstructorContext> {
+  const user = await requireUser();
+  const svc = getServiceClient();
+  const { data } = await svc
+    .from('memberships')
+    .select('tenant_id, tenants ( id, slug, name )')
+    .eq('user_id', user.id)
+    .eq('role', 'instructor')
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle<{ tenant_id: string; tenants: { id: string; slug: string; name: string } | null }>();
+  if (!data?.tenants) redirect('/login?error=not_instructor');
+  return { userId: user.id, tenant: data.tenants };
+}

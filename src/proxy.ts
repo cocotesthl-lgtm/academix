@@ -85,6 +85,11 @@ function buildResponse(req: NextRequest): { response: NextResponse; portal: stri
   }
 
   if (slug === 'app') {
+    // El portal de instructor convive en el mismo subdominio /app pero
+    // bajo /instructor/*. No prefijar con /owner en ese caso.
+    if (pathname.startsWith('/instructor')) {
+      return { response: NextResponse.next({ request: req }), portal: 'owner' };
+    }
     url.pathname = `/owner${pathname === '/' ? '/dashboard' : pathname}`;
     return { response: NextResponse.rewrite(url, { request: req }), portal: 'owner' };
   }

@@ -54,6 +54,18 @@ async function postAuthRedirect(userId: string): Promise<string> {
   if (ownership) {
     return subdomainUrl('app', '/dashboard');
   }
+  // Instructor → portal de instructor (también en subdominio app.<root>)
+  const { data: instr } = await svc
+    .from('memberships')
+    .select('tenant_id')
+    .eq('user_id', userId)
+    .eq('role', 'instructor')
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle();
+  if (instr) {
+    return subdomainUrl('app', '/instructor');
+  }
   // Si el user tiene enrollments es un alumno → mandarlo a /learn (relativo,
   // así se queda en el storefront donde se está logueando)
   const { data: enroll } = await svc
