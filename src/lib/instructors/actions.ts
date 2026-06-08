@@ -11,37 +11,55 @@ import { getServiceClient } from '@/lib/supabase/service';
  * Si el email no existe en profiles, falla con error_no_user (el user
  * tiene que registrarse antes, vía signup público).
  */
+/**
+ * Sumar/promover user como instructor del tenant.
+ * Acepta email (cualquier user de Curplat) o user_id directo
+ * (para el flow de "ascender afiliado" que ya tiene id resuelto).
+ *
+ * Importante: NO toca otras memberships del mismo user (si era afiliado,
+ * sigue siendo afiliado — agregamos la membership de instructor en
+ * paralelo). UNIQUE es (user_id, tenant_id, role), no (user_id, tenant_id).
+ */
 export async function addInstructorAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
+  const directUserId = String(formData.get('user_id') ?? '').trim();
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
-  if (!email) return;
+  if (!directUserId && !email) return;
+
   const svc = getServiceClient();
-  const { data: profile } = await svc
-    .from('profiles').select('id, email').eq('email', email)
-    .maybeSingle<{ id: string; email: string }>();
-  if (!profile) {
-    revalidatePath('/instructors');
-    return; // silencioso por ahora — UI muestra error según query string si querés
+  let userId = directUserId;
+  if (!userId && email) {
+    const { data: profile } = await svc
+      .from('profiles').select('id').eq('email', email)
+      .maybeSingle<{ id: string }>();
+    if (!profile) {
+      revalidatePath('/instructors');
+      return;
+    }
+    userId = profile.id;
   }
-  // Verificar si ya tiene membership en este tenant
+
+  // Buscamos SI YA EXISTE específicamente la membership con role='instructor'
+  // (las otras roles — affiliate, student — quedan intactas).
   const { data: existing } = await svc
     .from('memberships')
-    .select('id, role, status')
+    .select('id, status')
     .eq('tenant_id', tenant.id)
-    .eq('user_id', profile.id)
-    .maybeSingle<{ id: string; role: string; status: string }>();
+    .eq('user_id', userId)
+    .eq('role', 'instructor')
+    .maybeSingle<{ id: string; status: string }>();
 
   if (existing) {
-    if (existing.role !== 'instructor' || existing.status !== 'active') {
+    if (existing.status !== 'active') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (svc.from('memberships') as any)
-        .update({ role: 'instructor', status: 'active' })
+        .update({ status: 'active' })
         .eq('id', existing.id);
     }
   } else {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('memberships') as any).insert({
-      tenant_id: tenant.id, user_id: profile.id,
+      tenant_id: tenant.id, user_id: userId,
       role: 'instructor', status: 'active'
     });
   }

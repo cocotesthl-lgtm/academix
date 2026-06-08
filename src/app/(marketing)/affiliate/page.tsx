@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { becomeAffiliateAction } from "@/lib/affiliates/panel";
-import { tenantOrigin } from "@/lib/env";
+import { tenantOrigin, env } from "@/lib/env";
 import { NETWORK_EMOJI } from "@/lib/affiliates/networks";
 
 export const dynamic = "force-dynamic";
@@ -125,6 +125,16 @@ export default async function AffiliateGlobalPage({
 
   const tenantById = new Map<string, TenantRow>(myTenants.map((t) => [t.id, t]));
 
+  // ¿También es instructor en alguna academia? → mostramos link al portal
+  const { data: instructorMems } = await svc
+    .from('memberships')
+    .select('tenant_id, tenants ( id, slug, name )')
+    .eq('user_id', user.id).eq('role', 'instructor').eq('status', 'active')
+    .limit(10);
+  const instructorTenants = ((instructorMems ?? []) as Array<{
+    tenant_id: string; tenants: { id: string; slug: string; name: string } | null;
+  }>).filter((r) => r.tenants).map((r) => r.tenants!);
+
   return (
     <div data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Nav */}
@@ -150,6 +160,31 @@ export default async function AffiliateGlobalPage({
             Acá ves tus comisiones, las academias donde estás activo y las que podés sumar.
           </p>
         </div>
+
+        {/* Si también es instructor → links a los portales */}
+        {instructorTenants.length > 0 && (
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center gap-3 flex-wrap">
+            <span className="text-2xl">👨‍🏫</span>
+            <div className="flex-1 min-w-[200px]">
+              <div className="font-semibold text-sm">También sos instructor</div>
+              <div className="text-xs text-white/55 mt-0.5">
+                Te asignaron como instructor en {instructorTenants.length === 1 ? '1 academia' : `${instructorTenants.length} academias`}.
+              </div>
+            </div>
+            <a
+              href={(() => {
+                const u = new URL(env.appUrl);
+                const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
+                return isLocal
+                  ? `${u.protocol}//app.localhost${u.port ? ':' + u.port : ''}/instructor`
+                  : `${u.protocol}//app.${env.rootDomain}/instructor`;
+              })()}
+              className="rounded-lg bg-emerald-500 text-white px-4 py-2 text-sm font-semibold hover:bg-emerald-400"
+            >
+              Ir al panel de instructor →
+            </a>
+          </div>
+        )}
 
         {/* Stats globales */}
         <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
