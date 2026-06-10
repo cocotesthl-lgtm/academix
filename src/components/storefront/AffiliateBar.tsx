@@ -14,7 +14,11 @@ import { VARIANT_KEYS, type VariantKey, buildCourseUrl } from '@/lib/affiliates/
  * El código se fetchea client-side a /api/aff/my-code (lazy, solo cuando
  * caemos en una course page).
  */
-export function AffiliateBar({ primary, tenantSlug }: { primary: string; tenantSlug: string }) {
+export function AffiliateBar({
+  primary, tenantSlug, tenantId
+}: {
+  primary: string; tenantSlug: string; tenantId: string;
+}) {
   const pathname = usePathname() ?? '';
   const courseSlugMatch = pathname.match(/^\/c\/([^/]+)$/);
   const courseSlug = courseSlugMatch?.[1] ?? null;
@@ -22,6 +26,17 @@ export function AffiliateBar({ primary, tenantSlug }: { primary: string; tenantS
   const [variant, setVariant] = useState<VariantKey>('A');
   const [refCode, setRefCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [hidden, setHidden] = useState(false);
+
+  function dismiss() {
+    // Cookie 30 días scopeada al tenant. La layout lee la misma cookie y
+    // ya no renderiza la barra en próximos navegaciones.
+    const days = 30;
+    document.cookie = `aff_bar_hidden_${tenantId}=1; path=/; max-age=${60 * 60 * 24 * days}; SameSite=Lax`;
+    setHidden(true);
+  }
+
+  if (hidden) return null;
 
   // Fetch lazy del code cuando entramos a una course page
   useEffect(() => {
@@ -96,12 +111,23 @@ export function AffiliateBar({ primary, tenantSlug }: { primary: string; tenantS
         </>
       )}
 
-      <a
-        href="/affiliate"
-        className="ml-auto text-xs rounded-full border border-white/30 px-3 py-1 hover:bg-white/10"
-      >
-        Ir al panel →
-      </a>
+      <div className="ml-auto flex items-center gap-2">
+        <a
+          href="/affiliate"
+          className="text-xs rounded-full border border-white/30 px-3 py-1 hover:bg-white/10"
+        >
+          Ir al panel →
+        </a>
+        <button
+          type="button"
+          onClick={dismiss}
+          title="Ocultar esta barra por 30 días"
+          className="text-white/70 hover:text-white text-lg leading-none w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center"
+          aria-label="Ocultar barra de afiliado"
+        >
+          ✕
+        </button>
+      </div>
     </div>
   );
 }

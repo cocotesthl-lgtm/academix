@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -57,6 +58,8 @@ export default async function StorefrontLayout({
   // ¿El user logueado es afiliado PLATFORM-LEVEL (de Curplat)?
   // Si sí, mostramos la barra superior — puede afiliarse a este tenant
   // generando un link (la membership se autocrea ahí).
+  // El user puede ocultar la barra con la ✕: setea cookie y la layout
+  // respeta ese estado.
   const supabaseAuth = await createSupabaseServerClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
   let isAffiliate = false;
@@ -66,6 +69,8 @@ export default async function StorefrontLayout({
       .maybeSingle<{ is_affiliate: boolean }>();
     isAffiliate = !!profile?.is_affiliate;
   }
+  const cookieStore = await cookies();
+  const affBarHidden = !!cookieStore.get(`aff_bar_hidden_${tenantId}`)?.value;
 
   return (
     <div
@@ -75,7 +80,9 @@ export default async function StorefrontLayout({
         ['--brand-accent' as string]: accent
       }}
     >
-      {isAffiliate && <AffiliateBar primary={primary} tenantSlug={tenant.slug} />}
+      {isAffiliate && !affBarHidden && (
+        <AffiliateBar primary={primary} tenantSlug={tenant.slug} tenantId={tenantId} />
+      )}
       <header data-storefront-header className="storefront-header border-b border-black/10 bg-white sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <a href="/" className="flex items-center gap-3">
