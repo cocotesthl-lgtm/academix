@@ -69,8 +69,14 @@ export default async function StorefrontLayout({
       .maybeSingle<{ is_affiliate: boolean }>();
     isAffiliate = !!profile?.is_affiliate;
   }
-  const cookieStore = await cookies();
-  const affBarHidden = !!cookieStore.get(`aff_bar_hidden_${tenantId}`)?.value;
+  // Cookie de "barra de afiliado oculta" (defensivo: cookies() puede fallar
+  // en algunos contextos de edge / preview, no queremos voltear la página
+  // entera por eso).
+  let affBarHidden = false;
+  try {
+    const cookieStore = await cookies();
+    affBarHidden = !!cookieStore.get(`aff_bar_hidden_${tenantId}`)?.value;
+  } catch { /* no-op */ }
 
   return (
     <div
