@@ -10,7 +10,7 @@ import { HotmartLanding } from "@/components/storefront/landings/HotmartLanding"
 import { FunnelLanding } from "@/components/storefront/landings/FunnelLanding";
 import { VslLanding } from "@/components/storefront/landings/VslLanding";
 import { resolveCheckoutConfig } from "@/lib/checkout/types";
-import { generateSlots, type AvailabilityRule, type BookingSlot, type CalendarMode } from "@/lib/calendar/types";
+import { generateSlots, type AvailabilityRule, type BookingSlot, type CalendarMode, type CalendarDate, type AvailabilityOverride } from "@/lib/calendar/types";
 
 export const dynamic = "force-dynamic";
 
@@ -105,10 +105,17 @@ export default async function CourseDetailPage({
     const horizonDate = new Date();
     horizonDate.setDate(horizonDate.getDate() + horizon);
     try {
-      // Si el curso tiene instructores asignados, usamos SUS reglas. Sino,
-      // caemos a las reglas tenant-wide (instructor_user_id IS NULL).
-      // Cada slot tomado bloquea ese instructor (anti double-booking por
-      // instructor + slot_start).
+      // Source: 'instructor' (default, legacy) o 'owner' (config nueva).
+      // Default a 'instructor' si la columna no existe (migration 0017 falta).
+      let calendarSource: 'instructor' | 'owner' = 'instructor';
+      try {
+        const { data, error } = await svc.from('courses')
+          .select('calendar_source').eq('id', course.id)
+          .maybeSingle<{ calendar_source: string | null }>();
+        if (!error && data?.calendar_source === 'owner') calendarSource = 'owner';
+      } catch { /* idem */ }
+
+      // Instructores asignados (igual para ambos source — afectan ownerías)
       const { data: assignedRaw } = await svc
         .from('course_instructors')
         .select('user_id')
@@ -117,14 +124,58 @@ export default async function CourseDetailPage({
       const assignedIds = ((assignedRaw ?? []) as Array<{ user_id: string }>)
         .map((r) => r.user_id);
 
+      // Reglas recurrentes: depende del source.
+      // - 'owner': tenant-wide (instructor_user_id IS NULL)
+      // - 'instructor' + tiene asignados: rules de ESOS instructores
+      // - 'instructor' + sin asignados: fallback a tenant-wide
       let rulesQuery = svc.from('availability_rules')
         .select('id, tenant_id, weekday, start_min, end_min, slot_duration_min, timezone, instructor_user_id')
         .eq('tenant_id', tenantId);
-      if (assignedIds.length > 0) {
-        rulesQuery = rulesQuery.in('instructor_user_id', assignedIds);
-      } else {
+      if (calendarSource === 'owner' || assignedIds.length === 0) {
         rulesQuery = rulesQuery.is('instructor_user_id', null);
+      } else {
+        rulesQuery = rulesQuery.in('instructor_user_id', assignedIds);
       }
+
+      // Fechas puntuales + overrides (defensivo: pueden no existir si 0017 falta)
+      let oneOffDates: CalendarDate[] = [];
+      let overrides: AvailabilityOverride[] = [];
+      try {
+        let datesQuery = svc.from('calendar_dates')
+          .select('id, date, start_min, end_min, slot_duration_min, timezone, instructor_user_id, course_id')
+          .eq('tenant_id', tenantId)
+          .gte('date', new Date().toISOString().slice(0, 10));
+        // Source determina filtro de instructor; course_id puede ser específico o null
+        if (calendarSource === 'owner' || assignedIds.length === 0) {
+          datesQuery = datesQuery.is('instructor_user_id', null);
+        } else {
+          datesQuery = datesQuery.in('instructor_user_id', assignedIds);
+        }
+        // Solo dates de este curso o tenant-wide (course_id null)
+        const { data: dRaw } = await datesQuery;
+        oneOffDates = ((dRaw ?? []) as Array<CalendarDate & { course_id: string | null }>)
+          .filter((d) => d.course_id === null || d.course_id === course.id);
+
+        // Overrides: tenant-wide + de los instructores en juego + del course
+        const { data: ovRaw } = await svc
+          .from('availability_overrides')
+          .select('id, start_at, end_at, instructor_user_id, course_id, reason')
+          .eq('tenant_id', tenantId)
+          .gte('end_at', new Date().toISOString())
+          .lte('start_at', horizonDate.toISOString());
+        const allOverrides = (ovRaw ?? []) as AvailabilityOverride[];
+        overrides = allOverrides.filter((ov) => {
+          // Si tiene course_id ≠ este curso → no aplica
+          if (ov.course_id && ov.course_id !== course.id) return false;
+          // Si tiene instructor_user_id, solo aplica si ese instructor está en juego
+          if (ov.instructor_user_id) {
+            if (calendarSource === 'owner') return false;
+            return assignedIds.includes(ov.instructor_user_id);
+          }
+          // Tenant-wide → aplica siempre
+          return true;
+        });
+      } catch { /* migration 0017 falta */ }
 
       const [rulesRes, takenRes] = await Promise.all([
         rulesQuery,
@@ -136,12 +187,11 @@ export default async function CourseDetailPage({
           .lte('slot_start', horizonDate.toISOString())
       ]);
       const rules = (rulesRes.data ?? []) as Array<AvailabilityRule & { instructor_user_id: string | null }>;
-      // Slots tomados: key por instructor (o "_tenant" si null) + start
       const taken = (takenRes.data ?? []) as Array<{ slot_start: string; instructor_user_id: string | null }>;
       const takenSet = new Set(taken.map((b) => `${b.instructor_user_id ?? '_tenant'}|${b.slot_start}`));
 
-      // Generamos slots por cada rule. Si un slot está tomado para ESE
-      // instructor, taken=true (aunque otros instructores lo tengan libre).
+      // Generamos slots por cada rule. Sumamos los slots de fechas puntuales.
+      // Aplicamos overrides al final (los slots dentro de un pause quedan fuera).
       const allSlots: BookingSlot[] = [];
       for (const rule of rules) {
         const key = rule.instructor_user_id ?? '_tenant';
@@ -152,25 +202,36 @@ export default async function CourseDetailPage({
               .filter((t) => t.startsWith(`${key}|`))
               .map((t) => t.split('|')[1])
           ),
-          horizonDays: horizon
+          horizonDays: horizon,
+          overrides
         });
         allSlots.push(...ruleSlots);
       }
-      // Si dos instructores tienen el MISMO slot libre, lo unificamos:
-      // mostramos un solo botón. Si TODOS los instructores con ese slot
-      // lo tienen ocupado, marcamos taken=true.
+      // Sumar one-off dates en una sola pasada
+      if (oneOffDates.length > 0) {
+        const datesSlots = generateSlots({
+          rules: [], // no recurrente
+          takenSlotStarts: new Set(
+            [...takenSet].map((t) => t.split('|')[1])
+          ),
+          horizonDays: horizon,
+          oneOffDates,
+          overrides
+        });
+        allSlots.push(...datesSlots);
+      }
+      // Dedupe por start (cuando 2 instructores comparten slot mostramos uno)
       const merged = new Map<string, BookingSlot>();
       for (const s of allSlots) {
         const prev = merged.get(s.start);
         if (!prev) {
           merged.set(s.start, { ...s });
         } else {
-          // OR del taken: si CUALQUIERA está libre, queda libre
           merged.set(s.start, { ...s, taken: prev.taken && s.taken });
         }
       }
       calendarSlots = [...merged.values()].sort((a, b) => a.start.localeCompare(b.start));
-    } catch { /* migration 0012/0015 falta */ }
+    } catch { /* migration 0012/0015/0017 falta */ }
   }
 
   // Resolvemos el user logueado una sola vez (lo usamos para tracking de

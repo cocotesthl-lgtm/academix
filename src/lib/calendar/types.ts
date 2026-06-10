@@ -16,6 +16,25 @@ export type BookingSlot = {
   taken: boolean;
 };
 
+export type CalendarDate = {
+  id: string;
+  date: string;            // 'YYYY-MM-DD'
+  start_min: number;
+  end_min: number;
+  slot_duration_min: number;
+  timezone: string;
+  instructor_user_id: string | null;
+};
+
+export type AvailabilityOverride = {
+  id: string;
+  start_at: string;        // ISO
+  end_at: string;          // ISO
+  instructor_user_id: string | null;
+  course_id: string | null;
+  reason: string | null;
+};
+
 export const WEEKDAY_LABELS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 /** Convierte 540 → "09:00" */
@@ -81,16 +100,24 @@ function utcFromWallTime(year: number, month: number, day: number, hour: number,
  */
 export function generateSlots(opts: {
   rules: AvailabilityRule[];
-  takenSlotStarts: Set<string>;  // ISO strings de slots tomados
+  takenSlotStarts: Set<string>;     // ISO strings de slots tomados
   horizonDays: number;
+  /** Fechas puntuales (one-off). Se SUMAN a los slots recurrentes. */
+  oneOffDates?: CalendarDate[];
+  /** Pausas / cancelaciones. Se RESTAN del set final (cualquier slot que
+   *  caiga dentro de [start_at, end_at] queda fuera). */
+  overrides?: AvailabilityOverride[];
   now?: Date;
 }): BookingSlot[] {
   const out: BookingSlot[] = [];
   const nowMs = (opts.now ?? new Date()).getTime();
+  const weekdayMap: Record<string, number> = {
+    Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6
+  };
 
+  // ─── Slots recurrentes ───
   for (let dayOffset = 0; dayOffset < opts.horizonDays; dayOffset++) {
     for (const rule of opts.rules) {
-      // Para cada rule, calculamos qué calendar-day cae hoy+dayOffset en SU tz
       const targetMs = nowMs + dayOffset * 86_400_000;
       const fmt = new Intl.DateTimeFormat('en-US', {
         timeZone: rule.timezone,
@@ -101,9 +128,6 @@ export function generateSlots(opts: {
       const month = parseInt(parts.find((p) => p.type === 'month')?.value ?? '0', 10);
       const day = parseInt(parts.find((p) => p.type === 'day')?.value ?? '0', 10);
       const weekdayStr = parts.find((p) => p.type === 'weekday')?.value ?? '';
-      const weekdayMap: Record<string, number> = {
-        Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6
-      };
       const weekdayInTz = weekdayMap[weekdayStr] ?? 0;
       if (rule.weekday !== weekdayInTz) continue;
 
@@ -122,5 +146,41 @@ export function generateSlots(opts: {
       }
     }
   }
-  return out.sort((a, b) => a.start.localeCompare(b.start));
+
+  // ─── Slots de fechas puntuales (one-off) ───
+  for (const dt of opts.oneOffDates ?? []) {
+    const [yStr, mStr, dStr] = dt.date.split('-');
+    const year = parseInt(yStr, 10);
+    const month = parseInt(mStr, 10);
+    const day = parseInt(dStr, 10);
+    if (!year || !month || !day) continue;
+    for (let m = dt.start_min; m + dt.slot_duration_min <= dt.end_min; m += dt.slot_duration_min) {
+      const hour = Math.floor(m / 60);
+      const min = m % 60;
+      const slotStart = utcFromWallTime(year, month, day, hour, min, dt.timezone);
+      if (slotStart.getTime() <= nowMs) continue;
+      const slotEnd = new Date(slotStart.getTime() + dt.slot_duration_min * 60_000);
+      const startIso = slotStart.toISOString();
+      out.push({
+        start: startIso,
+        end: slotEnd.toISOString(),
+        taken: opts.takenSlotStarts.has(startIso)
+      });
+    }
+  }
+
+  // ─── Aplicar overrides (pausas/cancelaciones) ───
+  // Cualquier slot cuyo start cae dentro de [override.start_at, override.end_at]
+  // se descarta.
+  const overrides = opts.overrides ?? [];
+  const filtered = overrides.length === 0 ? out : out.filter((slot) => {
+    const slotMs = new Date(slot.start).getTime();
+    return !overrides.some((ov) => {
+      const a = new Date(ov.start_at).getTime();
+      const b = new Date(ov.end_at).getTime();
+      return slotMs >= a && slotMs < b;
+    });
+  });
+
+  return filtered.sort((a, b) => a.start.localeCompare(b.start));
 }

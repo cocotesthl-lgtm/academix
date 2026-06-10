@@ -82,3 +82,132 @@ export async function setCourseCalendarAction(formData: FormData): Promise<void>
     .eq('id', courseId).eq('tenant_id', tenant.id);
   revalidatePath(`/courses/${courseId}`);
 }
+
+/** Source del calendario del curso: 'instructor' (slots de los instructores
+ *  asignados) o 'owner' (slots tenant-wide + fechas puntuales del owner). */
+export async function setCourseCalendarSourceAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const courseId = String(formData.get('course_id') ?? '');
+  const sourceRaw = String(formData.get('source') ?? 'instructor');
+  const source = sourceRaw === 'owner' ? 'owner' : 'instructor';
+  if (!courseId) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('courses') as any)
+    .update({ calendar_source: source, updated_at: new Date().toISOString() })
+    .eq('id', courseId).eq('tenant_id', tenant.id);
+  revalidatePath(`/courses/${courseId}`);
+}
+
+/* ─── Fechas puntuales (one-off) ─── */
+
+const VALID_TZS_ALL = new Set([
+  'America/Argentina/Buenos_Aires', 'America/Argentina/Cordoba',
+  'America/Argentina/Mendoza', 'America/Sao_Paulo', 'America/Mexico_City',
+  'America/Bogota', 'America/Lima', 'America/Santiago',
+  'America/Montevideo', 'UTC'
+]);
+
+async function addCalendarDate(opts: {
+  tenantId: string;
+  courseId?: string | null;
+  instructorUserId?: string | null;
+  date: string;
+  startMin: number;
+  endMin: number;
+  slotDur: number;
+  timezone: string;
+  notes?: string | null;
+}): Promise<void> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(opts.date)) return;
+  if (opts.endMin <= opts.startMin) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('calendar_dates') as any).insert({
+    tenant_id: opts.tenantId,
+    course_id: opts.courseId ?? null,
+    instructor_user_id: opts.instructorUserId ?? null,
+    date: opts.date,
+    start_min: opts.startMin,
+    end_min: opts.endMin,
+    slot_duration_min: opts.slotDur,
+    timezone: VALID_TZS_ALL.has(opts.timezone) ? opts.timezone : 'America/Argentina/Buenos_Aires',
+    notes: opts.notes ?? null
+  });
+}
+
+export async function addOwnerCalendarDateAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const courseId = String(formData.get('course_id') ?? '') || null;
+  await addCalendarDate({
+    tenantId: tenant.id,
+    courseId,
+    date: String(formData.get('date') ?? '').trim(),
+    startMin: hhmmToMin(String(formData.get('start_time') ?? '').trim()),
+    endMin: hhmmToMin(String(formData.get('end_time') ?? '').trim()),
+    slotDur: parseInt(String(formData.get('slot_duration_min') ?? '60'), 10),
+    timezone: String(formData.get('timezone') ?? 'America/Argentina/Buenos_Aires'),
+    notes: String(formData.get('notes') ?? '').slice(0, 200) || null
+  });
+  revalidatePath('/availability');
+}
+
+export async function deleteOwnerCalendarDateAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const svc = getServiceClient();
+  await svc.from('calendar_dates').delete()
+    .eq('id', id).eq('tenant_id', tenant.id);
+  revalidatePath('/availability');
+}
+
+/* ─── Pausas / cancelaciones ─── */
+
+async function addOverride(opts: {
+  tenantId: string;
+  instructorUserId?: string | null;
+  courseId?: string | null;
+  startAt: string;
+  endAt: string;
+  reason?: string | null;
+}): Promise<void> {
+  if (!opts.startAt || !opts.endAt) return;
+  const start = new Date(opts.startAt);
+  const end = new Date(opts.endAt);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+  if (end.getTime() <= start.getTime()) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('availability_overrides') as any).insert({
+    tenant_id: opts.tenantId,
+    instructor_user_id: opts.instructorUserId ?? null,
+    course_id: opts.courseId ?? null,
+    start_at: start.toISOString(),
+    end_at: end.toISOString(),
+    reason: opts.reason?.slice(0, 200) ?? null
+  });
+}
+
+export async function addOwnerOverrideAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const courseId = String(formData.get('course_id') ?? '') || null;
+  await addOverride({
+    tenantId: tenant.id,
+    courseId,
+    startAt: String(formData.get('start_at') ?? '').trim(),
+    endAt: String(formData.get('end_at') ?? '').trim(),
+    reason: String(formData.get('reason') ?? '').slice(0, 200) || null
+  });
+  revalidatePath('/availability');
+}
+
+export async function deleteOwnerOverrideAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const svc = getServiceClient();
+  await svc.from('availability_overrides').delete()
+    .eq('id', id).eq('tenant_id', tenant.id);
+  revalidatePath('/availability');
+}

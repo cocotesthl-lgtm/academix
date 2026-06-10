@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { setCourseCalendarAction } from '@/lib/calendar/actions';
+import { setCourseCalendarAction, setCourseCalendarSourceAction } from '@/lib/calendar/actions';
 import type { CalendarMode } from '@/lib/calendar/types';
 
 /**
@@ -16,20 +16,31 @@ export function CourseCalendarConfig({
   initialMode,
   initialLabel,
   initialRequired,
-  initialHorizon
+  initialHorizon,
+  initialSource = 'instructor'
 }: {
   courseId: string;
   initialMode: CalendarMode;
   initialLabel: string | null;
   initialRequired: boolean;
   initialHorizon: number;
+  initialSource?: 'instructor' | 'owner';
 }) {
   const [mode, setMode] = useState<CalendarMode>(initialMode);
   const [label, setLabel] = useState(initialLabel ?? '');
   const [required, setRequired] = useState(initialRequired);
   const [horizon, setHorizon] = useState(initialHorizon);
+  const [source, setSource] = useState<'instructor' | 'owner'>(initialSource);
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
+
+  function saveSource(next: 'instructor' | 'owner') {
+    setSource(next);
+    const fd = new FormData();
+    fd.set('course_id', courseId);
+    fd.set('source', next);
+    start(async () => { await setCourseCalendarSourceAction(fd); });
+  }
 
   function save(next?: Partial<{ mode: CalendarMode; label: string; required: boolean; horizon: number }>) {
     const fd = new FormData();
@@ -94,10 +105,46 @@ export function CourseCalendarConfig({
           </div>
 
           {mode === 'mentorship_slot' && (
-            <div>
-              <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">
-                Cuántos días hacia adelante mostrar disponibilidad
-              </label>
+            <>
+              <div className="border-t border-white/10 pt-3">
+                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-2">
+                  ¿De dónde salen los slots?
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => saveSource('instructor')}
+                    disabled={pending}
+                    className={`text-left rounded border p-3 text-xs ${
+                      source === 'instructor' ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-white/15 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="font-semibold">👨‍🏫 Disponibilidad del instructor</div>
+                    <div className="text-white/55 mt-0.5">Slots de los instructores asignados al curso.</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => saveSource('owner')}
+                    disabled={pending}
+                    className={`text-left rounded border p-3 text-xs ${
+                      source === 'owner' ? 'border-fuchsia-500/50 bg-fuchsia-500/10' : 'border-white/15 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="font-semibold">🏫 Calendario del owner</div>
+                    <div className="text-white/55 mt-0.5">Vos definís los días/fechas, sin importar quién dicta.</div>
+                  </button>
+                </div>
+                <p className="text-[11px] text-white/45 mt-2">
+                  {source === 'instructor'
+                    ? 'Configurá los slots desde /availability (tenant-wide) o cada instructor desde /instructor/availability.'
+                    : 'Configurá los slots desde /availability (recurrente + fechas puntuales). Los instructores asignados pueden venir o no.'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">
+                  Cuántos días hacia adelante mostrar disponibilidad
+                </label>
               <input
                 type="number"
                 min={1} max={180}
@@ -107,14 +154,8 @@ export function CourseCalendarConfig({
                 className="w-32 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
               />
               <span className="text-white/45 text-sm ml-2">días</span>
-              {mode === 'mentorship_slot' && (
-                <p className="text-[11px] text-amber-300/70 mt-2">
-                  ⚠️ Si todavía no declaraste tu disponibilidad semanal, hacelo
-                  en <a href="/availability" className="underline">/availability</a> o
-                  el comprador no va a ver slots para elegir.
-                </p>
-              )}
-            </div>
+              </div>
+            </>
           )}
 
           <label className="flex items-center gap-2 text-sm">

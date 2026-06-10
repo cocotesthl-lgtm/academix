@@ -31,6 +31,14 @@ export default async function CourseEditPage({
     .eq("tenant_id", tenant.id)
     .maybeSingle<Course>();
 
+  // Calendar source extra (puede no existir si 0017 falta — defaults a 'instructor')
+  let calendarSource: 'instructor' | 'owner' = 'instructor';
+  try {
+    const { data, error } = await svc.from('courses')
+      .select('calendar_source').eq('id', id).maybeSingle<{ calendar_source: string | null }>();
+    if (!error && data?.calendar_source === 'owner') calendarSource = 'owner';
+  } catch { /* migration 0017 falta */ }
+
   if (!course) notFound();
 
   // Query separada para nuevos campos (checkout/calendar/subscription) —
@@ -194,6 +202,7 @@ export default async function CourseEditPage({
           initialLabel={courseExtras?.calendar_label ?? null}
           initialRequired={courseExtras?.calendar_required ?? true}
           initialHorizon={courseExtras?.calendar_horizon_days ?? 30}
+          initialSource={calendarSource}
         />
       </section>
 
