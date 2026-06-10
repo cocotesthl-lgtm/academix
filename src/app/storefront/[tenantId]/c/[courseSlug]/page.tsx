@@ -179,22 +179,28 @@ export default async function CourseDetailPage({
   const { data: { user: currentUser } } = await supabaseAuth.auth.getUser();
 
   // Affiliate click tracking + cookie set on first ?ref= visit
+  // Defensivo: si trackClick falla (RSC + cookies.set, dedupe duplicado,
+  // etc), la page no debe romperse — la atribución es nice-to-have.
   if (ref) {
-    const h = await headers();
-    const ip =
-      (h.get('x-forwarded-for')?.split(',')[0].trim()) ||
-      h.get('x-real-ip') ||
-      '0.0.0.0';
-    const ua = h.get('user-agent') ?? '';
-    const referer = h.get('referer') ?? '';
-    await trackClick({
-      code: ref,
-      tenantId,
-      ip,
-      userAgent: ua,
-      referer,
-      currentUserId: currentUser?.id ?? null
-    });
+    try {
+      const h = await headers();
+      const ip =
+        (h.get('x-forwarded-for')?.split(',')[0].trim()) ||
+        h.get('x-real-ip') ||
+        '0.0.0.0';
+      const ua = h.get('user-agent') ?? '';
+      const referer = h.get('referer') ?? '';
+      await trackClick({
+        code: ref,
+        tenantId,
+        ip,
+        userAgent: ua,
+        referer,
+        currentUserId: currentUser?.id ?? null
+      });
+    } catch (e) {
+      console.warn('[course page] trackClick failed', e);
+    }
   }
 
   const { data: modulesRaw } = await svc

@@ -109,14 +109,23 @@ export async function trackClick(opts: {
     ts: Date.now()
   };
 
-  const cookieStore = await cookies();
-  cookieStore.set(cookieName(link.tenant_id), signAffiliateCookie(payload), {
-    httpOnly: false,                   // accessible to client for transparency; HMAC-signed so untamperable
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: COOKIE_MAX_AGE_SECONDS,
-    path: '/'
-  });
+  // Next.js 16 a veces bloquea cookies.set() desde Server Components puros
+  // (depende de cómo Next interpreta el RSC stream). Lo envolvemos para que
+  // un fallo de cookies no rompa la PAGE entera con 500 — peor caso queda
+  // sin atribución cross-page pero la venta inmediata con ?ref= en URL
+  // igual entra al checkout (que sí puede parsear el ref).
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set(cookieName(link.tenant_id), signAffiliateCookie(payload), {
+      httpOnly: false,                 // accessible to client for transparency; HMAC-signed so untamperable
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: COOKIE_MAX_AGE_SECONDS,
+      path: '/'
+    });
+  } catch (e) {
+    console.warn('[trackClick] cookies.set failed (RSC context?)', e);
+  }
 
   return { ok: true, payload };
 }
