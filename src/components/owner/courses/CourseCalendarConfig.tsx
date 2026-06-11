@@ -58,11 +58,12 @@ export function CourseCalendarConfig({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {([
           { v: 'none', icon: '🚫', t: 'Sin calendario' },
           { v: 'start_date', icon: '📅', t: 'Fecha de inicio' },
-          { v: 'mentorship_slot', icon: '🗓️', t: 'Slot de mentoría' }
+          { v: 'mentorship_slot', icon: '🗓️', t: 'Slot de mentoría' },
+          { v: 'event_tickets', icon: '🎫', t: 'Tickets de evento' }
         ] as Array<{ v: CalendarMode; icon: string; t: string }>).map((opt) => (
           <button
             key={opt.v}
@@ -81,6 +82,7 @@ export function CourseCalendarConfig({
               {opt.v === 'none' && 'No se pide nada en el checkout.'}
               {opt.v === 'start_date' && 'Comprador elige una fecha simple.'}
               {opt.v === 'mentorship_slot' && 'Slots según tu disponibilidad semanal.'}
+              {opt.v === 'event_tickets' && 'Eventos con fecha + cupo. Compra N tickets.'}
             </div>
           </button>
         ))}

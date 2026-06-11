@@ -118,6 +118,10 @@ async function addCalendarDate(opts: {
   slotDur: number;
   timezone: string;
   notes?: string | null;
+  capacity?: number;
+  seatMode?: 'none' | 'grid';
+  seatRows?: number;
+  seatCols?: number;
 }): Promise<void> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(opts.date)) return;
   if (opts.endMin <= opts.startMin) return;
@@ -132,13 +136,18 @@ async function addCalendarDate(opts: {
     end_min: opts.endMin,
     slot_duration_min: opts.slotDur,
     timezone: VALID_TZS_ALL.has(opts.timezone) ? opts.timezone : 'America/Argentina/Buenos_Aires',
-    notes: opts.notes ?? null
+    notes: opts.notes ?? null,
+    capacity: Math.max(0, Math.min(10000, opts.capacity ?? 0)),
+    seat_mode: opts.seatMode === 'grid' ? 'grid' : 'none',
+    seat_rows: Math.max(0, Math.min(100, opts.seatRows ?? 0)),
+    seat_cols: Math.max(0, Math.min(100, opts.seatCols ?? 0))
   });
 }
 
 export async function addOwnerCalendarDateAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const courseId = String(formData.get('course_id') ?? '') || null;
+  const seatModeRaw = String(formData.get('seat_mode') ?? 'none');
   await addCalendarDate({
     tenantId: tenant.id,
     courseId,
@@ -147,7 +156,11 @@ export async function addOwnerCalendarDateAction(formData: FormData): Promise<vo
     endMin: hhmmToMin(String(formData.get('end_time') ?? '').trim()),
     slotDur: parseInt(String(formData.get('slot_duration_min') ?? '60'), 10),
     timezone: String(formData.get('timezone') ?? 'America/Argentina/Buenos_Aires'),
-    notes: String(formData.get('notes') ?? '').slice(0, 200) || null
+    notes: String(formData.get('notes') ?? '').slice(0, 200) || null,
+    capacity: parseInt(String(formData.get('capacity') ?? '0'), 10) || 0,
+    seatMode: seatModeRaw === 'grid' ? 'grid' : 'none',
+    seatRows: parseInt(String(formData.get('seat_rows') ?? '0'), 10) || 0,
+    seatCols: parseInt(String(formData.get('seat_cols') ?? '0'), 10) || 0
   });
   revalidatePath('/availability');
 }

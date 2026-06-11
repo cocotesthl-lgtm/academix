@@ -251,6 +251,41 @@ export default async function AvailabilityPage() {
           </div>
           <input name="notes" type="text" maxLength={200} placeholder="Notas (opcional, ej: evento especial)"
             className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+
+          {/* ─── Config de evento (capacity + asientos) ─── */}
+          <div className="rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-3 space-y-3">
+            <p className="text-xs text-fuchsia-200 font-semibold">🎫 Si el curso es evento con tickets, completá esto:</p>
+            <div className="grid sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Capacidad total</label>
+                <input name="capacity" type="number" min={0} max={10000} defaultValue={0}
+                  className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Modo asientos</label>
+                <select name="seat_mode" defaultValue="none" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
+                  <option value="none">Sin asientos (general)</option>
+                  <option value="grid">Asientos numerados (grid)</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Filas</label>
+                  <input name="seat_rows" type="number" min={0} max={100} defaultValue={0}
+                    className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Columnas</label>
+                  <input name="seat_cols" type="number" min={0} max={100} defaultValue={0}
+                    className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                </div>
+              </div>
+            </div>
+            <p className="text-[11px] text-white/45">
+              Capacidad = 0 → no es evento, es solo fecha puntual. Modo grid: filas × columnas (ej 5×10 = 50 asientos).
+            </p>
+          </div>
+
           <button className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90">
             + Agregar fecha puntual
           </button>

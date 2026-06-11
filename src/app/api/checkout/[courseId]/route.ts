@@ -39,9 +39,9 @@ export async function POST(
   if (!courseBase || courseBase.status !== 'published') {
     return NextResponse.json({ error: 'course_not_available' }, { status: 404 });
   }
-  if (courseBase.price_cents <= 0) {
-    return NextResponse.json({ error: 'free_course_no_checkout' }, { status: 400 });
-  }
+  // Para event_tickets gratis se permite igual (se crean tickets sin pasar
+  // por MP). El check de "free_course_no_checkout" se aplica más abajo
+  // SOLO si NO es event_tickets.
   // Subscription columns (opcional — migration 0013)
   type SubCfg = {
     pricing_mode: 'one_time' | 'subscription' | null;
@@ -203,9 +203,65 @@ export async function POST(
       );
     }
   }
+  // ─── Event tickets (calendar_mode='event_tickets') ───
+  // Si el form incluye event_date_id, vamos por este flow: validamos
+  // capacidad, insertamos tickets pending, y el precio total = price × qty.
+  const eventDateId = String(form?.get('event_date_id') ?? '').trim() || null;
+  const ticketQtyRaw = parseInt(String(form?.get('ticket_qty') ?? '0'), 10);
+  const ticketSeatsRaw = String(form?.get('ticket_seats') ?? '').trim();
+  const ticketSeats = ticketSeatsRaw ? ticketSeatsRaw.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const ticketQty = ticketSeats.length > 0 ? ticketSeats.length : Math.max(0, ticketQtyRaw);
+
+  let isEventTickets = false;
+  let eventTicketIds: string[] = [];
+  if (eventDateId && ticketQty > 0) {
+    isEventTickets = true;
+    // Validar evento existe
+    const { data: ev } = await svc.from('calendar_dates')
+      .select('id, capacity, seat_mode, course_id')
+      .eq('id', eventDateId).eq('tenant_id', course.tenant_id)
+      .maybeSingle<{ id: string; capacity: number; seat_mode: string; course_id: string | null }>();
+    if (!ev || (ev.course_id && ev.course_id !== course.id)) {
+      return NextResponse.redirect(`${origin}/c/${course.slug}?error=event_not_found`, { status: 303 });
+    }
+    // Check capacity
+    const { count } = await svc.from('event_tickets')
+      .select('id', { count: 'exact', head: true })
+      .eq('calendar_date_id', eventDateId)
+      .not('status', 'in', '(cancelled,refunded)');
+    const sold = count ?? 0;
+    if (sold + ticketQty > ev.capacity) {
+      return NextResponse.redirect(`${origin}/c/${course.slug}?error=sold_out`, { status: 303 });
+    }
+    // Insertar tickets pending. Si es seat_mode='grid', uno por seat label.
+    const common = {
+      tenant_id: course.tenant_id,
+      course_id: course.id,
+      calendar_date_id: eventDateId,
+      user_id: buyerUserId,
+      status: 'pending',
+      buyer_email: buyerInfo.email ?? user?.email ?? null,
+      buyer_name: buyerInfo.name
+    };
+    const ticketRows = ev.seat_mode === 'grid' && ticketSeats.length > 0
+      ? ticketSeats.map((label) => ({ ...common, seat_label: label }))
+      : Array.from({ length: ticketQty }, () => ({ ...common, seat_label: null }));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: inserted, error: tkErr } = await (svc.from('event_tickets') as any)
+      .insert(ticketRows).select('id');
+    if (tkErr) {
+      const msg = tkErr.message.toLowerCase().includes('duplicate') ? 'seat_taken' : 'ticket_failed';
+      return NextResponse.redirect(`${origin}/c/${course.slug}?error=${msg}`, { status: 303 });
+    }
+    eventTicketIds = (inserted as Array<{ id: string }>).map((r) => r.id);
+  } else if (course.price_cents <= 0) {
+    // Curso gratis SIN event tickets → no procesamos checkout (legacy behavior)
+    return NextResponse.json({ error: 'free_course_no_checkout' }, { status: 400 });
+  }
+
   let couponValid: Awaited<ReturnType<typeof validateCoupon>> | null = null;
-  let finalPrice = course.price_cents;
-  if (couponCode) {
+  let finalPrice = isEventTickets ? course.price_cents * ticketQty : course.price_cents;
+  if (couponCode && !isEventTickets) {
     couponValid = await validateCoupon(course.tenant_id, couponCode, course.id, course.price_cents);
     if (couponValid) finalPrice = couponValid.final_cents;
   }
@@ -295,6 +351,15 @@ export async function POST(
   const platformOrigin = env.platformApiOrigin;
 
   // If coupon makes it free, auto-enroll on the spot and skip MP entirely
+  // Event tickets gratis: confirmamos los tickets ya creados + redirect
+  if (isEventTickets && finalPrice <= 0) {
+    if (eventTicketIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('event_tickets') as any)
+        .update({ status: 'confirmed' }).in('id', eventTicketIds);
+    }
+    return NextResponse.redirect(`${origin}/learn?tickets=${eventTicketIds.length}`, { status: 303 });
+  }
   if (finalPrice <= 0 && couponValid && buyerUserId) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -431,7 +496,9 @@ export async function POST(
         // Calendario: el webhook usa booking_id para confirmar la reserva
         // y linkearla al enrollment. booking_date va directo a enrollment.
         booking_id:     createdBookingId,
-        booking_date:   bookingDate
+        booking_date:   bookingDate,
+        // Event tickets: ids creados pending → webhook los marca confirmed
+        event_ticket_ids: eventTicketIds.length > 0 ? eventTicketIds : null
       }
     });
 

@@ -1,0 +1,297 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import type { EventDate } from '@/lib/calendar/types';
+
+/**
+ * Selector de tickets para cursos con calendar_mode='event_tickets'.
+ * Reemplaza el CouponInput cuando el modo del curso es evento.
+ *
+ * Flow:
+ *  1. Comprador elige una fecha (evento) de la lista.
+ *  2. Si el evento es seat_mode='none' → input de cantidad (1..capacity-tomados).
+ *  3. Si es seat_mode='grid' → grid clickeable de asientos (los tomados aparecen
+ *     deshabilitados). Multi-selección.
+ *  4. Submit → POST a /api/checkout/[courseId] con event_date_id + qty/seats.
+ *
+ * El precio = course.price_cents × qty. Si el comprador eligió 3 tickets,
+ * paga 3 × $X.
+ */
+export function TicketPicker({
+  courseId,
+  priceCents,
+  currency,
+  primary,
+  events,
+  takenSeatsByDate,
+  defaultEmail = ''
+}: {
+  courseId: string;
+  priceCents: number;
+  currency: string;
+  primary: string;
+  events: EventDate[];
+  /** Por cada calendar_date.id, set de seat_label tomados. Solo para
+   *  seat_mode=grid. Para 'none' usamos un contador de tickets vendidos. */
+  takenSeatsByDate: Record<string, { taken: Set<string>; soldCount: number }>;
+  defaultEmail?: string;
+}) {
+  const [selectedDateId, setSelectedDateId] = useState<string>('');
+  const [qty, setQty] = useState(1);
+  const [seats, setSeats] = useState<string[]>([]);
+
+  const event = useMemo(
+    () => events.find((e) => e.id === selectedDateId) ?? null,
+    [events, selectedDateId]
+  );
+
+  const isFree = priceCents === 0;
+  const taken = event ? takenSeatsByDate[event.id] : null;
+  const availableCount = event
+    ? Math.max(0, event.capacity - (taken?.soldCount ?? 0))
+    : 0;
+
+  const totalTickets = event?.seat_mode === 'grid' ? seats.length : qty;
+  const totalCents = totalTickets * priceCents;
+  const dataReady = !!event && totalTickets > 0 && totalTickets <= availableCount;
+
+  function pickDate(id: string) {
+    setSelectedDateId(id);
+    setQty(1);
+    setSeats([]);
+  }
+
+  function toggleSeat(label: string) {
+    setSeats((prev) =>
+      prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label]
+    );
+  }
+
+  return (
+    <form action={`/api/checkout/${courseId}`} method="post" className="space-y-3">
+      <input type="hidden" name="event_date_id" value={selectedDateId} />
+      <input type="hidden" name="ticket_qty" value={totalTickets} />
+      {event?.seat_mode === 'grid' && (
+        <input type="hidden" name="ticket_seats" value={seats.join(',')} />
+      )}
+      {defaultEmail && <input type="hidden" name="buyer_email" value={defaultEmail} />}
+
+      {/* ─── Lista de eventos ─── */}
+      <div>
+        <h3 className="font-semibold text-sm mb-2">Elegí la fecha</h3>
+        {events.length === 0 ? (
+          <p className="text-sm text-black/55 rounded border border-dashed border-black/15 p-4 text-center">
+            No hay eventos próximos. Volvé pronto.
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {events.map((e) => {
+              const taken = takenSeatsByDate[e.id];
+              const left = Math.max(0, e.capacity - (taken?.soldCount ?? 0));
+              const dateObj = new Date(e.date + 'T12:00:00');
+              const dateLabel = dateObj.toLocaleDateString('es-AR', {
+                weekday: 'short', day: '2-digit', month: 'long', year: 'numeric'
+              });
+              const timeFrom = `${String(Math.floor(e.start_min / 60)).padStart(2, '0')}:${String(e.start_min % 60).padStart(2, '0')}`;
+              const timeTo = `${String(Math.floor(e.end_min / 60)).padStart(2, '0')}:${String(e.end_min % 60).padStart(2, '0')}`;
+              const isSel = selectedDateId === e.id;
+              const isSold = left === 0;
+              return (
+                <button
+                  key={e.id}
+                  type="button"
+                  disabled={isSold}
+                  onClick={() => pickDate(e.id)}
+                  className={`w-full text-left rounded-lg border p-3 transition ${
+                    isSel
+                      ? 'border-transparent text-white'
+                      : isSold
+                        ? 'border-black/10 text-black/30 cursor-not-allowed bg-black/[0.02]'
+                        : 'border-black/15 hover:border-black/40 bg-white'
+                  }`}
+                  style={isSel ? { background: primary } : undefined}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-sm capitalize">{dateLabel}</div>
+                      <div className={`text-xs mt-0.5 ${isSel ? 'text-white/80' : 'text-black/55'}`}>
+                        {timeFrom} – {timeTo}
+                        {e.seat_mode === 'grid' && ' · 🪑 con asientos'}
+                      </div>
+                    </div>
+                    <div className="text-xs font-semibold shrink-0">
+                      {isSold ? 'AGOTADO' : `${left} ${left === 1 ? 'lugar' : 'lugares'}`}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ─── Selector de tickets / asientos ─── */}
+      {event && (
+        <div className="rounded-lg border border-black/15 bg-black/[0.02] p-4 space-y-3">
+          {event.seat_mode === 'none' ? (
+            <>
+              <label className="block text-xs text-black/60 mb-1">Cantidad de tickets</label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className="w-9 h-9 rounded-full border border-black/15 text-lg hover:bg-black/[0.03]"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min={1}
+                  max={availableCount}
+                  value={qty}
+                  onChange={(e) => setQty(Math.max(1, Math.min(availableCount, parseInt(e.target.value || '1', 10))))}
+                  className="w-16 text-center rounded border border-black/15 px-2 py-1.5"
+                />
+                <button
+                  type="button"
+                  onClick={() => setQty((q) => Math.min(availableCount, q + 1))}
+                  className="w-9 h-9 rounded-full border border-black/15 text-lg hover:bg-black/[0.03]"
+                >
+                  +
+                </button>
+                <span className="text-xs text-black/55 ml-2">{availableCount} disponibles</span>
+              </div>
+            </>
+          ) : (
+            <SeatGrid
+              rows={event.seat_rows}
+              cols={event.seat_cols}
+              takenSet={taken?.taken ?? new Set()}
+              selected={seats}
+              onToggle={toggleSeat}
+              primary={primary}
+            />
+          )}
+
+          {/* Datos del comprador */}
+          {!defaultEmail && (
+            <div>
+              <label className="block text-xs text-black/60 mb-1">Tu email *</label>
+              <input
+                name="buyer_email"
+                type="email"
+                required
+                placeholder="vos@email.com"
+                className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
+              />
+            </div>
+          )}
+          <div>
+            <label className="block text-xs text-black/60 mb-1">Tu nombre *</label>
+            <input
+              name="buyer_name"
+              type="text"
+              required
+              placeholder="Juan Pérez"
+              className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
+            />
+          </div>
+
+          {/* Total + submit */}
+          <div className="pt-2 border-t border-black/10 flex items-center justify-between">
+            <div>
+              <div className="text-xs text-black/50">Total</div>
+              <div className="text-2xl font-bold">
+                {isFree
+                  ? 'Gratis'
+                  : `$ ${(totalCents / 100).toLocaleString('es-AR')} ${currency}`}
+              </div>
+              {totalTickets > 0 && !isFree && (
+                <div className="text-xs text-black/45">
+                  {totalTickets} × ${(priceCents / 100).toLocaleString('es-AR')}
+                </div>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={!dataReady}
+              className="rounded-md py-3 px-6 font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: primary }}
+            >
+              🎫 {isFree ? 'Reservar' : 'Comprar tickets'}
+            </button>
+          </div>
+        </div>
+      )}
+    </form>
+  );
+}
+
+function SeatGrid({
+  rows, cols, takenSet, selected, onToggle, primary
+}: {
+  rows: number;
+  cols: number;
+  takenSet: Set<string>;
+  selected: string[];
+  onToggle: (label: string) => void;
+  primary: string;
+}) {
+  if (rows < 1 || cols < 1) {
+    return <p className="text-sm text-black/55 text-center">Sin mapa de asientos configurado.</p>;
+  }
+  // Etiquetas: A1, A2, ..., B1, B2, ...
+  const rowChar = (i: number) => String.fromCharCode(65 + i);
+
+  return (
+    <div>
+      <label className="block text-xs text-black/60 mb-2">
+        Elegí tus asientos ({selected.length} {selected.length === 1 ? 'asiento seleccionado' : 'asientos seleccionados'})
+      </label>
+      <div className="rounded-lg bg-black/[0.04] p-3 overflow-x-auto">
+        {/* "ESCENARIO" indicator */}
+        <div className="text-center text-[10px] uppercase tracking-widest text-black/40 mb-2 border-b border-black/15 pb-1">
+          escenario / frente
+        </div>
+        <div className="space-y-1.5">
+          {Array.from({ length: rows }, (_, r) => (
+            <div key={r} className="flex items-center justify-center gap-1.5">
+              <span className="w-5 text-xs font-mono text-black/40 text-right">
+                {rowChar(r)}
+              </span>
+              {Array.from({ length: cols }, (_, c) => {
+                const label = `${rowChar(r)}${c + 1}`;
+                const isTaken = takenSet.has(label);
+                const isSel = selected.includes(label);
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    disabled={isTaken}
+                    onClick={() => onToggle(label)}
+                    title={label}
+                    className={`w-7 h-7 rounded text-[10px] font-semibold transition ${
+                      isTaken
+                        ? 'bg-black/15 text-black/30 cursor-not-allowed'
+                        : isSel
+                          ? 'text-white shadow-md'
+                          : 'bg-white border border-black/15 hover:border-black/40'
+                    }`}
+                    style={isSel ? { background: primary } : undefined}
+                  >
+                    {c + 1}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex items-center justify-center gap-3 text-[10px] text-black/55">
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-white border border-black/15 inline-block" /> Libre</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded inline-block" style={{ background: primary }} /> Elegido</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-black/15 inline-block" /> Ocupado</span>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -100,6 +100,9 @@ export async function processMpPayment(opts: {
   //   al enrollment.
   const bookingId = (meta.booking_id as string | null | undefined) ?? null;
   const bookingDate = (meta.booking_date as string | null | undefined) ?? null;
+  // Event tickets: ids creados pending por el checkout endpoint → los
+  // confirmamos al recibir payment.approved.
+  const eventTicketIds = Array.isArray(meta.event_ticket_ids) ? meta.event_ticket_ids as string[] : [];
 
   // Insert sale (idempotente: UNIQUE en external_provider+external_id)
   const salePayload = {
@@ -188,6 +191,16 @@ export async function processMpPayment(opts: {
             enrollment_id: (createdEnroll as { id: string }).id
           })
           .eq('id', bookingId);
+      }
+      // Event tickets: confirmar todos los ids creados
+      if (eventTicketIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (svc.from('event_tickets') as any)
+          .update({
+            status: 'confirmed',
+            enrollment_id: (createdEnroll as { id: string }).id
+          })
+          .in('id', eventTicketIds);
       }
     }
   }

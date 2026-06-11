@@ -10,7 +10,8 @@ import { HotmartLanding } from "@/components/storefront/landings/HotmartLanding"
 import { FunnelLanding } from "@/components/storefront/landings/FunnelLanding";
 import { VslLanding } from "@/components/storefront/landings/VslLanding";
 import { resolveCheckoutConfig } from "@/lib/checkout/types";
-import { generateSlots, type AvailabilityRule, type BookingSlot, type CalendarMode, type CalendarDate, type AvailabilityOverride } from "@/lib/calendar/types";
+import { generateSlots, type AvailabilityRule, type BookingSlot, type CalendarMode, type CalendarDate, type AvailabilityOverride, type EventDate } from "@/lib/calendar/types";
+import { TicketPicker } from "@/components/storefront/TicketPicker";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,38 @@ export default async function CourseDetailPage({
   // disponibles desde las reglas del tenant menos los ya tomados ───
   const calendarMode = (courseExtras?.calendar_mode ?? 'none') as CalendarMode;
   let calendarSlots: BookingSlot[] = [];
+
+  // ─── Tickets de evento ─── (mode='event_tickets')
+  let eventDates: EventDate[] = [];
+  const takenSeatsByDate: Record<string, { taken: Set<string>; soldCount: number }> = {};
+  if (calendarMode === 'event_tickets') {
+    try {
+      const { data: edRaw } = await svc.from('calendar_dates')
+        .select('id, course_id, date, start_min, end_min, timezone, capacity, seat_mode, seat_rows, seat_cols, notes')
+        .eq('tenant_id', tenantId)
+        .eq('course_id', course.id)
+        .gte('date', new Date().toISOString().slice(0, 10))
+        .order('date', { ascending: true })
+        .limit(20);
+      eventDates = (edRaw ?? []) as EventDate[];
+
+      // Tickets ya vendidos por fecha (para mostrar asientos ocupados + soldCount)
+      if (eventDates.length > 0) {
+        const { data: tRaw } = await svc.from('event_tickets')
+          .select('calendar_date_id, seat_label')
+          .in('calendar_date_id', eventDates.map((e) => e.id))
+          .not('status', 'in', '("cancelled","refunded")');
+        const tickets = (tRaw ?? []) as Array<{ calendar_date_id: string; seat_label: string | null }>;
+        for (const ev of eventDates) {
+          const evTickets = tickets.filter((t) => t.calendar_date_id === ev.id);
+          takenSeatsByDate[ev.id] = {
+            taken: new Set(evTickets.map((t) => t.seat_label).filter(Boolean) as string[]),
+            soldCount: evTickets.length
+          };
+        }
+      }
+    } catch { /* migration 0018 falta */ }
+  }
   if (calendarMode === 'mentorship_slot') {
     const horizon = courseExtras?.calendar_horizon_days ?? 30;
     const horizonDate = new Date();
@@ -439,18 +472,30 @@ export default async function CourseDetailPage({
               </div>
               <p className="text-xs text-black/50 mt-1">Pago único · Acceso permanente</p>
             </div>
-            <CouponInput
-              courseId={course.id}
-              priceCents={course.price_cents}
-              currency={course.currency}
-              primary={primary}
-              defaultEmail={currentUser?.email ?? ''}
-              checkoutConfig={checkoutConfig}
-        calendarMode={calendarMode}
-        calendarLabel={courseExtras?.calendar_label ?? null}
-        calendarRequired={courseExtras?.calendar_required ?? true}
-        calendarSlots={calendarSlots}
-            />
+            {calendarMode === 'event_tickets' ? (
+              <TicketPicker
+                courseId={course.id}
+                priceCents={course.price_cents}
+                currency={course.currency}
+                primary={primary}
+                events={eventDates}
+                takenSeatsByDate={takenSeatsByDate}
+                defaultEmail={currentUser?.email ?? ''}
+              />
+            ) : (
+              <CouponInput
+                courseId={course.id}
+                priceCents={course.price_cents}
+                currency={course.currency}
+                primary={primary}
+                defaultEmail={currentUser?.email ?? ''}
+                checkoutConfig={checkoutConfig}
+                calendarMode={calendarMode}
+                calendarLabel={courseExtras?.calendar_label ?? null}
+                calendarRequired={courseExtras?.calendar_required ?? true}
+                calendarSlots={calendarSlots}
+              />
+            )}
             <p className="text-xs text-center text-black/40">
               Pago seguro vía MercadoPago
             </p>

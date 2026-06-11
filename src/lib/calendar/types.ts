@@ -1,4 +1,4 @@
-export type CalendarMode = 'none' | 'start_date' | 'mentorship_slot';
+export type CalendarMode = 'none' | 'start_date' | 'mentorship_slot' | 'event_tickets';
 
 export type AvailabilityRule = {
   id: string;
@@ -24,6 +24,20 @@ export type CalendarDate = {
   slot_duration_min: number;
   timezone: string;
   instructor_user_id: string | null;
+};
+
+export type EventDate = {
+  id: string;
+  course_id: string | null;
+  date: string;
+  start_min: number;
+  end_min: number;
+  timezone: string;
+  capacity: number;
+  seat_mode: 'none' | 'grid';
+  seat_rows: number;
+  seat_cols: number;
+  notes: string | null;
 };
 
 export type AvailabilityOverride = {
