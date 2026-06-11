@@ -3,6 +3,11 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { getPayment } from '@/lib/payments/mercadopago';
 import { accrueCommissionForSale } from '@/lib/debt/accrue';
 import { accrueAffiliateCommissionsForSale } from '@/lib/affiliates/commission';
+import {
+  notifyPurchaseConfirmed,
+  notifyEventTicketsConfirmed,
+  notifyBookingConfirmed
+} from '@/lib/emails/dispatch';
 
 type CourseLookup = {
   id: string;
@@ -210,6 +215,57 @@ export async function processMpPayment(opts: {
     await accrueCommissionForSale(saleId);
     const affLinkId = (meta.affiliate_link_id as string | null | undefined) ?? null;
     await accrueAffiliateCommissionsForSale({ saleId, linkId: affLinkId });
+  }
+
+  // Emails transactional — solo en sale NUEVA (no en webhook retry duplicado)
+  // y solo si tenemos email + curso. Los dispatchers ya contienen errores
+  // internamente, no rompen el flujo si Resend falla.
+  if (payment.status === 'approved' && !reused && resolvedCourse && buyerEmailForRow) {
+    const baseArgs = {
+      tenantId: opts.tenantId,
+      courseId: resolvedCourse.id,
+      buyerEmail: buyerEmailForRow,
+      buyerName,
+      amountCents: Math.round(payment.transaction_amount * 100),
+      currency: payment.currency_id
+    };
+    if (eventTicketIds.length > 0) {
+      // Fetch seat labels + calendar_date para mostrar en email
+      const { data: tickets } = await svc
+        .from('event_tickets')
+        .select('seat_label, calendar_date_id')
+        .in('id', eventTicketIds);
+      const ticketsArr = (tickets ?? []) as Array<{ seat_label: string | null; calendar_date_id: string | null }>;
+      const seats = ticketsArr
+        .map((t) => t.seat_label)
+        .filter((s): s is string => !!s);
+      const dateId = ticketsArr.find((t) => !!t.calendar_date_id)?.calendar_date_id ?? null;
+      let eventDate: string | null = null;
+      if (dateId) {
+        const { data: dateRow } = await svc
+          .from('calendar_dates')
+          .select('date')
+          .eq('id', dateId)
+          .maybeSingle<{ date: string }>();
+        eventDate = dateRow?.date ?? null;
+      }
+      await notifyEventTicketsConfirmed({
+        ...baseArgs,
+        ticketsCount: eventTicketIds.length,
+        seats: seats.length > 0 ? seats : undefined,
+        eventDate
+      });
+    } else if (bookingDate || bookingId) {
+      await notifyBookingConfirmed({
+        tenantId: opts.tenantId,
+        courseId: resolvedCourse.id,
+        buyerEmail: buyerEmailForRow,
+        buyerName,
+        bookingDate: bookingDate ?? new Date().toISOString()
+      });
+    } else {
+      await notifyPurchaseConfirmed(baseArgs);
+    }
   }
 
   return { ok: true, saleId, reused };

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { requireOwner, requireInstructor } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { isTenantBlockedBy } from '@/lib/users/blocks';
+import { notifyInstructorAssigned, notifyBookingRescheduled } from '@/lib/emails/dispatch';
 
 /* ─────────── OWNER: alta de instructor + asignación de cursos ─────────── */
 
@@ -57,12 +58,14 @@ export async function addInstructorAction(formData: FormData): Promise<void> {
     .eq('role', 'instructor')
     .maybeSingle<{ id: string; status: string }>();
 
+  let isNewlyAssigned = false;
   if (existing) {
     if (existing.status !== 'active') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (svc.from('memberships') as any)
         .update({ status: 'active' })
         .eq('id', existing.id);
+      isNewlyAssigned = true; // reactivación cuenta como nueva
     }
   } else {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,6 +73,23 @@ export async function addInstructorAction(formData: FormData): Promise<void> {
       tenant_id: tenant.id, user_id: userId,
       role: 'instructor', status: 'active'
     });
+    isNewlyAssigned = true;
+  }
+
+  // Email de bienvenida — solo en alta o reactivación (no en noop)
+  if (isNewlyAssigned) {
+    const { data: prof } = await svc
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', userId)
+      .maybeSingle<{ email: string | null; full_name: string | null }>();
+    if (prof?.email) {
+      await notifyInstructorAssigned({
+        tenantId: tenant.id,
+        instructorEmail: prof.email,
+        instructorName: prof.full_name
+      });
+    }
   }
   revalidatePath('/instructors');
 }
@@ -165,12 +185,30 @@ export async function rescheduleBookingAction(formData: FormData): Promise<void>
   // Mantener la duración original del slot
   const durMs = new Date(booking.slot_end).getTime() - new Date(booking.slot_start).getTime();
   const newEnd = new Date(newStart.getTime() + durMs);
+  const oldStart = booking.slot_start;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (svc.from('bookings') as any)
     .update({ slot_start: newStart.toISOString(), slot_end: newEnd.toISOString() })
     .eq('id', bookingId).eq('tenant_id', tenant.id);
   if (error) return; // probablemente UNIQUE violation (slot ocupado) — UI muestra
+
+  // Notificar al alumno — fetch enrollment para email del comprador
+  const { data: enroll } = await svc
+    .from('enrollments')
+    .select('buyer_email, buyer_name')
+    .eq('booking_id', bookingId)
+    .maybeSingle<{ buyer_email: string | null; buyer_name: string | null }>();
+  if (enroll?.buyer_email) {
+    await notifyBookingRescheduled({
+      tenantId: tenant.id,
+      courseId: booking.course_id,
+      buyerEmail: enroll.buyer_email,
+      buyerName: enroll.buyer_name,
+      oldDate: oldStart,
+      newDate: newStart.toISOString()
+    });
+  }
   revalidatePath('/instructor/courses');
   revalidatePath(`/instructor/courses/${booking.course_id}`);
 }

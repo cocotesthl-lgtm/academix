@@ -73,6 +73,12 @@ export const env = {
 
   cookies: {
     affiliateSecret: () => required('AFFILIATE_COOKIE_SECRET')
+  },
+
+  resend: {
+    apiKey: () => optional('RESEND_API_KEY'),
+    fromEmail: () => optional('RESEND_FROM_EMAIL') ?? 'noreply@bzseguridad.store',
+    fromName: () => optional('RESEND_FROM_NAME') ?? 'Curplat'
   }
 };
 
