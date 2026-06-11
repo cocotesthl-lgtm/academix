@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { EventDate } from '@/lib/calendar/types';
+import type { EventDate, SeatZone } from '@/lib/calendar/types';
 
 /**
  * Selector de tickets para cursos con calendar_mode='event_tickets'.
@@ -51,8 +51,24 @@ export function TicketPicker({
     ? Math.max(0, event.capacity - (taken?.soldCount ?? 0))
     : 0;
 
-  const totalTickets = event?.seat_mode === 'grid' ? seats.length : qty;
-  const totalCents = totalTickets * priceCents;
+  const hasSeats = event && (event.seat_mode === 'grid' || event.seat_mode === 'zones');
+  const totalTickets = hasSeats ? seats.length : qty;
+
+  // Cálculo del total. En modo zones: precio por seat depende de la zona
+  // (label tiene formato "zoneId:rowChar+colNum"). En grid simple: precio base.
+  const totalCents = useMemo(() => {
+    if (!event) return 0;
+    if (event.seat_mode === 'zones') {
+      return seats.reduce((sum, label) => {
+        const zoneId = label.split(':')[0];
+        const zone = (event.seat_zones ?? []).find((z) => z.id === zoneId);
+        const mult = zone?.price_multiplier ?? 1;
+        return sum + Math.round(priceCents * mult);
+      }, 0);
+    }
+    return totalTickets * priceCents;
+  }, [event, seats, totalTickets, priceCents]);
+
   const dataReady = !!event && totalTickets > 0 && totalTickets <= availableCount;
 
   function pickDate(id: string) {
@@ -71,7 +87,7 @@ export function TicketPicker({
     <form action={`/api/checkout/${courseId}`} method="post" className="space-y-3">
       <input type="hidden" name="event_date_id" value={selectedDateId} />
       <input type="hidden" name="ticket_qty" value={totalTickets} />
-      {event?.seat_mode === 'grid' && (
+      {hasSeats && (
         <input type="hidden" name="ticket_seats" value={seats.join(',')} />
       )}
       {defaultEmail && <input type="hidden" name="buyer_email" value={defaultEmail} />}
@@ -133,7 +149,7 @@ export function TicketPicker({
       {/* ─── Selector de tickets / asientos ─── */}
       {event && (
         <div className="rounded-lg border border-black/15 bg-black/[0.02] p-4 space-y-3">
-          {event.seat_mode === 'none' ? (
+          {event.seat_mode === 'none' && (
             <>
               <label className="block text-xs text-black/60 mb-1">Cantidad de tickets</label>
               <div className="flex items-center gap-2">
@@ -162,13 +178,28 @@ export function TicketPicker({
                 <span className="text-xs text-black/55 ml-2">{availableCount} disponibles</span>
               </div>
             </>
-          ) : (
+          )}
+
+          {event.seat_mode === 'grid' && (
             <SeatGrid
+              zonePrefix=""
               rows={event.seat_rows}
               cols={event.seat_cols}
               takenSet={taken?.taken ?? new Set()}
               selected={seats}
               onToggle={toggleSeat}
+              primary={primary}
+            />
+          )}
+
+          {event.seat_mode === 'zones' && (
+            <ZonesView
+              zones={event.seat_zones ?? []}
+              takenSet={taken?.taken ?? new Set()}
+              selected={seats}
+              onToggle={toggleSeat}
+              priceCents={priceCents}
+              currency={currency}
               primary={primary}
             />
           )}
@@ -228,20 +259,24 @@ export function TicketPicker({
 }
 
 function SeatGrid({
-  rows, cols, takenSet, selected, onToggle, primary
+  zonePrefix, rows, cols, takenSet, selected, onToggle, primary, zoneColor
 }: {
+  /** Prefijo de zona: "vip:" → labels son "vip:A1". Vacío → "A1". */
+  zonePrefix: string;
   rows: number;
   cols: number;
   takenSet: Set<string>;
   selected: string[];
   onToggle: (label: string) => void;
   primary: string;
+  zoneColor?: string;
 }) {
   if (rows < 1 || cols < 1) {
     return <p className="text-sm text-black/55 text-center">Sin mapa de asientos configurado.</p>;
   }
   // Etiquetas: A1, A2, ..., B1, B2, ...
   const rowChar = (i: number) => String.fromCharCode(65 + i);
+  const accent = zoneColor || primary;
 
   return (
     <div>
@@ -260,7 +295,7 @@ function SeatGrid({
                 {rowChar(r)}
               </span>
               {Array.from({ length: cols }, (_, c) => {
-                const label = `${rowChar(r)}${c + 1}`;
+                const label = `${zonePrefix}${rowChar(r)}${c + 1}`;
                 const isTaken = takenSet.has(label);
                 const isSel = selected.includes(label);
                 return (
@@ -277,7 +312,7 @@ function SeatGrid({
                           ? 'text-white shadow-md'
                           : 'bg-white border border-black/15 hover:border-black/40'
                     }`}
-                    style={isSel ? { background: primary } : undefined}
+                    style={isSel ? { background: accent } : undefined}
                   >
                     {c + 1}
                   </button>
@@ -288,10 +323,67 @@ function SeatGrid({
         </div>
         <div className="mt-3 flex items-center justify-center gap-3 text-[10px] text-black/55">
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-white border border-black/15 inline-block" /> Libre</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded inline-block" style={{ background: primary }} /> Elegido</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded inline-block" style={{ background: accent }} /> Elegido</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-black/15 inline-block" /> Ocupado</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ZonesView({
+  zones, takenSet, selected, onToggle, priceCents, currency, primary
+}: {
+  zones: SeatZone[];
+  takenSet: Set<string>;
+  selected: string[];
+  onToggle: (label: string) => void;
+  priceCents: number;
+  currency: string;
+  primary: string;
+}) {
+  if (zones.length === 0) {
+    return <p className="text-sm text-black/55 text-center">Sin zonas configuradas.</p>;
+  }
+  return (
+    <div className="space-y-4">
+      {/* Indicador "escenario" arriba */}
+      <div className="text-center text-[10px] uppercase tracking-widest text-black/40 pb-2 border-b border-black/15">
+        escenario / frente
+      </div>
+      {zones.map((z) => {
+        const zoneSelected = selected.filter((s) => s.startsWith(`${z.id}:`)).length;
+        const zonePrice = Math.round(priceCents * z.price_multiplier);
+        return (
+          <div key={z.id} className="rounded-lg p-3" style={{ background: `${z.color ?? '#999'}10` }}>
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded" style={{ background: z.color ?? '#999' }} />
+                <strong className="text-sm">{z.name}</strong>
+                <span className="text-xs text-black/55">
+                  ${(zonePrice / 100).toLocaleString('es-AR')} {currency}/asiento
+                  {z.price_multiplier !== 1 && ` (× ${z.price_multiplier})`}
+                </span>
+              </div>
+              {zoneSelected > 0 && (
+                <span className="text-xs font-semibold" style={{ color: z.color ?? primary }}>
+                  {zoneSelected} elegido{zoneSelected > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+            <SeatGrid
+              zonePrefix={`${z.id}:`}
+              rows={z.rows}
+              cols={z.cols}
+              takenSet={takenSet}
+              selected={selected}
+              onToggle={onToggle}
+              primary={primary}
+              zoneColor={z.color}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

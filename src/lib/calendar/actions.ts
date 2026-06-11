@@ -119,12 +119,31 @@ async function addCalendarDate(opts: {
   timezone: string;
   notes?: string | null;
   capacity?: number;
-  seatMode?: 'none' | 'grid';
+  seatMode?: 'none' | 'grid' | 'zones';
   seatRows?: number;
   seatCols?: number;
+  seatZones?: Array<{ id: string; name: string; rows: number; cols: number; price_multiplier: number; color?: string }>;
 }): Promise<void> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(opts.date)) return;
   if (opts.endMin <= opts.startMin) return;
+  const seatMode = opts.seatMode === 'grid' || opts.seatMode === 'zones' ? opts.seatMode : 'none';
+  // Sanear zonas
+  const zones = (opts.seatZones ?? [])
+    .filter((z) => z && z.id && z.name && z.rows > 0 && z.cols > 0)
+    .map((z) => ({
+      id: String(z.id).slice(0, 40).replace(/[^a-z0-9_-]/gi, '').toLowerCase() || 'zone',
+      name: String(z.name).slice(0, 60),
+      rows: Math.max(1, Math.min(100, z.rows)),
+      cols: Math.max(1, Math.min(100, z.cols)),
+      price_multiplier: Math.max(0, Math.min(100, z.price_multiplier ?? 1)),
+      color: typeof z.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(z.color) ? z.color : undefined
+    }))
+    .slice(0, 20);
+  // Capacity en modo zones = suma de filas × cols
+  const computedCapacity = seatMode === 'zones'
+    ? zones.reduce((sum, z) => sum + z.rows * z.cols, 0)
+    : Math.max(0, Math.min(10000, opts.capacity ?? 0));
+
   const svc = getServiceClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('calendar_dates') as any).insert({
@@ -137,10 +156,11 @@ async function addCalendarDate(opts: {
     slot_duration_min: opts.slotDur,
     timezone: VALID_TZS_ALL.has(opts.timezone) ? opts.timezone : 'America/Argentina/Buenos_Aires',
     notes: opts.notes ?? null,
-    capacity: Math.max(0, Math.min(10000, opts.capacity ?? 0)),
-    seat_mode: opts.seatMode === 'grid' ? 'grid' : 'none',
+    capacity: computedCapacity,
+    seat_mode: seatMode,
     seat_rows: Math.max(0, Math.min(100, opts.seatRows ?? 0)),
-    seat_cols: Math.max(0, Math.min(100, opts.seatCols ?? 0))
+    seat_cols: Math.max(0, Math.min(100, opts.seatCols ?? 0)),
+    seat_zones: zones
   });
 }
 
@@ -148,6 +168,15 @@ export async function addOwnerCalendarDateAction(formData: FormData): Promise<vo
   const { tenant } = await requireOwner();
   const courseId = String(formData.get('course_id') ?? '') || null;
   const seatModeRaw = String(formData.get('seat_mode') ?? 'none');
+  const seatMode: 'none' | 'grid' | 'zones' =
+    seatModeRaw === 'grid' ? 'grid' : seatModeRaw === 'zones' ? 'zones' : 'none';
+  // Zones llega como JSON serializado en hidden input
+  let seatZones: Array<{ id: string; name: string; rows: number; cols: number; price_multiplier: number; color?: string }> = [];
+  try {
+    const parsed = JSON.parse(String(formData.get('seat_zones') ?? '[]'));
+    if (Array.isArray(parsed)) seatZones = parsed;
+  } catch { /* json inválido — ignoramos */ }
+
   await addCalendarDate({
     tenantId: tenant.id,
     courseId,
@@ -158,9 +187,10 @@ export async function addOwnerCalendarDateAction(formData: FormData): Promise<vo
     timezone: String(formData.get('timezone') ?? 'America/Argentina/Buenos_Aires'),
     notes: String(formData.get('notes') ?? '').slice(0, 200) || null,
     capacity: parseInt(String(formData.get('capacity') ?? '0'), 10) || 0,
-    seatMode: seatModeRaw === 'grid' ? 'grid' : 'none',
+    seatMode,
     seatRows: parseInt(String(formData.get('seat_rows') ?? '0'), 10) || 0,
-    seatCols: parseInt(String(formData.get('seat_cols') ?? '0'), 10) || 0
+    seatCols: parseInt(String(formData.get('seat_cols') ?? '0'), 10) || 0,
+    seatZones
   });
   revalidatePath('/availability');
 }

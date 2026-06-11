@@ -365,4 +365,15 @@ drop policy if exists "event_tickets: self" on public.event_tickets;
 create policy "event_tickets: self" on public.event_tickets
   for select using (user_id = auth.uid());
 
+-- ── 0019 Seat zones (V2) ──────────────────────────────────────
+do $$ begin
+  alter table public.calendar_dates drop constraint if exists calendar_dates_seat_mode_check;
+  alter table public.calendar_dates
+    add constraint calendar_dates_seat_mode_check
+    check (seat_mode in ('none', 'grid', 'zones'));
+exception when undefined_object then null; end $$;
+
+alter table public.calendar_dates
+  add column if not exists seat_zones jsonb default '[]'::jsonb;
+
 -- ✓ Listo. Recargá la app.

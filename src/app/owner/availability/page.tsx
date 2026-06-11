@@ -6,6 +6,7 @@ import {
   addOwnerOverrideAction, deleteOwnerOverrideAction
 } from "@/lib/calendar/actions";
 import { WEEKDAY_LABELS, minToHHMM, type AvailabilityRule } from "@/lib/calendar/types";
+import { ZonesEditor } from "@/components/owner/calendar/ZonesEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -260,29 +261,40 @@ export default async function AvailabilityPage() {
                 <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Capacidad total</label>
                 <input name="capacity" type="number" min={0} max={10000} defaultValue={0}
                   className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                <p className="text-[10px] text-white/40 mt-1">Solo para modo general/grid. Zonas usa la suma de cada zona.</p>
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Modo asientos</label>
                 <select name="seat_mode" defaultValue="none" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
                   <option value="none">Sin asientos (general)</option>
-                  <option value="grid">Asientos numerados (grid)</option>
+                  <option value="grid">Grid simple (filas × cols)</option>
+                  <option value="zones">🎭 Zonas (VIP / General / etc, distintos precios)</option>
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Filas</label>
+                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Filas (grid)</label>
                   <input name="seat_rows" type="number" min={0} max={100} defaultValue={0}
                     className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Columnas</label>
+                  <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Cols (grid)</label>
                   <input name="seat_cols" type="number" min={0} max={100} defaultValue={0}
                     className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
                 </div>
               </div>
             </div>
+
+            {/* Editor de zonas — solo aplica si elegís "zones" */}
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-fuchsia-200/70 mb-2">
+                Para modo Zonas — definí cada zona:
+              </p>
+              <ZonesEditor />
+            </div>
+
             <p className="text-[11px] text-white/45">
-              Capacidad = 0 → no es evento, es solo fecha puntual. Modo grid: filas × columnas (ej 5×10 = 50 asientos).
+              💡 Tip: zonas con multiplicador 2.0 = doble del precio base. 0.5 = mitad. 1.0 = igual.
             </p>
           </div>
 

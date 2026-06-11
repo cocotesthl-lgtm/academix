@@ -108,7 +108,7 @@ export default async function CourseDetailPage({
   if (calendarMode === 'event_tickets') {
     try {
       const { data: edRaw } = await svc.from('calendar_dates')
-        .select('id, course_id, date, start_min, end_min, timezone, capacity, seat_mode, seat_rows, seat_cols, notes')
+        .select('id, course_id, date, start_min, end_min, timezone, capacity, seat_mode, seat_rows, seat_cols, seat_zones, notes')
         .eq('tenant_id', tenantId)
         .eq('course_id', course.id)
         .gte('date', new Date().toISOString().slice(0, 10))

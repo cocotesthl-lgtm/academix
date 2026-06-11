@@ -214,13 +214,14 @@ export async function POST(
 
   let isEventTickets = false;
   let eventTicketIds: string[] = [];
+  let eventTicketsTotalCents = 0;
   if (eventDateId && ticketQty > 0) {
     isEventTickets = true;
     // Validar evento existe
     const { data: ev } = await svc.from('calendar_dates')
-      .select('id, capacity, seat_mode, course_id')
+      .select('id, capacity, seat_mode, course_id, seat_zones')
       .eq('id', eventDateId).eq('tenant_id', course.tenant_id)
-      .maybeSingle<{ id: string; capacity: number; seat_mode: string; course_id: string | null }>();
+      .maybeSingle<{ id: string; capacity: number; seat_mode: string; course_id: string | null; seat_zones: unknown }>();
     if (!ev || (ev.course_id && ev.course_id !== course.id)) {
       return NextResponse.redirect(`${origin}/c/${course.slug}?error=event_not_found`, { status: 303 });
     }
@@ -233,7 +234,7 @@ export async function POST(
     if (sold + ticketQty > ev.capacity) {
       return NextResponse.redirect(`${origin}/c/${course.slug}?error=sold_out`, { status: 303 });
     }
-    // Insertar tickets pending. Si es seat_mode='grid', uno por seat label.
+    // Insertar tickets pending. Si es seat_mode='grid'/'zones', uno por seat label.
     const common = {
       tenant_id: course.tenant_id,
       course_id: course.id,
@@ -243,9 +244,23 @@ export async function POST(
       buyer_email: buyerInfo.email ?? user?.email ?? null,
       buyer_name: buyerInfo.name
     };
-    const ticketRows = ev.seat_mode === 'grid' && ticketSeats.length > 0
+    const hasSeats = (ev.seat_mode === 'grid' || ev.seat_mode === 'zones') && ticketSeats.length > 0;
+    const ticketRows = hasSeats
       ? ticketSeats.map((label) => ({ ...common, seat_label: label }))
       : Array.from({ length: ticketQty }, () => ({ ...common, seat_label: null }));
+
+    // Recalculamos eventTicketsTotalCents SERVER-SIDE (anti-tampering).
+    // En modo zones: precio = sum(priceCents × zone.multiplier por cada seat).
+    if (ev.seat_mode === 'zones' && hasSeats) {
+      type Zone = { id: string; price_multiplier: number };
+      const zones = (Array.isArray(ev.seat_zones) ? ev.seat_zones : []) as Zone[];
+      const zoneMap = new Map(zones.map((z) => [z.id, z.price_multiplier]));
+      eventTicketsTotalCents = ticketSeats.reduce((sum, label) => {
+        const zoneId = label.split(':')[0];
+        const mult = zoneMap.get(zoneId) ?? 1;
+        return sum + Math.round(course.price_cents * mult);
+      }, 0);
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: inserted, error: tkErr } = await (svc.from('event_tickets') as any)
       .insert(ticketRows).select('id');
@@ -260,7 +275,10 @@ export async function POST(
   }
 
   let couponValid: Awaited<ReturnType<typeof validateCoupon>> | null = null;
-  let finalPrice = isEventTickets ? course.price_cents * ticketQty : course.price_cents;
+  // Si era event_tickets, el total ya está calculado (con zones si aplica)
+  let finalPrice = isEventTickets
+    ? (eventTicketsTotalCents > 0 ? eventTicketsTotalCents : course.price_cents * ticketQty)
+    : course.price_cents;
   if (couponCode && !isEventTickets) {
     couponValid = await validateCoupon(course.tenant_id, couponCode, course.id, course.price_cents);
     if (couponValid) finalPrice = couponValid.final_cents;

@@ -26,6 +26,15 @@ export type CalendarDate = {
   instructor_user_id: string | null;
 };
 
+export type SeatZone = {
+  id: string;          // slug-style: 'vip', 'general', 'platea-alta'
+  name: string;        // display: 'VIP', 'General', etc
+  rows: number;
+  cols: number;
+  price_multiplier: number;  // 1.0 = precio base, 2.0 = doble, 0.5 = mitad
+  color?: string;      // hex para diferenciar visualmente
+};
+
 export type EventDate = {
   id: string;
   course_id: string | null;
@@ -34,9 +43,10 @@ export type EventDate = {
   end_min: number;
   timezone: string;
   capacity: number;
-  seat_mode: 'none' | 'grid';
+  seat_mode: 'none' | 'grid' | 'zones';
   seat_rows: number;
   seat_cols: number;
+  seat_zones: SeatZone[];
   notes: string | null;
 };
 
