@@ -1,6 +1,7 @@
 import { requireOwner, getCurrentUser } from "@/lib/auth/guards";
 import { SignoutButton } from "@/components/auth/SignoutButton";
 import { stopImpersonatingAction } from "@/lib/founder/actions";
+import { tenantOrigin } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,10 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   const { tenant, impersonating } = await requireOwner();
   const user = await getCurrentUser();
   const email = user?.email ?? '';
+  // Post-logout redirect → storefront del tenant (sensación white-label).
+  // El login del storefront ya auto-redirige al owner a /dashboard via
+  // postAuthRedirect, así que vuelven a su panel sin perderse.
+  const tenantLoginUrl = `${tenantOrigin(tenant.slug)}/login`;
   return (
     <div data-ui-theme="dark" className="min-h-screen flex bg-[#0a0a0a] text-white">
       <aside className="w-64 border-r border-white/10 p-4 flex flex-col">
@@ -15,7 +20,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
           <h2 className="font-bold text-lg">{tenant.name}</h2>
           <div className="flex items-center gap-1.5 mt-0.5">
             <p className="text-xs text-white/40 truncate flex-1" title={email}>{email}</p>
-            <SignoutButton icon />
+            <SignoutButton icon redirectTo={tenantLoginUrl} />
           </div>
         </div>
         <nav className="flex flex-col gap-1 text-sm">

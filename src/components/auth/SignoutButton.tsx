@@ -3,13 +3,13 @@
 import { useTransition } from 'react';
 import { signoutAction } from '@/lib/auth/actions';
 
-export function SignoutButton({ className, icon = false }: { className?: string; icon?: boolean }) {
+export function SignoutButton({ className, icon = false, redirectTo }: { className?: string; icon?: boolean; redirectTo?: string }) {
   const [pending, start] = useTransition();
   if (icon) {
     return (
       <button
         type="button"
-        onClick={() => start(() => signoutAction())}
+        onClick={() => start(() => signoutAction(redirectTo))}
         disabled={pending}
         title="Cerrar sesión"
         aria-label="Cerrar sesión"
@@ -32,7 +32,7 @@ export function SignoutButton({ className, icon = false }: { className?: string;
   return (
     <button
       type="button"
-      onClick={() => start(() => signoutAction())}
+      onClick={() => start(() => signoutAction(redirectTo))}
       disabled={pending}
       className={className ?? 'text-sm text-white/60 hover:text-white disabled:opacity-50'}
     >

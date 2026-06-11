@@ -152,9 +152,36 @@ export async function loginAction(_prev: ActionResult | null, formData: FormData
   return { ok: true, redirectTo: await postAuthRedirect(userId) };
 }
 
-export async function signoutAction(): Promise<void> {
+/**
+ * Sanitiza un redirect absoluto post-signout: solo permitimos URLs que
+ * vivan bajo el rootDomain configurado (apex, subdominios de tenants,
+ * app/admin). Cualquier cosa fuera de eso → cae al '/' default.
+ */
+function sanitizePostSignoutRedirect(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const v = raw.trim();
+  if (!v) return null;
+  // Path interno relativo
+  if (v.startsWith('/') && !v.startsWith('//')) return v.length <= 500 ? v : null;
+  // URL absoluta: validar que hostname caiga bajo rootDomain
+  try {
+    const u = new URL(v);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    const root = env.rootDomain.toLowerCase();
+    const host = u.hostname.toLowerCase();
+    const isLocal = host === 'localhost' || host.endsWith('.localhost');
+    const isSameRoot = host === root || host.endsWith(`.${root}`);
+    if (!isLocal && !isSameRoot) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+export async function signoutAction(redirectTo?: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   revalidatePath('/', 'layout');
-  redirect('/');
+  const target = sanitizePostSignoutRedirect(redirectTo) ?? '/';
+  redirect(target);
 }
