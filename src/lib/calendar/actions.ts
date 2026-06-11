@@ -62,7 +62,7 @@ export async function setCourseCalendarAction(formData: FormData): Promise<void>
   const courseId = String(formData.get('course_id') ?? '');
   if (!courseId) return;
   const modeRaw = String(formData.get('mode') ?? 'none');
-  const mode = (['none', 'start_date', 'mentorship_slot'] as const)
+  const mode = (['none', 'start_date', 'mentorship_slot', 'event_tickets'] as const)
     .find((m) => m === modeRaw) ?? 'none';
   const label = String(formData.get('label') ?? '').trim().slice(0, 120) || null;
   const required = formData.get('required') === 'true' || formData.get('required') === 'on';
