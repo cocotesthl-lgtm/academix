@@ -15,7 +15,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
           <h2 className="font-bold text-lg">{tenant.name}</h2>
           <div className="flex items-center gap-1.5 mt-0.5">
             <p className="text-xs text-white/40 truncate flex-1" title={email}>{email}</p>
-            <SignoutButton className="text-[10px] uppercase tracking-wider text-white/40 hover:text-white border border-white/15 hover:border-white/40 rounded px-1.5 py-0.5 disabled:opacity-50 shrink-0" />
+            <SignoutButton icon />
           </div>
         </div>
         <nav className="flex flex-col gap-1 text-sm">
