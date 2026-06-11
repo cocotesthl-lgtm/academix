@@ -49,20 +49,6 @@ export default async function BuscarAcademiasPage() {
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 py-12 space-y-12">
-        {/* ─── Bloque login: usuarios que YA tienen cuenta ─── */}
-        <div className="rounded-2xl border border-white/15 bg-white/[0.03] p-6 text-center">
-          <h2 className="text-lg font-semibold">¿Ya tenés cuenta en Curplat?</h2>
-          <p className="text-sm text-white/60 mt-1">
-            Si sos propietario, afiliado o instructor, entrá con tu email.
-          </p>
-          <Link
-            href="/login"
-            className="inline-block mt-4 rounded-md bg-white text-black px-6 py-2.5 font-semibold hover:bg-white/90"
-          >
-            🔓 Iniciar sesión
-          </Link>
-        </div>
-
         {/* ─── Buscar academia (alumnos) ─── */}
         <div>
           <div className="text-center mb-8">
@@ -81,19 +67,6 @@ export default async function BuscarAcademiasPage() {
           />
         </div>
 
-        {/* ─── CTA crear cuenta (chooser) ─── */}
-        <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-6 text-center">
-          <h2 className="text-lg font-semibold">¿Todavía no tenés cuenta?</h2>
-          <p className="text-sm text-white/65 mt-1">
-            Creá tu cuenta en 30 segundos. Te preguntamos qué tipo querés.
-          </p>
-          <Link
-            href="/signup"
-            className="inline-block mt-4 rounded-md bg-fuchsia-500 text-white px-6 py-2.5 font-semibold hover:bg-fuchsia-400"
-          >
-            ✨ Crear cuenta gratis
-          </Link>
-        </div>
       </main>
     </div>
   );
