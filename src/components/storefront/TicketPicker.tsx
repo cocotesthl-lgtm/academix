@@ -228,28 +228,43 @@ export function TicketPicker({
             />
           </div>
 
-          {/* Total + submit */}
-          <div className="pt-2 border-t border-black/10 flex items-center justify-between">
-            <div>
-              <div className="text-xs text-black/50">Total</div>
-              <div className="text-2xl font-bold">
-                {isFree
-                  ? 'Gratis'
-                  : `$ ${(totalCents / 100).toLocaleString('es-AR')} ${currency}`}
+          {/* Total + submit. Look estilo recibo: currency al frente,
+              número compacto sin parsing de "$ X ARS" en columnas. */}
+          <div className="pt-3 border-t border-black/10 space-y-3">
+            <div className="rounded-lg bg-black/[0.04] px-4 py-3">
+              <div className="flex items-baseline justify-between gap-2 mb-1">
+                <span className="text-[11px] text-black/55 uppercase tracking-wider font-medium">Total</span>
+                {totalTickets > 0 && !isFree && (
+                  <span className="text-[11px] text-black/45 whitespace-nowrap">
+                    {totalTickets} × ${(priceCents / 100).toLocaleString('es-AR')}
+                  </span>
+                )}
               </div>
-              {totalTickets > 0 && !isFree && (
-                <div className="text-xs text-black/45">
-                  {totalTickets} × ${(priceCents / 100).toLocaleString('es-AR')}
-                </div>
-              )}
+              <div className="font-bold leading-none flex items-baseline gap-1.5">
+                {isFree ? (
+                  <span className="text-2xl">Gratis</span>
+                ) : (
+                  <>
+                    <span className="text-xs text-black/55 font-medium tracking-wide">{currency}</span>
+                    <span className="text-2xl">{(totalCents / 100).toLocaleString('es-AR')}</span>
+                  </>
+                )}
+              </div>
             </div>
             <button
               type="submit"
               disabled={!dataReady}
-              className="rounded-md py-3 px-6 font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-md py-3 px-4 font-semibold text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               style={{ background: primary }}
             >
-              🎫 {isFree ? 'Reservar' : 'Comprar tickets'}
+              <span>🎫</span>
+              <span>
+                {isFree
+                  ? 'Reservar mi lugar'
+                  : totalTickets > 0
+                    ? `Comprar ${totalTickets} ${totalTickets === 1 ? 'ticket' : 'tickets'}`
+                    : 'Comprar tickets'}
+              </span>
             </button>
           </div>
         </div>
