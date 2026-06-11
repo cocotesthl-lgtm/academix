@@ -4,6 +4,66 @@ import { useState } from 'react';
 import type { SeatZone } from '@/lib/calendar/types';
 
 /**
+ * Mapa visual chico de cómo se va a ver cada zona en el storefront.
+ * Sirve para que el owner vea de un pantallazo qué está armando.
+ */
+function ZonesPreview({ zones, basePriceCents = 1000_00, currency = 'ARS' }: {
+  zones: SeatZone[]; basePriceCents?: number; currency?: string;
+}) {
+  if (zones.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-white/10 bg-black/30 p-3 mt-3">
+      <div className="text-[10px] uppercase tracking-wider text-white/40 text-center mb-2 border-b border-white/10 pb-1">
+        escenario / frente
+      </div>
+      <div className="space-y-3">
+        {zones.map((z) => {
+          const zonePrice = Math.round(basePriceCents * z.price_multiplier);
+          const color = z.color || '#a855f7';
+          return (
+            <div key={z.id} className="rounded p-2" style={{ background: `${color}1A` }}>
+              <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="w-2.5 h-2.5 rounded" style={{ background: color }} />
+                  <strong>{z.name || '—'}</strong>
+                  <span className="text-white/55 text-[10px]">
+                    ${(zonePrice / 100).toLocaleString('es-AR')} {currency}/asiento
+                    {z.price_multiplier !== 1 && ` (×${z.price_multiplier})`}
+                  </span>
+                </div>
+                <span className="text-[10px] text-white/45">
+                  {z.rows}×{z.cols} = {z.rows * z.cols} asientos
+                </span>
+              </div>
+              <div className="space-y-0.5 overflow-x-auto">
+                {Array.from({ length: z.rows }, (_, r) => (
+                  <div key={r} className="flex items-center justify-center gap-0.5">
+                    <span className="w-3 text-[8px] font-mono text-white/30 text-right">
+                      {String.fromCharCode(65 + r)}
+                    </span>
+                    {Array.from({ length: z.cols }, (_, c) => (
+                      <span
+                        key={c}
+                        className="w-3 h-3 rounded-sm inline-block"
+                        style={{ background: `${color}80`, border: `1px solid ${color}` }}
+                        title={`${z.id}:${String.fromCharCode(65 + r)}${c + 1}`}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[9px] text-white/35 text-center mt-2">
+        💡 Vista previa con precio base de muestra ($1.000). El precio real sale del curso.
+      </p>
+    </div>
+  );
+}
+
+/**
  * Editor inline de zonas para un evento. El owner agrega zonas (ej VIP /
  * General / Pullman), cada una con su grid (filas × cols) + multiplicador
  * de precio. Renderiza un hidden input "seat_zones" con el JSON para
@@ -61,6 +121,9 @@ export function ZonesEditor() {
           + Zona
         </button>
       </div>
+
+      {/* Vista previa visual — ayuda al owner a ver qué está armando */}
+      <ZonesPreview zones={zones} />
 
       {zones.length > 0 && (
         <div className="space-y-2">
