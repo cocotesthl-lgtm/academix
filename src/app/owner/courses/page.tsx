@@ -27,6 +27,37 @@ export default async function CoursesIndex() {
 
   const courses = (data ?? []) as CourseRow[];
 
+  // Stats por curso (clientes únicos + revenue total)
+  // Una query agregada por todos los cursos: enrollments + sales
+  type Stats = { clients: number; revenue: number };
+  const stats = new Map<string, Stats>();
+  const courseIds = courses.map((c) => c.id);
+  if (courseIds.length > 0) {
+    const [{ data: enrollAgg }, { data: salesAgg }] = await Promise.all([
+      svc.from('enrollments').select('course_id, user_id')
+        .eq('tenant_id', tenant.id).in('course_id', courseIds),
+      svc.from('sales').select('course_id, amount_gross_cents')
+        .eq('tenant_id', tenant.id).eq('status', 'paid').in('course_id', courseIds)
+    ]);
+    // Clients únicos por (course_id, user_id)
+    const uniqueByCourse = new Map<string, Set<string>>();
+    for (const e of ((enrollAgg ?? []) as Array<{ course_id: string; user_id: string }>)) {
+      if (!uniqueByCourse.has(e.course_id)) uniqueByCourse.set(e.course_id, new Set());
+      uniqueByCourse.get(e.course_id)!.add(e.user_id);
+    }
+    // Revenue por course_id
+    const revByCourse = new Map<string, number>();
+    for (const s of ((salesAgg ?? []) as Array<{ course_id: string; amount_gross_cents: number }>)) {
+      revByCourse.set(s.course_id, (revByCourse.get(s.course_id) ?? 0) + Number(s.amount_gross_cents));
+    }
+    for (const c of courses) {
+      stats.set(c.id, {
+        clients: uniqueByCourse.get(c.id)?.size ?? 0,
+        revenue: revByCourse.get(c.id) ?? 0
+      });
+    }
+  }
+
   return (
     <div className="max-w-5xl">
       <PageHeader
@@ -47,18 +78,21 @@ export default async function CoursesIndex() {
       <div className="rounded-xl border border-white/10 overflow-hidden">
         {(
           <table className="w-full text-sm">
-            <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
+            <thead className="bg-[#0f0f0f] text-white/50 text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
                 <th className="text-left px-4 py-2.5">Título</th>
                 <th className="text-left px-4 py-2.5">Estado</th>
                 <th className="text-left px-4 py-2.5">Precio</th>
-                <th className="text-left px-4 py-2.5">Creado</th>
+                <th className="text-right px-4 py-2.5">Clientes</th>
+                <th className="text-right px-4 py-2.5">Recaudado</th>
                 <th className="text-right px-4 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
-              {courses.map((c) => (
-                <tr key={c.id} className="border-t border-white/5">
+              {courses.map((c) => {
+                const s = stats.get(c.id);
+                return (
+                <tr key={c.id} className="border-t border-white/5 hover:bg-white/[0.02]">
                   <td className="px-4 py-3">
                     <Link href={`/courses/${c.id}`} className="font-medium hover:underline">
                       {c.title}
@@ -77,10 +111,19 @@ export default async function CoursesIndex() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-white/80">
-                    {(c.price_cents / 100).toLocaleString('es-AR')} {c.currency}
+                    {c.price_cents === 0 ? 'Gratis' : `${(c.price_cents / 100).toLocaleString('es-AR')} ${c.currency}`}
                   </td>
-                  <td className="px-4 py-3 text-white/50">
-                    {new Date(c.created_at).toLocaleDateString('es-AR')}
+                  <td className="px-4 py-3 text-right font-medium">
+                    {s?.clients ?? 0}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    {s && s.revenue > 0 ? (
+                      <span className="text-emerald-300">
+                        ${(s.revenue / 100).toLocaleString('es-AR')}
+                      </span>
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link href={`/courses/${c.id}`} className="text-xs text-white/60 hover:text-white">
@@ -88,7 +131,8 @@ export default async function CoursesIndex() {
                     </Link>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
