@@ -8,6 +8,7 @@ import {
 } from "@/lib/instructors/actions";
 import { InstructorPermToggle } from "@/components/owner/instructors/InstructorPermToggle";
 import { EmptyState } from "@/components/owner/EmptyState";
+import { PageHeader } from "@/components/owner/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -76,13 +77,10 @@ export default async function OwnerInstructorsPage() {
 
   return (
     <div className="space-y-8 max-w-4xl">
-      <div>
-        <h1 className="text-2xl font-bold">Instructores</h1>
-        <p className="text-white/60 text-sm mt-1">
-          Asigná cursos a cada instructor y decidí qué pueden hacer en cada uno.
-          El instructor accede desde <code className="text-xs bg-white/5 px-1.5 py-0.5 rounded">/instructor</code>.
-        </p>
-      </div>
+      <PageHeader
+        title="Instructores"
+        description="Asigná cursos a cada instructor y decidí qué pueden hacer. Acceden desde /instructor con su misma cuenta."
+      />
 
       {/* ─── Ascender afiliados ─── */}
       {affiliateCandidates.length > 0 && (

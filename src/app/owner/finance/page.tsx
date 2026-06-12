@@ -2,6 +2,7 @@ import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { getOwnerBalance } from "@/lib/debt/accrue";
 import { CopyButton } from "@/components/owner/CopyButton";
+import { PageHeader, HeaderSecondary } from "@/components/owner/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -86,12 +87,11 @@ export default async function OwnerFinance() {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-bold">Finanzas</h1>
-        <p className="text-white/60 text-sm mt-1">
-          Vos cobrás directo a tu MercadoPago. Acá vemos la comisión que vas acumulando como deuda con la plataforma.
-        </p>
-      </div>
+      <PageHeader
+        title="Finanzas"
+        description="Vos cobrás directo a tu MercadoPago. Acá vemos la comisión que vas acumulando como deuda con la plataforma."
+        actions={<HeaderSecondary href="/ventas">Ver ventas</HeaderSecondary>}
+      />
 
       {showCollection && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 text-red-200 p-4">

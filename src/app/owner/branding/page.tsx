@@ -2,6 +2,7 @@ import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { BrandingForm } from "@/components/owner/BrandingForm";
+import { PageHeader, HeaderSecondary } from "@/components/owner/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +25,11 @@ export default async function BrandingPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Branding</h1>
-        <p className="text-white/60 mt-1 text-sm">
-          Personalizá cómo se ve tu academia para tus alumnos.
-        </p>
-      </div>
+      <PageHeader
+        title="Identidad"
+        description="Logo y color principal de tu academia. Aparecen en tu storefront, emails de venta y entradas."
+        actions={<HeaderSecondary href="/site">Editar páginas</HeaderSecondary>}
+      />
       <BrandingForm
         initialName={tenant.name}
         initialBrand={(data?.brand as BrandRow) ?? {}}
