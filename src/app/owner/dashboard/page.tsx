@@ -69,9 +69,9 @@ export default async function OwnerDashboard() {
           .eq('tenant_id', tenant.id)
           .gte('date', today)
           .order('date', { ascending: true })
-          .limit(1);
-        return data?.[0] as { id: string; date: string; course_id: string | null; start_min: number; capacity: number; seat_mode: string } | undefined;
-      } catch { return undefined; }
+          .limit(3);
+        return (data ?? []) as Array<{ id: string; date: string; course_id: string | null; start_min: number; capacity: number; seat_mode: string }>;
+      } catch { return []; }
     })()
   ]);
 
@@ -126,20 +126,35 @@ export default async function OwnerDashboard() {
   const totalClients = clientsCount.count ?? 0;
   const openSupport = openSupportRes.count ?? 0;
 
-  // Next event ticket sales count
-  let nextEventTickets = 0;
-  let nextEventCourseTitle = '';
-  if (nextEventRes) {
+  // Next events: fetch ticket counts + course titles in batch
+  type EventCard = {
+    id: string; date: string; start_min: number; capacity: number;
+    course_id: string | null; courseTitle: string; ticketsSold: number;
+  };
+  const upcomingEvents: EventCard[] = [];
+  if (nextEventRes.length > 0) {
     try {
-      const [{ count }, { data: course }] = await Promise.all([
-        svc.from('event_tickets').select('id', { count: 'exact', head: true })
-          .eq('calendar_date_id', nextEventRes.id).eq('status', 'confirmed'),
-        nextEventRes.course_id
-          ? svc.from('courses').select('title').eq('id', nextEventRes.course_id).maybeSingle<{ title: string }>()
-          : Promise.resolve({ data: null })
+      const eventIds = nextEventRes.map((e) => e.id);
+      const courseIdsFromEvents = Array.from(new Set(nextEventRes.map((e) => e.course_id).filter((c): c is string => !!c)));
+      const [tCountRes, coursesRes] = await Promise.all([
+        svc.from('event_tickets').select('calendar_date_id').in('calendar_date_id', eventIds).eq('status', 'confirmed'),
+        courseIdsFromEvents.length > 0
+          ? svc.from('courses').select('id, title').in('id', courseIdsFromEvents)
+          : Promise.resolve({ data: [] })
       ]);
-      nextEventTickets = count ?? 0;
-      nextEventCourseTitle = course?.title ?? 'Evento';
+      const ticketsByDate = new Map<string, number>();
+      for (const t of ((tCountRes.data ?? []) as Array<{ calendar_date_id: string }>)) {
+        ticketsByDate.set(t.calendar_date_id, (ticketsByDate.get(t.calendar_date_id) ?? 0) + 1);
+      }
+      const titleMap = new Map(((coursesRes.data ?? []) as Array<{ id: string; title: string }>).map((c) => [c.id, c.title]));
+      for (const e of nextEventRes) {
+        upcomingEvents.push({
+          id: e.id, date: e.date, start_min: e.start_min, capacity: e.capacity,
+          course_id: e.course_id,
+          courseTitle: e.course_id ? (titleMap.get(e.course_id) ?? 'Evento') : 'Evento',
+          ticketsSold: ticketsByDate.get(e.id) ?? 0
+        });
+      }
     } catch { /* ignore */ }
   }
 
@@ -221,7 +236,7 @@ export default async function OwnerDashboard() {
         <Kpi
           label="Clientes activos"
           value={String(totalClients)}
-          sub={totalClients === 0 ? 'Compartí tu sitio' : `${nextEventTickets > 0 ? nextEventTickets + ' tickets vendidos del evento próximo' : ''}`}
+          sub={totalClients === 0 ? 'Compartí tu sitio' : `${upcomingEvents.length > 0 ? upcomingEvents[0].ticketsSold + ' tickets en próximo evento' : ''}`}
         />
         <Kpi
           label="Cursos publicados"
@@ -236,30 +251,39 @@ export default async function OwnerDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
-        {/* ─── Próximo evento ─── */}
-        {nextEventRes && (
+        {/* ─── Próximos eventos (hasta 3) ─── */}
+        {upcomingEvents.length > 0 && (
           <div className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-fuchsia-300 font-semibold mb-1">🎟️ Próximo evento</div>
-                <h3 className="text-lg font-bold">{nextEventCourseTitle}</h3>
-                <p className="text-sm text-white/65 mt-1">
-                  {new Date(nextEventRes.date + 'T12:00:00').toLocaleDateString('es-AR', {
-                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-                  })}
-                  {' · '}
-                  {String(Math.floor(nextEventRes.start_min / 60)).padStart(2, '0')}:
-                  {String(nextEventRes.start_min % 60).padStart(2, '0')} hs
-                </p>
-              </div>
-            </div>
-            <div className="text-sm">
-              <strong className="text-fuchsia-200">{nextEventTickets}</strong>
-              {nextEventRes.capacity > 0 && (
-                <span className="text-white/55"> / {nextEventRes.capacity}</span>
-              )}
-              <span className="text-white/55"> entradas vendidas</span>
-            </div>
+            <div className="text-[10px] uppercase tracking-wider text-fuchsia-300 font-semibold mb-3">🎟️ Próximos eventos</div>
+            <ul className="space-y-3">
+              {upcomingEvents.map((ev) => {
+                const dateLabel = new Date(ev.date + 'T12:00:00').toLocaleDateString('es-AR', {
+                  weekday: 'short', day: 'numeric', month: 'short'
+                });
+                const timeLabel = `${String(Math.floor(ev.start_min / 60)).padStart(2, '0')}:${String(ev.start_min % 60).padStart(2, '0')}`;
+                const pct = ev.capacity > 0 ? Math.min(100, Math.round((ev.ticketsSold / ev.capacity) * 100)) : 0;
+                return (
+                  <li key={ev.id}>
+                    <Link href={`/eventos/${ev.id}`} className="block group">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <h3 className="text-sm font-bold truncate group-hover:text-fuchsia-200">{ev.courseTitle}</h3>
+                        <span className="text-xs text-white/55 capitalize whitespace-nowrap">{dateLabel} · {timeLabel}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="text-xs text-fuchsia-200 font-medium">
+                          {ev.ticketsSold}{ev.capacity > 0 ? `/${ev.capacity}` : ''} entradas
+                        </div>
+                        {ev.capacity > 0 && (
+                          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-fuchsia-500" style={{ width: `${pct}%` }} />
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
             <div className="flex gap-2 mt-4">
               <Link href="/eventos/validar"
                 className="rounded-md bg-fuchsia-500 text-white px-3 py-1.5 text-xs font-semibold hover:bg-fuchsia-400">
@@ -267,7 +291,7 @@ export default async function OwnerDashboard() {
               </Link>
               <Link href="/eventos/asistencia"
                 className="rounded-md border border-white/15 px-3 py-1.5 text-xs hover:bg-white/5">
-                Ver asistencia
+                Ver todos →
               </Link>
             </div>
           </div>
