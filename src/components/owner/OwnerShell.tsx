@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { CommandPalette, CommandPaletteTrigger } from './CommandPalette';
+import { ToastBus } from './ToastBus';
 
 /**
  * Layout shell del owner panel — wrapper client-side que maneja:
@@ -43,6 +44,7 @@ export function OwnerShell({
   return (
     <div data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white">
       <CommandPalette storefrontUrl={storefrontUrl} />
+      <ToastBus />
       {/* Mobile topbar — visible solo <lg */}
       <header className="lg:hidden sticky top-0 z-30 flex items-center gap-2 px-3 py-2 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/10">
         <button

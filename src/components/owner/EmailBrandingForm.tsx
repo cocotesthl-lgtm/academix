@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useState, useEffect } from 'react';
 import { updateEmailBrandingAction, type BrandingResult } from '@/lib/branding/actions';
+import { showToast } from './ToastBus';
 
 /**
  * Form para personalizar los emails que sale a los compradores.
@@ -36,6 +37,12 @@ export function EmailBrandingForm({
   const [header, setHeader] = useState(initialHeader);
   const [banner, setBanner] = useState(initialBanner);
   const [footer, setFooter] = useState(initialFooter);
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) showToast('Cambios guardados', 'success');
+    else showToast(state.error, 'error', 4500);
+  }, [state]);
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
