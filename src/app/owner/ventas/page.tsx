@@ -60,11 +60,31 @@ export default async function OwnerVentasPage({
   const courses = (coursesRaw ?? []) as Array<{ id: string; title: string }>;
   const courseMap = new Map(courses.map((c) => [c.id, c]));
 
+  // Si buscás por N° de orden, resolvemos el sale via event_tickets.order_number
+  let orderHits = new Set<string>(); // sale_ids que matchean por order_number
+  if (search) {
+    try {
+      const { data: orderRaw } = await svc
+        .from('event_tickets')
+        .select('order_number, enrollment_id')
+        .eq('tenant_id', tenant.id)
+        .ilike('order_number', `%${search.toUpperCase()}%`)
+        .limit(50);
+      const enrollIdsFromOrders = ((orderRaw ?? []) as Array<{ enrollment_id: string | null }>)
+        .map((t) => t.enrollment_id).filter((x): x is string => !!x);
+      if (enrollIdsFromOrders.length > 0) {
+        const { data: salesFromOrders } = await svc
+          .from('enrollments').select('sale_id').in('id', enrollIdsFromOrders);
+        orderHits = new Set(((salesFromOrders ?? []) as Array<{ sale_id: string | null }>)
+          .map((e) => e.sale_id).filter((x): x is string => !!x));
+      }
+    } catch { /* tabla event_tickets no existe */ }
+  }
   const filtered = search
     ? sales.filter((s) => {
         const hay = [s.buyer_name, s.buyer_email, s.buyer_phone, s.buyer_dni, s.external_id]
           .filter(Boolean).join(' ').toLowerCase();
-        return hay.includes(search);
+        return hay.includes(search) || orderHits.has(s.id);
       })
     : sales;
 
@@ -99,7 +119,7 @@ export default async function OwnerVentasPage({
           <label className="block text-xs text-white/50 mb-1">Buscar</label>
           <input
             type="text" name="q" defaultValue={sp.q ?? ''}
-            placeholder="Nombre, email, DNI, ID externo"
+            placeholder="Nombre, email, DNI, ID externo o N° de orden"
             className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
           />
         </div>
