@@ -5,6 +5,7 @@ import {
   setCouponStatusAction,
   deleteCouponAction
 } from "@/lib/coupons/actions";
+import { PageHeader } from "@/components/owner/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -42,12 +43,10 @@ export default async function CouponsPage() {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-bold">Cupones de descuento</h1>
-        <p className="text-white/60 text-sm mt-1">
-          Creá códigos promocionales con descuento porcentual o fijo, límite de usos y fecha de expiración.
-        </p>
-      </div>
+      <PageHeader
+        title="Cupones de descuento"
+        description="Códigos promocionales con % o monto fijo, límite de usos y expiración. Aplicables a un curso o a todos."
+      />
 
       {/* Create form */}
       <form

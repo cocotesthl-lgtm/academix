@@ -7,6 +7,7 @@ import {
 } from "@/lib/calendar/actions";
 import { WEEKDAY_LABELS, minToHHMM, type AvailabilityRule } from "@/lib/calendar/types";
 import { ZonesEditor } from "@/components/owner/calendar/ZonesEditor";
+import { PageHeader, HeaderSecondary } from "@/components/owner/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -111,14 +112,11 @@ export default async function AvailabilityPage() {
 
   return (
     <div className="space-y-8 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold">Disponibilidad</h1>
-        <p className="text-white/60 text-sm mt-1">
-          Declará tus horarios semanales recurrentes. Los compradores van a poder
-          elegir slots dentro de estos bloques cuando un curso esté configurado
-          como <strong>mentoría / clase en vivo</strong>.
-        </p>
-      </div>
+      <PageHeader
+        title="Calendario de eventos"
+        description="Horarios recurrentes para mentorías + fechas puntuales para eventos con tickets + pausas/vacaciones."
+        actions={<HeaderSecondary href="/eventos/asistencia">Ver asistencia</HeaderSecondary>}
+      />
 
       {/* ─── Agregar regla ─── */}
       <form action={addAvailabilityRuleAction} className="rounded-xl border border-white/10 bg-white/[0.02] p-5 space-y-3">

@@ -9,6 +9,7 @@ import {
   moveTenantExtraFieldAction
 } from "@/lib/checkout/actions";
 import { CheckoutFieldsEditor } from "@/components/owner/checkout/CheckoutFieldsEditor";
+import { PageHeader } from "@/components/owner/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -45,14 +46,10 @@ export default async function CheckoutDefaultPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold">Checkout — campos default</h1>
-        <p className="text-white/60 text-sm mt-1">
-          Definí qué datos pedís a los compradores antes del pago.
-          Estos se aplican a todos los cursos por default. Cada curso puede tener
-          su propia config si lo necesita (desde la página del curso).
-        </p>
-      </div>
+      <PageHeader
+        title="Checkout"
+        description="Qué datos pedís al comprador antes del pago. Aplica a todos los cursos por default — cada curso puede sobreescribir."
+      />
 
       <CheckoutFieldsEditor
         config={cfg}

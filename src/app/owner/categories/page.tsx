@@ -5,6 +5,7 @@ import {
   renameCategoryAction,
   deleteCategoryAction
 } from "@/lib/categories/actions";
+import { PageHeader } from "@/components/owner/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +23,10 @@ export default async function CategoriesPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold">Categorías</h1>
-        <p className="text-white/60 text-sm mt-1">Organizá tus cursos en categorías para que tus clientes filtren fácil.</p>
-      </div>
+      <PageHeader
+        title="Categorías"
+        description="Agrupá tus cursos para que los clientes filtren rápido en el storefront."
+      />
 
       <form action={createCategoryAction} className="flex gap-2">
         <input
