@@ -4,6 +4,7 @@ import { stopImpersonatingAction } from "@/lib/founder/actions";
 import { tenantOrigin } from "@/lib/env";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 import { OwnerShell } from "@/components/owner/OwnerShell";
+import { CommandPaletteTrigger } from "@/components/owner/CommandPalette";
 
 export const dynamic = "force-dynamic";
 
@@ -19,12 +20,15 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
 
   const sidebar = (
     <>
-      <div className="mb-5">
+      <div className="mb-3">
         <h2 className="font-bold text-lg truncate">{tenant.name}</h2>
         <div className="flex items-center gap-1.5 mt-0.5">
           <p className="text-xs text-white/40 truncate flex-1" title={email}>{email}</p>
           <SignoutButton icon redirectTo={tenantLoginUrl} />
         </div>
+      </div>
+      <div className="mb-3">
+        <CommandPaletteTrigger />
       </div>
       <div className="flex-1 overflow-y-auto -mx-1 px-1">
         <OwnerSidebar />
@@ -44,7 +48,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   );
 
   return (
-    <OwnerShell brandName={tenant.name} sidebar={sidebar}>
+    <OwnerShell brandName={tenant.name} storefrontUrl={storefrontUrl} sidebar={sidebar}>
       {impersonating && (
         <div className="mb-4 rounded-lg bg-amber-500 text-amber-950 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-sm font-medium">
           <span>

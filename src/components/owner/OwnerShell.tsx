@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { CommandPalette, CommandPaletteTrigger } from './CommandPalette';
 
 /**
  * Layout shell del owner panel — wrapper client-side que maneja:
@@ -16,10 +17,12 @@ import { usePathname } from 'next/navigation';
  */
 export function OwnerShell({
   brandName,
+  storefrontUrl,
   sidebar,
   children
 }: {
   brandName: string;
+  storefrontUrl: string;
   sidebar: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -39,8 +42,9 @@ export function OwnerShell({
 
   return (
     <div data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white">
+      <CommandPalette storefrontUrl={storefrontUrl} />
       {/* Mobile topbar — visible solo <lg */}
-      <header className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-3 py-2 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/10">
+      <header className="lg:hidden sticky top-0 z-30 flex items-center gap-2 px-3 py-2 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/10">
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -54,6 +58,7 @@ export function OwnerShell({
           </svg>
         </button>
         <div className="font-semibold text-sm truncate flex-1">{brandName}</div>
+        <CommandPaletteTrigger compact />
       </header>
 
       <div className="flex">
