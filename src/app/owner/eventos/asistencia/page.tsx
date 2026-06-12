@@ -120,21 +120,29 @@ function EventsTable({ rows }: { rows: EventRow[]; tenantSlug: string }) {
             <th className="text-right px-4 py-2">Vendidos</th>
             <th className="text-right px-4 py-2">Usados</th>
             <th className="text-right px-4 py-2">% asistencia</th>
+            <th className="text-right px-4 py-2"></th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => {
             const pct = r.total > 0 ? Math.round((r.used / r.total) * 100) : 0;
             return (
-              <tr key={r.id} className="border-t border-white/10">
-                <td className="px-4 py-2.5 font-mono text-white/70">{r.date}</td>
-                <td className="px-4 py-2.5">{r.course_title}</td>
+              <tr key={r.id} className="border-t border-white/10 hover:bg-white/[0.02] cursor-pointer">
+                <td className="px-4 py-2.5 font-mono text-white/70">
+                  <a href={`/eventos/${r.id}`} className="block">{r.date}</a>
+                </td>
+                <td className="px-4 py-2.5">
+                  <a href={`/eventos/${r.id}`} className="block hover:text-white">{r.course_title}</a>
+                </td>
                 <td className="px-4 py-2.5 text-right font-medium">{r.total}</td>
                 <td className="px-4 py-2.5 text-right font-medium text-emerald-300">{r.used}</td>
                 <td className="px-4 py-2.5 text-right">
                   <span className={pct >= 80 ? 'text-emerald-300' : pct >= 50 ? 'text-amber-300' : 'text-white/55'}>
                     {pct}%
                   </span>
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <a href={`/eventos/${r.id}`} className="text-xs text-white/55 hover:text-white">Ver →</a>
                 </td>
               </tr>
             );
