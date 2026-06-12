@@ -118,6 +118,12 @@ export default async function CourseDetailPage({
 
       // Tickets ya vendidos por fecha (para mostrar asientos ocupados + soldCount)
       if (eventDates.length > 0) {
+        // Cleanup lazy: liberar asientos de pendings abandonados (>15 min)
+        // antes de calcular ocupación. Si un comprador no terminó en MP, su
+        // ticket pending pasa a cancelled y el asiento queda libre.
+        const { cleanupStalePendingTicketsForDate } = await import('@/lib/calendar/seat-cleanup');
+        await Promise.all(eventDates.map((ev) => cleanupStalePendingTicketsForDate(svc, ev.id)));
+
         const { data: tRaw } = await svc.from('event_tickets')
           .select('calendar_date_id, seat_label')
           .in('calendar_date_id', eventDates.map((e) => e.id))

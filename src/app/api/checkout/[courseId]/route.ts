@@ -225,6 +225,13 @@ export async function POST(
     if (!ev || (ev.course_id && ev.course_id !== course.id)) {
       return NextResponse.redirect(`${origin}/c/${course.slug}?error=event_not_found`, { status: 303 });
     }
+    // Cleanup lazy: cancelar pendings abandonados (>15 min) ANTES de
+    // chequear capacidad o intentar insertar. Esto evita que el UNIQUE
+    // index (calendar_date_id, seat_label) rechace un nuevo comprador por
+    // un ticket pending de alguien que nunca pagó.
+    const { cleanupStalePendingTicketsForDate } = await import('@/lib/calendar/seat-cleanup');
+    await cleanupStalePendingTicketsForDate(svc, eventDateId);
+
     // Check capacity
     const { count } = await svc.from('event_tickets')
       .select('id', { count: 'exact', head: true })
