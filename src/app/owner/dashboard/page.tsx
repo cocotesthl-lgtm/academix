@@ -3,6 +3,7 @@ import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { getOwnerBalance } from "@/lib/debt/accrue";
 import { tenantOrigin } from "@/lib/env";
+import { OnboardingChecklist, type OnboardingStep } from "@/components/owner/OnboardingChecklist";
 
 export const dynamic = "force-dynamic";
 
@@ -110,6 +111,41 @@ export default async function OwnerDashboard() {
 
   const isNewAccount = totalCourses === 0;
 
+  // Onboarding: detectar qué pasos faltan
+  const { data: tenantBrand } = await svc
+    .from('tenants').select('brand').eq('id', tenant.id).maybeSingle<{ brand: { logo_url?: string; primary_color?: string } | null }>();
+  const hasBranding = !!(tenantBrand?.brand?.logo_url || (tenantBrand?.brand?.primary_color && tenantBrand.brand.primary_color !== '#a855f7'));
+  const onboardingSteps: OnboardingStep[] = [
+    {
+      id: 'brand',
+      title: 'Personalizá tu marca',
+      description: 'Subí tu logo y elegí un color principal.',
+      href: '/branding',
+      done: hasBranding
+    },
+    {
+      id: 'mp',
+      title: 'Conectá MercadoPago',
+      description: 'Necesario para cobrar las ventas.',
+      href: '/integrations',
+      done: mpConnected
+    },
+    {
+      id: 'course',
+      title: 'Creá tu primer curso',
+      description: 'Curso online, evento con tickets o mentoría.',
+      href: '/courses/new',
+      done: totalCourses > 0
+    },
+    {
+      id: 'publish',
+      title: 'Publicá al menos un curso',
+      description: 'Los borradores no aparecen en tu storefront público.',
+      href: '/courses',
+      done: totalPublished > 0
+    }
+  ];
+
   return (
     <div className="space-y-7 max-w-6xl">
       <div className="flex items-end justify-between flex-wrap gap-3">
@@ -129,21 +165,14 @@ export default async function OwnerDashboard() {
         </a>
       </div>
 
-      {/* ─── Alertas ─── */}
-      {!mpConnected && (
-        <Alert tone="amber" title="No conectaste MercadoPago todavía"
-          desc="Sin pasarela, los compradores no pueden pagar."
-          cta={{ label: 'Conectar ahora', href: '/integrations' }} />
-      )}
+      {/* ─── Onboarding checklist (se auto-oculta cuando 4/4 completados) ─── */}
+      <OnboardingChecklist steps={onboardingSteps} />
+
+      {/* ─── Alertas críticas (no redundantes con el checklist) ─── */}
       {balance > 0 && (
-        <Alert tone="emerald" title={`Tenés $ ${ars(balance)} de comisión a pagar`}
+        <Alert tone="amber" title={`Tenés $ ${ars(balance)} de comisión a pagar`}
           desc="Pagar a tiempo evita la suspensión de tu academia."
           cta={{ label: 'Ver finanzas', href: '/finance' }} />
-      )}
-      {isNewAccount && mpConnected && (
-        <Alert tone="fuchsia" title="¡Bienvenido! Tu cuenta está lista"
-          desc="Creá tu primer curso o evento para empezar a vender."
-          cta={{ label: 'Crear primer curso', href: '/courses/new' }} />
       )}
 
       {/* ─── KPIs ─── */}
