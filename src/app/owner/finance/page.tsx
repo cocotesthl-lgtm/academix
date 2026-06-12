@@ -257,7 +257,7 @@ function CryptoPayoutCard({ balanceCents }: { balanceCents: number }) {
         <p className="text-sm text-white/70 leading-relaxed">
           Por ahora la comisión se paga en USDT o BTC. Transferí el equivalente a{' '}
           <strong>${(balanceCents / 100).toLocaleString('es-AR')} ARS</strong> a una de estas direcciones
-          y mandanos el comprobante por <a href="/tickets/new" className="underline hover:text-white">soporte</a>.
+          y mandanos el comprobante por <a href="/soporte/new" className="underline hover:text-white">soporte</a>.
           En menos de 24h marcamos tu saldo en 0.
         </p>
       </div>

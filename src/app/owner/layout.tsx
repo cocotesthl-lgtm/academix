@@ -2,6 +2,7 @@ import { requireOwner, getCurrentUser } from "@/lib/auth/guards";
 import { SignoutButton } from "@/components/auth/SignoutButton";
 import { stopImpersonatingAction } from "@/lib/founder/actions";
 import { tenantOrigin } from "@/lib/env";
+import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 
 export const dynamic = "force-dynamic";
 
@@ -13,38 +14,21 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   // El login del storefront ya auto-redirige al owner a /dashboard via
   // postAuthRedirect, así que vuelven a su panel sin perderse.
   const tenantLoginUrl = `${tenantOrigin(tenant.slug)}/login`;
+  const storefrontUrl = `https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}`;
   return (
     <div data-ui-theme="dark" className="min-h-screen flex bg-[#0a0a0a] text-white">
       <aside className="w-64 border-r border-white/10 p-4 flex flex-col">
-        <div className="mb-6">
-          <h2 className="font-bold text-lg">{tenant.name}</h2>
+        <div className="mb-5">
+          <h2 className="font-bold text-lg truncate">{tenant.name}</h2>
           <div className="flex items-center gap-1.5 mt-0.5">
             <p className="text-xs text-white/40 truncate flex-1" title={email}>{email}</p>
             <SignoutButton icon redirectTo={tenantLoginUrl} />
           </div>
         </div>
-        <nav className="flex flex-col gap-1 text-sm">
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/dashboard">Dashboard</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/site">Editor de sitio</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/branding">Branding</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/courses">Cursos</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/clientes">Clientes</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/ventas">Ventas</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/instructors">Instructores</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/categories">Categorías</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/coupons">Cupones</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/checkout">Checkout</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/availability">Disponibilidad</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tickets-scan">Validar tickets</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tickets-usage">Uso de tickets</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/integrations">Integraciones</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/finance">Finanzas</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/affiliates">Afiliados</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tickets">Soporte</a>
-        </nav>
+        <OwnerSidebar />
         <div className="mt-auto pt-4 border-t border-white/10">
           <a
-            href={`https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}`}
+            href={storefrontUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="block text-xs text-white/40 hover:text-white truncate"
