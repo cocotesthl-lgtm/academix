@@ -81,16 +81,38 @@ export default async function OwnerDashboard() {
   const gmvPrev30 = salesPrev30.reduce((s, r) => s + Number(r.amount_gross_cents), 0);
   const gmvDelta = gmvPrev30 > 0 ? Math.round(((gmv30 - gmvPrev30) / gmvPrev30) * 100) : null;
 
-  // Sparkline data: ventas por día últimos 30 días
+  // Sparkline data: ventas por día últimos 30 días + top cursos
   const { data: salesWithDateRes } = await svc.from('sales')
-    .select('amount_gross_cents, occurred_at')
+    .select('amount_gross_cents, occurred_at, course_id')
     .eq('tenant_id', tenant.id).eq('status', 'paid').gte('occurred_at', since30);
   const salesByDay: number[] = Array.from({ length: 30 }, () => 0);
-  for (const s of ((salesWithDateRes ?? []) as Array<{ amount_gross_cents: number; occurred_at: string }>)) {
+  const revenueByCourse = new Map<string, { revenue: number; count: number }>();
+  for (const s of ((salesWithDateRes ?? []) as Array<{ amount_gross_cents: number; occurred_at: string; course_id: string | null }>)) {
     const daysAgo = Math.floor((now - new Date(s.occurred_at).getTime()) / 86400_000);
     const idx = 29 - daysAgo;
     if (idx >= 0 && idx < 30) salesByDay[idx] += Number(s.amount_gross_cents);
+    if (s.course_id) {
+      const cur = revenueByCourse.get(s.course_id) ?? { revenue: 0, count: 0 };
+      cur.revenue += Number(s.amount_gross_cents);
+      cur.count += 1;
+      revenueByCourse.set(s.course_id, cur);
+    }
   }
+
+  // Top 5 cursos por revenue 30d
+  const topCourseIds = Array.from(revenueByCourse.entries())
+    .sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5).map((e) => e[0]);
+  let topCourses: Array<{ id: string; title: string; revenue: number; count: number }> = [];
+  if (topCourseIds.length > 0) {
+    const { data: titles } = await svc.from('courses').select('id, title').in('id', topCourseIds);
+    const titleMap = new Map(((titles ?? []) as Array<{ id: string; title: string }>).map((c) => [c.id, c.title]));
+    topCourses = topCourseIds.map((id) => ({
+      id, title: titleMap.get(id) ?? 'Curso eliminado',
+      revenue: revenueByCourse.get(id)!.revenue,
+      count: revenueByCourse.get(id)!.count
+    }));
+  }
+  const maxRevenue = topCourses.length > 0 ? topCourses[0].revenue : 0;
 
   const recentSales = (recentSalesRes.data ?? []) as Array<{
     id: string; amount_gross_cents: number; currency: string; occurred_at: string;
@@ -258,6 +280,39 @@ export default async function OwnerDashboard() {
           storefrontUrl={storefrontUrl}
         />
       </div>
+
+      {/* ─── Top cursos ─── */}
+      {topCourses.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-white/55 mb-3">Top cursos · últimos 30 días</h2>
+          <div className="rounded-xl border border-white/10 overflow-hidden">
+            <ul className="divide-y divide-white/5">
+              {topCourses.map((c, i) => {
+                const pct = maxRevenue > 0 ? (c.revenue / maxRevenue) * 100 : 0;
+                return (
+                  <li key={c.id} className="px-4 py-3 relative overflow-hidden">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-fuchsia-500/[0.07]"
+                      style={{ width: `${pct}%` }}
+                      aria-hidden="true"
+                    />
+                    <div className="relative flex items-center gap-3 text-sm">
+                      <span className="text-white/40 text-xs font-mono w-4">{i + 1}</span>
+                      <Link href={`/courses/${c.id}`} className="flex-1 font-medium truncate hover:underline">
+                        {c.title}
+                      </Link>
+                      <span className="text-xs text-white/50">{c.count} {c.count === 1 ? 'venta' : 'ventas'}</span>
+                      <span className="font-mono font-semibold text-emerald-300 whitespace-nowrap">
+                        ${ars(c.revenue)}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* ─── Actividad reciente ─── */}
       <div>
