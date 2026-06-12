@@ -1,6 +1,7 @@
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { PageHeader, HeaderSecondary } from '@/components/owner/PageHeader';
+import { BarChart } from '@/components/owner/BarChart';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,6 +99,24 @@ export default async function OwnerVentasPage({
   const pending = filtered.filter((s) => s.status === 'pending').length;
   const currency = filtered[0]?.currency ?? 'ARS';
 
+  // Daily chart: ventas por día últimos 30 días (sobre filtered)
+  const now = Date.now();
+  const chartData: Array<{ label: string; value: number; subLabel?: string }> = Array.from(
+    { length: 30 },
+    (_, i) => {
+      const d = new Date(now - (29 - i) * 86400_000);
+      return {
+        label: d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }),
+        value: 0
+      };
+    }
+  );
+  for (const s of filtered.filter((s) => s.status === 'paid')) {
+    const daysAgo = Math.floor((now - new Date(s.occurred_at).getTime()) / 86400_000);
+    const idx = 29 - daysAgo;
+    if (idx >= 0 && idx < 30) chartData[idx].value += Number(s.amount_gross_cents);
+  }
+
   return (
     <div className="space-y-6 max-w-7xl">
       <PageHeader
@@ -111,11 +130,29 @@ export default async function OwnerVentasPage({
         }
       />
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Ingresos brutos" value={`${currency} ${(totalGross / 100).toLocaleString('es-AR')}`} accent="emerald" />
         <Stat label="Ventas confirmadas" value={String(totalSales)} />
         <Stat label="Reembolsos" value={String(refunded)} accent={refunded > 0 ? 'rose' : undefined} />
         <Stat label="Pendientes" value={String(pending)} accent={pending > 0 ? 'amber' : undefined} />
+      </div>
+
+      {/* Daily chart: últimos 30 días */}
+      <div>
+        <div className="flex items-baseline justify-between mb-2">
+          <h2 className="text-[10px] uppercase tracking-wider text-white/55 font-semibold">
+            Ingresos por día · últimos 30 días
+          </h2>
+          {filterCourse && (
+            <span className="text-[10px] text-white/40">(filtrado por curso)</span>
+          )}
+        </div>
+        <BarChart
+          data={chartData}
+          height={140}
+          formatValue={(v) => `${currency} ${(v / 100).toLocaleString('es-AR')}`}
+          emptyText="Sin ventas en los últimos 30 días"
+        />
       </div>
 
       <form method="get" className="flex flex-wrap items-end gap-2">
