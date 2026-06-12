@@ -5,6 +5,7 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { PageHeader, HeaderSecondary } from '@/components/owner/PageHeader';
 import { Pill } from '@/components/owner/Pill';
 import { manualValidateTicketAction, unvalidateTicketAction, cancelEventTicketAction } from '@/lib/tickets/event-actions';
+import { relativeTime, absoluteTime } from '@/lib/time';
 
 export const dynamic = 'force-dynamic';
 
@@ -213,7 +214,7 @@ export default async function EventDetailPage({
                     </td>
                     <td className="px-3 py-2.5 text-white/55 text-xs">
                       {t.validated_at
-                        ? new Date(t.validated_at).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+                        ? <span title={absoluteTime(t.validated_at)}>{relativeTime(t.validated_at)}</span>
                         : '—'}
                       {t.validation_count > 1 && <div className="text-fuchsia-300 text-[10px]">×{t.validation_count} entradas</div>}
                     </td>

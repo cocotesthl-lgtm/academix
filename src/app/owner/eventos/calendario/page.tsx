@@ -112,6 +112,24 @@ export default async function AvailabilityPage() {
     overrides = (ovRes.data ?? []) as typeof overrides;
   } catch { /* migration 0017 falta */ }
 
+  // Ticket counts por fecha (defensivo si event_tickets no existe)
+  const ticketCountByDate = new Map<string, { sold: number; validated: number }>();
+  if (dates.length > 0) {
+    try {
+      const { data: tickets } = await svc
+        .from('event_tickets')
+        .select('calendar_date_id, status, validated_at')
+        .in('calendar_date_id', dates.map((d) => d.id));
+      for (const t of ((tickets ?? []) as Array<{ calendar_date_id: string; status: string; validated_at: string | null }>)) {
+        if (t.status !== 'confirmed') continue;
+        const cur = ticketCountByDate.get(t.calendar_date_id) ?? { sold: 0, validated: 0 };
+        cur.sold++;
+        if (t.validated_at) cur.validated++;
+        ticketCountByDate.set(t.calendar_date_id, cur);
+      }
+    } catch { /* migration 0018 falta */ }
+  }
+
   return (
     <div className="space-y-8 max-w-3xl">
       <PageHeader
@@ -324,13 +342,24 @@ export default async function AvailabilityPage() {
               return (
                 <div key={d.id} className="rounded-lg border border-white/10 bg-white/[0.02] p-3 flex items-center gap-3 flex-wrap">
                   <div className="flex-1 min-w-[200px]">
-                    <div className="font-medium text-sm capitalize flex items-center gap-2">
-                      {dateLabel} · {minToHHMM(d.start_min)}–{minToHHMM(d.end_min)}
+                    <div className="font-medium text-sm capitalize flex items-center gap-2 flex-wrap">
+                      <a href={`/eventos/${d.id}`} className="hover:text-white hover:underline">
+                        {dateLabel} · {minToHHMM(d.start_min)}–{minToHHMM(d.end_min)}
+                      </a>
                       {d.allow_ticket_reentry && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300">
                           re-entry
                         </span>
                       )}
+                      {(() => {
+                        const tc = ticketCountByDate.get(d.id);
+                        if (!tc || tc.sold === 0) return null;
+                        return (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-300">
+                            🎫 {tc.sold} vendidos{tc.validated > 0 ? ` · ${tc.validated} usados` : ''}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="text-xs text-white/45">
                       {courseMap.get(d.course_id ?? '')?.title ?? 'Tenant-wide'} · slots de {d.slot_duration_min}min
