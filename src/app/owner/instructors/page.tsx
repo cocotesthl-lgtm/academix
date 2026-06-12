@@ -7,6 +7,7 @@ import {
   unassignCourseFromInstructorAction
 } from "@/lib/instructors/actions";
 import { InstructorPermToggle } from "@/components/owner/instructors/InstructorPermToggle";
+import { EmptyState } from "@/components/owner/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -132,9 +133,11 @@ export default async function OwnerInstructorsPage() {
 
       {/* ─── Lista de instructores con asignaciones ─── */}
       {instructors.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-white/15 p-10 text-center text-white/40 text-sm">
-          Todavía no tenés instructores.
-        </div>
+        <EmptyState
+          icon="👨‍🏫"
+          title="Aún no sumaste instructores"
+          description="Los instructores pueden ver alumnos, editar su calendario y reagendar clases. Sumá uno por email arriba, o ascendé un afiliado existente."
+        />
       ) : (
         <div className="space-y-6">
           {instructors.map((i) => (

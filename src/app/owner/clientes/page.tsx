@@ -1,6 +1,8 @@
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { StudentRowActions } from "@/components/owner/StudentRowActions";
+import { EmptyState } from "@/components/owner/EmptyState";
+import { tenantOrigin } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -209,6 +211,8 @@ export default async function OwnerClientesPage({
   const uniqueClients = new Set(enrollments.map((e) => e.user_id)).size;
   const totalPurchases = enrollments.length;
   const withFullInfo = enrollments.filter((e) => e.buyer_name && e.buyer_dni && e.buyer_phone).length;
+  const storefrontUrl = tenantOrigin(tenant.slug);
+  const isEmpty = enrollments.length === 0 && filteredOrphans.length === 0;
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -220,6 +224,16 @@ export default async function OwnerClientesPage({
         </p>
       </div>
 
+      {isEmpty ? (
+        <EmptyState
+          icon="👥"
+          title="Todavía no tenés clientes"
+          description="Cuando alguien compre un curso, una mentoría o un ticket, va a aparecer acá con sus datos completos."
+          primary={{ label: '↗ Ver mi sitio público', href: storefrontUrl }}
+          secondary={{ label: 'Editar cursos', href: '/courses' }}
+        />
+      ) : (
+      <>
       <div className="grid grid-cols-3 gap-4">
         <Stat label="Clientes únicos" value={uniqueClients} />
         <Stat label="Compras totales" value={totalPurchases} />
@@ -454,6 +468,8 @@ export default async function OwnerClientesPage({
       <p className="text-xs text-white/40">
         El teléfono linkea a WhatsApp · El email a tu cliente de mail por defecto.
       </p>
+      </>
+      )}
     </div>
   );
 }

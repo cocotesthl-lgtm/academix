@@ -24,7 +24,7 @@ export default async function CategoriesPage() {
     <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold">Categorías</h1>
-        <p className="text-white/60 text-sm mt-1">Organizá tus cursos en categorías que tus alumnos puedan filtrar.</p>
+        <p className="text-white/60 text-sm mt-1">Organizá tus cursos en categorías para que tus clientes filtren fácil.</p>
       </div>
 
       <form action={createCategoryAction} className="flex gap-2">

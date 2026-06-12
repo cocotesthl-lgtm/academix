@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
+import { EmptyState } from "@/components/owner/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -40,12 +41,17 @@ export default async function CoursesIndex() {
         </Link>
       </div>
 
+      {courses.length === 0 ? (
+        <EmptyState
+          icon="📚"
+          title="Todavía no creaste ningún curso"
+          description="Un curso puede ser online (videos), un evento con entradas o una mentoría 1-a-1. Creá el primero y empezá a vender."
+          primary={{ label: '+ Crear primer curso', href: '/courses/new' }}
+          secondary={{ label: 'Editar mi sitio', href: '/site' }}
+        />
+      ) : (
       <div className="rounded-xl border border-white/10 overflow-hidden">
-        {courses.length === 0 ? (
-          <div className="p-10 text-center text-white/50">
-            Todavía no creaste ningún curso. <Link href="/courses/new" className="underline text-white">Creá el primero</Link>.
-          </div>
-        ) : (
+        {(
           <table className="w-full text-sm">
             <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
               <tr>
@@ -93,6 +99,7 @@ export default async function CoursesIndex() {
           </table>
         )}
       </div>
+      )}
     </div>
   );
 }
