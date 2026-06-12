@@ -3,6 +3,7 @@ import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { EmptyState } from "@/components/owner/EmptyState";
 import { PageHeader, HeaderPrimary } from "@/components/owner/PageHeader";
+import { Sparkline } from "@/components/owner/Sparkline";
 
 export const dynamic = "force-dynamic";
 
@@ -27,33 +28,45 @@ export default async function CoursesIndex() {
 
   const courses = (data ?? []) as CourseRow[];
 
-  // Stats por curso (clientes únicos + revenue total)
-  // Una query agregada por todos los cursos: enrollments + sales
-  type Stats = { clients: number; revenue: number };
+  // Stats por curso (clientes únicos + revenue total + trend 30d)
+  type Stats = { clients: number; revenue: number; trend: number[] };
   const stats = new Map<string, Stats>();
   const courseIds = courses.map((c) => c.id);
+  const now = Date.now();
+  const since30 = new Date(now - 30 * 86400_000).toISOString();
   if (courseIds.length > 0) {
-    const [{ data: enrollAgg }, { data: salesAgg }] = await Promise.all([
+    const [{ data: enrollAgg }, { data: salesAgg }, { data: salesWithDate }] = await Promise.all([
       svc.from('enrollments').select('course_id, user_id')
         .eq('tenant_id', tenant.id).in('course_id', courseIds),
       svc.from('sales').select('course_id, amount_gross_cents')
-        .eq('tenant_id', tenant.id).eq('status', 'paid').in('course_id', courseIds)
+        .eq('tenant_id', tenant.id).eq('status', 'paid').in('course_id', courseIds),
+      svc.from('sales').select('course_id, amount_gross_cents, occurred_at')
+        .eq('tenant_id', tenant.id).eq('status', 'paid').in('course_id', courseIds).gte('occurred_at', since30)
     ]);
-    // Clients únicos por (course_id, user_id)
     const uniqueByCourse = new Map<string, Set<string>>();
     for (const e of ((enrollAgg ?? []) as Array<{ course_id: string; user_id: string }>)) {
       if (!uniqueByCourse.has(e.course_id)) uniqueByCourse.set(e.course_id, new Set());
       uniqueByCourse.get(e.course_id)!.add(e.user_id);
     }
-    // Revenue por course_id
     const revByCourse = new Map<string, number>();
     for (const s of ((salesAgg ?? []) as Array<{ course_id: string; amount_gross_cents: number }>)) {
       revByCourse.set(s.course_id, (revByCourse.get(s.course_id) ?? 0) + Number(s.amount_gross_cents));
     }
+    // Trend: 30 buckets de un día cada uno, por curso
+    const trendByCourse = new Map<string, number[]>();
+    for (const c of courses) trendByCourse.set(c.id, Array.from({ length: 30 }, () => 0));
+    for (const s of ((salesWithDate ?? []) as Array<{ course_id: string; amount_gross_cents: number; occurred_at: string }>)) {
+      const arr = trendByCourse.get(s.course_id);
+      if (!arr) continue;
+      const daysAgo = Math.floor((now - new Date(s.occurred_at).getTime()) / 86400_000);
+      const idx = 29 - daysAgo;
+      if (idx >= 0 && idx < 30) arr[idx] += Number(s.amount_gross_cents);
+    }
     for (const c of courses) {
       stats.set(c.id, {
         clients: uniqueByCourse.get(c.id)?.size ?? 0,
-        revenue: revByCourse.get(c.id) ?? 0
+        revenue: revByCourse.get(c.id) ?? 0,
+        trend: trendByCourse.get(c.id) ?? Array.from({ length: 30 }, () => 0)
       });
     }
   }
@@ -85,6 +98,7 @@ export default async function CoursesIndex() {
                 <th className="text-left px-4 py-2.5">Precio</th>
                 <th className="text-right px-4 py-2.5">Clientes</th>
                 <th className="text-right px-4 py-2.5">Recaudado</th>
+                <th className="text-right px-4 py-2.5">Últ. 30d</th>
                 <th className="text-right px-4 py-2.5"></th>
               </tr>
             </thead>
@@ -123,6 +137,13 @@ export default async function CoursesIndex() {
                       </span>
                     ) : (
                       <span className="text-white/30">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {s && s.trend.some((v) => v > 0) ? (
+                      <Sparkline values={s.trend} color="#10b981" width={90} height={24} className="inline-block" />
+                    ) : (
+                      <span className="text-white/25 text-xs">sin ventas</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
