@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { EmptyState } from "@/components/owner/EmptyState";
+import { PageHeader, HeaderPrimary } from "@/components/owner/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -27,19 +28,12 @@ export default async function CoursesIndex() {
   const courses = (data ?? []) as CourseRow[];
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Cursos</h1>
-          <p className="text-white/60 text-sm mt-1">Crear, editar y publicar cursos.</p>
-        </div>
-        <Link
-          href="/courses/new"
-          className="rounded-md bg-white text-black px-4 py-2 font-medium hover:bg-white/90"
-        >
-          + Nuevo curso
-        </Link>
-      </div>
+    <div className="max-w-5xl">
+      <PageHeader
+        title="Cursos"
+        description="Online, eventos con tickets o mentorías. Acá los creás, editás y publicás."
+        actions={<HeaderPrimary href="/courses/new">+ Nuevo curso</HeaderPrimary>}
+      />
 
       {courses.length === 0 ? (
         <EmptyState

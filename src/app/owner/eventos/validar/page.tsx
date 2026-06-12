@@ -1,18 +1,18 @@
 import { requireOwner } from '@/lib/auth/guards';
 import { TicketScanner } from '@/components/owner/tickets/Scanner';
+import { PageHeader, HeaderSecondary } from '@/components/owner/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ScanPage() {
   await requireOwner();
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Validar tickets</h1>
-        <p className="text-sm text-white/55 mt-1">
-          Escaneá los QR con la pistola, la cámara o tipeá el N° de orden.
-        </p>
-      </div>
+    <div className="max-w-3xl">
+      <PageHeader
+        title="Validar entradas"
+        description="Escaneá QR con pistola o cámara, o tipeá el N° de orden para validar manualmente."
+        actions={<HeaderSecondary href="/eventos/asistencia">Ver asistencia</HeaderSecondary>}
+      />
       <TicketScanner />
     </div>
   );

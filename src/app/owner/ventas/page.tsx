@@ -1,5 +1,6 @@
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
+import { PageHeader, HeaderSecondary } from '@/components/owner/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,13 +100,11 @@ export default async function OwnerVentasPage({
 
   return (
     <div className="space-y-6 max-w-7xl">
-      <div>
-        <h1 className="text-2xl font-bold">Ventas</h1>
-        <p className="text-white/60 text-sm mt-1">
-          Listado de transacciones registradas vía MercadoPago + alta manual.
-          Cada compra confirmada genera una venta acá.
-        </p>
-      </div>
+      <PageHeader
+        title="Ventas"
+        description="Cada compra confirmada genera una venta. Filtrá por curso, estado o buscá por nombre, email o N° de orden."
+        actions={<HeaderSecondary href="/clientes">Ver clientes</HeaderSecondary>}
+      />
 
       <div className="grid grid-cols-4 gap-3">
         <Stat label="Ingresos brutos" value={`${currency} ${(totalGross / 100).toLocaleString('es-AR')}`} accent="emerald" />

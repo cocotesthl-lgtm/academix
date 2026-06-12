@@ -2,6 +2,7 @@ import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { StudentRowActions } from "@/components/owner/StudentRowActions";
 import { EmptyState } from "@/components/owner/EmptyState";
+import { PageHeader, HeaderSecondary } from "@/components/owner/PageHeader";
 import { tenantOrigin } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -216,13 +217,11 @@ export default async function OwnerClientesPage({
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div>
-        <h1 className="text-2xl font-bold">Clientes</h1>
-        <p className="text-white/60 text-sm mt-1">
-          Datos de contacto de quienes compraron cursos o tickets.
-          Vas a poder verlos también si el pago quedó pendiente.
-        </p>
-      </div>
+      <PageHeader
+        title="Clientes"
+        description="Datos de contacto de quienes compraron cursos o tickets. También aparecen los pagos pendientes."
+        actions={<HeaderSecondary href="/ventas">Ver ventas</HeaderSecondary>}
+      />
 
       {isEmpty ? (
         <EmptyState

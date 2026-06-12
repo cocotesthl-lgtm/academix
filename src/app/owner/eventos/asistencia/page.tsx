@@ -1,5 +1,7 @@
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
+import { PageHeader, HeaderSecondary } from '@/components/owner/PageHeader';
+import { EmptyState } from '@/components/owner/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,32 +73,38 @@ export default async function TicketsUsagePage() {
     }
   } catch { /* migration 0018/0020 falta */ }
 
+  const noEvents = upcoming.length === 0 && past.length === 0;
   return (
     <div className="max-w-5xl space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Uso de tickets</h1>
-        <p className="text-sm text-white/55 mt-1">
-          Cuántos validaste y cuántos faltan por evento. Click en un evento para ver el detalle por ticket.
-        </p>
-      </div>
+      <PageHeader
+        title="Asistencia"
+        description="Cuántas entradas validaste por evento vs cuántas vendiste — el % te dice el rate de asistencia real."
+        actions={<HeaderSecondary href="/eventos/validar">Validar entradas</HeaderSecondary>}
+      />
 
-      <section>
-        <h2 className="text-lg font-semibold mb-3">Próximos eventos</h2>
-        {upcoming.length === 0 ? (
-          <p className="text-sm text-white/45">No hay eventos próximos con tickets vendidos.</p>
-        ) : (
-          <EventsTable rows={upcoming} tenantSlug="" />
-        )}
-      </section>
-
-      <section>
-        <h2 className="text-lg font-semibold mb-3">Eventos pasados (últimos 30 días)</h2>
-        {past.length === 0 ? (
-          <p className="text-sm text-white/45">Sin eventos recientes.</p>
-        ) : (
-          <EventsTable rows={past} tenantSlug="" />
-        )}
-      </section>
+      {noEvents ? (
+        <EmptyState
+          icon="🎟️"
+          title="Sin eventos con tickets vendidos"
+          description="Cuando vendas entradas para tus eventos, vas a ver acá el % de asistencia por fecha."
+          primary={{ label: 'Programar evento', href: '/eventos/calendario' }}
+        />
+      ) : (
+        <>
+          {upcoming.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-white/55 mb-3">Próximos eventos</h2>
+              <EventsTable rows={upcoming} tenantSlug="" />
+            </section>
+          )}
+          {past.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-white/55 mb-3">Eventos pasados (últimos 30 días)</h2>
+              <EventsTable rows={past} tenantSlug="" />
+            </section>
+          )}
+        </>
+      )}
     </div>
   );
 }

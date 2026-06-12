@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
+import { PageHeader, HeaderPrimary } from "@/components/owner/PageHeader";
+import { EmptyState } from "@/components/owner/EmptyState";
 
 export const dynamic = "force-dynamic";
 
@@ -24,26 +26,22 @@ export default async function OwnerTickets() {
   const rows = (data ?? []) as TicketRow[];
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Soporte</h1>
-          <p className="text-white/60 text-sm mt-1">Tus conversaciones con el equipo de Curplat.</p>
-        </div>
-        <Link
-          href="/soporte/new"
-          className="rounded-md bg-white text-black px-4 py-2 font-medium hover:bg-white/90"
-        >
-          + Nuevo ticket
-        </Link>
-      </div>
+    <div className="max-w-4xl">
+      <PageHeader
+        title="Soporte"
+        description="Tus conversaciones con el equipo de Curplat. Acá reportás bugs, pedís features o pedís ayuda."
+        actions={<HeaderPrimary href="/soporte/new">+ Nuevo ticket</HeaderPrimary>}
+      />
 
-      <div className="rounded-xl border border-white/10 overflow-hidden">
-        {rows.length === 0 ? (
-          <div className="p-10 text-center text-white/50 text-sm">
-            No abriste ningún ticket todavía.
-          </div>
-        ) : (
+      {rows.length === 0 ? (
+        <EmptyState
+          icon="📨"
+          title="No abriste ningún ticket todavía"
+          description="Si necesitás ayuda, reportar un bug o pedir una feature, abrí un ticket y te respondemos en menos de 24h."
+          primary={{ label: '+ Abrir mi primer ticket', href: '/soporte/new' }}
+        />
+      ) : (
+        <div className="rounded-xl border border-white/10 overflow-hidden">
           <ul className="divide-y divide-white/5">
             {rows.map((t) => (
               <li key={t.id}>
@@ -61,8 +59,8 @@ export default async function OwnerTickets() {
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
