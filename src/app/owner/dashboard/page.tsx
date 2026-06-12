@@ -5,6 +5,7 @@ import { getOwnerBalance } from "@/lib/debt/accrue";
 import { tenantOrigin } from "@/lib/env";
 import { OnboardingChecklist, type OnboardingStep } from "@/components/owner/OnboardingChecklist";
 import { Sparkline } from "@/components/owner/Sparkline";
+import { relativeTime, absoluteTime } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
@@ -354,10 +355,8 @@ export default async function OwnerDashboard() {
                 <li key={s.id} className="px-4 py-3 flex items-center gap-3 text-sm">
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{s.buyer_name ?? s.buyer_email ?? '—'}</div>
-                    <div className="text-xs text-white/45">
-                      {new Date(s.occurred_at).toLocaleString('es-AR', {
-                        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
-                      })}
+                    <div className="text-xs text-white/45" title={absoluteTime(s.occurred_at)}>
+                      {relativeTime(s.occurred_at)}
                     </div>
                   </div>
                   <div className="text-right">
