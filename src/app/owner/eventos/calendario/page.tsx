@@ -3,7 +3,8 @@ import { getServiceClient } from "@/lib/supabase/service";
 import {
   addAvailabilityRuleAction, deleteAvailabilityRuleAction,
   addOwnerCalendarDateAction, deleteOwnerCalendarDateAction,
-  addOwnerOverrideAction, deleteOwnerOverrideAction
+  addOwnerOverrideAction, deleteOwnerOverrideAction,
+  toggleAllowReentryAction
 } from "@/lib/calendar/actions";
 import { WEEKDAY_LABELS, minToHHMM, type AvailabilityRule } from "@/lib/calendar/types";
 import { ZonesEditor } from "@/components/owner/calendar/ZonesEditor";
@@ -86,6 +87,7 @@ export default async function AvailabilityPage() {
     id: string; course_id: string | null; date: string;
     start_min: number; end_min: number; slot_duration_min: number;
     timezone: string; notes: string | null;
+    allow_ticket_reentry?: boolean;
   }> = [];
   let overrides: Array<{
     id: string; course_id: string | null; start_at: string; end_at: string;
@@ -94,7 +96,7 @@ export default async function AvailabilityPage() {
   try {
     const [datesRes, ovRes] = await Promise.all([
       svc.from('calendar_dates')
-        .select('id, course_id, date, start_min, end_min, slot_duration_min, timezone, notes')
+        .select('id, course_id, date, start_min, end_min, slot_duration_min, timezone, notes, allow_ticket_reentry')
         .eq('tenant_id', tenant.id)
         .is('instructor_user_id', null)
         .gte('date', new Date().toISOString().slice(0, 10))
@@ -296,6 +298,18 @@ export default async function AvailabilityPage() {
             </p>
           </div>
 
+          {/* Re-entry */}
+          <label className="flex items-start gap-2 cursor-pointer rounded border border-white/10 bg-white/[0.02] p-3">
+            <input type="checkbox" name="allow_reentry" className="mt-0.5" />
+            <span className="text-sm">
+              <strong>Permitir re-entrada</strong>
+              <span className="block text-[11px] text-white/55 mt-0.5">
+                Cada ticket se puede escanear más de una vez. Útil para festivales o eventos con salidas/entradas.
+                Default: 1 entrada por ticket.
+              </span>
+            </span>
+          </label>
+
           <button className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90">
             + Agregar fecha puntual
           </button>
@@ -308,16 +322,28 @@ export default async function AvailabilityPage() {
                 weekday: 'short', day: '2-digit', month: 'long', year: 'numeric'
               });
               return (
-                <div key={d.id} className="rounded-lg border border-white/10 bg-white/[0.02] p-3 flex items-center gap-3">
-                  <div className="flex-1">
-                    <div className="font-medium text-sm capitalize">
+                <div key={d.id} className="rounded-lg border border-white/10 bg-white/[0.02] p-3 flex items-center gap-3 flex-wrap">
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="font-medium text-sm capitalize flex items-center gap-2">
                       {dateLabel} · {minToHHMM(d.start_min)}–{minToHHMM(d.end_min)}
+                      {d.allow_ticket_reentry && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300">
+                          re-entry
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-white/45">
                       {courseMap.get(d.course_id ?? '')?.title ?? 'Tenant-wide'} · slots de {d.slot_duration_min}min
                       {d.notes && ` · ${d.notes}`}
                     </div>
                   </div>
+                  <form action={toggleAllowReentryAction}>
+                    <input type="hidden" name="id" value={d.id} />
+                    <input type="hidden" name="allow" value={d.allow_ticket_reentry ? 'false' : 'true'} />
+                    <button className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5">
+                      {d.allow_ticket_reentry ? 'Quitar re-entry' : 'Permitir re-entry'}
+                    </button>
+                  </form>
                   <form action={deleteOwnerCalendarDateAction}>
                     <input type="hidden" name="id" value={d.id} />
                     <button className="text-xs px-2 py-1 rounded border border-red-500/30 text-red-300 hover:bg-red-500/10">

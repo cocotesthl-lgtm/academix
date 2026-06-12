@@ -123,6 +123,7 @@ async function addCalendarDate(opts: {
   seatRows?: number;
   seatCols?: number;
   seatZones?: Array<{ id: string; name: string; rows: number; cols: number; price_multiplier: number; color?: string }>;
+  allowReentry?: boolean;
 }): Promise<void> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(opts.date)) return;
   if (opts.endMin <= opts.startMin) return;
@@ -145,8 +146,9 @@ async function addCalendarDate(opts: {
     : Math.max(0, Math.min(10000, opts.capacity ?? 0));
 
   const svc = getServiceClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (svc.from('calendar_dates') as any).insert({
+  // Defensivo: si migration 0020 no corrió, allow_ticket_reentry no
+  // existe — primero probamos con la columna; si falla, sin ella.
+  const basePayload = {
     tenant_id: opts.tenantId,
     course_id: opts.courseId ?? null,
     instructor_user_id: opts.instructorUserId ?? null,
@@ -161,7 +163,32 @@ async function addCalendarDate(opts: {
     seat_rows: Math.max(0, Math.min(100, opts.seatRows ?? 0)),
     seat_cols: Math.max(0, Math.min(100, opts.seatCols ?? 0)),
     seat_zones: zones
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (svc.from('calendar_dates') as any).insert({
+    ...basePayload,
+    allow_ticket_reentry: !!opts.allowReentry
   });
+  if (error && error.message?.includes('allow_ticket_reentry')) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('calendar_dates') as any).insert(basePayload);
+  }
+}
+
+/** Toggle re-entry para una fecha existente. */
+export async function toggleAllowReentryAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const allow = formData.get('allow') === 'true';
+  if (!id) return;
+  const svc = getServiceClient();
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('calendar_dates') as any)
+      .update({ allow_ticket_reentry: allow })
+      .eq('id', id).eq('tenant_id', tenant.id);
+  } catch { /* migration 0020 falta */ }
+  revalidatePath('/eventos/calendario');
 }
 
 export async function addOwnerCalendarDateAction(formData: FormData): Promise<void> {
@@ -190,9 +217,10 @@ export async function addOwnerCalendarDateAction(formData: FormData): Promise<vo
     seatMode,
     seatRows: parseInt(String(formData.get('seat_rows') ?? '0'), 10) || 0,
     seatCols: parseInt(String(formData.get('seat_cols') ?? '0'), 10) || 0,
-    seatZones
+    seatZones,
+    allowReentry: formData.get('allow_reentry') === 'on' || formData.get('allow_reentry') === 'true'
   });
-  revalidatePath('/availability');
+  revalidatePath('/eventos/calendario');
 }
 
 export async function deleteOwnerCalendarDateAction(formData: FormData): Promise<void> {
