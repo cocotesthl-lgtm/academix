@@ -221,3 +221,27 @@ export async function markBroadcastReadAction(formData: FormData): Promise<void>
   );
   revalidatePath('/affiliate');
 }
+
+/* ─────────── Toggle: afiliado como validator de tickets ─────────── */
+
+/**
+ * Owner habilita/deshabilita a un afiliado como "asistente de molinete"
+ * — puede escanear tickets el dia del evento desde /affiliate/validar.
+ * Defensivo: si migration 0022 no corrio, no rompe.
+ */
+export async function toggleAffiliateValidatorAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const userId = String(formData.get('user_id') ?? '');
+  const allow = formData.get('allow') === 'true';
+  if (!userId) return;
+  const svc = getServiceClient();
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('memberships') as any)
+      .update({ can_validate_tickets: allow })
+      .eq('tenant_id', tenant.id)
+      .eq('user_id', userId)
+      .eq('role', 'affiliate');
+  } catch { /* migration 0022 falta */ }
+  revalidatePath('/affiliates');
+}

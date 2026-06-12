@@ -61,6 +61,16 @@ export default async function AffiliateDashboard({
   // que el owner lo vea entre sus afiliados.
   await ensureAffiliateMembership({ tenantId, userId: user.id });
 
+  // ¿Está habilitado como validator de tickets? (defensivo si migration falta)
+  let canValidate = false;
+  try {
+    const res = await svc.from("memberships")
+      .select("can_validate_tickets")
+      .eq("tenant_id", tenantId).eq("user_id", user.id).eq("role", "affiliate")
+      .maybeSingle<{ can_validate_tickets: boolean }>();
+    canValidate = !!res.data?.can_validate_tickets;
+  } catch { /* migration 0022 missing */ }
+
   // Cursos disponibles + mis links + comisiones (lo que ya teníamos)
   const [
     { data: courses },
@@ -120,11 +130,22 @@ export default async function AffiliateDashboard({
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
-      <div>
-        <h1 className="text-3xl font-bold">Panel de afiliado</h1>
-        <p className="text-black/60 mt-2">
-          Tus links, tus comisiones, material promocional y mensajes del owner de <strong>{tenant.name}</strong>.
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold">Panel de afiliado</h1>
+          <p className="text-black/60 mt-2">
+            Tus links, tus comisiones, material promocional y mensajes del owner de <strong>{tenant.name}</strong>.
+          </p>
+        </div>
+        {canValidate && (
+          <a
+            href="/affiliate/validar"
+            className="rounded-lg px-4 py-2.5 text-white text-sm font-semibold whitespace-nowrap"
+            style={{ background: primary }}
+          >
+            🎟️ Validar entradas
+          </a>
+        )}
       </div>
 
       {/* Stats */}

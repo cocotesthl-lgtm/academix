@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireOwner } from '@/lib/auth/guards';
+import { getCurrentUser } from '@/lib/auth/guards';
+import { getServiceClient } from '@/lib/supabase/service';
 import { validateTicket } from '@/lib/tickets/validate';
 
 export const dynamic = 'force-dynamic';
@@ -7,20 +8,21 @@ export const runtime = 'nodejs';
 
 /**
  * POST /api/tickets/validate
- * Body: { code: string }
+ * Body: { code: string, tenant_id?: string }
  *
- * Llamada por el scanner del owner. Auth via session (cookie supabase) +
- * resolución de tenant via requireOwner. Devuelve JSON con resultado para
- * pintar el feedback en la UI (verde = válido, rojo = ya usado / inválido).
+ * Auth: el caller puede ser:
+ *  - owner del tenant (cualquier tenant donde tenga role=owner)
+ *  - afiliado con can_validate_tickets=true en el tenant del ticket
+ *  - instructor con can_validate_tickets=true (si lo habilitamos en
+ *    futuras versiones — por ahora solo affiliate y owner)
+ *
+ * Si el caller tiene varios roles en varios tenants, el endpoint resuelve
+ * el tenant_id del ticket desde el qr_token y verifica que el caller
+ * tenga permiso para ese tenant específico (no para CUALQUIER tenant).
  */
 export async function POST(req: NextRequest) {
-  let userId: string;
-  let tenantId: string;
-  try {
-    const ctx = await requireOwner();
-    userId = ctx.userId;
-    tenantId = ctx.tenant.id;
-  } catch {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ ok: false, status: 'unauthorized' }, { status: 401 });
   }
 
@@ -35,10 +37,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, status: 'not_found' }, { status: 400 });
   }
 
+  const svc = getServiceClient();
+
+  // Resolver tenant_id del ticket (lookup minimo por qr_token / order_number)
+  // antes de chequear permisos, asi validamos contra el tenant correcto.
+  const { parseScannerInput } = await import('@/lib/tickets/validate');
+  const parsed = parseScannerInput(code);
+  if (!parsed) {
+    return NextResponse.json({ ok: false, status: 'not_found' });
+  }
+  const column = parsed.kind === 'token' ? 'qr_token' : 'order_number';
+  const { data: ticketLookup } = await svc
+    .from('event_tickets').select('tenant_id').eq(column, parsed.value)
+    .maybeSingle<{ tenant_id: string }>();
+  if (!ticketLookup) {
+    return NextResponse.json({ ok: false, status: 'not_found' });
+  }
+
+  // ¿El user tiene permiso para validar tickets en ese tenant?
+  // Owner: cualquier owner activo del tenant.
+  // Validator: cualquier membership (owner/instructor/affiliate) con
+  // can_validate_tickets=true.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let memQuery = svc.from('memberships')
+    .select('role, status, can_validate_tickets')
+    .eq('user_id', user.id)
+    .eq('tenant_id', ticketLookup.tenant_id)
+    .eq('status', 'active');
+  const { data: memberships } = await memQuery as { data: Array<{ role: string; status: string; can_validate_tickets?: boolean }> | null };
+
+  const memList = memberships ?? [];
+  const isOwner = memList.some((m) => m.role === 'owner');
+  const canValidate = memList.some((m) => m.can_validate_tickets === true);
+  if (!isOwner && !canValidate) {
+    return NextResponse.json({ ok: false, status: 'unauthorized' }, { status: 403 });
+  }
+
   const result = await validateTicket({
-    validatorUserId: userId,
-    tenantId,
+    validatorUserId: user.id,
+    tenantId: ticketLookup.tenant_id,
     input: code
   });
-  return NextResponse.json(result, { status: result.ok ? 200 : 200 });
+  return NextResponse.json(result);
 }

@@ -406,4 +406,11 @@ alter table public.tenants
   add column if not exists email_banner_image_url text,
   add column if not exists email_footer_message text;
 
+-- ── 0022 Affiliate validators ─────────────────────────────────
+alter table public.memberships
+  add column if not exists can_validate_tickets boolean not null default false;
+create index if not exists memberships_validator_idx
+  on public.memberships (tenant_id, role)
+  where can_validate_tickets = true;
+
 -- ✓ Listo. Recargá la app.

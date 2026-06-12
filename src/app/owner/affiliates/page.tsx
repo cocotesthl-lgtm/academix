@@ -3,7 +3,8 @@ import { getServiceClient } from "@/lib/supabase/service";
 import {
   addPromoMaterialAction, deletePromoMaterialAction,
   addCommunityLinkAction, deleteCommunityLinkAction,
-  sendBroadcastAction, deleteBroadcastAction
+  sendBroadcastAction, deleteBroadcastAction,
+  toggleAffiliateValidatorAction
 } from "@/lib/affiliates/panel";
 import { NETWORKS, NETWORK_EMOJI } from "@/lib/affiliates/networks";
 
@@ -42,6 +43,31 @@ export default async function OwnerAffiliates() {
       .select("id", { count: 'exact', head: true })
       .eq("tenant_id", tenant.id).eq("role", "affiliate").eq("status", "active")
   ]);
+
+  // Lista de afiliados (memberships) con flag can_validate_tickets.
+  // Defensivo: si migration 0022 no corrio, asumimos false.
+  type AffMember = {
+    user_id: string;
+    can_validate_tickets?: boolean;
+    profiles?: { email: string | null; display_name: string | null } | null;
+  };
+  let affiliates: AffMember[] = [];
+  try {
+    const res = await svc
+      .from("memberships")
+      .select("user_id, can_validate_tickets, profiles:user_id(email, display_name)")
+      .eq("tenant_id", tenant.id).eq("role", "affiliate").eq("status", "active")
+      .order("created_at", { ascending: false }).limit(50);
+    if (!res.error) affiliates = (res.data ?? []) as unknown as AffMember[];
+  } catch {
+    const res = await svc
+      .from("memberships")
+      .select("user_id, profiles:user_id(email, display_name)")
+      .eq("tenant_id", tenant.id).eq("role", "affiliate").eq("status", "active")
+      .order("created_at", { ascending: false }).limit(50);
+    affiliates = (res.data ?? []) as unknown as AffMember[];
+  }
+  const validatorsCount = affiliates.filter((a) => a.can_validate_tickets).length;
 
   const rows = (linksRaw ?? []) as unknown as LinkRow[];
   const promoRows = (promoRaw ?? []) as PromoRow[];
@@ -200,6 +226,47 @@ export default async function OwnerAffiliates() {
                 <div className="font-semibold text-sm">{p.title}</div>
                 {p.description && <p className="text-white/55 line-clamp-2">{p.description}</p>}
                 {p.asset_url && <a href={p.asset_url} target="_blank" rel="noopener" className="text-white/60 hover:text-white block truncate">{p.asset_url}</a>}
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      {/* ─── Validadores de tickets (Fase 4) ─── */}
+      <Section title="🎟️ Asistentes de molinete (validar entradas)">
+        <p className="text-xs text-white/55 -mt-2 mb-2">
+          Habilitá afiliados como ayudantes el día del evento. Acceden a un scanner desde su panel
+          (<code className="bg-white/10 px-1 rounded">/affiliate/validar</code>) sin tocar el resto del owner panel.
+          {validatorsCount > 0 && ` Actualmente ${validatorsCount} habilitado${validatorsCount === 1 ? '' : 's'}.`}
+        </p>
+        {affiliates.length === 0 ? (
+          <p className="text-sm text-white/45 py-3">Todavía no hay afiliados activos en tu academia.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {affiliates.map((a) => (
+              <div key={a.user_id} className="rounded-lg border border-white/10 bg-white/[0.02] p-3 flex items-center gap-3 flex-wrap">
+                <div className="flex-1 min-w-[180px]">
+                  <div className="text-sm font-medium truncate">
+                    {a.profiles?.display_name ?? a.profiles?.email ?? a.user_id.slice(0, 8)}
+                  </div>
+                  <div className="text-[11px] text-white/45 truncate">{a.profiles?.email ?? '—'}</div>
+                </div>
+                {a.can_validate_tickets && (
+                  <span className="text-[10px] uppercase tracking-wider rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 px-2 py-0.5">
+                    ✓ Validator
+                  </span>
+                )}
+                <form action={toggleAffiliateValidatorAction}>
+                  <input type="hidden" name="user_id" value={a.user_id} />
+                  <input type="hidden" name="allow" value={a.can_validate_tickets ? 'false' : 'true'} />
+                  <button className={`text-xs px-3 py-1 rounded border whitespace-nowrap ${
+                    a.can_validate_tickets
+                      ? 'border-white/15 hover:bg-white/5'
+                      : 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/20'
+                  }`}>
+                    {a.can_validate_tickets ? 'Quitar permiso' : '+ Habilitar validator'}
+                  </button>
+                </form>
               </div>
             ))}
           </div>
