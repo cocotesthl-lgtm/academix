@@ -220,7 +220,12 @@ export default async function OwnerClientesPage({
       <PageHeader
         title="Clientes"
         description="Datos de contacto de quienes compraron cursos o tickets. También aparecen los pagos pendientes."
-        actions={<HeaderSecondary href="/ventas">Ver ventas</HeaderSecondary>}
+        actions={
+          <>
+            <HeaderSecondary href="/api/export/clientes">⬇ Exportar CSV</HeaderSecondary>
+            <HeaderSecondary href="/ventas">Ver ventas</HeaderSecondary>
+          </>
+        }
       />
 
       {isEmpty ? (

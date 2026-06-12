@@ -4,6 +4,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { getOwnerBalance } from "@/lib/debt/accrue";
 import { tenantOrigin } from "@/lib/env";
 import { OnboardingChecklist, type OnboardingStep } from "@/components/owner/OnboardingChecklist";
+import { Sparkline } from "@/components/owner/Sparkline";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,17 @@ export default async function OwnerDashboard() {
   const gmv30 = sales30.reduce((s, r) => s + Number(r.amount_gross_cents), 0);
   const gmvPrev30 = salesPrev30.reduce((s, r) => s + Number(r.amount_gross_cents), 0);
   const gmvDelta = gmvPrev30 > 0 ? Math.round(((gmv30 - gmvPrev30) / gmvPrev30) * 100) : null;
+
+  // Sparkline data: ventas por día últimos 30 días
+  const { data: salesWithDateRes } = await svc.from('sales')
+    .select('amount_gross_cents, occurred_at')
+    .eq('tenant_id', tenant.id).eq('status', 'paid').gte('occurred_at', since30);
+  const salesByDay: number[] = Array.from({ length: 30 }, () => 0);
+  for (const s of ((salesWithDateRes ?? []) as Array<{ amount_gross_cents: number; occurred_at: string }>)) {
+    const daysAgo = Math.floor((now - new Date(s.occurred_at).getTime()) / 86400_000);
+    const idx = 29 - daysAgo;
+    if (idx >= 0 && idx < 30) salesByDay[idx] += Number(s.amount_gross_cents);
+  }
 
   const recentSales = (recentSalesRes.data ?? []) as Array<{
     id: string; amount_gross_cents: number; currency: string; occurred_at: string;
@@ -182,6 +194,7 @@ export default async function OwnerDashboard() {
           value={`$ ${ars(gmv30)}`}
           sub={`${sales30.length} transacciones`}
           delta={gmvDelta}
+          chart={<Sparkline values={salesByDay} color="#a855f7" width={140} height={36} className="mt-2" />}
         />
         <Kpi
           label="Clientes activos"
@@ -300,8 +313,9 @@ export default async function OwnerDashboard() {
   );
 }
 
-function Kpi({ label, value, sub, delta, accent }: {
+function Kpi({ label, value, sub, delta, accent, chart }: {
   label: string; value: string; sub?: string; delta?: number | null; accent?: 'amber';
+  chart?: React.ReactNode;
 }) {
   const border = accent === 'amber' ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/10 bg-white/[0.02]';
   return (
@@ -316,6 +330,7 @@ function Kpi({ label, value, sub, delta, accent }: {
         )}
         {sub && <span className="truncate">{sub}</span>}
       </div>
+      {chart}
     </div>
   );
 }

@@ -103,7 +103,12 @@ export default async function OwnerVentasPage({
       <PageHeader
         title="Ventas"
         description="Cada compra confirmada genera una venta. Filtrá por curso, estado o buscá por nombre, email o N° de orden."
-        actions={<HeaderSecondary href="/clientes">Ver clientes</HeaderSecondary>}
+        actions={
+          <>
+            <HeaderSecondary href="/api/export/ventas">⬇ Exportar CSV</HeaderSecondary>
+            <HeaderSecondary href="/clientes">Ver clientes</HeaderSecondary>
+          </>
+        }
       />
 
       <div className="grid grid-cols-4 gap-3">
