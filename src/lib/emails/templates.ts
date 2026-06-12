@@ -51,12 +51,48 @@ export function eventTicketConfirmedEmail(opts: Brand & {
   amountFormatted: string;
   seats?: string[];              // ["VIP A1", "VIP A2"] si hay asientos
   accessUrl: string;
+  tickets?: Array<{
+    qrDataUrl: string;           // QR ya renderizado a data:image/png;base64
+    orderNumber: string;
+    seatLabel?: string | null;
+  }>;
 }): { subject: string; html: string } {
   const greeting = opts.buyerName ? `¡Hola ${opts.buyerName}!` : '¡Hola!';
   const ticketsWord = opts.ticketsCount === 1 ? 'ticket' : 'tickets';
   const seatsRow = opts.seats && opts.seats.length > 0
     ? infoRow('Asientos', opts.seats.join(', '))
     : '';
+
+  // Bloque de QRs — uno por ticket. Si son muchos (>10) los apilamos en
+  // grid 2 columnas para que el email no quede infinito. La data:image
+  // va inline porque la mayoria de clientes (Gmail, Outlook) la respeta.
+  let qrBlock = '';
+  if (opts.tickets && opts.tickets.length > 0) {
+    const rows = opts.tickets.map((t) => `
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:8px 0;border:1px solid #eaeaef;border-radius:10px;background:#ffffff;">
+        <tr>
+          <td style="padding:14px;text-align:center;border-right:1px solid #eaeaef;width:130px;">
+            <img src="${esc(t.qrDataUrl)}" alt="QR ticket" width="110" height="110" style="display:block;margin:0 auto;" />
+          </td>
+          <td style="padding:14px 16px;vertical-align:middle;">
+            ${t.seatLabel ? `<div style="font-size:13px;color:#6b7280;margin-bottom:4px;">Asiento</div><div style="font-size:18px;font-weight:700;color:#0f0a1e;margin-bottom:10px;">${esc(t.seatLabel)}</div>` : ''}
+            <div style="font-size:11px;color:#6b7280;letter-spacing:0.5px;text-transform:uppercase;">N° de orden</div>
+            <div style="font-size:16px;font-weight:700;color:#0f0a1e;font-family:ui-monospace,Menlo,monospace;">${esc(t.orderNumber)}</div>
+          </td>
+        </tr>
+      </table>
+    `).join('');
+    qrBlock = `
+      <div style="margin:24px 0 16px;font-size:13px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">
+        Tus tickets
+      </div>
+      ${rows}
+      <p style="margin:16px 0 0;font-size:12px;color:#6b7280;line-height:1.5;">
+        ⚡ Mostrá el QR el día del evento o decí el <strong>N° de orden</strong> si el escáner falla.
+      </p>
+    `;
+  }
+
   const content = `
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f0a1e;">${greeting} 🎫</h1>
     <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#374151;">
@@ -69,6 +105,7 @@ export function eventTicketConfirmedEmail(opts: Brand & {
       seatsRow +
       infoRow('Total pagado', opts.amountFormatted)
     )}
+    ${qrBlock}
     ${ctaButton({ href: opts.accessUrl, label: 'Ver mis tickets', color: opts.brandColor || '#a855f7' })}
     <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
       Guardá este email — el día del evento te lo pueden pedir para validar entrada.

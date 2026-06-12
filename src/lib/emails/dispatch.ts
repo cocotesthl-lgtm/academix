@@ -1,6 +1,8 @@
 import 'server-only';
+import QRCode from 'qrcode';
 import { getServiceClient } from '@/lib/supabase/service';
-import { tenantOrigin } from '@/lib/env';
+import { tenantOrigin, env } from '@/lib/env';
+import { ticketQrUrl } from '@/lib/tickets/codes';
 import { sendEmail } from './client';
 import {
   purchaseConfirmedEmail,
@@ -99,6 +101,7 @@ export async function notifyEventTicketsConfirmed(opts: {
   currency: string;
   eventDate?: string | null;           // ISO date "2026-07-12"
   seats?: string[];                    // ["VIP A1"]
+  ticketIds?: string[];                // ids de event_tickets para generar QRs
 }): Promise<void> {
   try {
     const brand = await loadTenantBrand(opts.tenantId);
@@ -116,6 +119,28 @@ export async function notifyEventTicketsConfirmed(opts: {
       ? new Date(opts.eventDate).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
       : 'A definir';
 
+    // Generar QRs por ticket (si tenemos ids)
+    let qrTickets: Array<{ qrDataUrl: string; orderNumber: string; seatLabel?: string | null }> | undefined;
+    if (opts.ticketIds && opts.ticketIds.length > 0) {
+      const { data: tRows } = await svc
+        .from('event_tickets')
+        .select('qr_token, order_number, seat_label')
+        .in('id', opts.ticketIds);
+      const rows = (tRows ?? []) as Array<{ qr_token: string | null; order_number: string | null; seat_label: string | null }>;
+      qrTickets = await Promise.all(rows.filter((r) => r.qr_token).map(async (r) => {
+        const url = ticketQrUrl(r.qr_token!, env.platformApiOrigin);
+        const qrDataUrl = await QRCode.toDataURL(url, {
+          width: 220, margin: 1, errorCorrectionLevel: 'M',
+          color: { dark: '#0f0a1e', light: '#ffffff' }
+        });
+        return {
+          qrDataUrl,
+          orderNumber: r.order_number ?? '——',
+          seatLabel: r.seat_label
+        };
+      }));
+    }
+
     const { subject, html } = eventTicketConfirmedEmail({
       brandName: brand.name,
       brandColor: brand.primaryColor,
@@ -126,7 +151,8 @@ export async function notifyEventTicketsConfirmed(opts: {
       ticketsCount: opts.ticketsCount,
       amountFormatted: formatAmount(opts.amountCents, opts.currency),
       seats: opts.seats,
-      accessUrl: `${origin}/account`
+      accessUrl: `${origin}/account`,
+      tickets: qrTickets
     });
     await sendEmail({ to: opts.buyerEmail, subject, html });
   } catch (e) {

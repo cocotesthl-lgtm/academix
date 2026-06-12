@@ -376,4 +376,28 @@ exception when undefined_object then null; end $$;
 alter table public.calendar_dates
   add column if not exists seat_zones jsonb default '[]'::jsonb;
 
+-- ── 0020 Ticket validation (QR + scanner) ─────────────────────
+alter table public.event_tickets
+  add column if not exists qr_token text,
+  add column if not exists order_number text,
+  add column if not exists validated_at timestamptz,
+  add column if not exists validated_by_user_id uuid references auth.users(id) on delete set null,
+  add column if not exists validation_count integer not null default 0;
+
+update public.event_tickets
+  set qr_token = replace(replace(replace(encode(gen_random_bytes(9), 'base64'), '+', ''), '/', ''), '=', '')
+  where qr_token is null;
+
+update public.event_tickets
+  set order_number = upper(substr(replace(replace(encode(gen_random_bytes(5), 'base64'), '+', ''), '/', ''), 1, 6))
+  where order_number is null;
+
+create unique index if not exists event_tickets_qr_token_uniq
+  on public.event_tickets (qr_token);
+create index if not exists event_tickets_order_number_idx
+  on public.event_tickets (order_number);
+
+alter table public.calendar_dates
+  add column if not exists allow_ticket_reentry boolean not null default false;
+
 -- ✓ Listo. Recargá la app.

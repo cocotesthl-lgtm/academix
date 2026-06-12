@@ -92,6 +92,11 @@ function buildResponse(req: NextRequest): { response: NextResponse; portal: stri
     if (pathname === '/instructor' || pathname.startsWith('/instructor/')) {
       return { response: NextResponse.next({ request: req }), portal: 'owner' };
     }
+    // /v/[token] = página pública de ticket (la abre el comprador al
+    // escanear su QR con la cámara nativa del celu). No requiere owner.
+    if (pathname.startsWith('/v/')) {
+      return { response: NextResponse.next({ request: req }), portal: 'app-public' };
+    }
     url.pathname = `/owner${pathname === '/' ? '/dashboard' : pathname}`;
     return { response: NextResponse.rewrite(url, { request: req }), portal: 'owner' };
   }

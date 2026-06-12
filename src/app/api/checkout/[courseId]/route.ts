@@ -252,9 +252,17 @@ export async function POST(
       buyer_name: buyerInfo.name
     };
     const hasSeats = (ev.seat_mode === 'grid' || ev.seat_mode === 'zones') && ticketSeats.length > 0;
+    // Generamos qr_token + order_number aca para que el ticket lleve
+    // codigo desde el insert original (no requerir update posterior).
+    const { generateQrToken, generateOrderNumber } = await import('@/lib/tickets/codes');
+    const withCodes = (extra: Record<string, unknown>) => ({
+      ...common, ...extra,
+      qr_token: generateQrToken(),
+      order_number: generateOrderNumber()
+    });
     const ticketRows = hasSeats
-      ? ticketSeats.map((label) => ({ ...common, seat_label: label }))
-      : Array.from({ length: ticketQty }, () => ({ ...common, seat_label: null }));
+      ? ticketSeats.map((label) => withCodes({ seat_label: label }))
+      : Array.from({ length: ticketQty }, () => withCodes({ seat_label: null }));
 
     // Recalculamos eventTicketsTotalCents SERVER-SIDE (anti-tampering).
     // En modo zones: precio = sum(priceCents × zone.multiplier por cada seat).

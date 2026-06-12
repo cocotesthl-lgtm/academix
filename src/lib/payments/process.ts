@@ -253,7 +253,8 @@ export async function processMpPayment(opts: {
         ...baseArgs,
         ticketsCount: eventTicketIds.length,
         seats: seats.length > 0 ? seats : undefined,
-        eventDate
+        eventDate,
+        ticketIds: eventTicketIds
       });
     } else if (bookingDate || bookingId) {
       await notifyBookingConfirmed({
