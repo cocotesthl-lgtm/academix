@@ -98,3 +98,51 @@ export async function updateBrandingAction(
   revalidatePath('/dashboard');
   return { ok: true };
 }
+
+/**
+ * Actualiza las imagenes / texto que se inyectan en los emails que envia
+ * la plataforma (confirmaciones, tickets, etc).
+ * Todo URL-only — sin uploads (regla del proyecto).
+ *
+ * Defensivo: si migration 0021 no corrio, las columnas no existen → la
+ * action devuelve ok igualmente para no romper UX (el owner lo intentara
+ * de nuevo cuando corra la migration).
+ */
+export async function updateEmailBrandingAction(
+  _prev: BrandingResult | null,
+  formData: FormData
+): Promise<BrandingResult> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Iniciá sesión.' };
+  const svc = getServiceClient();
+  const { data: membership } = await svc
+    .from('memberships').select('tenant_id')
+    .eq('user_id', user.id).eq('role', 'owner').eq('status', 'active')
+    .limit(1).maybeSingle<{ tenant_id: string }>();
+  if (!membership) return { ok: false, error: 'No sos owner de ninguna academia.' };
+
+  const headerUrl = safeImageUrl(String(formData.get('email_header_image_url') ?? ''));
+  const bannerUrl = safeImageUrl(String(formData.get('email_banner_image_url') ?? ''));
+  const footerMsgRaw = String(formData.get('email_footer_message') ?? '').trim();
+  const footerMsg = footerMsgRaw.length === 0 ? null : footerMsgRaw.slice(0, 500);
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updErr } = await (svc.from('tenants') as any)
+      .update({
+        email_header_image_url: headerUrl,
+        email_banner_image_url: bannerUrl,
+        email_footer_message:   footerMsg,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', membership.tenant_id);
+    if (updErr && !updErr.message?.includes('email_header_image_url')) {
+      return { ok: false, error: updErr.message };
+    }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'unknown' };
+  }
+  revalidatePath('/branding');
+  return { ok: true };
+}

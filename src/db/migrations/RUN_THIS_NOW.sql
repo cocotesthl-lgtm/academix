@@ -400,4 +400,10 @@ create index if not exists event_tickets_order_number_idx
 alter table public.calendar_dates
   add column if not exists allow_ticket_reentry boolean not null default false;
 
+-- ── 0021 Tenant email branding ────────────────────────────────
+alter table public.tenants
+  add column if not exists email_header_image_url text,
+  add column if not exists email_banner_image_url text,
+  add column if not exists email_footer_message text;
+
 -- ✓ Listo. Recargá la app.

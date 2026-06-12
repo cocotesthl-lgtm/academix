@@ -30,21 +30,51 @@ type TenantBrand = {
   slug: string;
   logoUrl?: string;
   primaryColor: string;
+  emailHeaderImageUrl?: string;
+  emailBannerImageUrl?: string;
+  emailFooterMessage?: string;
 };
 
 async function loadTenantBrand(tenantId: string): Promise<TenantBrand | null> {
   const svc = getServiceClient();
-  const { data } = await svc
-    .from('tenants')
-    .select('name, slug, brand')
-    .eq('id', tenantId)
-    .maybeSingle<{ name: string; slug: string; brand: { logo_url?: string; primary_color?: string } | null }>();
+  // Defensivo: si migration 0021 no corrió, las columnas email_* no existen
+  // → reintentamos con el set basico.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any = null;
+  try {
+    const res = await svc
+      .from('tenants')
+      .select('name, slug, brand, email_header_image_url, email_banner_image_url, email_footer_message')
+      .eq('id', tenantId)
+      .maybeSingle();
+    if (res.error) throw res.error;
+    data = res.data;
+  } catch {
+    const res = await svc
+      .from('tenants').select('name, slug, brand').eq('id', tenantId).maybeSingle();
+    data = res.data;
+  }
   if (!data) return null;
   return {
     name: data.name,
     slug: data.slug,
     logoUrl: data.brand?.logo_url,
-    primaryColor: data.brand?.primary_color || '#a855f7'
+    primaryColor: data.brand?.primary_color || '#a855f7',
+    emailHeaderImageUrl: data.email_header_image_url || undefined,
+    emailBannerImageUrl: data.email_banner_image_url || undefined,
+    emailFooterMessage: data.email_footer_message || undefined
+  };
+}
+
+/** Spread del brand → opciones de layout (sin duplicar en cada dispatcher). */
+function brandToLayout(brand: TenantBrand) {
+  return {
+    brandName: brand.name,
+    brandColor: brand.primaryColor,
+    logoUrl: brand.logoUrl,
+    emailHeaderImageUrl: brand.emailHeaderImageUrl,
+    emailBannerImageUrl: brand.emailBannerImageUrl,
+    emailFooterMessage: brand.emailFooterMessage
   };
 }
 
@@ -75,9 +105,7 @@ export async function notifyPurchaseConfirmed(opts: {
 
     const origin = tenantOrigin(brand.slug);
     const { subject, html } = purchaseConfirmedEmail({
-      brandName: brand.name,
-      brandColor: brand.primaryColor,
-      logoUrl: brand.logoUrl,
+      ...brandToLayout(brand),
       buyerName: opts.buyerName ?? undefined,
       buyerEmail: opts.buyerEmail,
       courseTitle: course.title,
@@ -142,9 +170,7 @@ export async function notifyEventTicketsConfirmed(opts: {
     }
 
     const { subject, html } = eventTicketConfirmedEmail({
-      brandName: brand.name,
-      brandColor: brand.primaryColor,
-      logoUrl: brand.logoUrl,
+      ...brandToLayout(brand),
       buyerName: opts.buyerName ?? undefined,
       eventTitle: course.title,
       eventDate: dateStr,
@@ -187,9 +213,7 @@ export async function notifyBookingConfirmed(opts: {
     });
 
     const { subject, html } = bookingConfirmedEmail({
-      brandName: brand.name,
-      brandColor: brand.primaryColor,
-      logoUrl: brand.logoUrl,
+      ...brandToLayout(brand),
       buyerName: opts.buyerName ?? undefined,
       courseTitle: course.title,
       bookingDate: dateStr,
@@ -230,9 +254,7 @@ export async function notifyBookingRescheduled(opts: {
     });
 
     const { subject, html } = bookingRescheduledEmail({
-      brandName: brand.name,
-      brandColor: brand.primaryColor,
-      logoUrl: brand.logoUrl,
+      ...brandToLayout(brand),
       buyerName: opts.buyerName ?? undefined,
       courseTitle: course.title,
       oldDate: fmt(opts.oldDate),
@@ -257,9 +279,7 @@ export async function notifyInstructorAssigned(opts: {
     if (!brand) return;
     const origin = tenantOrigin(brand.slug);
     const { subject, html } = instructorWelcomeEmail({
-      brandName: brand.name,
-      brandColor: brand.primaryColor,
-      logoUrl: brand.logoUrl,
+      ...brandToLayout(brand),
       instructorName: opts.instructorName ?? undefined,
       portalUrl: `${origin}/instructor`
     });

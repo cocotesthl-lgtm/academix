@@ -24,6 +24,9 @@ export type LayoutOpts = {
   brandName?: string;     // nombre del tenant (header)
   logoUrl?: string;       // URL del logo del tenant
   footerNote?: string;    // tenant info, dirección, unsubscribe, etc.
+  emailHeaderImageUrl?: string;  // banner top custom del tenant (URL only)
+  emailBannerImageUrl?: string;  // strip mid email custom del tenant
+  emailFooterMessage?: string;   // mensaje extra footer custom del tenant
 };
 
 export function renderLayout(opts: LayoutOpts & { content: string }): string {
@@ -33,6 +36,25 @@ export function renderLayout(opts: LayoutOpts & { content: string }): string {
   const logo = opts.logoUrl
     ? `<img src="${esc(opts.logoUrl)}" alt="${brandName}" style="max-height:40px;max-width:160px;display:block;margin:0 auto;" />`
     : `<div style="font-size:22px;font-weight:700;color:#0f0a1e;text-align:center;">${brandName}</div>`;
+
+  // Custom blocks opcionales del tenant — solo se renderizan si vienen.
+  const headerBanner = opts.emailHeaderImageUrl
+    ? `<tr><td style="padding:0;line-height:0;">
+        <img src="${esc(opts.emailHeaderImageUrl)}" alt="" style="display:block;width:100%;max-width:600px;height:auto;" />
+       </td></tr>`
+    : '';
+  const midBanner = opts.emailBannerImageUrl
+    ? `<tr><td style="padding:0 32px 24px;">
+        <img src="${esc(opts.emailBannerImageUrl)}" alt="" style="display:block;width:100%;height:auto;border-radius:8px;" />
+       </td></tr>`
+    : '';
+  // Footer message custom — soportamos HTML básico (links, br) pero esc del resto.
+  // Estrategia simple: si el owner pone <a href> / <br> respetamos, sino esc todo.
+  const customFooter = opts.emailFooterMessage
+    ? `<tr><td style="padding:18px 32px;border-top:1px solid #eaeaef;background:#ffffff;font-size:13px;color:#374151;line-height:1.6;text-align:center;">
+        ${opts.emailFooterMessage.replace(/\n/g, '<br/>')}
+       </td></tr>`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -46,12 +68,15 @@ export function renderLayout(opts: LayoutOpts & { content: string }): string {
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f5f5f7;">
 <tr><td align="center" style="padding:32px 16px;">
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    ${headerBanner}
     <tr><td style="padding:28px 32px;border-bottom:1px solid #eaeaef;background:#ffffff;">
       ${logo}
     </td></tr>
     <tr><td style="padding:32px;">
       ${opts.content}
     </td></tr>
+    ${midBanner}
+    ${customFooter}
     <tr><td style="padding:20px 32px;border-top:1px solid #eaeaef;background:#fafafb;font-size:12px;color:#6b7280;line-height:1.6;">
       ${opts.footerNote ? esc(opts.footerNote) + '<br/>' : ''}
       Este email fue enviado por <strong style="color:#1a1a1a;">${brandName}</strong> a través de Curplat.<br/>
