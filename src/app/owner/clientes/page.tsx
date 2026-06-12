@@ -282,7 +282,7 @@ export default async function OwnerClientesPage({
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
+            <thead className="bg-[#0f0f0f] text-white/50 text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
                 <th className="text-left px-3 py-2.5">Nombre</th>
                 <th className="text-left px-3 py-2.5">DNI</th>
@@ -425,7 +425,7 @@ export default async function OwnerClientesPage({
             </p>
           </div>
           <table className="w-full text-sm">
-            <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
+            <thead className="bg-[#0f0f0f] text-white/50 text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
                 <th className="text-left px-3 py-2.5">Comprador</th>
                 <th className="text-left px-3 py-2.5">Email</th>

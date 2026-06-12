@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useState, useEffect } from 'react';
 import { updateBrandingAction, type BrandingResult } from '@/lib/branding/actions';
+import { showToast } from './ToastBus';
 
 type Brand = {
   logo_url?: string | null;
@@ -35,6 +36,12 @@ export function BrandingForm({
   const [logoText, setLogoText] = useState(initialBrand.logo_text ?? '');
 
   const domain = rootDomain ?? 'bzseguridad.store';
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.ok) showToast('Branding actualizado', 'success');
+    else showToast(state.error, 'error', 4500);
+  }, [state]);
 
   return (
     <form action={formAction} className="space-y-6 max-w-2xl">

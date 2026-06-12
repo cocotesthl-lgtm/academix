@@ -155,7 +155,7 @@ export default async function OwnerVentasPage({
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
+            <thead className="bg-[#0f0f0f] text-white/50 text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
                 <th className="text-left px-3 py-2.5">Fecha</th>
                 <th className="text-left px-3 py-2.5">Cliente</th>
