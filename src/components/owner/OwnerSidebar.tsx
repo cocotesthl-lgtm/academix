@@ -49,6 +49,7 @@ const NAV: NavEntry[] = [
       items: [
         { label: 'Clientes', href: '/clientes' },
         { label: 'Ventas', href: '/ventas' },
+        { label: 'Suscripciones', href: '/suscripciones' },
         { label: 'Instructores', href: '/instructors' },
         { label: 'Afiliados', href: '/affiliates' }
       ]

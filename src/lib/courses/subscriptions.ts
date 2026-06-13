@@ -27,3 +27,55 @@ export async function setCoursePricingModeAction(formData: FormData): Promise<vo
     .eq('id', courseId).eq('tenant_id', tenant.id);
   revalidatePath(`/courses/${courseId}`);
 }
+
+/**
+ * Cancelar una suscripción de un cliente del owner.
+ * Llama al MP API con el access_token DEL OWNER (no el de la plataforma)
+ * porque la suscripción está creada con el MP del owner.
+ *
+ * Si MP rechaza, igual marcamos como cancelled en nuestra DB para que el
+ * owner no la siga viendo activa.
+ */
+export async function cancelClientSubscriptionAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const subId = String(formData.get('subscription_id') ?? '');
+  if (!subId) return;
+
+  const svc = getServiceClient();
+  const { data: sub } = await svc
+    .from('subscriptions')
+    .select('preapproval_id, status, external_provider')
+    .eq('id', subId).eq('tenant_id', tenant.id)
+    .maybeSingle<{ preapproval_id: string; status: string; external_provider: string }>();
+  if (!sub) return;
+  if (sub.status === 'cancelled') return;
+
+  // Obtener el access_token del owner (su integración MP)
+  const { data: integration } = await svc
+    .from('integrations').select('access_token')
+    .eq('tenant_id', tenant.id).eq('provider', 'mercadopago').eq('status', 'connected')
+    .maybeSingle<{ access_token: string }>();
+
+  if (integration?.access_token && sub.external_provider === 'mercadopago') {
+    try {
+      await fetch(`https://api.mercadopago.com/preapproval/${sub.preapproval_id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${integration.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'cancelled' })
+      });
+    } catch (e) {
+      console.error('[cancelClientSubscription] MP fail, cancelando local:', e);
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('subscriptions') as any).update({
+    status: 'cancelled',
+    cancelled_at: new Date().toISOString()
+  }).eq('id', subId).eq('tenant_id', tenant.id);
+
+  revalidatePath('/suscripciones');
+}
