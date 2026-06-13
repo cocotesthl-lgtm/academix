@@ -46,6 +46,102 @@ export async function getPlanById(id: string): Promise<Plan | null> {
   } catch { return null; }
 }
 
+/** Códigos promo activos (no expirados, no llenos). */
+export async function getActivePromoCodes(): Promise<Array<{
+  id: string; code: string; description: string | null;
+  discount_type: 'percent' | 'fixed'; discount_value: number;
+  plan_ids: string[]; applies_to: 'monthly' | 'annual' | 'both';
+  max_uses: number | null; used_count: number;
+  expires_at: string | null; is_active: boolean;
+}>> {
+  const svc = getServiceClient();
+  try {
+    const { data, error } = await svc
+      .from('plan_promo_codes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return (data ?? []) as unknown as Array<{
+      id: string; code: string; description: string | null;
+      discount_type: 'percent' | 'fixed'; discount_value: number;
+      plan_ids: string[]; applies_to: 'monthly' | 'annual' | 'both';
+      max_uses: number | null; used_count: number;
+      expires_at: string | null; is_active: boolean;
+    }>;
+  } catch { return []; }
+}
+
+/** Buscar un código específico por string — usado al aplicarlo. */
+export async function findPromoCode(rawCode: string): Promise<{
+  id: string; code: string;
+  discount_type: 'percent' | 'fixed'; discount_value: number;
+  plan_ids: string[]; applies_to: 'monthly' | 'annual' | 'both';
+  max_uses: number | null; used_count: number;
+  expires_at: string | null; is_active: boolean;
+} | null> {
+  const code = rawCode.trim().toUpperCase();
+  if (!code) return null;
+  const svc = getServiceClient();
+  try {
+    const { data, error } = await svc
+      .from('plan_promo_codes').select('*').eq('code', code).maybeSingle();
+    if (error || !data) return null;
+    return data as unknown as {
+      id: string; code: string;
+      discount_type: 'percent' | 'fixed'; discount_value: number;
+      plan_ids: string[]; applies_to: 'monthly' | 'annual' | 'both';
+      max_uses: number | null; used_count: number;
+      expires_at: string | null; is_active: boolean;
+    };
+  } catch { return null; }
+}
+
+/** Anuncios activos no expirados, ordenados por más reciente. */
+export async function getActiveAnnouncements(): Promise<Array<{
+  id: string; title: string; message: string;
+  cta_label: string | null; cta_href: string | null; promo_code: string | null;
+  bg_color: string; text_color: string;
+  plan_ids: string[]; is_active: boolean; expires_at: string | null;
+}>> {
+  const svc = getServiceClient();
+  try {
+    const nowIso = new Date().toISOString();
+    const { data, error } = await svc
+      .from('plan_announcements').select('*')
+      .eq('is_active', true)
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return (data ?? []) as unknown as Array<{
+      id: string; title: string; message: string;
+      cta_label: string | null; cta_href: string | null; promo_code: string | null;
+      bg_color: string; text_color: string;
+      plan_ids: string[]; is_active: boolean; expires_at: string | null;
+    }>;
+  } catch { return []; }
+}
+
+export async function getAllAnnouncements(): Promise<Array<{
+  id: string; title: string; message: string;
+  cta_label: string | null; cta_href: string | null; promo_code: string | null;
+  bg_color: string; text_color: string;
+  plan_ids: string[]; is_active: boolean; expires_at: string | null;
+}>> {
+  const svc = getServiceClient();
+  try {
+    const { data, error } = await svc
+      .from('plan_announcements').select('*')
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return (data ?? []) as unknown as Array<{
+      id: string; title: string; message: string;
+      cta_label: string | null; cta_href: string | null; promo_code: string | null;
+      bg_color: string; text_color: string;
+      plan_ids: string[]; is_active: boolean; expires_at: string | null;
+    }>;
+  } catch { return []; }
+}
+
 /** Plan + estado de suscripción de un tenant. */
 export async function getTenantPlan(tenantId: string): Promise<{
   plan: Plan | null;

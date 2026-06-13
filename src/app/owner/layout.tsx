@@ -5,6 +5,8 @@ import { tenantOrigin } from "@/lib/env";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 import { OwnerShell } from "@/components/owner/OwnerShell";
 import { CommandPaletteTrigger } from "@/components/owner/CommandPalette";
+import { AnnouncementBanner } from "@/components/owner/plan/AnnouncementBanner";
+import { getActiveAnnouncements, getTenantPlan } from "@/lib/plans/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,16 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   // postAuthRedirect, así que vuelven a su panel sin perderse.
   const tenantLoginUrl = `${tenantOrigin(tenant.slug)}/login`;
   const storefrontUrl = `https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}`;
+
+  // Banner promo: el más reciente activo que matchee el plan del tenant
+  const [announcements, tenantPlan] = await Promise.all([
+    getActiveAnnouncements(),
+    getTenantPlan(tenant.id)
+  ]);
+  const matchingBanner = announcements.find((a) =>
+    a.plan_ids.length === 0 ||
+    (tenantPlan.plan && a.plan_ids.includes(tenantPlan.plan.id))
+  );
 
   const sidebar = (
     <>
@@ -59,6 +71,20 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
               Salir del modo admin
             </button>
           </form>
+        </div>
+      )}
+      {matchingBanner && (
+        <div className="mb-4">
+          <AnnouncementBanner banner={{
+            id: matchingBanner.id,
+            title: matchingBanner.title,
+            message: matchingBanner.message,
+            cta_label: matchingBanner.cta_label,
+            cta_href: matchingBanner.cta_href,
+            promo_code: matchingBanner.promo_code,
+            bg_color: matchingBanner.bg_color,
+            text_color: matchingBanner.text_color
+          }} />
         </div>
       )}
       {children}

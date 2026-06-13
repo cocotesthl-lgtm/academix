@@ -94,12 +94,15 @@ export function annualMonthlyEquivalent(plan: Plan): number {
   return Math.round(plan.price_cents_annual / 12);
 }
 
-/** Aplicar descuento de promo code a un precio. */
-export function applyDiscount(priceCents: number, code: PromoCode): number {
-  if (code.discount_type === 'percent') {
-    return Math.max(0, Math.round(priceCents * (1 - code.discount_value / 100)));
+/** Aplicar descuento — acepta cualquier objeto que tenga {discount_type, discount_value}. */
+export function applyDiscount(
+  priceCents: number,
+  discount: { discount_type: 'percent' | 'fixed'; discount_value: number }
+): number {
+  if (discount.discount_type === 'percent') {
+    return Math.max(0, Math.round(priceCents * (1 - discount.discount_value / 100)));
   }
-  return Math.max(0, priceCents - code.discount_value);
+  return Math.max(0, priceCents - discount.discount_value);
 }
 
 /** Parse safe del jsonb features (defensivo si DB devuelve null). */

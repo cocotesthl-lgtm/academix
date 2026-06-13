@@ -3,11 +3,19 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  annualSavingsPct, annualMonthlyEquivalent,
+  annualSavingsPct, annualMonthlyEquivalent, applyDiscount,
   type Plan, type BillingPeriod
 } from '@/lib/plans/types';
 import { setTenantPlanAction } from '@/lib/plans/actions';
 import { showToast } from '@/components/owner/ToastBus';
+
+type AppliedPromo = {
+  code: string;
+  discount_type: 'percent' | 'fixed';
+  discount_value: number;
+  plan_ids: string[];
+  applies_to: 'monthly' | 'annual' | 'both';
+};
 
 /**
  * Pricing cards style SaaS: 3 tarjetas + toggle anual/mensual arriba.
@@ -33,8 +41,48 @@ export function PlanPricingCards({
 }) {
   const [period, setPeriod] = useState<BillingPeriod>(defaultPeriod);
   const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
+  const [validating, setValidating] = useState(false);
   const [pending, start] = useTransition();
   const router = useRouter();
+
+  async function validatePromo() {
+    const code = promoCode.trim().toUpperCase();
+    if (!code) return;
+    setValidating(true);
+    try {
+      const res = await fetch(`/api/plans/validate-promo?code=${encodeURIComponent(code)}`);
+      const json = await res.json();
+      if (json.ok) {
+        setAppliedPromo(json as AppliedPromo);
+        showToast(`Código ${json.code} aplicado`, 'success');
+      } else {
+        const msgs: Record<string, string> = {
+          not_found: 'Código inválido',
+          paused: 'Código pausado',
+          expired: 'Código expirado',
+          maxed_out: 'Código agotado'
+        };
+        showToast(msgs[json.error] ?? 'Código inválido', 'error', 4000);
+      }
+    } catch {
+      showToast('Error validando código', 'error');
+    }
+    setValidating(false);
+  }
+
+  function clearPromo() {
+    setAppliedPromo(null);
+    setPromoCode('');
+  }
+
+  /** ¿Aplica el promo a este (plan, period)? */
+  function promoApplies(plan: Plan): boolean {
+    if (!appliedPromo) return false;
+    if (appliedPromo.plan_ids.length > 0 && !appliedPromo.plan_ids.includes(plan.id)) return false;
+    if (appliedPromo.applies_to !== 'both' && appliedPromo.applies_to !== period) return false;
+    return true;
+  }
 
   function format(cents: number, currency: string) {
     return `${currency} ${(cents / 100).toLocaleString('es-AR')}`;
@@ -89,7 +137,15 @@ export function PlanPricingCards({
         {plans.map((plan) => {
           const isCurrent = currentPlanId === plan.id;
           const isFeatured = plan.is_featured;
-          const priceDisplay = period === 'annual' ? annualMonthlyEquivalent(plan) : plan.price_cents_monthly;
+          const basePrice = period === 'annual' ? annualMonthlyEquivalent(plan) : plan.price_cents_monthly;
+          const annualBasePrice = plan.price_cents_annual;
+          const applies = promoApplies(plan);
+          const priceDisplay = applies
+            ? applyDiscount(basePrice, appliedPromo!)
+            : basePrice;
+          const annualDisplay = applies
+            ? applyDiscount(annualBasePrice, appliedPromo!)
+            : annualBasePrice;
 
           return (
             <div
@@ -113,6 +169,11 @@ export function PlanPricingCards({
 
               <div className="mb-5">
                 <div className="flex items-baseline gap-1">
+                  {applies && (
+                    <span className="text-sm text-white/40 line-through tabular-nums mr-1">
+                      {format(basePrice, plan.currency)}
+                    </span>
+                  )}
                   <span className="text-3xl font-bold tabular-nums">
                     {format(priceDisplay, plan.currency)}
                   </span>
@@ -120,11 +181,13 @@ export function PlanPricingCards({
                 </div>
                 {period === 'annual' ? (
                   <p className="text-xs text-emerald-300 mt-1">
-                    Facturado {format(plan.price_cents_annual, plan.currency)} por año
+                    Facturado {format(annualDisplay, plan.currency)} por año
+                    {applies && <span className="text-fuchsia-300 ml-1.5">(código {appliedPromo!.code})</span>}
                   </p>
                 ) : (
                   <p className="text-xs text-white/45 mt-1">
                     Facturado mes a mes
+                    {applies && <span className="text-fuchsia-300 ml-1.5">(código {appliedPromo!.code})</span>}
                   </p>
                 )}
               </div>
@@ -191,24 +254,46 @@ export function PlanPricingCards({
         <div className="text-xs uppercase tracking-wider text-white/55 mb-2 text-center">
           ¿Tenés un código promocional?
         </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={promoCode}
-            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-            placeholder="Pegá tu código"
-            className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono uppercase"
-            maxLength={20}
-          />
-          <button
-            type="button"
-            disabled={!promoCode.trim()}
-            onClick={() => showToast('Códigos promo se aplican en checkout (próximamente)', 'info')}
-            className="rounded bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-medium disabled:opacity-30"
-          >
-            Aplicar
-          </button>
-        </div>
+        {appliedPromo ? (
+          <div className="flex items-center justify-between gap-2 rounded bg-emerald-500/10 border border-emerald-500/30 px-3 py-2">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-emerald-300">✓</span>
+              <span className="font-mono font-semibold">{appliedPromo.code}</span>
+              <span className="text-white/65">
+                {appliedPromo.discount_type === 'percent'
+                  ? `-${appliedPromo.discount_value}%`
+                  : `-$${(appliedPromo.discount_value / 100).toLocaleString('es-AR')}`}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={clearPromo}
+              className="text-xs text-white/55 hover:text-white"
+            >
+              Quitar
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); validatePromo(); } }}
+              placeholder="Pegá tu código"
+              className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono uppercase"
+              maxLength={30}
+            />
+            <button
+              type="button"
+              disabled={!promoCode.trim() || validating}
+              onClick={validatePromo}
+              className="rounded bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-medium disabled:opacity-30"
+            >
+              {validating ? 'Validando…' : 'Aplicar'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
