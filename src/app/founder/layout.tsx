@@ -13,6 +13,7 @@ export default async function FounderLayout({ children }: { children: React.Reac
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/dashboard">Dashboard</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tenants">Academias</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/users">Usuarios</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/plans">Planes</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/commissions">Comisiones</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tickets">Soporte</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/revenue">Revenue</a>

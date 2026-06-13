@@ -71,6 +71,7 @@ const NAV: NavEntry[] = [
     group: {
       label: 'Configuración', icon: '⚙️',
       items: [
+        { label: 'Mi plan', href: '/mi-plan' },
         { label: 'Integraciones', href: '/integrations' },
         { label: 'Finanzas', href: '/finance' },
         { label: 'Soporte', href: '/soporte' }
