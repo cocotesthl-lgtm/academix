@@ -34,6 +34,8 @@ export type CreatePreapprovalOpts = {
   externalReference: string; // tenant_id (para identificarlo después)
   payerEmail: string;
   backUrl: string;           // URL de retorno post-pago
+  /** Días de trial gratis. MP captura tarjeta pero no cobra hasta el día N+1. */
+  freeTrialDays?: number;
 };
 
 export type Preapproval = {
@@ -53,14 +55,24 @@ export type Preapproval = {
 
 export async function createPreapproval(opts: CreatePreapprovalOpts): Promise<Preapproval> {
   const accessToken = getAccessToken();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const autoRecurring: any = {
+    frequency: opts.frequency === 'annual' ? 12 : 1,
+    frequency_type: 'months',
+    transaction_amount: opts.amountCents / 100,
+    currency_id: opts.currency
+  };
+  // Free trial: MP capta tarjeta pero no cobra durante N días.
+  // Soportamos 1-90 días. El primer cobro real ocurre al día N+1.
+  if (opts.freeTrialDays && opts.freeTrialDays > 0) {
+    autoRecurring.free_trial = {
+      frequency: Math.min(90, Math.max(1, opts.freeTrialDays)),
+      frequency_type: 'days'
+    };
+  }
   const body = {
     reason: opts.reason,
-    auto_recurring: {
-      frequency: opts.frequency === 'annual' ? 12 : 1,
-      frequency_type: 'months',
-      transaction_amount: opts.amountCents / 100,
-      currency_id: opts.currency
-    },
+    auto_recurring: autoRecurring,
     back_url: opts.backUrl,
     external_reference: opts.externalReference,
     payer_email: opts.payerEmail,

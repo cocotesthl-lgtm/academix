@@ -498,6 +498,12 @@ create policy "announcements: founder write" on public.plan_announcements for al
   exists (select 1 from public.profiles where id = auth.uid() and is_super_admin = true)
 );
 
+-- ── 0025 Trial days per plan ──────────────────────────────────
+alter table public.plans
+  add column if not exists trial_days integer not null default 0;
+update public.plans set trial_days = 7
+  where slug in ('medium', 'pro') and trial_days = 0;
+
 -- ── 0024 Platform subscriptions ───────────────────────────────
 create table if not exists public.platform_subscriptions (
   id uuid primary key default gen_random_uuid(),

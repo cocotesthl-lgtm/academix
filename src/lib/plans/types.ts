@@ -26,6 +26,7 @@ export type Plan = {
   price_cents_monthly: number;
   price_cents_annual: number;
   currency: string;
+  trial_days: number;               // 0 = sin trial; >0 = N días gratis
   features: PlanFeatures;
   created_at?: string;
 };

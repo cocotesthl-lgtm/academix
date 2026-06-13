@@ -123,6 +123,19 @@ function PlanEditor({ plan, canMoveUp, canMoveDown }: { plan: Plan; canMoveUp: b
           </Field>
         </div>
 
+        {/* Trial */}
+        <div className="rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-3">
+          <Field label="Días de trial gratis (0 = sin trial · captura tarjeta y auto-cobra al final)">
+            <input name="trial_days" type="number" min={0} max={90}
+              defaultValue={plan.trial_days ?? 0}
+              className="w-full sm:w-32 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </Field>
+          <p className="text-[10px] text-white/45 mt-1.5">
+            Con trial: el owner mete tarjeta en MP al activar, no se cobra durante X días, MP auto-cobra el día X+1.
+            Si pone 0, el botón "Trial" desaparece y solo queda "Suscribirse ya".
+          </p>
+        </div>
+
         {/* Toggles */}
         <div className="flex gap-4 flex-wrap">
           <label className="flex items-center gap-2 text-sm cursor-pointer">

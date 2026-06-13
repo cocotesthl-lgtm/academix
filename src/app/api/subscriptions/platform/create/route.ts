@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
   }
 
-  let body: { plan_id?: string; billing_period?: BillingPeriod; promo_code?: string };
+  let body: { plan_id?: string; billing_period?: BillingPeriod; promo_code?: string; use_trial?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -75,20 +75,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'no_email' }, { status: 400 });
   }
 
+  // Trial: si el plan tiene trial_days configurado Y el owner pidió trial
+  // (default = sí cuando trial_days > 0), pasamos free_trial a MP.
+  const useTrial = body.use_trial !== false;  // default true
+  const freeTrialDays = useTrial && plan.trial_days > 0 ? plan.trial_days : 0;
+
   // Crear preapproval en MP
   try {
     const reasonSuffix = period === 'annual' ? 'anual' : 'mensual';
+    const trialSuffix = freeTrialDays > 0 ? ` + ${freeTrialDays}d trial` : '';
     const preapproval = await createPreapproval({
       amountCents,
       currency: plan.currency,
       frequency: period,
-      reason: `Curplat Plan ${plan.name} (${reasonSuffix})`,
+      reason: `Curplat Plan ${plan.name} (${reasonSuffix})${trialSuffix}`,
       externalReference: `${ctx.tenant.id}::${plan.id}::${period}${appliedPromoCode ? '::' + appliedPromoCode : ''}`,
       payerEmail,
-      // MP no soporta placeholders en back_url. El preapproval id lo
-      // capturamos via webhook + el query ?preapproval_id que MP
-      // agrega al redirect.
-      backUrl: `${env.platformApiOrigin}/mi-plan?status=success`
+      backUrl: `${env.platformApiOrigin}/mi-plan?status=success`,
+      freeTrialDays
     });
 
     // Guardar preapproval pending en nuestra DB (para tracking)

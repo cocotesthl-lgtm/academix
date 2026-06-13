@@ -88,20 +88,12 @@ export function PlanPricingCards({
     return `${currency} ${(cents / 100).toLocaleString('es-AR')}`;
   }
 
-  /** Activar trial sin cobro — solo crea registro en DB. */
-  function startTrial(planId: string) {
-    start(async () => {
-      const fd = new FormData();
-      fd.append('plan_id', planId);
-      fd.append('billing_period', period);
-      await setTenantPlanAction(fd);
-      showToast('Trial de 7 días activado · sin cobro', 'success');
-      router.refresh();
-    });
-  }
-
-  /** Suscribirse con cobro real — redirige a MP. */
-  function subscribeWithMP(planId: string) {
+  /**
+   * Ir a MP. Si useTrial=true Y el plan tiene trial_days>0, MP captura
+   * tarjeta pero no cobra hasta que termine el trial. Auto-cobro al final.
+   * Si useTrial=false (o plan sin trial_days), cobra al toque.
+   */
+  function goToMp(planId: string, useTrial: boolean) {
     start(async () => {
       const res = await fetch('/api/subscriptions/platform/create', {
         method: 'POST',
@@ -109,7 +101,8 @@ export function PlanPricingCards({
         body: JSON.stringify({
           plan_id: planId,
           billing_period: period,
-          promo_code: appliedPromo?.code ?? undefined
+          promo_code: appliedPromo?.code ?? undefined,
+          use_trial: useTrial
         })
       });
       const json = await res.json();
@@ -255,36 +248,39 @@ export function PlanPricingCards({
                 ))}
               </ul>
 
-              {/* CTA: depende del estado actual */}
+              {/* CTA depende del estado + si el plan tiene trial */}
               {isCurrent && isSubscribed ? (
                 <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 text-center py-2.5 text-sm font-semibold">
                   ✓ Plan actual
                 </div>
               ) : isCurrent && onTrial ? (
-                <div className="space-y-2">
-                  <div className="rounded-md border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200 text-center py-2 text-xs font-semibold">
-                    En trial · sin cobro todavía
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => subscribeWithMP(plan.id)}
-                    disabled={pending}
-                    className={`w-full rounded-md py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
-                      isFeatured
-                        ? 'bg-fuchsia-500 text-white hover:bg-fuchsia-400'
-                        : 'bg-white text-black hover:bg-white/90'
-                    }`}
-                  >
-                    {pending ? 'Redirigiendo…' : `Suscribirse · ${format(priceDisplay, plan.currency)}/mes`}
-                  </button>
+                <div className="rounded-md border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200 text-center py-2 text-xs font-semibold">
+                  En trial · MP cobrará al terminar
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {/* Si nunca activó trial → ofrecemos trial gratis */}
-                  {!currentPlanId && (
+                  {plan.trial_days > 0 ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => goToMp(plan.id, true)}
+                        disabled={pending}
+                        className={`w-full rounded-md py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
+                          isFeatured
+                            ? 'bg-fuchsia-500 text-white hover:bg-fuchsia-400'
+                            : 'bg-white text-black hover:bg-white/90'
+                        }`}
+                      >
+                        {pending ? 'Redirigiendo…' : `🎁 Probar ${plan.trial_days} días gratis`}
+                      </button>
+                      <p className="text-[10px] text-white/45 text-center">
+                        Mete tarjeta pero no se cobra hasta el día {plan.trial_days + 1}. Cancelable.
+                      </p>
+                    </>
+                  ) : (
                     <button
                       type="button"
-                      onClick={() => startTrial(plan.id)}
+                      onClick={() => goToMp(plan.id, false)}
                       disabled={pending}
                       className={`w-full rounded-md py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
                         isFeatured
@@ -292,25 +288,9 @@ export function PlanPricingCards({
                           : 'bg-white text-black hover:bg-white/90'
                       }`}
                     >
-                      {pending ? 'Activando…' : '🎁 Probar 7 días gratis'}
+                      {pending ? 'Redirigiendo…' : `Suscribirse · ${format(priceDisplay, plan.currency)}/mes`}
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => subscribeWithMP(plan.id)}
-                    disabled={pending}
-                    className={`w-full rounded-md py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
-                      !currentPlanId
-                        ? 'bg-white/5 text-white/75 hover:bg-white/10 border border-white/15'
-                        : isFeatured
-                          ? 'bg-fuchsia-500 text-white hover:bg-fuchsia-400'
-                          : 'bg-white text-black hover:bg-white/90'
-                    }`}
-                  >
-                    {pending ? 'Redirigiendo…' : !currentPlanId
-                      ? `O suscribirse ya · ${format(priceDisplay, plan.currency)}/mes`
-                      : `Suscribirse · ${format(priceDisplay, plan.currency)}/mes`}
-                  </button>
                 </div>
               )}
             </div>

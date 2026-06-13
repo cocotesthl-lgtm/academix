@@ -30,6 +30,8 @@ export async function updatePlanAction(formData: FormData): Promise<void> {
   const priceCentsMonthly = parsePriceArs(String(formData.get('price_monthly') ?? '0'));
   const priceCentsAnnual = parsePriceArs(String(formData.get('price_annual') ?? '0'));
   const currency = String(formData.get('currency') ?? 'ARS').trim().slice(0, 3).toUpperCase() || 'ARS';
+  const trialDaysRaw = parseInt(String(formData.get('trial_days') ?? '0'), 10);
+  const trialDays = Math.max(0, Math.min(90, Number.isFinite(trialDaysRaw) ? trialDaysRaw : 0));
 
   // Features estructuradas
   const features = normalizeFeatures({
@@ -44,15 +46,22 @@ export async function updatePlanAction(formData: FormData): Promise<void> {
   });
 
   const svc = getServiceClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (svc.from('plans') as any).update({
+  // Defensivo: si migration 0025 no corrió, omitimos trial_days
+  const basePayload = {
     name, tagline, description,
     is_active: isActive, is_featured: isFeatured,
     price_cents_monthly: priceCentsMonthly,
     price_cents_annual: priceCentsAnnual,
     currency, features,
     updated_at: new Date().toISOString()
-  }).eq('id', id);
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: updErr } = await (svc.from('plans') as any)
+    .update({ ...basePayload, trial_days: trialDays }).eq('id', id);
+  if (updErr && updErr.message?.includes('trial_days')) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('plans') as any).update(basePayload).eq('id', id);
+  }
 
   revalidatePath('/founder/plans');
   revalidatePath('/mi-plan');

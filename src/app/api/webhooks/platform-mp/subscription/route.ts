@@ -112,19 +112,41 @@ async function handlePreapprovalEvent(svc: any, preapprovalId: string) {
     const period = parts[2] === 'annual' ? 'annual' : 'monthly';
 
     if (tenantId && planId) {
+      // Si la preapproval tiene free_trial activo, durante esos días el
+      // tenant queda en status='trial' (autorizado pero sin cobro).
+      // Detectamos por auto_recurring.free_trial en la respuesta de MP.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ft = (preapproval.auto_recurring as any)?.free_trial as
+        | { frequency: number; frequency_type: 'days' | 'months' } | undefined;
+
       const tenantUpdate: Record<string, unknown> = {
         plan_id: planId,
-        billing_period: period,
-        subscription_status: subStatus === 'active' ? 'active' : subStatus
+        billing_period: period
       };
       if (subStatus === 'active') {
-        // Ya autorizada: setear current_period_end según frequency
-        const monthsAhead = period === 'annual' ? 12 : 1;
-        const end = new Date();
-        end.setMonth(end.getMonth() + monthsAhead);
-        tenantUpdate.current_period_end = end.toISOString();
-        tenantUpdate.trial_ends_at = null;
-        tenantUpdate.last_paid_at = new Date().toISOString();
+        if (ft && ft.frequency > 0) {
+          // Trial activo: status='trial', trial_ends_at = now + N días
+          const trialEnd = new Date();
+          if (ft.frequency_type === 'months') {
+            trialEnd.setMonth(trialEnd.getMonth() + ft.frequency);
+          } else {
+            trialEnd.setDate(trialEnd.getDate() + ft.frequency);
+          }
+          tenantUpdate.subscription_status = 'trial';
+          tenantUpdate.trial_ends_at = trialEnd.toISOString();
+          tenantUpdate.current_period_end = trialEnd.toISOString();
+        } else {
+          // Sin trial: activo + período actual ya cargado
+          const monthsAhead = period === 'annual' ? 12 : 1;
+          const end = new Date();
+          end.setMonth(end.getMonth() + monthsAhead);
+          tenantUpdate.subscription_status = 'active';
+          tenantUpdate.current_period_end = end.toISOString();
+          tenantUpdate.trial_ends_at = null;
+          tenantUpdate.last_paid_at = new Date().toISOString();
+        }
+      } else {
+        tenantUpdate.subscription_status = subStatus;
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (svc.from('tenants') as any).update(tenantUpdate).eq('id', tenantId);
