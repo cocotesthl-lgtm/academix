@@ -88,9 +88,21 @@ export function PlanPricingCards({
     return `${currency} ${(cents / 100).toLocaleString('es-AR')}`;
   }
 
-  function selectPlan(planId: string) {
+  /** Activar trial sin cobro — solo crea registro en DB. */
+  function startTrial(planId: string) {
     start(async () => {
-      // Llamar al endpoint que crea preapproval en MP + nos da init_point
+      const fd = new FormData();
+      fd.append('plan_id', planId);
+      fd.append('billing_period', period);
+      await setTenantPlanAction(fd);
+      showToast('Trial de 7 días activado · sin cobro', 'success');
+      router.refresh();
+    });
+  }
+
+  /** Suscribirse con cobro real — redirige a MP. */
+  function subscribeWithMP(planId: string) {
+    start(async () => {
       const res = await fetch('/api/subscriptions/platform/create', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -102,25 +114,20 @@ export function PlanPricingCards({
       });
       const json = await res.json();
       if (json.ok && json.init_point) {
-        // Redirect a MP para que el owner confirme el pago
         showToast('Redirigiendo a MercadoPago…', 'info');
         window.location.href = json.init_point;
         return;
       }
-      // Fallback: si MP no está configurado, caemos al flow viejo (trial sin cobro)
       if (json.error === 'platform_mp_not_configured') {
-        showToast('Activando trial (MP no configurado todavía)…', 'info');
-        const fd = new FormData();
-        fd.append('plan_id', planId);
-        fd.append('billing_period', period);
-        await setTenantPlanAction(fd);
-        showToast('Plan activado en modo trial', 'success');
-        router.refresh();
+        showToast('MP de la plataforma no está configurado todavía', 'error', 5000);
         return;
       }
       showToast(`Error: ${json.message ?? json.error ?? 'unknown'}`, 'error', 5000);
     });
   }
+
+  const onTrial = currentStatus === 'trial';
+  const isSubscribed = currentStatus === 'active';
 
   return (
     <div className="space-y-6">
@@ -248,24 +255,63 @@ export function PlanPricingCards({
                 ))}
               </ul>
 
-              {/* CTA */}
-              {isCurrent ? (
+              {/* CTA: depende del estado actual */}
+              {isCurrent && isSubscribed ? (
                 <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 text-center py-2.5 text-sm font-semibold">
-                  ✓ Plan actual {currentStatus === 'trial' ? '(trial)' : ''}
+                  ✓ Plan actual
+                </div>
+              ) : isCurrent && onTrial ? (
+                <div className="space-y-2">
+                  <div className="rounded-md border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200 text-center py-2 text-xs font-semibold">
+                    En trial · sin cobro todavía
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => subscribeWithMP(plan.id)}
+                    disabled={pending}
+                    className={`w-full rounded-md py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
+                      isFeatured
+                        ? 'bg-fuchsia-500 text-white hover:bg-fuchsia-400'
+                        : 'bg-white text-black hover:bg-white/90'
+                    }`}
+                  >
+                    {pending ? 'Redirigiendo…' : `Suscribirse · ${format(priceDisplay, plan.currency)}/mes`}
+                  </button>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => selectPlan(plan.id)}
-                  disabled={pending}
-                  className={`w-full rounded-md py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
-                    isFeatured
-                      ? 'bg-fuchsia-500 text-white hover:bg-fuchsia-400'
-                      : 'bg-white text-black hover:bg-white/90'
-                  }`}
-                >
-                  {pending ? 'Guardando…' : currentPlanId ? 'Cambiar a este' : 'Activar trial 7 días'}
-                </button>
+                <div className="space-y-2">
+                  {/* Si nunca activó trial → ofrecemos trial gratis */}
+                  {!currentPlanId && (
+                    <button
+                      type="button"
+                      onClick={() => startTrial(plan.id)}
+                      disabled={pending}
+                      className={`w-full rounded-md py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
+                        isFeatured
+                          ? 'bg-fuchsia-500 text-white hover:bg-fuchsia-400'
+                          : 'bg-white text-black hover:bg-white/90'
+                      }`}
+                    >
+                      {pending ? 'Activando…' : '🎁 Probar 7 días gratis'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => subscribeWithMP(plan.id)}
+                    disabled={pending}
+                    className={`w-full rounded-md py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
+                      !currentPlanId
+                        ? 'bg-white/5 text-white/75 hover:bg-white/10 border border-white/15'
+                        : isFeatured
+                          ? 'bg-fuchsia-500 text-white hover:bg-fuchsia-400'
+                          : 'bg-white text-black hover:bg-white/90'
+                    }`}
+                  >
+                    {pending ? 'Redirigiendo…' : !currentPlanId
+                      ? `O suscribirse ya · ${format(priceDisplay, plan.currency)}/mes`
+                      : `Suscribirse · ${format(priceDisplay, plan.currency)}/mes`}
+                  </button>
+                </div>
               )}
             </div>
           );
