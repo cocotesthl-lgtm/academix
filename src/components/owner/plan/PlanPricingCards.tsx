@@ -90,12 +90,35 @@ export function PlanPricingCards({
 
   function selectPlan(planId: string) {
     start(async () => {
-      const fd = new FormData();
-      fd.append('plan_id', planId);
-      fd.append('billing_period', period);
-      await setTenantPlanAction(fd);
-      showToast('Plan actualizado — quedaste en trial', 'success');
-      router.refresh();
+      // Llamar al endpoint que crea preapproval en MP + nos da init_point
+      const res = await fetch('/api/subscriptions/platform/create', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          plan_id: planId,
+          billing_period: period,
+          promo_code: appliedPromo?.code ?? undefined
+        })
+      });
+      const json = await res.json();
+      if (json.ok && json.init_point) {
+        // Redirect a MP para que el owner confirme el pago
+        showToast('Redirigiendo a MercadoPago…', 'info');
+        window.location.href = json.init_point;
+        return;
+      }
+      // Fallback: si MP no está configurado, caemos al flow viejo (trial sin cobro)
+      if (json.error === 'platform_mp_not_configured') {
+        showToast('Activando trial (MP no configurado todavía)…', 'info');
+        const fd = new FormData();
+        fd.append('plan_id', planId);
+        fd.append('billing_period', period);
+        await setTenantPlanAction(fd);
+        showToast('Plan activado en modo trial', 'success');
+        router.refresh();
+        return;
+      }
+      showToast(`Error: ${json.message ?? json.error ?? 'unknown'}`, 'error', 5000);
     });
   }
 
