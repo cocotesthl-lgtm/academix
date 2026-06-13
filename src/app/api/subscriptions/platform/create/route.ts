@@ -85,7 +85,10 @@ export async function POST(req: NextRequest) {
       reason: `Curplat Plan ${plan.name} (${reasonSuffix})`,
       externalReference: `${ctx.tenant.id}::${plan.id}::${period}${appliedPromoCode ? '::' + appliedPromoCode : ''}`,
       payerEmail,
-      backUrl: `${env.platformApiOrigin}/mi-plan?status=success&preapproval=${'{{preapproval_id}}'}`
+      // MP no soporta placeholders en back_url. El preapproval id lo
+      // capturamos via webhook + el query ?preapproval_id que MP
+      // agrega al redirect.
+      backUrl: `${env.platformApiOrigin}/mi-plan?status=success`
     });
 
     // Guardar preapproval pending en nuestra DB (para tracking)

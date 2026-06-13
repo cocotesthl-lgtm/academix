@@ -203,14 +203,14 @@ export function PlanPricingCards({
                   <span className="text-sm text-white/55">/mes</span>
                 </div>
                 {period === 'annual' ? (
-                  <p className="text-xs text-emerald-300 mt-1">
+                  <p className="text-xs text-white/40 mt-1">
                     Facturado {format(annualDisplay, plan.currency)} por año
-                    {applies && <span className="text-fuchsia-300 ml-1.5">(código {appliedPromo!.code})</span>}
+                    {applies && <span className="text-fuchsia-300/80 ml-1.5">(código {appliedPromo!.code})</span>}
                   </p>
                 ) : (
-                  <p className="text-xs text-white/45 mt-1">
+                  <p className="text-xs text-white/40 mt-1">
                     Facturado mes a mes
-                    {applies && <span className="text-fuchsia-300 ml-1.5">(código {appliedPromo!.code})</span>}
+                    {applies && <span className="text-fuchsia-300/80 ml-1.5">(código {appliedPromo!.code})</span>}
                   </p>
                 )}
               </div>
