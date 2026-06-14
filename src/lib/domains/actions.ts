@@ -1,8 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
+import { getTenantPlan } from '@/lib/plans/queries';
 import { addDomainToVercel, removeDomainFromVercel, verifyDomain } from './vercel';
 
 /**
@@ -30,10 +32,26 @@ export async function connectCustomDomainAction(formData: FormData): Promise<voi
   const { tenant } = await requireOwner();
   const domain = sanitizeDomain(String(formData.get('domain') ?? ''));
   if (!domain) {
-    revalidatePath('/dominio');
-    return;
+    redirect('/dominio?error=invalid_domain');
   }
+
+  // ENFORCEMENT: chequear plan antes de permitir conectar dominio.
+  // Si plan.features.domains_max === 0 → bloqueamos.
+  const tenantPlan = await getTenantPlan(tenant.id);
+  const allowed = tenantPlan.plan?.features?.domains_max ?? 0;
+  if (allowed === 0) {
+    redirect('/dominio?error=plan_no_domains');
+  }
+  // Si ya tiene un dominio conectado y el plan solo permite N, bloqueamos
+  // (por ahora limitamos a 1 — futuro: multi-domain con tenant_domains tabla)
   const svc = getServiceClient();
+  const { data: existing } = await svc.from('tenants')
+    .select('custom_domain').eq('id', tenant.id).maybeSingle<{ custom_domain: string | null }>();
+  if (existing?.custom_domain && existing.custom_domain !== domain) {
+    // Ya tiene uno conectado — debe desconectar primero
+    redirect('/dominio?error=already_connected');
+  }
+
   // Update tenant.custom_domain
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('tenants') as any).update({
@@ -41,29 +59,33 @@ export async function connectCustomDomainAction(formData: FormData): Promise<voi
     updated_at: new Date().toISOString()
   }).eq('id', tenant.id);
 
-  // Llamar a Vercel API para agregarlo al proyecto
-  let verified = false;
+  // Llamar a Vercel API para agregarlo al proyecto.
+  // IMPORTANTE: SIEMPRE seteamos vercel_verified=false en la conexión
+  // inicial. El owner debe configurar DNS + apretar "Verificar ahora"
+  // para que pase a verified=true. Esto evita el bug previo donde Vercel
+  // a veces respondía verified=true sin que el DNS esté realmente OK.
   let apex: string | undefined;
   let cname: string | undefined;
   let vercelRaw: unknown = { skipped: 'no_token' };
+  let vercelError: string | null = null;
   if (process.env.VERCEL_API_TOKEN && process.env.VERCEL_PROJECT_ID) {
     try {
       const status = await addDomainToVercel(domain);
-      verified = status.verified;
       apex = status.apexValue;
       cname = status.cnameTarget;
       vercelRaw = status.raw;
     } catch (e) {
-      vercelRaw = { error: e instanceof Error ? e.message : 'unknown' };
+      vercelError = e instanceof Error ? e.message : 'unknown';
+      vercelRaw = { error: vercelError };
     }
   }
 
-  // Guardar estado de verificación
+  // Guardar estado — SIEMPRE como no-verificado en la conexión inicial.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('tenant_domain_status') as any).upsert({
     tenant_id: tenant.id,
     domain,
-    vercel_verified: verified,
+    vercel_verified: false,
     vercel_apex_a_record: apex ?? '76.76.21.21',
     vercel_cname_target: cname ?? 'cname.vercel-dns.com',
     last_checked_at: new Date().toISOString(),
@@ -71,7 +93,10 @@ export async function connectCustomDomainAction(formData: FormData): Promise<voi
     updated_at: new Date().toISOString()
   }, { onConflict: 'tenant_id' });
 
-  revalidatePath('/dominio');
+  if (vercelError) {
+    redirect(`/dominio?error=vercel_failed&msg=${encodeURIComponent(vercelError)}`);
+  }
+  redirect('/dominio?ok=connected');
 }
 
 export async function verifyCustomDomainAction(): Promise<void> {
@@ -83,26 +108,32 @@ export async function verifyCustomDomainAction(): Promise<void> {
   if (!data?.custom_domain) return;
 
   if (!process.env.VERCEL_API_TOKEN) {
-    revalidatePath('/dominio');
-    return;
+    redirect('/dominio?error=vercel_not_configured');
   }
   try {
     const status = await verifyDomain(data.custom_domain);
+    // Verificación real: solo trustamos verified=true si Vercel lo dice
+    // explícitamente Y no hay errores en el verification array.
+    const reallyVerified = status.verified && (!status.verification || status.verification.length === 0);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('tenant_domain_status') as any).upsert({
       tenant_id: tenant.id,
       domain: data.custom_domain,
-      vercel_verified: status.verified,
+      vercel_verified: reallyVerified,
       vercel_apex_a_record: status.apexValue ?? '76.76.21.21',
       vercel_cname_target: status.cnameTarget ?? 'cname.vercel-dns.com',
       last_checked_at: new Date().toISOString(),
       vercel_response: status.raw,
       updated_at: new Date().toISOString()
     }, { onConflict: 'tenant_id' });
+    if (!reallyVerified) {
+      redirect('/dominio?error=dns_not_propagated');
+    }
   } catch (e) {
     console.error('[verifyCustomDomain]', e);
+    redirect('/dominio?error=verify_failed');
   }
-  revalidatePath('/dominio');
+  redirect('/dominio?ok=verified');
 }
 
 export async function disconnectCustomDomainAction(): Promise<void> {

@@ -520,8 +520,8 @@ create table if not exists public.tenant_domain_status (
 -- ── 0025 Trial days per plan ──────────────────────────────────
 alter table public.plans
   add column if not exists trial_days integer not null default 0;
-update public.plans set trial_days = 7
-  where slug in ('medium', 'pro') and trial_days = 0;
+-- 0027: reset trial a 0 (founder no quiere trials por default)
+update public.plans set trial_days = 0;
 
 -- ── 0024 Platform subscriptions ───────────────────────────────
 create table if not exists public.platform_subscriptions (

@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { PageHeader, HeaderSecondary } from "@/components/owner/PageHeader";
 import { Pill } from "@/components/owner/Pill";
+import { getTenantPlan } from "@/lib/plans/queries";
 import {
   connectCustomDomainAction, verifyCustomDomainAction,
   disconnectCustomDomainAction, togglePublicListingAction
@@ -9,14 +11,27 @@ import {
 
 export const dynamic = "force-dynamic";
 
-/**
- * Owner gestiona su dominio propio + privacidad del listado público.
- * El dominio se conecta via Vercel API — si VERCEL_API_TOKEN no está
- * seteado, igual se guarda en DB pero no se agrega al proyecto.
- */
-export default async function DomainPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  invalid_domain: 'El dominio que ingresaste no es válido.',
+  plan_no_domains: 'Tu plan actual no incluye dominio propio. Actualizá tu plan para conectar uno.',
+  already_connected: 'Ya tenés un dominio conectado. Desconectalo primero para cambiarlo.',
+  vercel_failed: 'No pudimos agregar el dominio a Vercel.',
+  vercel_not_configured: 'La plataforma no tiene configurada la integración con Vercel.',
+  dns_not_propagated: 'Los DNS records todavía no se ven. Esperá 5-30 min y volvé a verificar.',
+  verify_failed: 'Hubo un error al verificar. Intentá de nuevo en un rato.'
+};
+
+export default async function DomainPage({
+  searchParams
+}: {
+  searchParams: Promise<{ error?: string; msg?: string; ok?: string }>;
+}) {
   const { tenant } = await requireOwner();
+  const sp = await searchParams;
   const svc = getServiceClient();
+  const tenantPlan = await getTenantPlan(tenant.id);
+  const planDomainsMax = tenantPlan.plan?.features?.domains_max ?? 0;
+  const planName = tenantPlan.plan?.name ?? 'sin plan';
 
   // Defensivo: si migration 0026 no corrió, devolvemos defaults
   let customDomain: string | null = null;
@@ -57,6 +72,42 @@ export default async function DomainPage() {
         description="Conectá tu propio dominio (ej. tuempresa.com) o seguí usando el subdominio gratuito."
         actions={<HeaderSecondary href="/branding">← Branding</HeaderSecondary>}
       />
+
+      {/* Banner de feedback de la última acción */}
+      {sp.error && ERROR_MESSAGES[sp.error] && (
+        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          <strong>✗ {ERROR_MESSAGES[sp.error]}</strong>
+          {sp.msg && <div className="text-xs text-rose-200/70 mt-1 font-mono">{sp.msg}</div>}
+          {sp.error === 'plan_no_domains' && (
+            <Link href="/mi-plan" className="inline-block mt-2 text-xs underline">
+              Ver planes disponibles →
+            </Link>
+          )}
+        </div>
+      )}
+      {sp.ok === 'connected' && (
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          ✓ Dominio conectado. Configurá los DNS records abajo para activarlo.
+        </div>
+      )}
+      {sp.ok === 'verified' && (
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          ✓ ¡Dominio verificado! Ya podés usarlo.
+        </div>
+      )}
+
+      {/* Estado del plan */}
+      <div className="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-2.5 text-xs text-white/65 flex items-center justify-between flex-wrap gap-2">
+        <span>
+          Plan actual: <strong className="text-white">{planName}</strong> ·
+          Dominios incluidos: <strong className="text-white">{planDomainsMax === 0 ? 'ninguno' : `${planDomainsMax}`}</strong>
+        </span>
+        {planDomainsMax === 0 && (
+          <Link href="/mi-plan" className="text-fuchsia-300 hover:text-fuchsia-200 font-medium">
+            Upgradear plan →
+          </Link>
+        )}
+      </div>
 
       {/* ─── Privacidad ─── */}
       <section className="rounded-xl border border-white/10 bg-white/[0.02] p-5 space-y-3">
@@ -179,39 +230,54 @@ export default async function DomainPage() {
 
       {/* ─── Conectar dominio ─── */}
       {!customDomain && (
-        <section className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5 space-y-4">
-          <div>
-            <h2 className="font-bold text-lg">Conectar mi dominio propio</h2>
-            <p className="text-sm text-white/65 mt-1">
-              Si ya compraste un dominio en otro proveedor (NameCheap, GoDaddy, DonWeb, Cloudflare, etc),
-              podés conectarlo acá. El SSL/HTTPS lo gestionamos nosotros gratis.
+        planDomainsMax === 0 ? (
+          <section className="rounded-xl border border-white/15 bg-white/[0.02] p-5 text-center space-y-3">
+            <div className="text-4xl">🔒</div>
+            <h2 className="font-bold text-lg">Tu plan no incluye dominio propio</h2>
+            <p className="text-sm text-white/65 max-w-md mx-auto">
+              Para conectar tu propio dominio (ej. tuempresa.com), necesitás actualizar a un plan que lo incluya.
             </p>
-          </div>
-
-          {!vercelConfigured && (
-            <div className="rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
-              ⚠️ La plataforma todavía no tiene configurada la integración con Vercel.
-              Podés guardar tu dominio igual pero la verificación automática no va a funcionar.
-              El admin debe setear VERCEL_API_TOKEN + VERCEL_PROJECT_ID.
+            <Link
+              href="/mi-plan"
+              className="inline-block rounded-md bg-fuchsia-500 text-white px-5 py-2.5 text-sm font-semibold hover:bg-fuchsia-400"
+            >
+              Ver planes →
+            </Link>
+          </section>
+        ) : (
+          <section className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5 space-y-4">
+            <div>
+              <h2 className="font-bold text-lg">Conectar mi dominio propio</h2>
+              <p className="text-sm text-white/65 mt-1">
+                Si ya compraste un dominio en otro proveedor (NameCheap, GoDaddy, DonWeb, Cloudflare, etc),
+                podés conectarlo acá. El SSL/HTTPS lo gestionamos nosotros gratis.
+              </p>
             </div>
-          )}
 
-          <form action={connectCustomDomainAction} className="flex gap-2 flex-wrap">
-            <input
-              name="domain" type="text" required
-              placeholder="tuempresa.com"
-              className="flex-1 min-w-[200px] rounded bg-black/40 border border-white/20 px-3 py-2 text-sm font-mono"
-            />
-            <button className="rounded-md bg-fuchsia-500 text-white px-5 py-2 text-sm font-semibold hover:bg-fuchsia-400">
-              Conectar
-            </button>
-          </form>
+            {!vercelConfigured && (
+              <div className="rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                ⚠️ La plataforma todavía no tiene configurada la integración con Vercel.
+                Podés guardar tu dominio igual pero la verificación automática no va a funcionar.
+              </div>
+            )}
 
-          <p className="text-[11px] text-white/45">
-            Después te vamos a dar los DNS records que tenés que pegar en tu registrar.
-            En 5 min a 24 hs queda funcionando con HTTPS automático.
-          </p>
-        </section>
+            <form action={connectCustomDomainAction} className="flex gap-2 flex-wrap">
+              <input
+                name="domain" type="text" required
+                placeholder="tuempresa.com"
+                className="flex-1 min-w-[200px] rounded bg-black/40 border border-white/20 px-3 py-2 text-sm font-mono"
+              />
+              <button className="rounded-md bg-fuchsia-500 text-white px-5 py-2 text-sm font-semibold hover:bg-fuchsia-400">
+                Conectar
+              </button>
+            </form>
+
+            <p className="text-[11px] text-white/45">
+              Después te vamos a dar los DNS records que tenés que pegar en tu registrar.
+              En 5 min a 24 hs queda funcionando con HTTPS automático.
+            </p>
+          </section>
+        )
       )}
     </div>
   );
