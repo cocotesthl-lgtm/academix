@@ -498,6 +498,25 @@ create policy "announcements: founder write" on public.plan_announcements for al
   exists (select 1 from public.profiles where id = auth.uid() and is_super_admin = true)
 );
 
+-- ── 0026 Public listing + custom domains ─────────────────────
+alter table public.tenants
+  add column if not exists public_listing boolean not null default true,
+  add column if not exists custom_domain text;
+create unique index if not exists tenants_custom_domain_uniq
+  on public.tenants (custom_domain) where custom_domain is not null;
+
+create table if not exists public.tenant_domain_status (
+  tenant_id uuid primary key references public.tenants(id) on delete cascade,
+  domain text not null,
+  vercel_verified boolean not null default false,
+  vercel_apex_a_record text,
+  vercel_cname_target text,
+  last_checked_at timestamptz,
+  vercel_response jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- ── 0025 Trial days per plan ──────────────────────────────────
 alter table public.plans
   add column if not exists trial_days integer not null default 0;

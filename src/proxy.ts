@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { resolveTenantIdBySlug } from '@/lib/tenant/resolve';
+import { resolveTenantIdBySlug, resolveTenantIdByCustomDomain } from '@/lib/tenant/resolve';
 import { env } from '@/lib/env';
 
 export const config = {
@@ -14,7 +14,7 @@ function isAuthPath(pathname: string): boolean {
   return AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
 }
 
-function extractSubdomain(host: string): { kind: 'apex' | 'sub'; slug?: string } {
+function extractSubdomain(host: string): { kind: 'apex' | 'sub' | 'custom'; slug?: string; customHost?: string } {
   const cleanHost = host.split(':')[0].toLowerCase();
 
   if (cleanHost === 'localhost' || cleanHost === '127.0.0.1') {
@@ -32,7 +32,8 @@ function extractSubdomain(host: string): { kind: 'apex' | 'sub'; slug?: string }
     const sub = cleanHost.slice(0, -(`.${ROOT_DOMAIN}`.length));
     return { kind: 'sub', slug: sub };
   }
-  return { kind: 'apex' };
+  // Cualquier otro host = custom domain de un tenant (lo resolvemos via DB).
+  return { kind: 'custom', customHost: cleanHost };
 }
 
 function buildResponse(req: NextRequest): { response: NextResponse; portal: string; tenantId?: string; tenantSlug?: string } {
@@ -48,6 +49,16 @@ function buildResponse(req: NextRequest): { response: NextResponse; portal: stri
 
   if (parsed.kind === 'apex') {
     return { response: NextResponse.next({ request: req }), portal: 'marketing' };
+  }
+
+  // Custom domain → resolvemos vía DB (con cache). Lo tratamos como
+  // storefront-pending, igual que un subdomain.
+  if (parsed.kind === 'custom') {
+    return {
+      response: NextResponse.next({ request: req }),
+      portal: 'storefront-pending-custom',
+      tenantSlug: parsed.customHost!
+    };
   }
 
   const slug = parsed.slug!;
@@ -112,7 +123,7 @@ export async function proxy(req: NextRequest) {
 
   let { response, portal, tenantSlug } = buildResponse(req);
 
-  // Resolve tenant subdomain (deferred so we can rewrite to /not-found if missing)
+  // Resolve tenant por slug (subdomain) o por custom domain (host completo)
   if (portal === 'storefront-pending' && tenantSlug) {
     const tenantId = await resolveTenantIdBySlug(tenantSlug);
     if (!tenantId) {
@@ -124,6 +135,22 @@ export async function proxy(req: NextRequest) {
       response = NextResponse.rewrite(url, { request: req });
       response.headers.set('x-tenant-id', tenantId);
       response.headers.set('x-tenant-slug', tenantSlug);
+      portal = 'storefront';
+    }
+  }
+  if (portal === 'storefront-pending-custom' && tenantSlug) {
+    const tenantId = await resolveTenantIdByCustomDomain(tenantSlug);
+    if (!tenantId) {
+      // Dominio no conectado a ningún tenant — fallback a marketing
+      // (mejor que not-found, así si el DNS apunta acá sin haber registrado
+      // el dominio, ven el landing en lugar de un error)
+      response = NextResponse.next({ request: req });
+      portal = 'marketing';
+    } else {
+      url.pathname = `/storefront/${tenantId}${pathname === '/' ? '' : pathname}`;
+      response = NextResponse.rewrite(url, { request: req });
+      response.headers.set('x-tenant-id', tenantId);
+      response.headers.set('x-custom-domain', tenantSlug);
       portal = 'storefront';
     }
   }

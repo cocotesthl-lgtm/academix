@@ -33,6 +33,34 @@ export async function resolveTenantIdBySlug(slug: string): Promise<string | null
   return id;
 }
 
+/**
+ * Resolver tenant por custom domain (ej. "tuempresa.com").
+ * Usado por el proxy cuando el request viene de un host que NO es
+ * apex.<root> ni *.<root>.
+ *
+ * Defensivo: si migration 0026 no corrió, devuelve null sin romper.
+ */
+export async function resolveTenantIdByCustomDomain(host: string): Promise<string | null> {
+  const cleanHost = host.split(':')[0].toLowerCase();
+  const key = `domain:${cleanHost}`;
+  const cached = await cacheGet(key);
+  if (cached !== undefined) return cached;
+
+  const sb = getServiceClient();
+  try {
+    const { data } = await sb
+      .from('tenants').select('id')
+      .eq('custom_domain', cleanHost)
+      .maybeSingle<{ id: string }>();
+    const id = data?.id ?? null;
+    await cacheSet(key, id);
+    return id;
+  } catch {
+    // Migration 0026 no corrió → no hay columna
+    return null;
+  }
+}
+
 type TenantRow = {
   id: string;
   slug: string;

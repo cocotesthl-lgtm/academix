@@ -42,21 +42,21 @@ export default function MarketingHome() {
             Beta abierta · Argentina · LatAm
           </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight">
-            Tu academia, <br className="hidden md:inline" />
+            Creá tu propia <br className="hidden md:inline" />
             <span className="bg-gradient-to-r from-fuchsia-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
-              tu propia plataforma.
+              plataforma web.
             </span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-white/70 max-w-2xl mx-auto">
-            Vendé cursos, gestioná alumnos, crecé con afiliados. Todo en tu subdominio,
-            con tu marca, cobrando directo a tu MercadoPago o Shopify.
+            Vendé cursos, eventos con tickets, suscripciones o mentorías. Todo en tu propio dominio,
+            con tu marca, cobrando directo a tu MercadoPago.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/signup"
               className="w-full sm:w-auto rounded-md bg-white text-black px-8 py-3.5 font-semibold hover:bg-white/90 transition shadow-lg shadow-white/10"
             >
-              Crear mi academia gratis
+              Crear mi plataforma gratis
             </Link>
             <Link
               href="/demo"
@@ -225,7 +225,7 @@ export default function MarketingHome() {
               href="/signup"
               className="rounded-md bg-white text-black px-8 py-3.5 font-semibold hover:bg-white/90 transition"
             >
-              Crear mi academia
+              Crear mi plataforma
             </Link>
           </div>
         </div>
@@ -235,7 +235,7 @@ export default function MarketingHome() {
       <section className="border-t border-white/10 py-24">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-            ¿Listo para tener tu academia propia?
+            ¿Listo para tener tu propia plataforma web?
           </h2>
           <p className="text-lg text-white/60 mb-10">
             Creá tu cuenta gratis y configurá tu plataforma hoy mismo.

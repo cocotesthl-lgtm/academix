@@ -73,6 +73,7 @@ const NAV: NavEntry[] = [
       label: 'Configuración', icon: '⚙️',
       items: [
         { label: 'Mi plan', href: '/mi-plan' },
+        { label: 'Mi dominio', href: '/dominio' },
         { label: 'Integraciones', href: '/integrations' },
         { label: 'Finanzas', href: '/finance' },
         { label: 'Soporte', href: '/soporte' }

@@ -14,11 +14,25 @@ type TenantRow = {
 
 export default async function BuscarAcademiasPage() {
   const svc = getServiceClient();
-  const { data } = await svc
-    .from("tenants")
-    .select("id, slug, name, brand")
-    .eq("status", "active")
-    .order("created_at", { ascending: false });
+  // Defensivo: si migration 0026 no corrió, public_listing no existe →
+  // hacemos query sin el filtro y muestra todos (comportamiento previo).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any[] | null = null;
+  try {
+    const res = await svc
+      .from("tenants")
+      .select("id, slug, name, brand")
+      .eq("status", "active")
+      .eq("public_listing", true)
+      .order("created_at", { ascending: false });
+    if (!res.error) data = res.data;
+  } catch { /* migration missing */ }
+  if (!data) {
+    const fallback = await svc.from("tenants")
+      .select("id, slug, name, brand").eq("status", "active")
+      .order("created_at", { ascending: false });
+    data = fallback.data;
+  }
 
   const academias: AcademiaCard[] = ((data ?? []) as TenantRow[]).map((t) => ({
     id: t.id,
