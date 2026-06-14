@@ -87,6 +87,60 @@ export async function reorderPlanAction(formData: FormData): Promise<void> {
   revalidatePath('/founder/plans');
 }
 
+/**
+ * Founder regala un plan a un tenant — sin pasar por MP.
+ * Setea el plan + extiende el período por N meses + marca como activo.
+ * Cuando vence, el cron lo bajará a 'past_due' (queda en manos del
+ * owner suscribirse o ser downgradeado).
+ */
+export async function giftPlanToTenantAction(formData: FormData): Promise<void> {
+  await requireSuperAdmin();
+  const tenantId = String(formData.get('tenant_id') ?? '');
+  const planId = String(formData.get('plan_id') ?? '');
+  const monthsRaw = parseInt(String(formData.get('months') ?? '1'), 10);
+  const months = Math.max(1, Math.min(60, Number.isFinite(monthsRaw) ? monthsRaw : 1));
+  const periodRaw = String(formData.get('billing_period') ?? 'monthly');
+  const period = periodRaw === 'annual' ? 'annual' : 'monthly';
+  const notes = String(formData.get('notes') ?? '').trim().slice(0, 500) || null;
+  if (!tenantId || !planId) return;
+
+  const svc = getServiceClient();
+  const end = new Date();
+  end.setMonth(end.getMonth() + months);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('tenants') as any).update({
+    plan_id: planId,
+    billing_period: period,
+    subscription_status: 'active',
+    trial_ends_at: null,
+    current_period_end: end.toISOString(),
+    last_paid_at: new Date().toISOString(),
+    subscription_notes: notes
+  }).eq('id', tenantId);
+
+  revalidatePath('/founder/plans/regalar');
+  revalidatePath('/founder/tenants');
+}
+
+/** Founder cancela manualmente el plan regalado (vuelve a sin plan). */
+export async function revokeTenantPlanAction(formData: FormData): Promise<void> {
+  await requireSuperAdmin();
+  const tenantId = String(formData.get('tenant_id') ?? '');
+  if (!tenantId) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('tenants') as any).update({
+    plan_id: null,
+    subscription_status: 'cancelled',
+    current_period_end: null,
+    trial_ends_at: null,
+    subscription_notes: null
+  }).eq('id', tenantId);
+  revalidatePath('/founder/plans/regalar');
+  revalidatePath('/founder/tenants');
+}
+
 /** Owner cambia su plan (sin cobro real todavía — eso es Fase 2). */
 export async function setTenantPlanAction(formData: FormData): Promise<void> {
   // Por ahora cualquier user puede setear su plan (free trial). Cuando

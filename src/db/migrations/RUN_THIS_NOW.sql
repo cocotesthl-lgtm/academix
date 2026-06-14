@@ -498,6 +498,10 @@ create policy "announcements: founder write" on public.plan_announcements for al
   exists (select 1 from public.profiles where id = auth.uid() and is_super_admin = true)
 );
 
+-- ── 0028 Tenant subscription notes (founder) ─────────────────
+alter table public.tenants
+  add column if not exists subscription_notes text;
+
 -- ── 0026 Public listing + custom domains ─────────────────────
 alter table public.tenants
   add column if not exists public_listing boolean not null default true,
