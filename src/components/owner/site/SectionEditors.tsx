@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { RichTextField } from './RichTextField';
+import { HrefField } from './HrefSelect';
 
 /**
  * Helper para renderizar un string que puede ser HTML (del RichTextField)
@@ -238,11 +239,11 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
           <RichTextField label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} multiline />
           <div className="grid grid-cols-2 gap-3">
             <Field label="Botón principal" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
-            <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
+            <HrefField label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Botón secundario (opcional)" value={v.cta_label_2} onChange={(x) => setV({ ...v, cta_label_2: x })} />
-            <Field label="Destino (href)" value={v.cta_href_2} onChange={(x) => setV({ ...v, cta_href_2: x })} />
+            <HrefField label="Destino (href)" value={v.cta_href_2} onChange={(x) => setV({ ...v, cta_href_2: x })} />
           </div>
           <RichTextField label="Caption (texto chico debajo de los CTAs)" value={v.caption} onChange={(x) => setV({ ...v, caption: x })} />
           <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, layout: layoutSel })} />

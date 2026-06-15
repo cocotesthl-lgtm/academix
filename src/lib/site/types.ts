@@ -89,6 +89,18 @@ type SectionBase = {
   card_border_color?: string | null; // borde de esas tarjetas
   font_family?: string | null;       // 'sans' | 'serif' | 'display' | 'mono' | null=heredar
   title_weight?: string | null;      // 'normal' | 'medium' | 'semibold' | 'bold' | 'extrabold' | 'black'
+  // ─ Background image (URL only, sin uploads) ─
+  bg_image_url?: string | null;      // URL de imagen de fondo
+  bg_image_opacity?: number | null;  // 0..1 opacidad de la imagen (default 1)
+  bg_image_position?: string | null; // 'cover' | 'contain' | 'repeat' (default 'cover')
+  // ─ Efectos de texto en títulos ─
+  text_effect?: string | null;       // 'none' | 'shadow' | 'glow' | 'neon' | 'outline'
+  // ─ Botones (CTA) — opcionales, fallback a accent + brand ─
+  button_bg_color?: string | null;
+  button_text_color?: string | null;
+  button_border_color?: string | null;
+  button_glow?: boolean | null;      // efecto brillo en botones
+  button_hidden?: boolean | null;    // ocultar todos los CTAs de esta sección
 };
 
 export type SiteConfig = {

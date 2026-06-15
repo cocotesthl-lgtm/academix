@@ -37,7 +37,34 @@ type Styles = {
   card_border_color: string | null;
   font_family: string | null;
   title_weight: string | null;
+  // Bg image
+  bg_image_url?: string | null;
+  bg_image_opacity?: number | null;
+  bg_image_position?: string | null;
+  // Effects
+  text_effect?: string | null;
+  // Botones
+  button_bg_color?: string | null;
+  button_text_color?: string | null;
+  button_border_color?: string | null;
+  button_glow?: boolean | null;
+  button_hidden?: boolean | null;
 };
+
+const TEXT_EFFECT_OPTIONS = [
+  { value: '',         label: 'Sin efecto' },
+  { value: 'shadow',   label: 'Sombra suave' },
+  { value: 'glow',     label: 'Brillo (glow)' },
+  { value: 'neon',     label: 'Neón' },
+  { value: 'outline',  label: 'Contorno' }
+];
+
+const BG_POSITION_OPTIONS = [
+  { value: '',         label: 'Cubrir (cover)' },
+  { value: 'contain',  label: 'Contener (contain)' },
+  { value: 'repeat',   label: 'Patrón repetido' },
+  { value: 'center',   label: 'Centrado sin repetir' }
+];
 
 export function SectionStyleEditor({
   sectionKey,
@@ -112,12 +139,183 @@ export function SectionStyleEditor({
             />
           </div>
 
+          {/* Background image + opacity */}
+          <div className="border-t border-white/10 pt-3 space-y-3">
+            <p className="text-[10px] uppercase tracking-wider text-white/40">Imagen de fondo</p>
+            <StyleTextRow
+              label="URL imagen"
+              sectionKey={sectionKey} field="bg_image_url"
+              initial={initial.bg_image_url ?? null}
+              placeholder="https://..."
+            />
+            <StyleRangeRow
+              label="Opacidad"
+              sectionKey={sectionKey} field="bg_image_opacity"
+              initial={initial.bg_image_opacity ?? 1}
+            />
+            <StyleSelectRow
+              label="Modo"
+              sectionKey={sectionKey} field="bg_image_position"
+              initial={initial.bg_image_position ?? null}
+              options={BG_POSITION_OPTIONS}
+            />
+          </div>
+
+          {/* Efectos de texto */}
+          <div className="border-t border-white/10 pt-3">
+            <StyleSelectRow
+              label="Efecto en títulos"
+              sectionKey={sectionKey} field="text_effect"
+              initial={initial.text_effect ?? null}
+              options={TEXT_EFFECT_OPTIONS}
+            />
+          </div>
+
+          {/* Botones */}
+          <div className="border-t border-white/10 pt-3 space-y-3">
+            <p className="text-[10px] uppercase tracking-wider text-white/40">Botones (CTA)</p>
+            <StyleColorRow label="Fondo del botón" sectionKey={sectionKey} field="button_bg_color" initial={initial.button_bg_color ?? null} />
+            <StyleColorRow label="Texto del botón" sectionKey={sectionKey} field="button_text_color" initial={initial.button_text_color ?? null} />
+            <StyleColorRow label="Borde del botón" sectionKey={sectionKey} field="button_border_color" initial={initial.button_border_color ?? null} />
+            <StyleToggleRow
+              label="Efecto brillo (glow)"
+              sectionKey={sectionKey} field="button_glow"
+              initial={!!initial.button_glow}
+            />
+            <StyleToggleRow
+              label="Ocultar botón"
+              sectionKey={sectionKey} field="button_hidden"
+              initial={!!initial.button_hidden}
+            />
+          </div>
+
           <p className="text-[10px] text-white/40 leading-snug pt-1">
             Dejá vacío para usar el default. Los cambios se guardan automáticamente.
           </p>
         </div>
       )}
     </div>
+  );
+}
+
+function StyleTextRow({
+  label, sectionKey, field, initial, placeholder
+}: {
+  label: string; sectionKey: string; field: string;
+  initial: string | null; placeholder?: string;
+}) {
+  const [value, setValue] = useState(initial ?? '');
+  const [pending, start] = useTransition();
+  const [saved, setSaved] = useState(false);
+  const debRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => setValue(initial ?? ''), [initial]);
+  useEffect(() => () => { if (debRef.current) clearTimeout(debRef.current); }, []);
+
+  function save(v: string) {
+    setValue(v);
+    if (debRef.current) clearTimeout(debRef.current);
+    debRef.current = setTimeout(() => {
+      start(async () => {
+        const fd = new FormData();
+        fd.set('section', sectionKey);
+        fd.set('field', field);
+        fd.set('value', v);
+        await setSectionStyleFieldAction(fd);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 1200);
+      });
+    }, 600);
+  }
+
+  return (
+    <div className="space-y-1">
+      <label className="text-xs text-white/60 flex items-center justify-between">
+        <span>{label}</span>
+        {pending && <span className="text-[10px] text-white/40">…</span>}
+        {saved && !pending && <span className="text-[10px] text-emerald-300">✓</span>}
+      </label>
+      <input
+        type="url"
+        value={value}
+        onChange={(e) => save(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded bg-white/5 border border-white/15 px-2 py-1 text-xs focus:outline-none focus:border-white/40 font-mono"
+      />
+    </div>
+  );
+}
+
+function StyleRangeRow({
+  label, sectionKey, field, initial
+}: {
+  label: string; sectionKey: string; field: string; initial: number;
+}) {
+  const [value, setValue] = useState(initial);
+  const [pending, start] = useTransition();
+  const debRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => setValue(initial), [initial]);
+  useEffect(() => () => { if (debRef.current) clearTimeout(debRef.current); }, []);
+
+  function save(v: number) {
+    setValue(v);
+    if (debRef.current) clearTimeout(debRef.current);
+    debRef.current = setTimeout(() => {
+      start(async () => {
+        const fd = new FormData();
+        fd.set('section', sectionKey);
+        fd.set('field', field);
+        fd.set('value', String(v));
+        await setSectionStyleFieldAction(fd);
+      });
+    }, 200);
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <label className="text-xs text-white/60 flex-1">{label}</label>
+      <input
+        type="range" min={0} max={1} step={0.05}
+        value={value}
+        onChange={(e) => save(parseFloat(e.target.value))}
+        className="w-24"
+      />
+      <span className="text-[10px] text-white/55 w-8 text-right tabular-nums">
+        {pending ? '…' : `${Math.round(value * 100)}%`}
+      </span>
+    </div>
+  );
+}
+
+function StyleToggleRow({
+  label, sectionKey, field, initial
+}: {
+  label: string; sectionKey: string; field: string; initial: boolean;
+}) {
+  const [value, setValue] = useState(initial);
+  const [pending, start] = useTransition();
+
+  useEffect(() => setValue(initial), [initial]);
+
+  function toggle() {
+    const next = !value;
+    setValue(next);
+    start(async () => {
+      const fd = new FormData();
+      fd.set('section', sectionKey);
+      fd.set('field', field);
+      fd.set('value', next ? 'true' : '');
+      await setSectionStyleFieldAction(fd);
+    });
+  }
+
+  return (
+    <label className="flex items-center gap-2 text-xs text-white/65 cursor-pointer">
+      <input type="checkbox" checked={value} onChange={toggle} disabled={pending}
+        className="rounded" />
+      {label}
+    </label>
   );
 }
 

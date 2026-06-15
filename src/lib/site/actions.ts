@@ -125,8 +125,20 @@ export async function setSectionTextColorAction(formData: FormData): Promise<voi
 const STYLE_FIELDS = new Set([
   'title_color', 'body_color', 'accent_color',
   'card_bg_color', 'card_border_color',
-  'font_family', 'title_weight'
+  'font_family', 'title_weight',
+  // Background image + opacity
+  'bg_image_url', 'bg_image_opacity', 'bg_image_position',
+  // Text effects
+  'text_effect',
+  // Buttons
+  'button_bg_color', 'button_text_color', 'button_border_color',
+  'button_glow', 'button_hidden'
 ]);
+
+// Campos boolean (almacenan true/false, no string)
+const STYLE_BOOL_FIELDS = new Set(['button_glow', 'button_hidden']);
+// Campos numericos (almacenan number 0..1)
+const STYLE_NUMBER_FIELDS = new Set(['bg_image_opacity']);
 
 export async function setSectionStyleFieldAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
@@ -137,7 +149,26 @@ export async function setSectionStyleFieldAction(formData: FormData): Promise<vo
   if (!STYLE_FIELDS.has(field)) return;
   const cfg = await loadConfig(tenant.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (cfg.sections[key] as any)[field] = raw === '' || raw.toLowerCase() === 'null' ? null : raw.slice(0, 80);
+  const target = cfg.sections[key] as any;
+  if (raw === '' || raw.toLowerCase() === 'null') {
+    target[field] = null;
+  } else if (STYLE_BOOL_FIELDS.has(field)) {
+    target[field] = raw === 'true' || raw === 'on' || raw === '1';
+  } else if (STYLE_NUMBER_FIELDS.has(field)) {
+    const n = parseFloat(raw);
+    target[field] = Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : null;
+  } else {
+    // String — sanitize URLs (text_effect, colors, position)
+    if (field === 'bg_image_url') {
+      // URL validation básica — solo http/https
+      try {
+        const u = new URL(raw);
+        target[field] = (u.protocol === 'http:' || u.protocol === 'https:') ? raw.slice(0, 2048) : null;
+      } catch { target[field] = null; }
+    } else {
+      target[field] = raw.slice(0, 80);
+    }
+  }
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }

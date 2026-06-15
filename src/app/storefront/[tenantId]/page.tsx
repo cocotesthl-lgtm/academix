@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
 import { mergeConfig, type SectionKey } from "@/lib/site/types";
+import { sectionBgStyle, textEffectStyle, buttonStyle, buttonsVisible } from "@/lib/site/style-helpers";
 import { AnimatedCounter } from "@/components/storefront/AnimatedCounter";
 import { FadeIn } from "@/components/storefront/FadeIn";
 import { CatalogFilter } from "@/components/storefront/CatalogFilter";
@@ -171,20 +172,23 @@ export default async function StorefrontHome({
           case 'hero': {
             const h = cfg.sections.hero;
             const heroTitle = h.title || tenant?.name || 'Academia';
-            const cta1 = h.cta_label && (
+            const btnHidden = !buttonsVisible(h);
+            const heroBtnStyle = buttonStyle(h, primary);
+            const cta1 = !btnHidden && h.cta_label && (
               <a href={h.cta_href || '#cursos'}
-                className="inline-block rounded-md px-6 py-3 font-semibold text-white shadow-md hover:shadow-lg transition"
-                style={{ background: primary }}>
+                className="inline-block rounded-md px-6 py-3 font-semibold shadow-md hover:shadow-lg transition"
+                style={heroBtnStyle}>
                 {h.cta_label}
               </a>
             );
-            const cta2 = h.cta_label_2 && (
+            const cta2 = !btnHidden && h.cta_label_2 && (
               <a href={h.cta_href_2 || '#cursos'}
                 className="inline-block rounded-md px-6 py-3 font-semibold border-2 hover:bg-black/[0.02] transition"
-                style={{ borderColor: primary, color: primary }}>
+                style={{ borderColor: h.button_border_color ?? primary, color: h.button_text_color ?? primary }}>
                 {h.cta_label_2}
               </a>
             );
+            const titleEffectStyle = textEffectStyle(h.text_effect, h.accent_color ?? primary);
             const eyebrowPill = h.eyebrow && (
               <span className="inline-block text-xs font-medium px-3 py-1 rounded-full border" style={{ borderColor: `${primary}55`, color: primary, background: `${primary}10` }}>
                 {h.eyebrow}
@@ -193,7 +197,8 @@ export default async function StorefrontHome({
 
             if (h.layout === 'split') {
               return (
-                <section key={key} {...dt} className="relative overflow-hidden px-6 pt-16 pb-24" style={{ background: bg ?? `linear-gradient(135deg, ${primary}10 0%, transparent 55%)` }}>
+                <section key={key} {...dt} className="relative overflow-hidden px-6 pt-16 pb-24"
+                  style={sectionBgStyle(h, bg ?? `linear-gradient(135deg, ${primary}10 0%, transparent 55%)`)}>
                   {/* Decorative blob */}
                   <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-3xl opacity-30 -z-0" style={{ background: `radial-gradient(circle, ${primary} 0%, transparent 70%)` }} />
 
@@ -202,6 +207,7 @@ export default async function StorefrontHome({
                       <div>
                         {eyebrowPill}
                         <h1 className="mt-5 text-4xl md:text-6xl font-bold tracking-tight leading-tight"
+                          style={titleEffectStyle}
                           dangerouslySetInnerHTML={richHtml(h.title, heroTitle)} />
                         {h.subtitle && <div className="mt-5 text-lg text-black/65 leading-relaxed max-w-lg"
                           dangerouslySetInnerHTML={richHtml(h.subtitle)} />}
@@ -238,7 +244,7 @@ export default async function StorefrontHome({
               /* Amazon-style: imagen full-width grandota arriba que ocupa pantalla,
                  con CTA overlay encima del banner para empujar a la acción. */
               return (
-                <section key={key} {...dt} className="relative" style={{ background: bg ?? '#0a0a0a' }}>
+                <section key={key} {...dt} className="relative" style={sectionBgStyle(h, bg ?? '#0a0a0a')}>
                   {/* Banner principal */}
                   <div className="relative w-full h-[60vh] min-h-[440px] max-h-[680px] overflow-hidden">
                     {h.image_url ? (
@@ -275,6 +281,7 @@ export default async function StorefrontHome({
                               </span>
                             )}
                             <h1 className="mt-4 text-4xl md:text-6xl font-bold tracking-tight leading-tight drop-shadow-lg"
+                              style={titleEffectStyle}
                               dangerouslySetInnerHTML={richHtml(h.title, heroTitle)} />
                             {h.subtitle && (
                               <div className="mt-4 text-lg md:text-xl text-white/90 leading-relaxed max-w-xl drop-shadow"
