@@ -917,6 +917,7 @@ export function CatalogEditor({
   initialTitle, initialShowFilters, initialMaxVisible, initialPaginationMode,
   initialCtaMode, initialCtaCustomHref,
   initialManualCards, initialManualCardsPosition, initialShowAutoCourses,
+  initialCardStyle,
   primary
 }: {
   initialTitle: string; initialShowFilters: boolean; initialMaxVisible: number;
@@ -926,6 +927,7 @@ export function CatalogEditor({
   initialManualCards?: ManualCard[];
   initialManualCardsPosition?: 'before' | 'after';
   initialShowAutoCourses?: boolean;
+  initialCardStyle?: 'classic' | 'compact';
   primary: string;
 }) {
   const [title, setTitle] = useState(initialTitle);
@@ -936,6 +938,7 @@ export function CatalogEditor({
   const [ctaCustomHref, setCtaCustomHref] = useState(initialCtaCustomHref ?? '');
   const [manualCardsPosition, setManualCardsPosition] = useState<'before' | 'after'>(initialManualCardsPosition ?? 'before');
   const [showAutoCourses, setShowAutoCourses] = useState(initialShowAutoCourses ?? true);
+  const [cardStyle, setCardStyle] = useState<'classic' | 'compact'>(initialCardStyle ?? 'classic');
   const cards = initialManualCards ?? [];
   const { pending, saved, fire } = useSave('catalog');
   return (
@@ -984,6 +987,31 @@ export function CatalogEditor({
               className="w-24 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
             />
             <span className="text-xs text-white/45">cursos</span>
+          </div>
+        </div>
+        <div className="pt-3 border-t border-white/10 space-y-2">
+          <label className="block text-xs text-white/60 mb-1.5">Estilo de las tarjetas</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setCardStyle('classic')}
+              className={`text-left rounded border p-3 text-xs ${
+                cardStyle === 'classic' ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'
+              }`}
+            >
+              <div className="font-semibold">🎴 Clásico</div>
+              <div className="text-white/50 mt-0.5">3 por fila, imagen horizontal grande.</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCardStyle('compact')}
+              className={`text-left rounded border p-3 text-xs ${
+                cardStyle === 'compact' ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'
+              }`}
+            >
+              <div className="font-semibold">🛍 Compacto (MeLi)</div>
+              <div className="text-white/50 mt-0.5">4-5 por fila, imagen cuadrada estilo ecommerce.</div>
+            </button>
           </div>
         </div>
         <div className="pt-3 border-t border-white/10 space-y-2">
@@ -1046,34 +1074,117 @@ export function CatalogEditor({
             cta_mode: ctaMode,
             cta_custom_href: ctaCustomHref,
             manual_cards_position: manualCardsPosition,
-            show_auto_courses: showAutoCourses
+            show_auto_courses: showAutoCourses,
+            card_style: cardStyle
           })}
         />
       </div>
       <PreviewFrame>
-        <div className="p-5">
-          <h2 className="text-lg font-bold mb-3">{title || '—'}</h2>
+        <div className="p-3">
+          <h2 className="text-base font-bold mb-2">{title || '—'}</h2>
           {showFilters && (
-            <div className="flex gap-1 mb-3 text-[9px]">
+            <div className="flex gap-1 mb-2 text-[8px]">
               <span className="px-1.5 py-0.5 bg-black text-white rounded-full">Todos</span>
               <span className="px-1.5 py-0.5 border border-black/15 rounded-full">Marketing</span>
               <span className="px-1.5 py-0.5 border border-black/15 rounded-full">Diseño</span>
             </div>
           )}
-          <div className="grid grid-cols-3 gap-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded border border-black/10 overflow-hidden">
-                <div className="h-12" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }} />
-                <div className="p-2 text-[9px]">Curso #{i}</div>
-              </div>
-            ))}
-          </div>
+          {cardStyle === 'compact' ? (
+            <div className="grid grid-cols-4 gap-1.5">
+              {/* manual cards primero si position=before */}
+              {manualCardsPosition === 'before' && cards.slice(0, 2).map((c) => (
+                <CompactPreviewCard key={c.id} card={c} primary={primary} />
+              ))}
+              {showAutoCourses && [1, 2, 3, 4].slice(0, 4 - (manualCardsPosition === 'before' ? Math.min(cards.length, 2) : 0) - (manualCardsPosition === 'after' ? Math.min(cards.length, 2) : 0)).map((i) => (
+                <div key={`c-${i}`} className="rounded border border-black/10 overflow-hidden bg-white">
+                  <div className="aspect-square relative" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }}>
+                    <span className="absolute top-1 left-1 text-[7px] bg-white/90 text-black px-1 rounded">★</span>
+                  </div>
+                  <div className="p-1">
+                    <div className="text-[8px] truncate">Curso #{i}</div>
+                    <div className="text-[9px] font-bold">$ 9.999</div>
+                  </div>
+                </div>
+              ))}
+              {manualCardsPosition === 'after' && cards.slice(0, 2).map((c) => (
+                <CompactPreviewCard key={c.id} card={c} primary={primary} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {manualCardsPosition === 'before' && cards.slice(0, 1).map((c) => (
+                <ClassicPreviewCard key={c.id} card={c} primary={primary} />
+              ))}
+              {showAutoCourses && [1, 2, 3].slice(0, 3 - (manualCardsPosition === 'before' ? Math.min(cards.length, 1) : 0) - (manualCardsPosition === 'after' ? Math.min(cards.length, 1) : 0)).map((i) => (
+                <div key={`c-${i}`} className="rounded border border-black/10 overflow-hidden bg-white">
+                  <div className="h-12" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }} />
+                  <div className="p-2 text-[9px]">Curso #{i}</div>
+                </div>
+              ))}
+              {manualCardsPosition === 'after' && cards.slice(0, 1).map((c) => (
+                <ClassicPreviewCard key={c.id} card={c} primary={primary} />
+              ))}
+            </div>
+          )}
+          {cards.length > 0 && (
+            <p className="text-[8px] text-black/40 mt-2 italic">
+              Previa con {cards.length} {cards.length === 1 ? 'tarjeta custom' : 'tarjetas custom'}.
+            </p>
+          )}
         </div>
       </PreviewFrame>
 
       {/* Sub-editor full width: tarjetas manuales */}
       <div className="md:col-span-2 mt-2 pt-6 border-t border-white/10">
         <ManualCardsEditor cards={cards} primary={primary} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Mini-previews para el editor (no se ven en storefront) ─── */
+
+function CompactPreviewCard({ card, primary }: { card: ManualCard; primary: string }) {
+  const tone = RIBBON_TONES_UI.find((t) => t.value === card.ribbon_tone) ?? RIBBON_TONES_UI[0];
+  return (
+    <div className="rounded border border-black/10 overflow-hidden bg-white relative">
+      <div className="aspect-square relative" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }}>
+        {card.image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={card.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        {card.ribbon_text && (
+          <span className={`absolute top-1 left-1 text-[7px] px-1 rounded uppercase font-bold ${tone.cls}`}>
+            {card.ribbon_text}
+          </span>
+        )}
+      </div>
+      <div className="p-1">
+        <div className="text-[8px] truncate">{card.title}</div>
+        {card.price && <div className="text-[9px] font-bold">{card.price}</div>}
+      </div>
+    </div>
+  );
+}
+
+function ClassicPreviewCard({ card, primary }: { card: ManualCard; primary: string }) {
+  const tone = RIBBON_TONES_UI.find((t) => t.value === card.ribbon_tone) ?? RIBBON_TONES_UI[0];
+  return (
+    <div className="rounded border border-black/10 overflow-hidden bg-white">
+      <div className="h-12 relative" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }}>
+        {card.image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={card.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        {card.ribbon_text && (
+          <span className={`absolute top-1 left-1 text-[7px] px-1 rounded uppercase font-bold ${tone.cls}`}>
+            {card.ribbon_text}
+          </span>
+        )}
+      </div>
+      <div className="p-2">
+        <div className="text-[9px] truncate">{card.title}</div>
+        {card.price && <div className="text-[9px] font-bold">{card.price}</div>}
       </div>
     </div>
   );

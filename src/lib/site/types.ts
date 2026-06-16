@@ -139,6 +139,7 @@ export type SiteConfig = {
       manual_cards?: ManualCard[];                 // tarjetas custom mezcladas con cursos
       manual_cards_position?: 'before' | 'after';  // dónde aparecen vs cursos auto (default 'before')
       show_auto_courses?: boolean;                  // default true. Si false, solo manual_cards
+      card_style?: 'classic' | 'compact';           // 'compact' = grid 4-5 col, imagen cuadrada (tipo MeLi/Amazon)
     };
     testimonials: SectionBase & { title: string; items: TestimonialItem[] };
     before_after: SectionBase & { title: string; before_label: string; after_label: string; before_image_url: string | null; after_image_url: string | null; before_body: string; after_body: string };

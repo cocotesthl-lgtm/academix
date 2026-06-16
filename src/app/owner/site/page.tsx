@@ -277,6 +277,7 @@ export default async function SiteBuilderPage() {
                 initialManualCards={cfg.sections.catalog.manual_cards ?? []}
                 initialManualCardsPosition={cfg.sections.catalog.manual_cards_position ?? 'before'}
                 initialShowAutoCourses={cfg.sections.catalog.show_auto_courses !== false}
+                initialCardStyle={cfg.sections.catalog.card_style ?? 'classic'}
                 primary={primary}
               />
             )}

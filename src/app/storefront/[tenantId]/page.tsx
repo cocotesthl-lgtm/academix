@@ -598,6 +598,7 @@ export default async function StorefrontHome({
                   manualCards={cfg.sections.catalog.manual_cards ?? []}
                   manualCardsPosition={cfg.sections.catalog.manual_cards_position ?? 'before'}
                   showAutoCourses={cfg.sections.catalog.show_auto_courses !== false}
+                  cardStyle={cfg.sections.catalog.card_style ?? 'classic'}
                 />
               </section>
             );

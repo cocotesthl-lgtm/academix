@@ -211,6 +211,10 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   if (formData.has('show_auto_courses')) {
     section.show_auto_courses = formData.get('show_auto_courses') === 'on';
   }
+  if (formData.has('card_style')) {
+    const v = String(formData.get('card_style') ?? 'classic');
+    section.card_style = v === 'compact' ? 'compact' : 'classic';
+  }
   if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
   if (formData.has('marquee')) section.marquee = formData.get('marquee') === 'on';
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
