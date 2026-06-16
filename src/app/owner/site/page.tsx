@@ -35,6 +35,7 @@ import {
 } from "@/components/owner/site/SectionEditors";
 import { ColorAutoSave } from "@/components/owner/site/ColorAutoSave";
 import { SectionStyleEditor } from "@/components/owner/site/SectionStyleEditor";
+import { HrefTargetsProvider, buildCourseTargets } from "@/components/owner/site/HrefSelect";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,16 @@ export default async function SiteBuilderPage() {
   const cfg = mergeConfig(tenantRow?.site_config);
   const primary = tenantRow?.brand?.primary_color ?? '#a855f7';
 
+  // Cursos del tenant para enriquecer el dropdown de href
+  // (cada curso aparece como link directo + opción de checkout).
+  const { data: ownerCourses } = await svc
+    .from("courses")
+    .select("slug, title")
+    .eq("tenant_id", tenant.id)
+    .eq("status", "published")
+    .order("created_at", { ascending: false });
+  const courseTargets = buildCourseTargets((ownerCourses ?? []) as Array<{ slug: string; title: string }>);
+
   // CSS para que las previews del editor reflejen los colores reales.
   // Cada Section envuelve sus children con data-sec-editor={key}.
   // Si el owner picó text_color o bg_color, esos ganan en el preview también.
@@ -101,6 +112,7 @@ export default async function SiteBuilderPage() {
   const publicUrl = `${u.protocol}//${publicHost}`;
 
   return (
+    <HrefTargetsProvider targets={courseTargets}>
     <div className="space-y-6 max-w-6xl">
       {previewCss && (
         <style dangerouslySetInnerHTML={{ __html: previewCss }} />
@@ -422,6 +434,7 @@ export default async function SiteBuilderPage() {
         </div>
       </div>
     </div>
+    </HrefTargetsProvider>
   );
 }
 

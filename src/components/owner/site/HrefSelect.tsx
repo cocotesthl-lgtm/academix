@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
 
 /**
  * Dropdown smart para el campo href de un CTA.
@@ -10,7 +10,32 @@ import { useState, useEffect } from 'react';
  * Se usa dentro de los forms de las secciones en lugar de un input texto
  * plano. Cuando el owner elige una sección, se pone "#section_id" en el
  * input subyacente.
+ *
+ * Cursos del tenant: se inyectan via HrefTargetsProvider en el árbol.
+ * Cada curso aparece como "/c/<slug>" y "/c/<slug>#comprar" para el checkout.
  */
+
+export type HrefTarget = { value: string; label: string; group: string };
+
+const HrefTargetsContext = createContext<HrefTarget[]>([]);
+
+export function HrefTargetsProvider({ targets, children }: { targets: HrefTarget[]; children: ReactNode }) {
+  return <HrefTargetsContext.Provider value={targets}>{children}</HrefTargetsContext.Provider>;
+}
+
+/**
+ * Helper para que el server-side genere los targets dinámicos del tenant
+ * (cursos + sus checkouts). Llamalo en el server component que carga la
+ * página del builder y pasá el resultado al Provider.
+ */
+export function buildCourseTargets(courses: Array<{ slug: string; title: string }>): HrefTarget[] {
+  const out: HrefTarget[] = [];
+  for (const c of courses) {
+    out.push({ value: `/c/${c.slug}`, label: `📚 ${c.title}`, group: 'Cursos' });
+    out.push({ value: `/c/${c.slug}#comprar`, label: `🛒 Checkout — ${c.title}`, group: 'Checkout / Compra' });
+  }
+  return out;
+}
 
 const COMMON_TARGETS: Array<{ value: string; label: string; group: string }> = [
   // Secciones del storefront (anchor links)
@@ -44,11 +69,13 @@ export function HrefField({
   value: string;
   onChange: (v: string) => void;
 }) {
-  const isCommon = COMMON_TARGETS.some((t) => t.value === value);
+  const extra = useContext(HrefTargetsContext);
+  const allTargets = [...COMMON_TARGETS, ...extra];
+  const isCommon = allTargets.some((t) => t.value === value);
   const [mode, setMode] = useState<'common' | 'custom'>(isCommon || !value ? 'common' : 'custom');
 
-  const grouped: Record<string, typeof COMMON_TARGETS> = {};
-  for (const t of COMMON_TARGETS) {
+  const grouped: Record<string, HrefTarget[]> = {};
+  for (const t of allTargets) {
     if (!grouped[t.group]) grouped[t.group] = [];
     grouped[t.group].push(t);
   }
@@ -115,21 +142,21 @@ export function HrefSelect({
   required?: boolean;
   className?: string;
 }) {
+  const extra = useContext(HrefTargetsContext);
+  const allTargets = [...COMMON_TARGETS, ...extra];
   const initial = defaultValue ?? '';
-  // Detectar si el initial está en COMMON_TARGETS
-  const isCommon = COMMON_TARGETS.some((t) => t.value === initial);
+  const isCommon = allTargets.some((t) => t.value === initial);
   const [mode, setMode] = useState<'common' | 'custom'>(isCommon || !initial ? 'common' : 'custom');
   const [value, setValue] = useState(initial);
 
   useEffect(() => {
-    // Si el value cambia desde afuera (poco común), sincronizar
     setValue(initial);
-    setMode(COMMON_TARGETS.some((t) => t.value === initial) || !initial ? 'common' : 'custom');
+    setMode(allTargets.some((t) => t.value === initial) || !initial ? 'common' : 'custom');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial]);
 
-  // Agrupar opciones para el optgroup
-  const grouped: Record<string, typeof COMMON_TARGETS> = {};
-  for (const t of COMMON_TARGETS) {
+  const grouped: Record<string, HrefTarget[]> = {};
+  for (const t of allTargets) {
     if (!grouped[t.group]) grouped[t.group] = [];
     grouped[t.group].push(t);
   }

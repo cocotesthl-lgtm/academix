@@ -394,7 +394,7 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee }: {
             {editingId ? '✎ Editando logo' : 'Agregar logo'}
           </label>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre (ej. Acme Corp)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="Link (opcional)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <HrefField label="Link (opcional)" value={href} onChange={setHref} />
           <input type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)}
             placeholder="URL del logo (vacío = solo nombre)"
             className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
@@ -1554,7 +1554,9 @@ function ManualCardForm({ value, onChange }: { value: Partial<ManualCard>; onCha
         </div>
       </div>
       <Field label="Texto del botón (vacío = sin botón)" value={value.cta_text ?? ''} onChange={(v) => set('cta_text', v)} placeholder="Comprar ahora" />
-      <Field label="URL del botón" value={value.cta_href ?? ''} onChange={(v) => set('cta_href', v)} placeholder="https://… o /pagina" />
+      <div className="col-span-2">
+        <HrefField label="Destino del botón" value={value.cta_href ?? ''} onChange={(v) => set('cta_href', v)} />
+      </div>
     </div>
   );
 }
@@ -1875,10 +1877,8 @@ export function OfferEditor({ initial, primary }: { initial: OfferValues; primar
           placeholder="2026-12-31T23:59"
           type="datetime-local"
         />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Texto del botón" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
-          <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
-        </div>
+        <Field label="Texto del botón" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
+        <HrefField label="Destino del botón" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
       </div>
       <PreviewFrame>
@@ -1951,10 +1951,8 @@ export function CtaFinalEditor({ initial, primary }: { initial: CtaValues; prima
       <div className="space-y-3">
         <Field label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
         <Textarea label="Texto" value={v.body} onChange={(x) => setV({ ...v, body: x })} rows={3} />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Texto del botón" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
-          <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
-        </div>
+        <Field label="Texto del botón" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
+        <HrefField label="Destino del botón" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
       </div>
       <PreviewFrame>
@@ -2092,10 +2090,8 @@ export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }:
           </div>
           <input value={td} onChange={(e) => setTd(e.target.value)} placeholder="Descripción corta (opcional)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           <textarea value={tf} onChange={(e) => setTf(e.target.value)} rows={3} placeholder="Features, una por línea&#10;Acceso de por vida&#10;Soporte 24/7&#10;Certificado" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <div className="grid grid-cols-2 gap-2">
-            <input value={tc} onChange={(e) => setTc(e.target.value)} placeholder="Texto del botón" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <input value={th} onChange={(e) => setTh(e.target.value)} placeholder="Destino (href)" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          </div>
+          <input value={tc} onChange={(e) => setTc(e.target.value)} placeholder="Texto del botón" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <HrefField label="Destino del botón" value={th} onChange={setTh} />
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={hi} onChange={(e) => setHi(e.target.checked)} />
             Marcar como plan destacado
@@ -2450,10 +2446,8 @@ export function CustomEditor({ initial, imageUrl, primary }: {
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Botón (opcional)" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
-          <Field label="Destino (href)" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
-        </div>
+        <Field label="Botón (opcional)" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
+        <HrefField label="Destino del botón" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} />
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
 
         <div className="pt-3 mt-3 border-t border-white/5">
@@ -2520,10 +2514,8 @@ export function NavEditor({ links, showLogin, primary, tenantName }: {
           <label className="text-xs text-white/60 block mb-1">
             {editingId ? '✎ Editando link' : 'Agregar link al nav'}
           </label>
-          <div className="grid grid-cols-2 gap-2">
-            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Cursos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="#cursos o /algo" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          </div>
+          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Cursos" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <HrefField label="Destino" value={href} onChange={setHref} />
           <div className="flex gap-2">
             <button type="button" disabled={addPending || !label || !href}
               onClick={() => {
@@ -2631,10 +2623,8 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
           <label className="text-xs text-white/60 block mb-1">
             {editingLinkId ? '✎ Editando link' : 'Agregar link de footer (términos, privacidad, etc.)'}
           </label>
-          <div className="grid grid-cols-2 gap-2">
-            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Términos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="/terminos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          </div>
+          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Términos" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <HrefField label="Destino" value={href} onChange={setHref} />
           <div className="flex gap-2">
             <button type="button" disabled={linkPending || !label || !href}
               onClick={() => {
