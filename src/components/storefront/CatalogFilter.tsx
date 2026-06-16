@@ -3,6 +3,21 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
+export type ManualCard = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  body?: string;
+  image_url?: string | null;
+  price?: string;
+  old_price?: string;
+  stock_label?: string;
+  ribbon_text?: string;
+  ribbon_tone?: 'featured' | 'sale' | 'urgent' | 'new' | 'info';
+  cta_text?: string;
+  cta_href?: string;
+};
+
 type Course = {
   id: string;
   slug: string;
@@ -52,7 +67,10 @@ export function CatalogFilter({
   primary,
   initialCatSlug,
   ctaMode = 'course_link',
-  ctaCustomHref = ''
+  ctaCustomHref = '',
+  manualCards = [],
+  manualCardsPosition = 'before',
+  showAutoCourses = true
 }: {
   title: string;
   showFilters: boolean;
@@ -64,6 +82,9 @@ export function CatalogFilter({
   initialCatSlug: string | null;
   ctaMode?: CtaMode;
   ctaCustomHref?: string;
+  manualCards?: ManualCard[];
+  manualCardsPosition?: 'before' | 'after';
+  showAutoCourses?: boolean;
 }) {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(initialCatSlug);
   const [expanded, setExpanded] = useState(false);   // solo modo 'show_more'
@@ -77,9 +98,10 @@ export function CatalogFilter({
   );
 
   const fullCatalog = useMemo(() => {
+    if (!showAutoCourses) return [];
     if (!selectedCat) return courses;
     return courses.filter((c) => c.category_id === selectedCat.id);
-  }, [selectedCat, courses]);
+  }, [selectedCat, courses, showAutoCourses]);
 
   const totalPages = Math.max(1, Math.ceil(fullCatalog.length / maxVisible));
 
@@ -163,7 +185,7 @@ export function CatalogFilter({
         </div>
       )}
 
-      {catalog.length === 0 ? (
+      {catalog.length === 0 && manualCards.length === 0 ? (
         <div className="rounded-xl border border-black/10 p-12 text-center text-black/50">
           {selectedCat ? `No hay cursos en "${selectedCat.name}" todavía.` : 'Todavía no hay cursos publicados.'}
         </div>
@@ -173,6 +195,9 @@ export function CatalogFilter({
             key={fadeKey}
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 catalog-fade-in"
           >
+            {manualCardsPosition === 'before' && manualCards.map((m) => (
+              <ManualCardItem key={m.id} card={m} primary={primary} />
+            ))}
             {catalog.map((c) => (
               <CourseCard
                 key={c.id}
@@ -182,6 +207,9 @@ export function CatalogFilter({
                 ctaMode={ctaMode}
                 ctaCustomHref={ctaCustomHref}
               />
+            ))}
+            {manualCardsPosition === 'after' && manualCards.map((m) => (
+              <ManualCardItem key={m.id} card={m} primary={primary} />
             ))}
           </div>
 
@@ -343,6 +371,78 @@ function CourseCard({
   );
 
   if (href) {
+    return (
+      <Link href={href} className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <div className="block rounded-xl border border-black/10 overflow-hidden bg-white">
+      {inner}
+    </div>
+  );
+}
+
+function ManualCardItem({ card, primary }: { card: ManualCard; primary: string }) {
+  const ribbonCls = card.ribbon_text ? (RIBBON_TONE_CLS[card.ribbon_tone ?? 'featured'] ?? RIBBON_TONE_CLS.featured) : '';
+  const hasButton = !!card.cta_text?.trim();
+  const href = hasButton ? (card.cta_href?.trim() || '#') : null;
+
+  const inner = (
+    <>
+      <div className="h-40 relative" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }}>
+        {card.image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={card.image_url} alt={card.title} className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        {card.ribbon_text && (
+          <span className={`absolute top-3 left-3 text-[10px] font-bold tracking-wider px-2 py-1 rounded uppercase ${ribbonCls}`}>
+            {card.ribbon_text}
+          </span>
+        )}
+        {card.stock_label && (
+          <span className="absolute top-3 right-3 bg-black/70 text-white text-[10px] font-semibold px-2 py-1 rounded uppercase tracking-wide">
+            {card.stock_label}
+          </span>
+        )}
+      </div>
+      <div className="p-5">
+        {card.subtitle && (
+          <div className="text-xs font-medium mb-1.5" style={{ color: primary }}>
+            {card.subtitle}
+          </div>
+        )}
+        <h3 className="font-semibold mb-1">{card.title}</h3>
+        {card.body && <p className="text-sm text-black/60 line-clamp-2 mb-3">{card.body}</p>}
+        <div className="flex items-center justify-between">
+          {card.price ? (
+            <div className="flex items-baseline gap-2">
+              <span className="font-bold">{card.price}</span>
+              {card.old_price && (
+                <span className="text-xs text-black/40 line-through">{card.old_price}</span>
+              )}
+            </div>
+          ) : <span />}
+          {hasButton && (
+            <span className="text-xs font-medium px-2 py-1 rounded text-white" style={{ background: primary }}>
+              {card.cta_text} →
+            </span>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
+  if (href) {
+    const isExternal = /^https?:\/\//i.test(href);
+    if (isExternal) {
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
+          {inner}
+        </a>
+      );
+    }
     return (
       <Link href={href} className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
         {inner}

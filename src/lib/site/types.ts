@@ -37,6 +37,27 @@ export type GalleryItem = {
   caption?: string;
 };
 
+/**
+ * Tarjeta manual del catálogo. Permite agregar al grid del catálogo bloques
+ * que NO son cursos: info pura, producto estilo ecommerce (con precio + tachado
+ * + stock), o link a página externa. Todos los campos opcionales — si cta_text
+ * está vacío la card no muestra botón (tarjeta informativa).
+ */
+export type ManualCard = {
+  id: string;
+  title: string;
+  subtitle?: string;       // texto chico arriba del título (categoría/etiqueta)
+  body?: string;           // descripción
+  image_url?: string | null;
+  price?: string;          // libre, ej "$ 9.999" o "Gratis"
+  old_price?: string;      // libre, se muestra tachado (descuento)
+  stock_label?: string;    // ej "Pocas unidades", "Últimos 3"
+  ribbon_text?: string;
+  ribbon_tone?: 'featured' | 'sale' | 'urgent' | 'new' | 'info';
+  cta_text?: string;       // vacío = sin botón (info card)
+  cta_href?: string;
+};
+
 export type InstructorItem = {
   id: string;
   name: string;
@@ -114,7 +135,11 @@ export type SiteConfig = {
     features:     SectionBase & { title: string; items: FeatureItem[] };
     featured:     SectionBase & { title: string };
     catalog:      SectionBase & { title: string; show_filters: boolean; max_visible: number; pagination_mode: 'show_more' | 'paginated';
-      cta_mode?: 'course_link' | 'no_button' | 'custom_url'; cta_custom_href?: string };
+      cta_mode?: 'course_link' | 'no_button' | 'custom_url'; cta_custom_href?: string;
+      manual_cards?: ManualCard[];                 // tarjetas custom mezcladas con cursos
+      manual_cards_position?: 'before' | 'after';  // dónde aparecen vs cursos auto (default 'before')
+      show_auto_courses?: boolean;                  // default true. Si false, solo manual_cards
+    };
     testimonials: SectionBase & { title: string; items: TestimonialItem[] };
     before_after: SectionBase & { title: string; before_label: string; after_label: string; before_image_url: string | null; after_image_url: string | null; before_body: string; after_body: string };
     faq:          SectionBase & { title: string; items: FaqItem[] };
@@ -252,7 +277,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       ]
     },
     featured: { enabled: true, title: 'Cursos destacados' },
-    catalog: { enabled: true, title: 'Todos los cursos', show_filters: true, max_visible: 3, pagination_mode: 'show_more' },
+    catalog: { enabled: true, title: 'Todos los cursos', show_filters: true, max_visible: 3, pagination_mode: 'show_more', manual_cards: [], manual_cards_position: 'before', show_auto_courses: true },
     testimonials: {
       enabled: true,
       title: 'Lo que dicen nuestros alumnos',

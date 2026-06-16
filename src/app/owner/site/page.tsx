@@ -274,6 +274,9 @@ export default async function SiteBuilderPage() {
                 initialPaginationMode={cfg.sections.catalog.pagination_mode ?? 'show_more'}
                 initialCtaMode={cfg.sections.catalog.cta_mode ?? 'course_link'}
                 initialCtaCustomHref={cfg.sections.catalog.cta_custom_href ?? ''}
+                initialManualCards={cfg.sections.catalog.manual_cards ?? []}
+                initialManualCardsPosition={cfg.sections.catalog.manual_cards_position ?? 'before'}
+                initialShowAutoCourses={cfg.sections.catalog.show_auto_courses !== false}
                 primary={primary}
               />
             )}

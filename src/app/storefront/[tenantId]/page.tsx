@@ -595,6 +595,9 @@ export default async function StorefrontHome({
                   initialCatSlug={selectedCatSlug ?? null}
                   ctaMode={cfg.sections.catalog.cta_mode ?? 'course_link'}
                   ctaCustomHref={cfg.sections.catalog.cta_custom_href ?? ''}
+                  manualCards={cfg.sections.catalog.manual_cards ?? []}
+                  manualCardsPosition={cfg.sections.catalog.manual_cards_position ?? 'before'}
+                  showAutoCourses={cfg.sections.catalog.show_auto_courses !== false}
                 />
               </section>
             );

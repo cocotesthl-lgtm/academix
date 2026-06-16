@@ -23,7 +23,8 @@ import {
   type GalleryItem,
   type InstructorItem,
   type InstructorDisplay,
-  type CustomImagePos
+  type CustomImagePos,
+  type ManualCard
 } from '@/lib/site/types';
 
 async function loadConfig(tenantId: string): Promise<SiteConfig> {
@@ -202,6 +203,13 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   }
   if (formData.has('cta_custom_href')) {
     section.cta_custom_href = String(formData.get('cta_custom_href') ?? '').slice(0, 500);
+  }
+  if (formData.has('manual_cards_position')) {
+    const v = String(formData.get('manual_cards_position') ?? 'before');
+    section.manual_cards_position = v === 'after' ? 'after' : 'before';
+  }
+  if (formData.has('show_auto_courses')) {
+    section.show_auto_courses = formData.get('show_auto_courses') === 'on';
   }
   if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
   if (formData.has('marquee')) section.marquee = formData.get('marquee') === 'on';
@@ -468,6 +476,80 @@ export async function deleteGalleryImageAction(formData: FormData): Promise<void
   const id = String(formData.get('id') ?? '');
   const cfg = await loadConfig(tenant.id);
   cfg.sections.gallery.items = cfg.sections.gallery.items.filter((i) => i.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Catalog: manual cards CRUD ===== */
+
+const VALID_RIBBON_TONES = new Set(['featured', 'sale', 'urgent', 'new', 'info']);
+
+function parseManualCardForm(formData: FormData): Omit<ManualCard, 'id'> | null {
+  const title = String(formData.get('title') ?? '').trim();
+  if (!title) return null;
+  const subtitle = String(formData.get('subtitle') ?? '').trim() || undefined;
+  const body = String(formData.get('body') ?? '').trim() || undefined;
+  const image_url = safeImageUrl(String(formData.get('image_url') ?? ''));
+  const price = String(formData.get('price') ?? '').trim() || undefined;
+  const old_price = String(formData.get('old_price') ?? '').trim() || undefined;
+  const stock_label = String(formData.get('stock_label') ?? '').trim() || undefined;
+  const ribbon_text = String(formData.get('ribbon_text') ?? '').trim().slice(0, 30) || undefined;
+  const toneRaw = String(formData.get('ribbon_tone') ?? '').trim();
+  const ribbon_tone = (VALID_RIBBON_TONES.has(toneRaw) ? toneRaw : 'featured') as ManualCard['ribbon_tone'];
+  const cta_text = String(formData.get('cta_text') ?? '').trim().slice(0, 40) || undefined;
+  const cta_href = String(formData.get('cta_href') ?? '').trim().slice(0, 500) || undefined;
+  return { title: title.slice(0, 120), subtitle, body, image_url, price, old_price, stock_label, ribbon_text, ribbon_tone, cta_text, cta_href };
+}
+
+export async function addManualCardAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const data = parseManualCardForm(formData);
+  if (!data) return;
+  const cfg = await loadConfig(tenant.id);
+  if (!Array.isArray(cfg.sections.catalog.manual_cards)) cfg.sections.catalog.manual_cards = [];
+  cfg.sections.catalog.manual_cards.push({ id: randomUUID(), ...data });
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateManualCardAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const data = parseManualCardForm(formData);
+  if (!data) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.catalog.manual_cards ?? [];
+  const idx = arr.findIndex((c) => c.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, ...data };
+  cfg.sections.catalog.manual_cards = arr;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function deleteManualCardAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.catalog.manual_cards = (cfg.sections.catalog.manual_cards ?? []).filter((c) => c.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function moveManualCardAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const dir = String(formData.get('dir') ?? '');
+  if (dir !== 'up' && dir !== 'down') return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = [...(cfg.sections.catalog.manual_cards ?? [])];
+  const idx = arr.findIndex((c) => c.id === id);
+  if (idx === -1) return;
+  const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+  if (newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  cfg.sections.catalog.manual_cards = arr;
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }

@@ -36,6 +36,10 @@ import {
   deleteFeatureAction,
   addLogoAction,
   deleteLogoAction,
+  addManualCardAction,
+  updateManualCardAction,
+  deleteManualCardAction,
+  moveManualCardAction,
   addNavLinkAction,
   deleteNavLinkAction,
   toggleNavLoginAction,
@@ -48,7 +52,7 @@ import {
 import type {
   TestimonialItem, FaqItem, StatItem, LearnItem, FeatureItem, LogoItem,
   NavLink, SocialLink, HeroLayout, PricingTier, GalleryItem,
-  InstructorItem, InstructorDisplay, CustomImagePos
+  InstructorItem, InstructorDisplay, CustomImagePos, ManualCard
 } from '@/lib/site/types';
 
 /* =====================================================================
@@ -911,12 +915,17 @@ export function FeaturedEditor({ initialTitle, primary }: { initialTitle: string
 
 export function CatalogEditor({
   initialTitle, initialShowFilters, initialMaxVisible, initialPaginationMode,
-  initialCtaMode, initialCtaCustomHref, primary
+  initialCtaMode, initialCtaCustomHref,
+  initialManualCards, initialManualCardsPosition, initialShowAutoCourses,
+  primary
 }: {
   initialTitle: string; initialShowFilters: boolean; initialMaxVisible: number;
   initialPaginationMode: 'show_more' | 'paginated';
   initialCtaMode?: 'course_link' | 'no_button' | 'custom_url';
   initialCtaCustomHref?: string;
+  initialManualCards?: ManualCard[];
+  initialManualCardsPosition?: 'before' | 'after';
+  initialShowAutoCourses?: boolean;
   primary: string;
 }) {
   const [title, setTitle] = useState(initialTitle);
@@ -925,6 +934,9 @@ export function CatalogEditor({
   const [paginationMode, setPaginationMode] = useState<'show_more' | 'paginated'>(initialPaginationMode);
   const [ctaMode, setCtaMode] = useState<'course_link' | 'no_button' | 'custom_url'>(initialCtaMode ?? 'course_link');
   const [ctaCustomHref, setCtaCustomHref] = useState(initialCtaCustomHref ?? '');
+  const [manualCardsPosition, setManualCardsPosition] = useState<'before' | 'after'>(initialManualCardsPosition ?? 'before');
+  const [showAutoCourses, setShowAutoCourses] = useState(initialShowAutoCourses ?? true);
+  const cards = initialManualCards ?? [];
   const { pending, saved, fire } = useSave('catalog');
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -998,6 +1010,31 @@ export function CatalogEditor({
             💡 La cinta destacada (ej. OFERTA, NUEVO) de cada curso se configura desde el editor del curso.
           </p>
         </div>
+        <div className="pt-3 border-t border-white/10 space-y-2">
+          <label className="block text-xs text-white/60">Tarjetas manuales (custom)</label>
+          <p className="text-[10px] text-white/40 -mt-1">
+            Mezclá tarjetas custom con los cursos: info, producto con precio + descuento, o link externo.
+          </p>
+          <div>
+            <label className="block text-[10px] text-white/45 mb-1">Posición de las tarjetas custom</label>
+            <select
+              value={manualCardsPosition}
+              onChange={(e) => setManualCardsPosition(e.target.value as typeof manualCardsPosition)}
+              className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
+            >
+              <option value="before">⬆ Antes de los cursos</option>
+              <option value="after">⬇ Después de los cursos</option>
+            </select>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-white/70">
+            <input
+              type="checkbox"
+              checked={showAutoCourses}
+              onChange={(e) => setShowAutoCourses(e.target.checked)}
+            />
+            Mostrar también los cursos del catálogo automáticamente
+          </label>
+        </div>
         <SaveBar
           pending={pending}
           saved={saved}
@@ -1007,7 +1044,9 @@ export function CatalogEditor({
             max_visible: String(maxVisible),
             pagination_mode: paginationMode,
             cta_mode: ctaMode,
-            cta_custom_href: ctaCustomHref
+            cta_custom_href: ctaCustomHref,
+            manual_cards_position: manualCardsPosition,
+            show_auto_courses: showAutoCourses
           })}
         />
       </div>
@@ -1031,6 +1070,312 @@ export function CatalogEditor({
           </div>
         </div>
       </PreviewFrame>
+
+      {/* Sub-editor full width: tarjetas manuales */}
+      <div className="md:col-span-2 mt-2 pt-6 border-t border-white/10">
+        <ManualCardsEditor cards={cards} primary={primary} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Sub-editor: tarjetas manuales del catálogo ─── */
+
+const RIBBON_TONES_UI: { value: ManualCard['ribbon_tone']; label: string; cls: string }[] = [
+  { value: 'featured', label: '★ Destacado', cls: 'bg-fuchsia-500 text-white' },
+  { value: 'sale',     label: '💸 Oferta',    cls: 'bg-rose-500 text-white' },
+  { value: 'urgent',   label: '⏰ Urgente',   cls: 'bg-amber-500 text-amber-950' },
+  { value: 'new',      label: '✨ Nuevo',     cls: 'bg-emerald-500 text-white' },
+  { value: 'info',     label: 'ℹ Info',       cls: 'bg-sky-500 text-white' }
+];
+
+type CardTemplate = 'info' | 'product' | 'link';
+
+const TEMPLATE_DEFAULTS: Record<CardTemplate, Partial<ManualCard>> = {
+  info: {
+    title: 'Bloque informativo',
+    subtitle: 'Información',
+    body: 'Texto descriptivo para destacar algo importante. Sin botón.',
+    ribbon_text: '',
+    cta_text: ''
+  },
+  product: {
+    title: 'Producto premium',
+    subtitle: 'Producto físico',
+    body: 'Descripción corta del producto y por qué vale la pena.',
+    price: '$ 9.999',
+    old_price: '$ 14.999',
+    stock_label: 'Pocas unidades',
+    ribbon_text: 'OFERTA',
+    ribbon_tone: 'sale',
+    cta_text: 'Comprar ahora',
+    cta_href: '#'
+  },
+  link: {
+    title: 'Conocé más',
+    subtitle: 'Página externa',
+    body: 'Tarjeta que lleva a otra sección o sitio.',
+    ribbon_text: '',
+    cta_text: 'Ver más',
+    cta_href: '/sobre-nosotros'
+  }
+};
+
+function ManualCardsEditor({ cards, primary }: { cards: ManualCard[]; primary: string }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [template, setTemplate] = useState<CardTemplate>('info');
+  const [draft, setDraft] = useState<Partial<ManualCard>>(TEMPLATE_DEFAULTS.info);
+  const [addPending, startAdd] = useTransition();
+  const [delPending, startDel] = useTransition();
+  const [movePending, startMove] = useTransition();
+
+  function applyTemplate(t: CardTemplate) {
+    setTemplate(t);
+    setDraft(TEMPLATE_DEFAULTS[t]);
+  }
+
+  function makeFormData(d: Partial<ManualCard>, id?: string): FormData {
+    const fd = new FormData();
+    if (id) fd.set('id', id);
+    fd.set('title', d.title ?? '');
+    fd.set('subtitle', d.subtitle ?? '');
+    fd.set('body', d.body ?? '');
+    fd.set('image_url', d.image_url ?? '');
+    fd.set('price', d.price ?? '');
+    fd.set('old_price', d.old_price ?? '');
+    fd.set('stock_label', d.stock_label ?? '');
+    fd.set('ribbon_text', d.ribbon_text ?? '');
+    fd.set('ribbon_tone', d.ribbon_tone ?? 'featured');
+    fd.set('cta_text', d.cta_text ?? '');
+    fd.set('cta_href', d.cta_href ?? '');
+    return fd;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">🧩 Tarjetas manuales</h3>
+          <p className="text-[11px] text-white/45">{cards.length} {cards.length === 1 ? 'tarjeta' : 'tarjetas'} configurada{cards.length === 1 ? '' : 's'}.</p>
+        </div>
+        {!showAddForm && (
+          <button
+            type="button"
+            onClick={() => { setShowAddForm(true); applyTemplate('info'); }}
+            className="text-xs px-3 py-1.5 rounded bg-white text-black font-semibold hover:bg-white/90 transition"
+          >
+            + Agregar tarjeta
+          </button>
+        )}
+      </div>
+
+      {showAddForm && (
+        <div className="rounded-xl border border-white/15 bg-white/[0.02] p-4 space-y-3">
+          <div>
+            <label className="block text-[10px] text-white/45 mb-1.5">Empezar con plantilla</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { v: 'info', label: 'ℹ Info', desc: 'Solo texto, sin botón' },
+                { v: 'product', label: '🛒 Producto', desc: 'Precio + descuento + stock' },
+                { v: 'link', label: '🔗 Link', desc: 'CTA a otra página' }
+              ] as { v: CardTemplate; label: string; desc: string }[]).map((t) => (
+                <button
+                  key={t.v}
+                  type="button"
+                  onClick={() => applyTemplate(t.v)}
+                  className={`text-left rounded border p-2.5 text-xs transition ${
+                    template === t.v ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'
+                  }`}
+                >
+                  <div className="font-semibold">{t.label}</div>
+                  <div className="text-white/40 mt-0.5">{t.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <ManualCardForm value={draft} onChange={setDraft} />
+
+          <div className="flex gap-2 pt-2 border-t border-white/10">
+            <button
+              type="button"
+              disabled={addPending || !draft.title?.trim()}
+              onClick={() => startAdd(async () => {
+                await addManualCardAction(makeFormData(draft));
+                setShowAddForm(false);
+                setDraft(TEMPLATE_DEFAULTS.info);
+              })}
+              className="flex-1 rounded bg-white text-black text-xs font-semibold py-2 hover:bg-white/90 disabled:opacity-40 transition"
+            >
+              {addPending ? 'Guardando…' : 'Crear tarjeta'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowAddForm(false); setDraft(TEMPLATE_DEFAULTS.info); }}
+              className="rounded border border-white/20 text-xs px-3 py-2 hover:bg-white/5 transition"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {cards.length > 0 && (
+        <ul className="space-y-2">
+          {cards.map((card, idx) => {
+            const isEditing = editingId === card.id;
+            const tone = RIBBON_TONES_UI.find((t) => t.value === card.ribbon_tone) ?? RIBBON_TONES_UI[0];
+            return (
+              <li key={card.id} className="rounded-lg border border-white/10 bg-white/[0.02]">
+                {isEditing ? (
+                  <InlineEditCard
+                    card={card}
+                    onSave={(data) => updateManualCardAction(makeFormData(data, card.id)).then(() => setEditingId(null))}
+                    onCancel={() => setEditingId(null)}
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="w-12 h-12 rounded bg-white/5 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                      {card.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={card.image_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-white/30 text-xl">🖼</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-semibold truncate">{card.title}</div>
+                        {card.ribbon_text && (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider ${tone.cls}`}>
+                            {card.ribbon_text}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-white/40 truncate">
+                        {card.price ? `${card.price}${card.old_price ? ` (era ${card.old_price})` : ''} · ` : ''}
+                        {card.cta_text ? `Botón: "${card.cta_text}"` : 'Sin botón'}
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        disabled={movePending || idx === 0}
+                        onClick={() => startMove(async () => {
+                          const fd = new FormData(); fd.set('id', card.id); fd.set('dir', 'up');
+                          await moveManualCardAction(fd);
+                        })}
+                        className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5 disabled:opacity-30 transition"
+                        title="Subir"
+                      >↑</button>
+                      <button
+                        type="button"
+                        disabled={movePending || idx === cards.length - 1}
+                        onClick={() => startMove(async () => {
+                          const fd = new FormData(); fd.set('id', card.id); fd.set('dir', 'down');
+                          await moveManualCardAction(fd);
+                        })}
+                        className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5 disabled:opacity-30 transition"
+                        title="Bajar"
+                      >↓</button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(card.id)}
+                        className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5 transition"
+                      >✎ Editar</button>
+                      <button
+                        type="button"
+                        disabled={delPending}
+                        onClick={() => {
+                          if (!confirm('¿Eliminar esta tarjeta?')) return;
+                          startDel(async () => {
+                            const fd = new FormData(); fd.set('id', card.id);
+                            await deleteManualCardAction(fd);
+                          });
+                        }}
+                        className="text-xs px-2 py-1 rounded border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 transition"
+                      >×</button>
+                    </div>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
+      <div hidden>{primary}</div>
+    </div>
+  );
+}
+
+function ManualCardForm({ value, onChange }: { value: Partial<ManualCard>; onChange: (v: Partial<ManualCard>) => void }) {
+  function set<K extends keyof ManualCard>(k: K, v: ManualCard[K] | undefined) {
+    onChange({ ...value, [k]: v });
+  }
+  return (
+    <div className="grid grid-cols-2 gap-2.5">
+      <div className="col-span-2">
+        <Field label="Título *" value={value.title ?? ''} onChange={(v) => set('title', v)} placeholder="Nombre de la tarjeta" />
+      </div>
+      <Field label="Subtítulo / Categoría" value={value.subtitle ?? ''} onChange={(v) => set('subtitle', v)} placeholder="Ej. Producto físico" />
+      <Field label="URL de imagen" value={value.image_url ?? ''} onChange={(v) => set('image_url', v)} placeholder="https://…" />
+      <div className="col-span-2">
+        <Textarea label="Descripción" value={value.body ?? ''} onChange={(v) => set('body', v)} rows={2} />
+      </div>
+      <Field label="Precio (libre)" value={value.price ?? ''} onChange={(v) => set('price', v)} placeholder="$ 9.999  o  Gratis" />
+      <Field label="Precio anterior (tachado)" value={value.old_price ?? ''} onChange={(v) => set('old_price', v)} placeholder="$ 14.999" />
+      <Field label="Etiqueta de stock" value={value.stock_label ?? ''} onChange={(v) => set('stock_label', v)} placeholder="Pocas unidades" />
+      <Field label="Cinta destacada" value={value.ribbon_text ?? ''} onChange={(v) => set('ribbon_text', v)} placeholder="OFERTA, NUEVO…" />
+      <div className="col-span-2">
+        <label className="block text-xs text-white/60 mb-1">Color de la cinta</label>
+        <div className="flex flex-wrap gap-1.5">
+          {RIBBON_TONES_UI.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => set('ribbon_tone', t.value)}
+              className={`text-[10px] px-2 py-1 rounded uppercase font-bold tracking-wider transition ${t.cls} ${
+                (value.ribbon_tone ?? 'featured') === t.value ? 'ring-2 ring-white' : 'opacity-60 hover:opacity-100'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <Field label="Texto del botón (vacío = sin botón)" value={value.cta_text ?? ''} onChange={(v) => set('cta_text', v)} placeholder="Comprar ahora" />
+      <Field label="URL del botón" value={value.cta_href ?? ''} onChange={(v) => set('cta_href', v)} placeholder="https://… o /pagina" />
+    </div>
+  );
+}
+
+function InlineEditCard({ card, onSave, onCancel }: {
+  card: ManualCard; onSave: (data: Partial<ManualCard>) => void; onCancel: () => void;
+}) {
+  const [draft, setDraft] = useState<Partial<ManualCard>>(card);
+  const [pending, start] = useTransition();
+  return (
+    <div className="p-3 space-y-3">
+      <ManualCardForm value={draft} onChange={setDraft} />
+      <div className="flex gap-2 pt-2 border-t border-white/10">
+        <button
+          type="button"
+          disabled={pending || !draft.title?.trim()}
+          onClick={() => start(async () => { await onSave(draft); })}
+          className="flex-1 rounded bg-white text-black text-xs font-semibold py-2 hover:bg-white/90 disabled:opacity-40 transition"
+        >
+          {pending ? 'Guardando…' : 'Guardar cambios'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded border border-white/20 text-xs px-3 py-2 hover:bg-white/5 transition"
+        >
+          Cancelar
+        </button>
+      </div>
     </div>
   );
 }
