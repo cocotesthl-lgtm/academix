@@ -76,14 +76,16 @@ export function SectionStyleEditor({
   const [open, setOpen] = useState(false);
   const popRef = useRef<HTMLDivElement>(null);
 
-  // Cierra el popover si se clickea afuera
+  // No auto-close on outside click — el usuario necesita poder scrollear /
+  // interactuar con la página mientras edita estilos. Cierra solo con ✕,
+  // con el botón 🎨 Estilos otra vez, o tecla Esc.
   useEffect(() => {
     if (!open) return;
-    function onClick(e: MouseEvent) {
-      if (popRef.current && !popRef.current.contains(e.target as Node)) setOpen(false);
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
     }
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
   // Cuenta cuántos overrides están activos para mostrar badge
