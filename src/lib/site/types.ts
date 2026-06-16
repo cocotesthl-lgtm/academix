@@ -113,7 +113,8 @@ export type SiteConfig = {
     learn_points: SectionBase & { title: string; subtitle: string; items: LearnItem[] };
     features:     SectionBase & { title: string; items: FeatureItem[] };
     featured:     SectionBase & { title: string };
-    catalog:      SectionBase & { title: string; show_filters: boolean; max_visible: number; pagination_mode: 'show_more' | 'paginated' };
+    catalog:      SectionBase & { title: string; show_filters: boolean; max_visible: number; pagination_mode: 'show_more' | 'paginated';
+      cta_mode?: 'course_link' | 'no_button' | 'custom_url'; cta_custom_href?: string };
     testimonials: SectionBase & { title: string; items: TestimonialItem[] };
     before_after: SectionBase & { title: string; before_label: string; after_label: string; before_image_url: string | null; after_image_url: string | null; before_body: string; after_body: string };
     faq:          SectionBase & { title: string; items: FaqItem[] };

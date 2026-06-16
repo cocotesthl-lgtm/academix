@@ -187,6 +187,27 @@ export async function setCourseStatusAction(formData: FormData): Promise<void> {
   revalidatePath(`/courses/${id}`);
 }
 
+/** Cinta (ribbon) que aparece sobre la tarjeta del curso en el catálogo. */
+export async function setCourseRibbonAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const text = String(formData.get('ribbon_text') ?? '').trim().slice(0, 30) || null;
+  const toneRaw = String(formData.get('ribbon_tone') ?? 'featured');
+  const tone = ['featured', 'sale', 'urgent', 'new', 'info'].includes(toneRaw) ? toneRaw : 'featured';
+  const svc = getServiceClient();
+  // Defensivo: si migration 0029 no corrió, retry sin las columnas
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (svc.from('courses') as any)
+    .update({ ribbon_text: text, ribbon_tone: tone, updated_at: new Date().toISOString() })
+    .eq('id', id).eq('tenant_id', tenant.id);
+  if (error && error.message?.includes('ribbon')) {
+    console.warn('[setCourseRibbon] migration 0029 falta');
+  }
+  revalidatePath(`/courses/${id}`);
+  revalidatePath('/courses');
+}
+
 export async function deleteCourseAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();

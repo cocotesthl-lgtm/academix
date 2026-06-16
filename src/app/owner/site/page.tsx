@@ -272,6 +272,8 @@ export default async function SiteBuilderPage() {
                 initialShowFilters={cfg.sections.catalog.show_filters}
                 initialMaxVisible={cfg.sections.catalog.max_visible ?? 3}
                 initialPaginationMode={cfg.sections.catalog.pagination_mode ?? 'show_more'}
+                initialCtaMode={cfg.sections.catalog.cta_mode ?? 'course_link'}
+                initialCtaCustomHref={cfg.sections.catalog.cta_custom_href ?? ''}
                 primary={primary}
               />
             )}

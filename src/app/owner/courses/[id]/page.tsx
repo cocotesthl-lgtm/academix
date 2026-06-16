@@ -9,6 +9,7 @@ import { deleteCourseAction } from "@/lib/courses/actions";
 import { CourseCheckoutOverride } from "@/components/owner/checkout/CourseCheckoutOverride";
 import { CourseCalendarConfig } from "@/components/owner/courses/CourseCalendarConfig";
 import { CourseSubscriptionConfig } from "@/components/owner/courses/CourseSubscriptionConfig";
+import { CourseRibbonEditor } from "@/components/owner/courses/CourseRibbonEditor";
 import { mergeCheckoutConfig } from "@/lib/checkout/types";
 import type { CalendarMode } from "@/lib/calendar/types";
 
@@ -38,6 +39,18 @@ export default async function CourseEditPage({
       .select('calendar_source').eq('id', id).maybeSingle<{ calendar_source: string | null }>();
     if (!error && data?.calendar_source === 'owner') calendarSource = 'owner';
   } catch { /* migration 0017 falta */ }
+
+  // Ribbon (migration 0029) — defensivo
+  let ribbonText: string | null = null;
+  let ribbonTone: string | null = null;
+  try {
+    const { data } = await svc.from('courses')
+      .select('ribbon_text, ribbon_tone').eq('id', id).maybeSingle<{ ribbon_text: string | null; ribbon_tone: string | null }>();
+    if (data) {
+      ribbonText = data.ribbon_text;
+      ribbonTone = data.ribbon_tone;
+    }
+  } catch { /* migration 0029 falta */ }
 
   if (!course) notFound();
 
@@ -173,6 +186,12 @@ export default async function CourseEditPage({
             : `${tenant.slug}.${env.rootDomain}`;
           return `${u.protocol}//${host}`;
         })()}
+      />
+
+      <CourseRibbonEditor
+        courseId={course.id}
+        initialText={ribbonText}
+        initialTone={ribbonTone}
       />
 
       <section className="max-w-3xl pt-8 border-t border-white/10">

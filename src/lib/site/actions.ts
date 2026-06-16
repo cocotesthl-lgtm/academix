@@ -196,6 +196,13 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
     const v = String(formData.get('pagination_mode') ?? 'show_more');
     section.pagination_mode = v === 'paginated' ? 'paginated' : 'show_more';
   }
+  if (formData.has('cta_mode')) {
+    const v = String(formData.get('cta_mode') ?? 'course_link');
+    section.cta_mode = ['course_link', 'no_button', 'custom_url'].includes(v) ? v : 'course_link';
+  }
+  if (formData.has('cta_custom_href')) {
+    section.cta_custom_href = String(formData.get('cta_custom_href') ?? '').slice(0, 500);
+  }
   if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
   if (formData.has('marquee')) section.marquee = formData.get('marquee') === 'on';
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');

@@ -909,14 +909,22 @@ export function FeaturedEditor({ initialTitle, primary }: { initialTitle: string
  * CATALOG
  * ===================================================================== */
 
-export function CatalogEditor({ initialTitle, initialShowFilters, initialMaxVisible, initialPaginationMode, primary }: {
+export function CatalogEditor({
+  initialTitle, initialShowFilters, initialMaxVisible, initialPaginationMode,
+  initialCtaMode, initialCtaCustomHref, primary
+}: {
   initialTitle: string; initialShowFilters: boolean; initialMaxVisible: number;
-  initialPaginationMode: 'show_more' | 'paginated'; primary: string;
+  initialPaginationMode: 'show_more' | 'paginated';
+  initialCtaMode?: 'course_link' | 'no_button' | 'custom_url';
+  initialCtaCustomHref?: string;
+  primary: string;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [showFilters, setShowFilters] = useState(initialShowFilters);
   const [maxVisible, setMaxVisible] = useState(initialMaxVisible);
   const [paginationMode, setPaginationMode] = useState<'show_more' | 'paginated'>(initialPaginationMode);
+  const [ctaMode, setCtaMode] = useState<'course_link' | 'no_button' | 'custom_url'>(initialCtaMode ?? 'course_link');
+  const [ctaCustomHref, setCtaCustomHref] = useState(initialCtaCustomHref ?? '');
   const { pending, saved, fire } = useSave('catalog');
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -966,6 +974,30 @@ export function CatalogEditor({ initialTitle, initialShowFilters, initialMaxVisi
             <span className="text-xs text-white/45">cursos</span>
           </div>
         </div>
+        <div className="pt-3 border-t border-white/10 space-y-2">
+          <label className="block text-xs text-white/60">Botón de cada tarjeta</label>
+          <select
+            value={ctaMode}
+            onChange={(e) => setCtaMode(e.target.value as typeof ctaMode)}
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
+          >
+            <option value="course_link">🎓 Ir al curso (default)</option>
+            <option value="no_button">ℹ Sin botón (tarjeta informativa)</option>
+            <option value="custom_url">🔗 URL custom (todas las tarjetas)</option>
+          </select>
+          {ctaMode === 'custom_url' && (
+            <input
+              type="text"
+              value={ctaCustomHref}
+              onChange={(e) => setCtaCustomHref(e.target.value)}
+              placeholder="https://otro-sitio.com  o  /pagina"
+              className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono"
+            />
+          )}
+          <p className="text-[10px] text-white/40">
+            💡 La cinta destacada (ej. OFERTA, NUEVO) de cada curso se configura desde el editor del curso.
+          </p>
+        </div>
         <SaveBar
           pending={pending}
           saved={saved}
@@ -973,7 +1005,9 @@ export function CatalogEditor({ initialTitle, initialShowFilters, initialMaxVisi
             title,
             show_filters: showFilters,
             max_visible: String(maxVisible),
-            pagination_mode: paginationMode
+            pagination_mode: paginationMode,
+            cta_mode: ctaMode,
+            cta_custom_href: ctaCustomHref
           })}
         />
       </div>

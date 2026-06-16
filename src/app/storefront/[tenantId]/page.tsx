@@ -32,6 +32,8 @@ type PublicCourse = {
   is_featured: boolean;
   featured_position: number;
   category_id: string | null;
+  ribbon_text?: string | null;
+  ribbon_tone?: string | null;
 };
 
 type Category = { id: string; name: string; slug: string };
@@ -60,11 +62,20 @@ export default async function StorefrontHome({
   const svc = getServiceClient();
   const [{ data: tenantRow }, { data: coursesRaw }, { data: catsRaw }] = await Promise.all([
     svc.from('tenants').select('site_config').eq('id', tenantId).single<{ site_config: unknown }>(),
-    svc.from('courses')
-      .select('id, slug, title, description, cover_url, price_cents, currency, is_featured, featured_position, category_id')
-      .eq('tenant_id', tenantId)
-      .eq('status', 'published')
-      .order('created_at', { ascending: false }),
+    // Defensivo: si migration 0029 (ribbon) no corrió, retry sin las columnas
+    (async () => {
+      try {
+        const res = await svc.from('courses')
+          .select('id, slug, title, description, cover_url, price_cents, currency, is_featured, featured_position, category_id, ribbon_text, ribbon_tone')
+          .eq('tenant_id', tenantId).eq('status', 'published')
+          .order('created_at', { ascending: false });
+        if (!res.error) return res;
+      } catch { /* migration missing */ }
+      return await svc.from('courses')
+        .select('id, slug, title, description, cover_url, price_cents, currency, is_featured, featured_position, category_id')
+        .eq('tenant_id', tenantId).eq('status', 'published')
+        .order('created_at', { ascending: false });
+    })(),
     svc.from('course_categories')
       .select('id, name, slug')
       .eq('tenant_id', tenantId)
@@ -582,6 +593,8 @@ export default async function StorefrontHome({
                   categories={categories}
                   primary={primary}
                   initialCatSlug={selectedCatSlug ?? null}
+                  ctaMode={cfg.sections.catalog.cta_mode ?? 'course_link'}
+                  ctaCustomHref={cfg.sections.catalog.cta_custom_href ?? ''}
                 />
               </section>
             );

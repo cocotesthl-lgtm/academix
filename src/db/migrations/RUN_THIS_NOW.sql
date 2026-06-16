@@ -502,6 +502,16 @@ create policy "announcements: founder write" on public.plan_announcements for al
 alter table public.tenants
   add column if not exists subscription_notes text;
 
+-- ── 0029 Course ribbon ────────────────────────────────────────
+alter table public.courses
+  add column if not exists ribbon_text text,
+  add column if not exists ribbon_tone text default 'featured';
+do $$ begin
+  alter table public.courses
+    add constraint courses_ribbon_tone_check
+    check (ribbon_tone in ('featured', 'sale', 'urgent', 'new', 'info'));
+exception when duplicate_object then null; end $$;
+
 -- ── 0026 Public listing + custom domains ─────────────────────
 alter table public.tenants
   add column if not exists public_listing boolean not null default true,

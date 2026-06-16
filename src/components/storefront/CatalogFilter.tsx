@@ -14,11 +14,22 @@ type Course = {
   is_featured: boolean;
   featured_position: number;
   category_id: string | null;
+  ribbon_text?: string | null;
+  ribbon_tone?: string | null;
 };
 
 type Category = { id: string; name: string; slug: string };
 
 type PaginationMode = 'show_more' | 'paginated';
+type CtaMode = 'course_link' | 'no_button' | 'custom_url';
+
+const RIBBON_TONE_CLS: Record<string, string> = {
+  featured: 'bg-fuchsia-500 text-white',
+  sale:     'bg-rose-500 text-white',
+  urgent:   'bg-amber-500 text-amber-950',
+  new:      'bg-emerald-500 text-white',
+  info:     'bg-sky-500 text-white'
+};
 
 /**
  * Catálogo con filtros client-side. Sin recarga, sin scroll-jump.
@@ -39,7 +50,9 @@ export function CatalogFilter({
   courses,
   categories,
   primary,
-  initialCatSlug
+  initialCatSlug,
+  ctaMode = 'course_link',
+  ctaCustomHref = ''
 }: {
   title: string;
   showFilters: boolean;
@@ -49,6 +62,8 @@ export function CatalogFilter({
   categories: Category[];
   primary: string;
   initialCatSlug: string | null;
+  ctaMode?: CtaMode;
+  ctaCustomHref?: string;
 }) {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(initialCatSlug);
   const [expanded, setExpanded] = useState(false);   // solo modo 'show_more'
@@ -164,6 +179,8 @@ export function CatalogFilter({
                 c={c}
                 primary={primary}
                 category={c.category_id ? catById.get(c.category_id) : null}
+                ctaMode={ctaMode}
+                ctaCustomHref={ctaCustomHref}
               />
             ))}
           </div>
@@ -274,18 +291,30 @@ function getPageNumbers(current: number, total: number): Array<number | '…'> {
 }
 
 function CourseCard({
-  c, primary, category
+  c, primary, category, ctaMode, ctaCustomHref
 }: {
   c: Course; primary: string; category?: Category | null;
+  ctaMode: CtaMode; ctaCustomHref: string;
 }) {
-  return (
-    <Link href={`/c/${c.slug}`} className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
+  const ribbonCls = c.ribbon_text ? (RIBBON_TONE_CLS[c.ribbon_tone ?? 'featured'] ?? RIBBON_TONE_CLS.featured) : '';
+
+  // Resolver href según mode
+  const href = ctaMode === 'no_button' ? null
+    : ctaMode === 'custom_url' ? (ctaCustomHref || '#')
+    : `/c/${c.slug}`;
+
+  const inner = (
+    <>
       <div className="h-40 relative" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }}>
         {c.cover_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={c.cover_url} alt={c.title} className="absolute inset-0 w-full h-full object-cover" />
         )}
-        {c.is_featured && (
+        {c.ribbon_text ? (
+          <span className={`absolute top-3 left-3 text-[10px] font-bold tracking-wider px-2 py-1 rounded uppercase ${ribbonCls}`}>
+            {c.ribbon_text}
+          </span>
+        ) : c.is_featured && (
           <span className="absolute top-3 left-3 bg-white text-black text-xs font-semibold px-2 py-1 rounded">
             ⭐ Destacado
           </span>
@@ -303,11 +332,26 @@ function CourseCard({
           <span className="font-bold">
             {c.price_cents === 0 ? 'Gratis' : `$ ${(c.price_cents / 100).toLocaleString('es-AR')} ${c.currency}`}
           </span>
-          <span className="text-xs font-medium px-2 py-1 rounded text-white" style={{ background: primary }}>
-            Ver curso →
-          </span>
+          {ctaMode !== 'no_button' && (
+            <span className="text-xs font-medium px-2 py-1 rounded text-white" style={{ background: primary }}>
+              {ctaMode === 'custom_url' ? 'Ver más →' : 'Ver curso →'}
+            </span>
+          )}
         </div>
       </div>
-    </Link>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <div className="block rounded-xl border border-black/10 overflow-hidden bg-white">
+      {inner}
+    </div>
   );
 }
