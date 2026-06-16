@@ -558,6 +558,205 @@ export async function moveManualCardAction(formData: FormData): Promise<void> {
   revalidatePath('/site');
 }
 
+/* =====================================================================
+ * UPDATE actions para items pre-cargados (FAQ, stats, testimonios, etc).
+ * Cada uno toma id + los mismos fields que el add, busca en el array y
+ * reemplaza la entrada manteniendo el mismo id.
+ * ===================================================================== */
+
+export async function updateInstructorItemAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
+  if (!id || !name) return;
+  const credentials = String(formData.get('credentials') ?? '').trim() || undefined;
+  const bio = String(formData.get('bio') ?? '').trim() || undefined;
+  const photo_url = safeImageUrl(String(formData.get('photo_url') ?? ''));
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.instructor.items;
+  const idx = arr.findIndex((i) => i.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, name, credentials, bio, photo_url };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateTestimonialAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
+  const text = String(formData.get('text') ?? '').trim();
+  if (!id || !name || !text) return;
+  const role = String(formData.get('role') ?? '').trim() || undefined;
+  const rating = Math.min(5, Math.max(1, parseInt(String(formData.get('rating') ?? '5'), 10) || 5));
+  const photo_url = safeImageUrl(String(formData.get('photo_url') ?? ''));
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.testimonials.items;
+  const idx = arr.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, name, text, role, rating, photo_url };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateFaqAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const q = String(formData.get('q') ?? '').trim();
+  const a = String(formData.get('a') ?? '').trim();
+  if (!id || !q || !a) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.faq.items;
+  const idx = arr.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, q, a };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateStatAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const number = String(formData.get('number') ?? '').trim();
+  const label = String(formData.get('label') ?? '').trim();
+  if (!id || !number || !label) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.stats.items;
+  const idx = arr.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, number, label };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateLearnPointAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const text = String(formData.get('text') ?? '').trim();
+  if (!id || !text) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.learn_points.items;
+  const idx = arr.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, text };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateFeatureAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const icon = String(formData.get('icon') ?? '⭐').trim() || '⭐';
+  const title = String(formData.get('title') ?? '').trim();
+  const body = String(formData.get('body') ?? '').trim();
+  if (!id || !title || !body) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.features.items;
+  const idx = arr.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, icon, title, body };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateLogoAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
+  if (!id || !name) return;
+  const href = String(formData.get('href') ?? '').trim() || null;
+  const logo_url = safeImageUrl(String(formData.get('logo_url') ?? ''));
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.trusted_by.items;
+  const idx = arr.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, name, logo_url, href };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updatePricingTierAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const name = String(formData.get('name') ?? '').trim();
+  const price = String(formData.get('price') ?? '').trim();
+  if (!id || !name || !price) return;
+  const description = String(formData.get('description') ?? '').trim() || undefined;
+  const featuresRaw = String(formData.get('features') ?? '').trim();
+  const cta_label = String(formData.get('cta_label') ?? '').trim() || 'Elegir plan';
+  const cta_href = String(formData.get('cta_href') ?? '').trim() || '#cursos';
+  const highlighted = formData.get('highlighted') === 'on';
+  const features = featuresRaw.split('\n').map((l) => l.trim()).filter(Boolean);
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.pricing.tiers;
+  const idx = arr.findIndex((t) => t.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, name, price, description, features, cta_label, cta_href, highlighted };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateGalleryImageAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const image_url = safeImageUrl(String(formData.get('image_url') ?? ''));
+  if (!id || !image_url) return;
+  const caption = String(formData.get('caption') ?? '').trim() || undefined;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.gallery.items;
+  const idx = arr.findIndex((i) => i.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, image_url, caption };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateNavLinkAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const label = String(formData.get('label') ?? '').trim();
+  const href = String(formData.get('href') ?? '').trim();
+  if (!id || !label || !href) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.nav.links;
+  const idx = arr.findIndex((l) => l.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, label, href };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateFooterLinkAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const label = String(formData.get('label') ?? '').trim();
+  const href = String(formData.get('href') ?? '').trim();
+  if (!id || !label || !href) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.footer.links;
+  const idx = arr.findIndex((l) => l.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, label, href };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateSocialLinkAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const network = String(formData.get('network') ?? '') as SocialLink['network'];
+  const href = String(formData.get('href') ?? '').trim();
+  const valid = ['instagram','youtube','linkedin','twitter','tiktok','facebook','web'];
+  if (!id || !valid.includes(network) || !href) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.footer.socials;
+  const idx = arr.findIndex((l) => l.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, network, href };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
 /* ===== Section duplication / templates ===== */
 
 export async function duplicateSectionAction(formData: FormData): Promise<void> {

@@ -40,6 +40,18 @@ import {
   updateManualCardAction,
   deleteManualCardAction,
   moveManualCardAction,
+  updateInstructorItemAction,
+  updateTestimonialAction,
+  updateFaqAction,
+  updateStatAction,
+  updateLearnPointAction,
+  updateFeatureAction,
+  updateLogoAction,
+  updatePricingTierAction,
+  updateGalleryImageAction,
+  updateNavLinkAction,
+  updateFooterLinkAction,
+  updateSocialLinkAction,
   addNavLinkAction,
   deleteNavLinkAction,
   toggleNavLoginAction,
@@ -355,8 +367,13 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee }: {
   const { pending, saved, fire } = useSave('trusted_by');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [href, setHref] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+
+  function startEdit(l: LogoItem) { setEditingId(l.id); setName(l.name); setHref(l.href ?? ''); setLogoUrl(l.logo_url ?? ''); }
+  function reset() { setEditingId(null); setName(''); setHref(''); setLogoUrl(''); }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -373,31 +390,38 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee }: {
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, grayscale: gs, marquee: mq })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar logo</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingId ? '✎ Editando logo' : 'Agregar logo'}
+          </label>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre (ej. Acme Corp)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="Link (opcional)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <form
-            action={(fd) => {
-              fd.set('name', name); fd.set('href', href);
-              startAdd(async () => {
-                await addLogoAction(fd);
-                setName(''); setHref('');
-              });
-            }}
-            className="flex items-center gap-2"
-          >
-            <input type="url" name="logo_url" placeholder="URL del logo (vacío = solo nombre)"
-              className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <button disabled={addPending || !name} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-              {addPending ? 'Agregando…' : '+ Agregar'}
+          <input type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)}
+            placeholder="URL del logo (vacío = solo nombre)"
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <div className="flex gap-2">
+            <button type="button" disabled={addPending || !name}
+              onClick={() => {
+                startAdd(async () => {
+                  const fd = new FormData();
+                  fd.set('name', name); fd.set('href', href); fd.set('logo_url', logoUrl);
+                  if (editingId) { fd.set('id', editingId); await updateLogoAction(fd); }
+                  else { await addLogoAction(fd); }
+                  reset();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Guardando…' : editingId ? 'Guardar cambios' : '+ Agregar'}
             </button>
-          </form>
+            {editingId && (
+              <button type="button" onClick={reset} className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">Cancelar</button>
+            )}
+          </div>
         </div>
 
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((l) => (
-              <li key={l.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+              <li key={l.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === l.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
                 <div className="flex items-center gap-2">
                   {l.logo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -407,12 +431,16 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee }: {
                   )}
                   <span className="font-medium">{l.name}</span>
                 </div>
-                <button type="button" disabled={delPending} onClick={() => {
-                  startDel(async () => {
-                    const fd = new FormData(); fd.set('id', l.id);
-                    await deleteLogoAction(fd);
-                  });
-                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => startEdit(l)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                  <button type="button" disabled={delPending} onClick={() => {
+                    if (!confirm('¿Eliminar?')) return;
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', l.id);
+                      await deleteLogoAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                </div>
               </li>
             ))}
           </ul>
@@ -506,9 +534,17 @@ export function InstructorEditor({ initial, items, primary }: {
   const { pending, saved, fire } = useSave('instructor');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [credentials, setCredentials] = useState('');
   const [bio, setBio] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+
+  function startEdit(it: InstructorItem) {
+    setEditingId(it.id); setName(it.name); setCredentials(it.credentials ?? '');
+    setBio(it.bio ?? ''); setPhotoUrl(it.photo_url ?? '');
+  }
+  function reset() { setEditingId(null); setName(''); setCredentials(''); setBio(''); setPhotoUrl(''); }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -529,52 +565,63 @@ export function InstructorEditor({ initial, items, primary }: {
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar instructor</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingId ? '✎ Editando instructor' : 'Agregar instructor'}
+          </label>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           <input value={credentials} onChange={(e) => setCredentials(e.target.value)} placeholder="Credenciales / rol" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={2} placeholder="Bio corta (opcional)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <form
-            action={(fd) => {
-              fd.set('name', name); fd.set('credentials', credentials); fd.set('bio', bio);
-              startAdd(async () => {
-                await addInstructorItemAction(fd);
-                setName(''); setCredentials(''); setBio('');
-              });
-            }}
-            className="flex items-center gap-2"
-          >
-            <input type="url" name="photo_url" placeholder="URL de la foto (opcional, cuadrada 400×400)"
-              className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <button disabled={addPending || !name} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-              {addPending ? 'Agregando…' : '+ Agregar'}
+          <input type="url" value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)}
+            placeholder="URL de la foto (opcional, cuadrada 400×400)"
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <div className="flex gap-2">
+            <button type="button" disabled={addPending || !name}
+              onClick={() => {
+                startAdd(async () => {
+                  const fd = new FormData();
+                  fd.set('name', name); fd.set('credentials', credentials); fd.set('bio', bio); fd.set('photo_url', photoUrl);
+                  if (editingId) { fd.set('id', editingId); await updateInstructorItemAction(fd); }
+                  else { await addInstructorItemAction(fd); }
+                  reset();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Guardando…' : editingId ? 'Guardar cambios' : '+ Agregar'}
             </button>
-          </form>
+            {editingId && (
+              <button type="button" onClick={reset} className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">Cancelar</button>
+            )}
+          </div>
         </div>
 
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((i) => (
-              <li key={i.id} className="rounded border border-white/10 p-2 flex items-start justify-between gap-3 text-sm">
-                <div className="flex gap-2">
+              <li key={i.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === i.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+                <div className="flex gap-2 flex-1 min-w-0">
                   {i.photo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={i.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    <img src={i.photo_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: primary }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: primary }}>
                       {i.name.slice(0, 1).toUpperCase()}
                     </div>
                   )}
-                  <div>
-                    <div className="font-medium">{i.name}</div>
-                    {i.credentials && <div className="text-white/40 text-xs">{i.credentials}</div>}
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{i.name}</div>
+                    {i.credentials && <div className="text-white/40 text-xs truncate">{i.credentials}</div>}
                   </div>
                 </div>
-                <button type="button" disabled={delPending} onClick={() => {
-                  startDel(async () => {
-                    const fd = new FormData(); fd.set('id', i.id);
-                    await deleteInstructorItemAction(fd);
-                  });
-                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                <div className="flex gap-1 flex-shrink-0">
+                  <button type="button" onClick={() => startEdit(i)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                  <button type="button" disabled={delPending} onClick={() => {
+                    if (!confirm('¿Eliminar?')) return;
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', i.id);
+                      await deleteInstructorItemAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                </div>
               </li>
             ))}
           </ul>
@@ -656,8 +703,12 @@ export function StatsEditor({ initialTitle, items, primary }: {
   const { pending, saved, fire } = useSave('stats');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [num, setNum] = useState('');
   const [lbl, setLbl] = useState('');
+
+  function startEdit(s: StatItem) { setEditingId(s.id); setNum(s.number); setLbl(s.label); }
+  function reset() { setEditingId(null); setNum(''); setLbl(''); }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -666,34 +717,47 @@ export function StatsEditor({ initialTitle, items, primary }: {
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar estadística</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingId ? '✎ Editando estadística' : 'Agregar estadística'}
+          </label>
           <div className="grid grid-cols-2 gap-2">
             <input value={num} onChange={(e) => setNum(e.target.value)} placeholder="+2.400" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <input value={lbl} onChange={(e) => setLbl(e.target.value)} placeholder="alumnos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </div>
-          <button type="button" disabled={addPending || !num || !lbl}
-            onClick={() => {
-              startAdd(async () => {
-                const fd = new FormData(); fd.set('number', num); fd.set('label', lbl);
-                await addStatAction(fd); setNum(''); setLbl('');
-              });
-            }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-            {addPending ? 'Agregando…' : '+ Agregar'}
-          </button>
+          <div className="flex gap-2">
+            <button type="button" disabled={addPending || !num || !lbl}
+              onClick={() => {
+                startAdd(async () => {
+                  const fd = new FormData(); fd.set('number', num); fd.set('label', lbl);
+                  if (editingId) { fd.set('id', editingId); await updateStatAction(fd); }
+                  else { await addStatAction(fd); }
+                  reset();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Guardando…' : editingId ? 'Guardar cambios' : '+ Agregar'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={reset} className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">Cancelar</button>
+            )}
+          </div>
         </div>
 
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((s) => (
-              <li key={s.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+              <li key={s.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === s.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
                 <div><span className="font-bold">{s.number}</span> <span className="text-white/60">{s.label}</span></div>
-                <button type="button" disabled={delPending} onClick={() => {
-                  startDel(async () => {
-                    const fd = new FormData(); fd.set('id', s.id);
-                    await deleteStatAction(fd);
-                  });
-                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => startEdit(s)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                  <button type="button" disabled={delPending} onClick={() => {
+                    if (!confirm('¿Eliminar?')) return;
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', s.id);
+                      await deleteStatAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                </div>
               </li>
             ))}
           </ul>
@@ -732,7 +796,11 @@ export function LearnPointsEditor({ initialTitle, initialSubtitle, items, primar
   const { pending, saved, fire } = useSave('learn_points');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [text, setText] = useState('');
+
+  function startEdit(p: LearnItem) { setEditingId(p.id); setText(p.text); }
+  function reset() { setEditingId(null); setText(''); }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -742,31 +810,44 @@ export function LearnPointsEditor({ initialTitle, initialSubtitle, items, primar
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, subtitle })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar punto de aprendizaje</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingId ? '✎ Editando punto' : 'Agregar punto de aprendizaje'}
+          </label>
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Diseñar wireframes con Figma" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <button type="button" disabled={addPending || !text}
-            onClick={() => {
-              startAdd(async () => {
-                const fd = new FormData(); fd.set('text', text);
-                await addLearnPointAction(fd); setText('');
-              });
-            }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-            {addPending ? 'Agregando…' : '+ Agregar'}
-          </button>
+          <div className="flex gap-2">
+            <button type="button" disabled={addPending || !text}
+              onClick={() => {
+                startAdd(async () => {
+                  const fd = new FormData(); fd.set('text', text);
+                  if (editingId) { fd.set('id', editingId); await updateLearnPointAction(fd); }
+                  else { await addLearnPointAction(fd); }
+                  reset();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Guardando…' : editingId ? 'Guardar cambios' : '+ Agregar'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={reset} className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">Cancelar</button>
+            )}
+          </div>
         </div>
 
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((p) => (
-              <li key={p.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+              <li key={p.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === p.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
                 <span>✓ {p.text}</span>
-                <button type="button" disabled={delPending} onClick={() => {
-                  startDel(async () => {
-                    const fd = new FormData(); fd.set('id', p.id);
-                    await deleteLearnPointAction(fd);
-                  });
-                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => startEdit(p)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                  <button type="button" disabled={delPending} onClick={() => {
+                    if (!confirm('¿Eliminar?')) return;
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', p.id);
+                      await deleteLearnPointAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                </div>
               </li>
             ))}
           </ul>
@@ -805,9 +886,13 @@ export function FeaturesEditor({ initialTitle, items, primary }: {
   const { pending, saved, fire } = useSave('features');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [icon, setIcon] = useState('⭐');
   const [t, setT] = useState('');
   const [b, setB] = useState('');
+
+  function startEdit(f: FeatureItem) { setEditingId(f.id); setIcon(f.icon); setT(f.title); setB(f.body); }
+  function reset() { setEditingId(null); setT(''); setB(''); setIcon('⭐'); }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -816,39 +901,51 @@ export function FeaturesEditor({ initialTitle, items, primary }: {
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar feature (icono emoji + título + texto)</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingId ? '✎ Editando feature' : 'Agregar feature (icono emoji + título + texto)'}
+          </label>
           <div className="grid grid-cols-4 gap-2">
             <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="⭐" maxLength={3} className="col-span-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm text-center" />
             <input value={t} onChange={(e) => setT(e.target.value)} placeholder="Título" className="col-span-3 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </div>
           <textarea value={b} onChange={(e) => setB(e.target.value)} rows={2} placeholder="Descripción corta" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <button type="button" disabled={addPending || !t || !b}
-            onClick={() => {
-              startAdd(async () => {
-                const fd = new FormData(); fd.set('icon', icon); fd.set('title', t); fd.set('body', b);
-                await addFeatureAction(fd);
-                setT(''); setB(''); setIcon('⭐');
-              });
-            }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-            {addPending ? 'Agregando…' : '+ Agregar'}
-          </button>
+          <div className="flex gap-2">
+            <button type="button" disabled={addPending || !t || !b}
+              onClick={() => {
+                startAdd(async () => {
+                  const fd = new FormData(); fd.set('icon', icon); fd.set('title', t); fd.set('body', b);
+                  if (editingId) { fd.set('id', editingId); await updateFeatureAction(fd); }
+                  else { await addFeatureAction(fd); }
+                  reset();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Guardando…' : editingId ? 'Guardar cambios' : '+ Agregar'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={reset} className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">Cancelar</button>
+            )}
+          </div>
         </div>
 
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((f) => (
-              <li key={f.id} className="rounded border border-white/10 p-2 flex items-start justify-between gap-3 text-sm">
+              <li key={f.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === f.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
                 <div>
                   <div className="font-medium">{f.icon} {f.title}</div>
                   <div className="text-xs text-white/60 mt-0.5">{f.body}</div>
                 </div>
-                <button type="button" disabled={delPending} onClick={() => {
-                  startDel(async () => {
-                    const fd = new FormData(); fd.set('id', f.id);
-                    await deleteFeatureAction(fd);
-                  });
-                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                <div className="flex gap-1 flex-shrink-0">
+                  <button type="button" onClick={() => startEdit(f)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                  <button type="button" disabled={delPending} onClick={() => {
+                    if (!confirm('¿Eliminar?')) return;
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', f.id);
+                      await deleteFeatureAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                </div>
               </li>
             ))}
           </ul>
@@ -1502,10 +1599,21 @@ export function TestimonialsEditor({ initialTitle, items, primary }: {
   const { pending, saved, fire } = useSave('testimonials');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [text, setText] = useState('');
   const [rating, setRating] = useState(5);
+  const [photoUrl, setPhotoUrl] = useState('');
+
+  function startEdit(t: TestimonialItem) {
+    setEditingId(t.id);
+    setName(t.name); setRole(t.role ?? ''); setText(t.text);
+    setRating(t.rating ?? 5); setPhotoUrl(t.photo_url ?? '');
+  }
+  function reset() {
+    setEditingId(null); setName(''); setRole(''); setText(''); setRating(5); setPhotoUrl('');
+  }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -1514,7 +1622,9 @@ export function TestimonialsEditor({ initialTitle, items, primary }: {
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar testimonio</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingId ? '✎ Editando testimonio' : 'Agregar testimonio'}
+          </label>
           <div className="grid grid-cols-2 gap-2">
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Rol o ciudad (opcional)" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
@@ -1527,49 +1637,66 @@ export function TestimonialsEditor({ initialTitle, items, primary }: {
             ))}
             <span className="text-xs text-white/40">({rating})</span>
           </div>
-          <form
-            action={(fd) => {
-              fd.set('name', name); fd.set('role', role); fd.set('text', text); fd.set('rating', String(rating));
-              startAdd(async () => {
-                await addTestimonialAction(fd);
-                setName(''); setRole(''); setText(''); setRating(5);
-              });
-            }}
-            className="flex items-center gap-2"
-          >
-            <input type="url" name="photo_url" placeholder="URL de la foto (opcional, cuadrada 400×400)"
-              className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <button disabled={addPending || !name || !text} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-              {addPending ? 'Agregando…' : '+ Agregar'}
+          <input type="url" value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)}
+            placeholder="URL de la foto (opcional, cuadrada 400×400)"
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <div className="flex gap-2">
+            <button type="button" disabled={addPending || !name || !text}
+              onClick={() => {
+                startAdd(async () => {
+                  const fd = new FormData();
+                  fd.set('name', name); fd.set('role', role); fd.set('text', text);
+                  fd.set('rating', String(rating)); fd.set('photo_url', photoUrl);
+                  if (editingId) {
+                    fd.set('id', editingId);
+                    await updateTestimonialAction(fd);
+                  } else {
+                    await addTestimonialAction(fd);
+                  }
+                  reset();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Guardando…' : editingId ? 'Guardar cambios' : '+ Agregar'}
             </button>
-          </form>
+            {editingId && (
+              <button type="button" onClick={reset}
+                className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">
+                Cancelar
+              </button>
+            )}
+          </div>
         </div>
 
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((t) => (
-              <li key={t.id} className="rounded border border-white/10 p-2 flex items-start justify-between gap-3 text-sm">
-                <div className="flex gap-2">
+              <li key={t.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === t.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+                <div className="flex gap-2 flex-1 min-w-0">
                   {t.photo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={t.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                    <img src={t.photo_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: primary }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: primary }}>
                       {t.name.slice(0, 1).toUpperCase()}
                     </div>
                   )}
-                  <div>
-                    <div className="font-medium">{t.name}{t.role && <span className="text-white/40"> · {t.role}</span>}</div>
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{t.name}{t.role && <span className="text-white/40"> · {t.role}</span>}</div>
                     <div className="text-yellow-400 text-xs">{'★'.repeat(t.rating ?? 5)}</div>
-                    <div className="text-white/60 text-xs mt-0.5">{t.text}</div>
+                    <div className="text-white/60 text-xs mt-0.5 line-clamp-2">{t.text}</div>
                   </div>
                 </div>
-                <button type="button" disabled={delPending} onClick={() => {
-                  startDel(async () => {
-                    const fd = new FormData(); fd.set('id', t.id);
-                    await deleteTestimonialAction(fd);
-                  });
-                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                <div className="flex gap-1 flex-shrink-0">
+                  <button type="button" onClick={() => startEdit(t)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                  <button type="button" disabled={delPending} onClick={() => {
+                    if (!confirm('¿Eliminar este testimonio?')) return;
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', t.id);
+                      await deleteTestimonialAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                </div>
               </li>
             ))}
           </ul>
@@ -1619,8 +1746,18 @@ export function FaqEditor({ initialTitle, items }: { initialTitle: string; items
   const { pending, saved, fire } = useSave('faq');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [a, setA] = useState('');
+
+  function startEdit(item: FaqItem) {
+    setEditingId(item.id);
+    setQ(item.q);
+    setA(item.a);
+  }
+  function cancelEdit() {
+    setEditingId(null); setQ(''); setA('');
+  }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -1629,35 +1766,55 @@ export function FaqEditor({ initialTitle, items }: { initialTitle: string; items
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar pregunta</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingId ? '✎ Editando pregunta' : 'Agregar pregunta'}
+          </label>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pregunta" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           <textarea value={a} onChange={(e) => setA(e.target.value)} rows={2} placeholder="Respuesta" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <button type="button" disabled={addPending || !q || !a}
-            onClick={() => {
-              startAdd(async () => {
-                const fd = new FormData(); fd.set('q', q); fd.set('a', a);
-                await addFaqAction(fd); setQ(''); setA('');
-              });
-            }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-            {addPending ? 'Agregando…' : '+ Agregar'}
-          </button>
+          <div className="flex gap-2">
+            <button type="button" disabled={addPending || !q || !a}
+              onClick={() => {
+                startAdd(async () => {
+                  const fd = new FormData(); fd.set('q', q); fd.set('a', a);
+                  if (editingId) {
+                    fd.set('id', editingId);
+                    await updateFaqAction(fd);
+                  } else {
+                    await addFaqAction(fd);
+                  }
+                  setQ(''); setA(''); setEditingId(null);
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Guardando…' : editingId ? 'Guardar cambios' : '+ Agregar'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={cancelEdit}
+                className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">
+                Cancelar
+              </button>
+            )}
+          </div>
         </div>
 
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((f) => (
-              <li key={f.id} className="rounded border border-white/10 p-2 flex items-start justify-between gap-3 text-sm">
-                <div>
+              <li key={f.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === f.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+                <div className="flex-1 min-w-0">
                   <div className="font-medium">{f.q}</div>
-                  <div className="text-white/60 text-xs mt-0.5 whitespace-pre-line">{f.a}</div>
+                  <div className="text-white/60 text-xs mt-0.5 whitespace-pre-line line-clamp-2">{f.a}</div>
                 </div>
-                <button type="button" disabled={delPending} onClick={() => {
-                  startDel(async () => {
-                    const fd = new FormData(); fd.set('id', f.id);
-                    await deleteFaqAction(fd);
-                  });
-                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                <div className="flex gap-1 flex-shrink-0">
+                  <button type="button" onClick={() => startEdit(f)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                  <button type="button" disabled={delPending} onClick={() => {
+                    if (!confirm('¿Eliminar esta pregunta?')) return;
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', f.id);
+                      await deleteFaqAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                </div>
               </li>
             ))}
           </ul>
@@ -1898,6 +2055,7 @@ export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }:
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
 
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [tn, setTn] = useState('');
   const [tp, setTp] = useState('');
   const [td, setTd] = useState('');
@@ -1905,6 +2063,17 @@ export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }:
   const [tc, setTc] = useState('Elegir plan');
   const [th, setTh] = useState('#cursos');
   const [hi, setHi] = useState(false);
+
+  function startEdit(t: PricingTier) {
+    setEditingId(t.id);
+    setTn(t.name); setTp(t.price); setTd(t.description ?? '');
+    setTf(t.features.join('\n')); setTc(t.cta_label); setTh(t.cta_href);
+    setHi(!!t.highlighted);
+  }
+  function reset() {
+    setEditingId(null); setTn(''); setTp(''); setTd(''); setTf('');
+    setTc('Elegir plan'); setTh('#cursos'); setHi(false);
+  }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -1914,7 +2083,9 @@ export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }:
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, subtitle })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar plan</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingId ? '✎ Editando plan' : 'Agregar plan'}
+          </label>
           <div className="grid grid-cols-2 gap-2">
             <input value={tn} onChange={(e) => setTn(e.target.value)} placeholder="Nombre (ej. Pro)" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <input value={tp} onChange={(e) => setTp(e.target.value)} placeholder="Precio (ej. $14.900 / mes)" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
@@ -1929,26 +2100,32 @@ export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }:
             <input type="checkbox" checked={hi} onChange={(e) => setHi(e.target.checked)} />
             Marcar como plan destacado
           </label>
-          <button type="button" disabled={addPending || !tn || !tp}
-            onClick={() => {
-              startAdd(async () => {
-                const fd = new FormData();
-                fd.set('name', tn); fd.set('price', tp); fd.set('description', td);
-                fd.set('features', tf); fd.set('cta_label', tc); fd.set('cta_href', th);
-                if (hi) fd.set('highlighted', 'on');
-                await addPricingTierAction(fd);
-                setTn(''); setTp(''); setTd(''); setTf(''); setTc('Elegir plan'); setTh('#cursos'); setHi(false);
-              });
-            }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-            {addPending ? 'Agregando…' : '+ Agregar plan'}
-          </button>
+          <div className="flex gap-2">
+            <button type="button" disabled={addPending || !tn || !tp}
+              onClick={() => {
+                startAdd(async () => {
+                  const fd = new FormData();
+                  fd.set('name', tn); fd.set('price', tp); fd.set('description', td);
+                  fd.set('features', tf); fd.set('cta_label', tc); fd.set('cta_href', th);
+                  if (hi) fd.set('highlighted', 'on');
+                  if (editingId) { fd.set('id', editingId); await updatePricingTierAction(fd); }
+                  else { await addPricingTierAction(fd); }
+                  reset();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Guardando…' : editingId ? 'Guardar cambios' : '+ Agregar plan'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={reset} className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">Cancelar</button>
+            )}
+          </div>
         </div>
 
         {tiers.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {tiers.map((t) => (
-              <li key={t.id} className="rounded border border-white/10 p-2 flex items-start justify-between gap-3 text-sm">
+              <li key={t.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === t.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
                 <div>
                   <div className="font-medium">
                     {t.name} <span className="text-white/40">— {t.price}</span>
@@ -1956,12 +2133,16 @@ export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }:
                   </div>
                   <div className="text-xs text-white/50 mt-0.5">{t.features.length} feature(s)</div>
                 </div>
-                <button type="button" disabled={delPending} onClick={() => {
-                  startDel(async () => {
-                    const fd = new FormData(); fd.set('id', t.id);
-                    await deletePricingTierAction(fd);
-                  });
-                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => startEdit(t)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                  <button type="button" disabled={delPending} onClick={() => {
+                    if (!confirm('¿Eliminar este plan?')) return;
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', t.id);
+                      await deletePricingTierAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                </div>
               </li>
             ))}
           </ul>
@@ -2086,6 +2267,12 @@ export function GalleryEditor({ initialTitle, initialSubtitle, items, columns }:
   const { pending, saved, fire } = useSave('gallery');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [imgUrl, setImgUrl] = useState('');
+  const [caption, setCaption] = useState('');
+
+  function startEdit(it: GalleryItem) { setEditingId(it.id); setImgUrl(it.image_url); setCaption(it.caption ?? ''); }
+  function reset() { setEditingId(null); setImgUrl(''); setCaption(''); }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -2105,20 +2292,35 @@ export function GalleryEditor({ initialTitle, initialSubtitle, items, columns }:
         </div>
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, subtitle, columns: String(cols) })} />
 
-        <div className="pt-3 mt-3 border-t border-white/5">
-          <label className="text-xs text-white/60 block mb-1">Agregar imagen (URL)</label>
-          <form
-            action={(fd) => startAdd(async () => { await addGalleryImageAction(fd); })}
-            className="space-y-2"
-          >
-            <input type="url" name="image_url" required placeholder="https://… URL de la imagen"
-              className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <input name="caption" placeholder="Caption (opcional)" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-            <button disabled={addPending} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-              {addPending ? 'Agregando…' : '+ Agregar imagen'}
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
+          <label className="text-xs text-white/60 block mb-1">
+            {editingId ? '✎ Editando imagen' : 'Agregar imagen (URL)'}
+          </label>
+          <input type="url" value={imgUrl} onChange={(e) => setImgUrl(e.target.value)}
+            placeholder="https://… URL de la imagen"
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <input value={caption} onChange={(e) => setCaption(e.target.value)}
+            placeholder="Caption (opcional)"
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <div className="flex gap-2">
+            <button type="button" disabled={addPending || !imgUrl}
+              onClick={() => {
+                startAdd(async () => {
+                  const fd = new FormData();
+                  fd.set('image_url', imgUrl); fd.set('caption', caption);
+                  if (editingId) { fd.set('id', editingId); await updateGalleryImageAction(fd); }
+                  else { await addGalleryImageAction(fd); }
+                  reset();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Guardando…' : editingId ? 'Guardar cambios' : '+ Agregar imagen'}
             </button>
-            <p className="text-[10px] text-white/40">📐 Recomendado 1200×900px (4:3) o 1200×1200px (cuadrada) para que se vean iguales</p>
-          </form>
+            {editingId && (
+              <button type="button" onClick={reset} className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">Cancelar</button>
+            )}
+          </div>
+          <p className="text-[10px] text-white/40">📐 Recomendado 1200×900px (4:3) o 1200×1200px (cuadrada) para que se vean iguales</p>
         </div>
 
         {items.length > 0 && (
@@ -2126,19 +2328,25 @@ export function GalleryEditor({ initialTitle, initialSubtitle, items, columns }:
             <p className="text-xs text-white/60 mb-2">{items.length} imagen(es)</p>
             <ul className="grid grid-cols-3 gap-2">
               {items.map((it) => (
-                <li key={it.id} className="relative group">
+                <li key={it.id} className={`relative group rounded overflow-hidden ${editingId === it.id ? 'ring-2 ring-fuchsia-500' : ''}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={it.image_url} alt={it.caption ?? ''} className="w-full h-20 object-cover rounded" />
-                  <button type="button" disabled={delPending}
-                    onClick={() => {
-                      startDel(async () => {
-                        const fd = new FormData(); fd.set('id', it.id);
-                        await deleteGalleryImageAction(fd);
-                      });
-                    }}
-                    className="absolute top-1 right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full opacity-0 group-hover:opacity-100">
-                    ✕
-                  </button>
+                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                    <button type="button" onClick={() => startEdit(it)}
+                      className="bg-white text-black text-xs w-5 h-5 rounded-full flex items-center justify-center"
+                      title="Editar">✎</button>
+                    <button type="button" disabled={delPending}
+                      onClick={() => {
+                        if (!confirm('¿Eliminar?')) return;
+                        startDel(async () => {
+                          const fd = new FormData(); fd.set('id', it.id);
+                          await deleteGalleryImageAction(fd);
+                        });
+                      }}
+                      className="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                      ✕
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -2292,8 +2500,12 @@ export function NavEditor({ links, showLogin, primary, tenantName }: {
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
   const [togglePending, startToggle] = useTransition();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [label, setLabel] = useState('');
   const [href, setHref] = useState('');
+
+  function startEdit(l: NavLink) { setEditingId(l.id); setLabel(l.label); setHref(l.href); }
+  function reset() { setEditingId(null); setLabel(''); setHref(''); }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -2305,34 +2517,47 @@ export function NavEditor({ links, showLogin, primary, tenantName }: {
         </label>
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar link al nav</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingId ? '✎ Editando link' : 'Agregar link al nav'}
+          </label>
           <div className="grid grid-cols-2 gap-2">
             <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Cursos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="#cursos o /algo" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </div>
-          <button type="button" disabled={addPending || !label || !href}
-            onClick={() => {
-              startAdd(async () => {
-                const fd = new FormData(); fd.set('label', label); fd.set('href', href);
-                await addNavLinkAction(fd); setLabel(''); setHref('');
-              });
-            }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-            {addPending ? 'Agregando…' : '+ Agregar link'}
-          </button>
+          <div className="flex gap-2">
+            <button type="button" disabled={addPending || !label || !href}
+              onClick={() => {
+                startAdd(async () => {
+                  const fd = new FormData(); fd.set('label', label); fd.set('href', href);
+                  if (editingId) { fd.set('id', editingId); await updateNavLinkAction(fd); }
+                  else { await addNavLinkAction(fd); }
+                  reset();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {addPending ? 'Guardando…' : editingId ? 'Guardar cambios' : '+ Agregar link'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={reset} className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">Cancelar</button>
+            )}
+          </div>
         </div>
 
         {links.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {links.map((l) => (
-              <li key={l.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+              <li key={l.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === l.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
                 <div><span className="font-medium">{l.label}</span> <span className="text-white/40 text-xs">{l.href}</span></div>
-                <button type="button" disabled={delPending} onClick={() => {
-                  startDel(async () => {
-                    const fd = new FormData(); fd.set('id', l.id);
-                    await deleteNavLinkAction(fd);
-                  });
-                }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => startEdit(l)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                  <button type="button" disabled={delPending} onClick={() => {
+                    if (!confirm('¿Eliminar?')) return;
+                    startDel(async () => {
+                      const fd = new FormData(); fd.set('id', l.id);
+                      await deleteNavLinkAction(fd);
+                    });
+                  }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                </div>
               </li>
             ))}
           </ul>
@@ -2377,10 +2602,17 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
   const [socialPending, startSocial] = useTransition();
   const [delSocialPending, startDelSocial] = useTransition();
 
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [editingSocialId, setEditingSocialId] = useState<string | null>(null);
   const [label, setLabel] = useState('');
   const [href, setHref] = useState('');
   const [network, setNetwork] = useState<SocialLink['network']>('instagram');
   const [socHref, setSocHref] = useState('');
+
+  function startEditLink(l: NavLink) { setEditingLinkId(l.id); setLabel(l.label); setHref(l.href); }
+  function resetLink() { setEditingLinkId(null); setLabel(''); setHref(''); }
+  function startEditSocial(s: SocialLink) { setEditingSocialId(s.id); setNetwork(s.network); setSocHref(s.href); }
+  function resetSocial() { setEditingSocialId(null); setNetwork('instagram'); setSocHref(''); }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -2396,32 +2628,45 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
         </button>
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar link de footer (términos, privacidad, etc.)</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingLinkId ? '✎ Editando link' : 'Agregar link de footer (términos, privacidad, etc.)'}
+          </label>
           <div className="grid grid-cols-2 gap-2">
             <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Términos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <input value={href} onChange={(e) => setHref(e.target.value)} placeholder="/terminos" className="rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </div>
-          <button type="button" disabled={linkPending || !label || !href}
-            onClick={() => {
-              startLink(async () => {
-                const fd = new FormData(); fd.set('label', label); fd.set('href', href);
-                await addFooterLinkAction(fd); setLabel(''); setHref('');
-              });
-            }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-            {linkPending ? 'Agregando…' : '+ Agregar link'}
-          </button>
+          <div className="flex gap-2">
+            <button type="button" disabled={linkPending || !label || !href}
+              onClick={() => {
+                startLink(async () => {
+                  const fd = new FormData(); fd.set('label', label); fd.set('href', href);
+                  if (editingLinkId) { fd.set('id', editingLinkId); await updateFooterLinkAction(fd); }
+                  else { await addFooterLinkAction(fd); }
+                  resetLink();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {linkPending ? 'Guardando…' : editingLinkId ? 'Guardar cambios' : '+ Agregar link'}
+            </button>
+            {editingLinkId && (
+              <button type="button" onClick={resetLink} className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">Cancelar</button>
+            )}
+          </div>
           {links.length > 0 && (
             <ul className="space-y-1.5 mt-2">
               {links.map((l) => (
-                <li key={l.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+                <li key={l.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingLinkId === l.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
                   <div><span className="font-medium">{l.label}</span> <span className="text-white/40 text-xs">{l.href}</span></div>
-                  <button type="button" disabled={delLinkPending} onClick={() => {
-                    startDelLink(async () => {
-                      const fd = new FormData(); fd.set('id', l.id);
-                      await deleteFooterLinkAction(fd);
-                    });
-                  }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => startEditLink(l)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                    <button type="button" disabled={delLinkPending} onClick={() => {
+                      if (!confirm('¿Eliminar?')) return;
+                      startDelLink(async () => {
+                        const fd = new FormData(); fd.set('id', l.id);
+                        await deleteFooterLinkAction(fd);
+                      });
+                    }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -2429,34 +2674,47 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
         </div>
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
-          <label className="text-xs text-white/60 block mb-1">Agregar red social</label>
+          <label className="text-xs text-white/60 block mb-1">
+            {editingSocialId ? '✎ Editando red social' : 'Agregar red social'}
+          </label>
           <div className="grid grid-cols-3 gap-2">
             <select value={network} onChange={(e) => setNetwork(e.target.value as SocialLink['network'])} className="col-span-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
               {SOCIAL_OPTIONS.map((n) => <option key={n} value={n}>{SOCIAL_LABEL[n]}</option>)}
             </select>
             <input value={socHref} onChange={(e) => setSocHref(e.target.value)} placeholder="https://instagram.com/tu" className="col-span-2 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </div>
-          <button type="button" disabled={socialPending || !socHref}
-            onClick={() => {
-              startSocial(async () => {
-                const fd = new FormData(); fd.set('network', network); fd.set('href', socHref);
-                await addSocialLinkAction(fd); setSocHref('');
-              });
-            }}
-            className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-            {socialPending ? 'Agregando…' : '+ Agregar red'}
-          </button>
+          <div className="flex gap-2">
+            <button type="button" disabled={socialPending || !socHref}
+              onClick={() => {
+                startSocial(async () => {
+                  const fd = new FormData(); fd.set('network', network); fd.set('href', socHref);
+                  if (editingSocialId) { fd.set('id', editingSocialId); await updateSocialLinkAction(fd); }
+                  else { await addSocialLinkAction(fd); }
+                  resetSocial();
+                });
+              }}
+              className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
+              {socialPending ? 'Guardando…' : editingSocialId ? 'Guardar cambios' : '+ Agregar red'}
+            </button>
+            {editingSocialId && (
+              <button type="button" onClick={resetSocial} className="rounded border border-white/20 text-white/70 px-3 py-1.5 text-sm hover:bg-white/5">Cancelar</button>
+            )}
+          </div>
           {socials.length > 0 && (
             <ul className="space-y-1.5 mt-2">
               {socials.map((s) => (
-                <li key={s.id} className="rounded border border-white/10 p-2 flex items-center justify-between gap-3 text-sm">
+                <li key={s.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingSocialId === s.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
                   <div><span className="font-medium">{SOCIAL_LABEL[s.network]}</span> <span className="text-white/40 text-xs">{s.href}</span></div>
-                  <button type="button" disabled={delSocialPending} onClick={() => {
-                    startDelSocial(async () => {
-                      const fd = new FormData(); fd.set('id', s.id);
-                      await deleteSocialLinkAction(fd);
-                    });
-                  }} className="text-xs text-red-300 hover:text-red-200">✕</button>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => startEditSocial(s)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
+                    <button type="button" disabled={delSocialPending} onClick={() => {
+                      if (!confirm('¿Eliminar?')) return;
+                      startDelSocial(async () => {
+                        const fd = new FormData(); fd.set('id', s.id);
+                        await deleteSocialLinkAction(fd);
+                      });
+                    }} className="text-xs text-red-300 hover:text-red-200 px-1.5 py-0.5 rounded hover:bg-red-500/10">✕</button>
+                  </div>
                 </li>
               ))}
             </ul>
