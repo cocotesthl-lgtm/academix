@@ -43,8 +43,11 @@ export type GalleryItem = {
  * + stock), o link a página externa. Todos los campos opcionales — si cta_text
  * está vacío la card no muestra botón (tarjeta informativa).
  */
+export type CardLayout = 'standard' | 'banner_h' | 'banner_v';
+
 export type ManualCard = {
   id: string;
+  layout?: CardLayout;     // 'standard' default | 'banner_h' = imagen horizontal con texto encima | 'banner_v' = vertical
   title: string;
   subtitle?: string;       // texto chico arriba del título (categoría/etiqueta)
   body?: string;           // descripción
@@ -56,6 +59,9 @@ export type ManualCard = {
   ribbon_tone?: 'featured' | 'sale' | 'urgent' | 'new' | 'info';
   cta_text?: string;       // vacío = sin botón (info card)
   cta_href?: string;
+  // Banner-specific
+  text_color?: string;     // color del texto sobre el banner (default blanco)
+  overlay_opacity?: number; // 0..1 oscurecimiento sobre la imagen para legibilidad (default 0.4)
 };
 
 export type InstructorItem = {
@@ -82,6 +88,7 @@ export type SectionKey =
   | 'features'
   | 'featured'
   | 'catalog'
+  | 'cards'
   | 'testimonials'
   | 'before_after'
   | 'faq'
@@ -136,10 +143,16 @@ export type SiteConfig = {
     featured:     SectionBase & { title: string };
     catalog:      SectionBase & { title: string; show_filters: boolean; max_visible: number; pagination_mode: 'show_more' | 'paginated';
       cta_mode?: 'course_link' | 'no_button' | 'custom_url'; cta_custom_href?: string;
-      manual_cards?: ManualCard[];                 // tarjetas custom mezcladas con cursos
-      manual_cards_position?: 'before' | 'after';  // dónde aparecen vs cursos auto (default 'before')
-      show_auto_courses?: boolean;                  // default true. Si false, solo manual_cards
+      manual_cards?: ManualCard[];                 // legacy — ahora viven en la sección 'cards'. Conservamos por backwards compat
+      manual_cards_position?: 'before' | 'after';
+      show_auto_courses?: boolean;
       card_style?: 'classic' | 'compact';           // 'compact' = grid 4-5 col, imagen cuadrada (tipo MeLi/Amazon)
+    };
+    cards:        SectionBase & {
+      title: string;
+      subtitle?: string;
+      items: ManualCard[];
+      columns?: 2 | 3 | 4;       // default 3
     };
     testimonials: SectionBase & { title: string; items: TestimonialItem[] };
     before_after: SectionBase & { title: string; before_label: string; after_label: string; before_image_url: string | null; after_image_url: string | null; before_body: string; after_body: string };
@@ -169,6 +182,7 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'instructor',
   'featured',
   'catalog',
+  'cards',
   'pricing',
   'before_after',
   'gallery',
@@ -279,6 +293,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     },
     featured: { enabled: true, title: 'Cursos destacados' },
     catalog: { enabled: true, title: 'Todos los cursos', show_filters: true, max_visible: 3, pagination_mode: 'show_more', manual_cards: [], manual_cards_position: 'before', show_auto_courses: true },
+    cards: { enabled: false, title: 'Bloques destacados', subtitle: '', items: [], columns: 3 },
     testimonials: {
       enabled: true,
       title: 'Lo que dicen nuestros alumnos',
@@ -415,6 +430,15 @@ export function mergeConfig(stored: any): SiteConfig {
         bio: ins.bio,
         photo_url: ins.photo_url
       }];
+    }
+
+    // Cards migration: si las manual_cards estaban en catalog y la nueva sección
+    // cards está vacía, las migramos automáticamente para no perder data.
+    const cards = base.sections.cards;
+    const legacy = base.sections.catalog?.manual_cards;
+    if (cards && (!cards.items || cards.items.length === 0) && Array.isArray(legacy) && legacy.length > 0) {
+      cards.items = legacy;
+      cards.enabled = true; // si ya tenían cards configuradas, mostramos la nueva sección por default
     }
   }
   if (Array.isArray(stored.order) && stored.order.length > 0) {

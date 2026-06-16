@@ -595,13 +595,28 @@ export default async function StorefrontHome({
                   initialCatSlug={selectedCatSlug ?? null}
                   ctaMode={cfg.sections.catalog.cta_mode ?? 'course_link'}
                   ctaCustomHref={cfg.sections.catalog.cta_custom_href ?? ''}
-                  manualCards={cfg.sections.catalog.manual_cards ?? []}
-                  manualCardsPosition={cfg.sections.catalog.manual_cards_position ?? 'before'}
-                  showAutoCourses={cfg.sections.catalog.show_auto_courses !== false}
                   cardStyle={cfg.sections.catalog.card_style ?? 'classic'}
                 />
               </section>
             );
+
+          case 'cards': {
+            const cs = cfg.sections.cards;
+            if (!cs.items || cs.items.length === 0) return null;
+            const cols = cs.columns ?? 3;
+            const colsCls = cols === 2 ? 'md:grid-cols-2' : cols === 4 ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2 lg:grid-cols-3';
+            return (
+              <section key={key} {...dt} id="bloques" className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+                <div className="max-w-6xl mx-auto">
+                  {cs.title && <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">{cs.title}</h2>}
+                  {cs.subtitle && <p className="text-center text-black/60 mb-8 max-w-2xl mx-auto">{cs.subtitle}</p>}
+                  <div className={`grid gap-6 ${colsCls}`}>
+                    {cs.items.map((card) => <StoreCardItem key={card.id} card={card} primary={primary} />)}
+                  </div>
+                </div>
+              </section>
+            );
+          }
 
           case 'testimonials': {
             const ts = cfg.sections.testimonials;
@@ -1021,5 +1036,160 @@ function CountdownDisplay({ endsAt }: { endsAt: string }) {
         </div>
       ))}
     </div>
+  );
+}
+
+/* ─── Tarjetas de la sección 'cards' (info / producto / link / banner) ─── */
+
+const STORE_RIBBON_CLS: Record<string, string> = {
+  featured: 'bg-fuchsia-500 text-white',
+  sale:     'bg-rose-500 text-white',
+  urgent:   'bg-amber-500 text-amber-950',
+  new:      'bg-emerald-500 text-white',
+  info:     'bg-sky-500 text-white'
+};
+
+type StoreCard = {
+  id: string;
+  layout?: 'standard' | 'banner_h' | 'banner_v';
+  title: string;
+  subtitle?: string;
+  body?: string;
+  image_url?: string | null;
+  price?: string;
+  old_price?: string;
+  stock_label?: string;
+  ribbon_text?: string;
+  ribbon_tone?: 'featured' | 'sale' | 'urgent' | 'new' | 'info';
+  cta_text?: string;
+  cta_href?: string;
+  text_color?: string;
+  overlay_opacity?: number;
+};
+
+function StoreCardItem({ card, primary }: { card: StoreCard; primary: string }) {
+  const layout = card.layout ?? 'standard';
+  if (layout === 'banner_h') return <BannerHCard card={card} primary={primary} />;
+  if (layout === 'banner_v') return <BannerVCard card={card} primary={primary} />;
+  return <StandardCard card={card} primary={primary} />;
+}
+
+function CardLinkWrap({ href, children, className }: { href: string | null; children: React.ReactNode; className: string }) {
+  if (!href) return <div className={className}>{children}</div>;
+  const isExternal = /^https?:\/\//i.test(href);
+  if (isExternal) {
+    return <a href={href} target="_blank" rel="noopener noreferrer" className={className}>{children}</a>;
+  }
+  return <Link href={href} className={className}>{children}</Link>;
+}
+
+function StandardCard({ card, primary }: { card: StoreCard; primary: string }) {
+  const ribbonCls = card.ribbon_text ? (STORE_RIBBON_CLS[card.ribbon_tone ?? 'featured'] ?? STORE_RIBBON_CLS.featured) : '';
+  const hasButton = !!card.cta_text?.trim();
+  const href = hasButton ? (card.cta_href?.trim() || '#') : null;
+
+  return (
+    <CardLinkWrap href={href} className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
+      <div className="h-40 relative" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }}>
+        {card.image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={card.image_url} alt={card.title} className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        {card.ribbon_text && (
+          <span className={`absolute top-3 left-3 text-[10px] font-bold tracking-wider px-2 py-1 rounded uppercase ${ribbonCls}`}>
+            {card.ribbon_text}
+          </span>
+        )}
+        {card.stock_label && (
+          <span className="absolute top-3 right-3 bg-black/70 text-white text-[10px] font-semibold px-2 py-1 rounded uppercase tracking-wide">
+            {card.stock_label}
+          </span>
+        )}
+      </div>
+      <div className="p-5">
+        {card.subtitle && <div className="text-xs font-medium mb-1.5" style={{ color: primary }}>{card.subtitle}</div>}
+        <h3 className="font-semibold mb-1">{card.title}</h3>
+        {card.body && <p className="text-sm text-black/60 line-clamp-2 mb-3">{card.body}</p>}
+        <div className="flex items-center justify-between">
+          {card.price ? (
+            <div className="flex items-baseline gap-2">
+              <span className="font-bold">{card.price}</span>
+              {card.old_price && <span className="text-xs text-black/40 line-through">{card.old_price}</span>}
+            </div>
+          ) : <span />}
+          {hasButton && (
+            <span className="text-xs font-medium px-2 py-1 rounded text-white" style={{ background: primary }}>
+              {card.cta_text} →
+            </span>
+          )}
+        </div>
+      </div>
+    </CardLinkWrap>
+  );
+}
+
+function BannerHCard({ card, primary }: { card: StoreCard; primary: string }) {
+  const ribbonCls = card.ribbon_text ? (STORE_RIBBON_CLS[card.ribbon_tone ?? 'featured'] ?? STORE_RIBBON_CLS.featured) : '';
+  const hasButton = !!card.cta_text?.trim();
+  const href = hasButton ? (card.cta_href?.trim() || '#') : null;
+  const ov = card.overlay_opacity ?? 0.4;
+  const textColor = card.text_color ?? '#ffffff';
+
+  return (
+    <CardLinkWrap href={href} className="col-span-full block rounded-xl overflow-hidden hover:shadow-xl transition relative aspect-[16/5] bg-gray-200">
+      {card.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={card.image_url} alt={card.title} className="absolute inset-0 w-full h-full object-cover" />
+      )}
+      <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${ov})` }} />
+      {card.ribbon_text && (
+        <span className={`absolute top-4 left-4 text-[11px] font-bold tracking-wider px-2.5 py-1 rounded uppercase ${ribbonCls}`}>
+          {card.ribbon_text}
+        </span>
+      )}
+      <div className="absolute inset-0 flex flex-col justify-center px-6 md:px-12" style={{ color: textColor }}>
+        {card.subtitle && <div className="text-xs md:text-sm font-medium mb-2 opacity-90">{card.subtitle}</div>}
+        <h3 className="text-xl md:text-3xl font-bold leading-tight max-w-xl">{card.title}</h3>
+        {card.body && <p className="text-sm md:text-base mt-2 opacity-90 max-w-xl line-clamp-2">{card.body}</p>}
+        {hasButton && (
+          <span className="mt-4 inline-block w-fit text-sm font-semibold px-5 py-2.5 rounded-md text-white" style={{ background: primary }}>
+            {card.cta_text} →
+          </span>
+        )}
+      </div>
+    </CardLinkWrap>
+  );
+}
+
+function BannerVCard({ card, primary }: { card: StoreCard; primary: string }) {
+  const ribbonCls = card.ribbon_text ? (STORE_RIBBON_CLS[card.ribbon_tone ?? 'featured'] ?? STORE_RIBBON_CLS.featured) : '';
+  const hasButton = !!card.cta_text?.trim();
+  const href = hasButton ? (card.cta_href?.trim() || '#') : null;
+  const ov = card.overlay_opacity ?? 0.45;
+  const textColor = card.text_color ?? '#ffffff';
+
+  return (
+    <CardLinkWrap href={href} className="block rounded-xl overflow-hidden hover:shadow-xl transition relative aspect-[3/4] bg-gray-200">
+      {card.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={card.image_url} alt={card.title} className="absolute inset-0 w-full h-full object-cover" />
+      )}
+      <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${Math.min(1, ov + 0.3)}) 0%, rgba(0,0,0,${Math.max(0, ov - 0.2)}) 60%, rgba(0,0,0,0) 100%)` }} />
+      {card.ribbon_text && (
+        <span className={`absolute top-3 left-3 text-[10px] font-bold tracking-wider px-2 py-1 rounded uppercase ${ribbonCls}`}>
+          {card.ribbon_text}
+        </span>
+      )}
+      <div className="absolute inset-x-0 bottom-0 p-5" style={{ color: textColor }}>
+        {card.subtitle && <div className="text-[11px] font-medium mb-1 opacity-90">{card.subtitle}</div>}
+        <h3 className="text-lg font-bold leading-tight">{card.title}</h3>
+        {card.body && <p className="text-xs mt-1.5 opacity-90 line-clamp-2">{card.body}</p>}
+        {hasButton && (
+          <span className="mt-3 inline-block text-xs font-semibold px-3 py-1.5 rounded text-white" style={{ background: primary }}>
+            {card.cta_text} →
+          </span>
+        )}
+      </div>
+    </CardLinkWrap>
   );
 }

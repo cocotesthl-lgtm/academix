@@ -488,6 +488,8 @@ export async function deleteGalleryImageAction(formData: FormData): Promise<void
 
 const VALID_RIBBON_TONES = new Set(['featured', 'sale', 'urgent', 'new', 'info']);
 
+const VALID_LAYOUTS = new Set(['standard', 'banner_h', 'banner_v']);
+
 function parseManualCardForm(formData: FormData): Omit<ManualCard, 'id'> | null {
   const title = String(formData.get('title') ?? '').trim();
   if (!title) return null;
@@ -502,7 +504,12 @@ function parseManualCardForm(formData: FormData): Omit<ManualCard, 'id'> | null 
   const ribbon_tone = (VALID_RIBBON_TONES.has(toneRaw) ? toneRaw : 'featured') as ManualCard['ribbon_tone'];
   const cta_text = String(formData.get('cta_text') ?? '').trim().slice(0, 40) || undefined;
   const cta_href = String(formData.get('cta_href') ?? '').trim().slice(0, 500) || undefined;
-  return { title: title.slice(0, 120), subtitle, body, image_url, price, old_price, stock_label, ribbon_text, ribbon_tone, cta_text, cta_href };
+  const layoutRaw = String(formData.get('layout') ?? 'standard').trim();
+  const layout = (VALID_LAYOUTS.has(layoutRaw) ? layoutRaw : 'standard') as ManualCard['layout'];
+  const text_color = String(formData.get('text_color') ?? '').trim() || undefined;
+  const overlayRaw = parseFloat(String(formData.get('overlay_opacity') ?? ''));
+  const overlay_opacity = Number.isFinite(overlayRaw) ? Math.max(0, Math.min(1, overlayRaw)) : undefined;
+  return { title: title.slice(0, 120), subtitle, body, image_url, price, old_price, stock_label, ribbon_text, ribbon_tone, cta_text, cta_href, layout, text_color, overlay_opacity };
 }
 
 export async function addManualCardAction(formData: FormData): Promise<void> {
@@ -537,6 +544,61 @@ export async function deleteManualCardAction(formData: FormData): Promise<void> 
   const id = String(formData.get('id') ?? '');
   const cfg = await loadConfig(tenant.id);
   cfg.sections.catalog.manual_cards = (cfg.sections.catalog.manual_cards ?? []).filter((c) => c.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/* ===== Cards section (standalone) — usa el mismo shape ManualCard ===== */
+
+export async function addCardItemAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const data = parseManualCardForm(formData);
+  if (!data) return;
+  const cfg = await loadConfig(tenant.id);
+  if (!Array.isArray(cfg.sections.cards.items)) cfg.sections.cards.items = [];
+  cfg.sections.cards.items.push({ id: randomUUID(), ...data });
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateCardItemAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const data = parseManualCardForm(formData);
+  if (!data) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.cards.items ?? [];
+  const idx = arr.findIndex((c) => c.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, ...data };
+  cfg.sections.cards.items = arr;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function deleteCardItemAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.cards.items = (cfg.sections.cards.items ?? []).filter((c) => c.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function moveCardItemAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const dir = String(formData.get('dir') ?? '');
+  if (dir !== 'up' && dir !== 'down') return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = [...(cfg.sections.cards.items ?? [])];
+  const idx = arr.findIndex((c) => c.id === id);
+  if (idx === -1) return;
+  const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+  if (newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  cfg.sections.cards.items = arr;
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }

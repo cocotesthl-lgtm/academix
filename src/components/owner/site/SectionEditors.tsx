@@ -40,6 +40,10 @@ import {
   updateManualCardAction,
   deleteManualCardAction,
   moveManualCardAction,
+  addCardItemAction,
+  updateCardItemAction,
+  deleteCardItemAction,
+  moveCardItemAction,
   updateInstructorItemAction,
   updateTestimonialAction,
   updateFaqAction,
@@ -1013,7 +1017,7 @@ export function FeaturedEditor({ initialTitle, primary }: { initialTitle: string
 export function CatalogEditor({
   initialTitle, initialShowFilters, initialMaxVisible, initialPaginationMode,
   initialCtaMode, initialCtaCustomHref,
-  initialManualCards, initialManualCardsPosition, initialShowAutoCourses,
+  initialManualCardsPosition, initialShowAutoCourses,
   initialCardStyle,
   primary
 }: {
@@ -1021,7 +1025,6 @@ export function CatalogEditor({
   initialPaginationMode: 'show_more' | 'paginated';
   initialCtaMode?: 'course_link' | 'no_button' | 'custom_url';
   initialCtaCustomHref?: string;
-  initialManualCards?: ManualCard[];
   initialManualCardsPosition?: 'before' | 'after';
   initialShowAutoCourses?: boolean;
   initialCardStyle?: 'classic' | 'compact';
@@ -1033,10 +1036,11 @@ export function CatalogEditor({
   const [paginationMode, setPaginationMode] = useState<'show_more' | 'paginated'>(initialPaginationMode);
   const [ctaMode, setCtaMode] = useState<'course_link' | 'no_button' | 'custom_url'>(initialCtaMode ?? 'course_link');
   const [ctaCustomHref, setCtaCustomHref] = useState(initialCtaCustomHref ?? '');
-  const [manualCardsPosition, setManualCardsPosition] = useState<'before' | 'after'>(initialManualCardsPosition ?? 'before');
-  const [showAutoCourses, setShowAutoCourses] = useState(initialShowAutoCourses ?? true);
+  // Backwards-compat: estos antes vivían en catalog; ahora las tarjetas están en su propia sección.
+  // Mantenemos los valores actuales del config para no perderlos en el save.
+  const manualCardsPosition = initialManualCardsPosition ?? 'before';
+  const showAutoCourses = initialShowAutoCourses ?? true;
   const [cardStyle, setCardStyle] = useState<'classic' | 'compact'>(initialCardStyle ?? 'classic');
-  const cards = initialManualCards ?? [];
   const { pending, saved, fire } = useSave('catalog');
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -1135,30 +1139,11 @@ export function CatalogEditor({
             💡 La cinta destacada (ej. OFERTA, NUEVO) de cada curso se configura desde el editor del curso.
           </p>
         </div>
-        <div className="pt-3 border-t border-white/10 space-y-2">
-          <label className="block text-xs text-white/60">Tarjetas manuales (custom)</label>
-          <p className="text-[10px] text-white/40 -mt-1">
-            Mezclá tarjetas custom con los cursos: info, producto con precio + descuento, o link externo.
+        <div className="pt-3 border-t border-white/10">
+          <p className="text-[11px] text-white/50">
+            💡 Las tarjetas custom (info / producto / link / banner) ahora viven en su propia sección <strong className="text-white/80">🧩 Tarjetas</strong>.
+            Activala desde la lista de secciones para configurarlas.
           </p>
-          <div>
-            <label className="block text-[10px] text-white/45 mb-1">Posición de las tarjetas custom</label>
-            <select
-              value={manualCardsPosition}
-              onChange={(e) => setManualCardsPosition(e.target.value as typeof manualCardsPosition)}
-              className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
-            >
-              <option value="before">⬆ Antes de los cursos</option>
-              <option value="after">⬇ Después de los cursos</option>
-            </select>
-          </div>
-          <label className="flex items-center gap-2 text-xs text-white/70">
-            <input
-              type="checkbox"
-              checked={showAutoCourses}
-              onChange={(e) => setShowAutoCourses(e.target.checked)}
-            />
-            Mostrar también los cursos del catálogo automáticamente
-          </label>
         </div>
         <SaveBar
           pending={pending}
@@ -1188,11 +1173,7 @@ export function CatalogEditor({
           )}
           {cardStyle === 'compact' ? (
             <div className="grid grid-cols-4 gap-1.5">
-              {/* manual cards primero si position=before */}
-              {manualCardsPosition === 'before' && cards.slice(0, 2).map((c) => (
-                <CompactPreviewCard key={c.id} card={c} primary={primary} />
-              ))}
-              {showAutoCourses && [1, 2, 3, 4].slice(0, 4 - (manualCardsPosition === 'before' ? Math.min(cards.length, 2) : 0) - (manualCardsPosition === 'after' ? Math.min(cards.length, 2) : 0)).map((i) => (
+              {[1, 2, 3, 4].map((i) => (
                 <div key={`c-${i}`} className="rounded border border-black/10 overflow-hidden bg-white">
                   <div className="aspect-square relative" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }}>
                     <span className="absolute top-1 left-1 text-[7px] bg-white/90 text-black px-1 rounded">★</span>
@@ -1203,38 +1184,20 @@ export function CatalogEditor({
                   </div>
                 </div>
               ))}
-              {manualCardsPosition === 'after' && cards.slice(0, 2).map((c) => (
-                <CompactPreviewCard key={c.id} card={c} primary={primary} />
-              ))}
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2">
-              {manualCardsPosition === 'before' && cards.slice(0, 1).map((c) => (
-                <ClassicPreviewCard key={c.id} card={c} primary={primary} />
-              ))}
-              {showAutoCourses && [1, 2, 3].slice(0, 3 - (manualCardsPosition === 'before' ? Math.min(cards.length, 1) : 0) - (manualCardsPosition === 'after' ? Math.min(cards.length, 1) : 0)).map((i) => (
+              {[1, 2, 3].map((i) => (
                 <div key={`c-${i}`} className="rounded border border-black/10 overflow-hidden bg-white">
                   <div className="h-12" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }} />
                   <div className="p-2 text-[9px]">Curso #{i}</div>
                 </div>
               ))}
-              {manualCardsPosition === 'after' && cards.slice(0, 1).map((c) => (
-                <ClassicPreviewCard key={c.id} card={c} primary={primary} />
-              ))}
             </div>
-          )}
-          {cards.length > 0 && (
-            <p className="text-[8px] text-black/40 mt-2 italic">
-              Previa con {cards.length} {cards.length === 1 ? 'tarjeta custom' : 'tarjetas custom'}.
-            </p>
           )}
         </div>
       </PreviewFrame>
 
-      {/* Sub-editor full width: tarjetas manuales */}
-      <div className="md:col-span-2 mt-2 pt-6 border-t border-white/10">
-        <ManualCardsEditor cards={cards} primary={primary} />
-      </div>
     </div>
   );
 }
@@ -1297,10 +1260,11 @@ const RIBBON_TONES_UI: { value: ManualCard['ribbon_tone']; label: string; cls: s
   { value: 'info',     label: 'ℹ Info',       cls: 'bg-sky-500 text-white' }
 ];
 
-type CardTemplate = 'info' | 'product' | 'link';
+type CardTemplate = 'info' | 'product' | 'link' | 'banner_h' | 'banner_v';
 
 const TEMPLATE_DEFAULTS: Record<CardTemplate, Partial<ManualCard>> = {
   info: {
+    layout: 'standard',
     title: 'Bloque informativo',
     subtitle: 'Información',
     body: 'Texto descriptivo para destacar algo importante. Sin botón.',
@@ -1308,6 +1272,7 @@ const TEMPLATE_DEFAULTS: Record<CardTemplate, Partial<ManualCard>> = {
     cta_text: ''
   },
   product: {
+    layout: 'standard',
     title: 'Producto premium',
     subtitle: 'Producto físico',
     body: 'Descripción corta del producto y por qué vale la pena.',
@@ -1320,16 +1285,144 @@ const TEMPLATE_DEFAULTS: Record<CardTemplate, Partial<ManualCard>> = {
     cta_href: '#'
   },
   link: {
+    layout: 'standard',
     title: 'Conocé más',
     subtitle: 'Página externa',
     body: 'Tarjeta que lleva a otra sección o sitio.',
     ribbon_text: '',
     cta_text: 'Ver más',
     cta_href: '/sobre-nosotros'
+  },
+  banner_h: {
+    layout: 'banner_h',
+    title: 'Aprovechá esta oferta',
+    subtitle: 'Por tiempo limitado',
+    body: 'Texto corto sobre la imagen — ideal para destacar promos.',
+    image_url: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1600&q=80&auto=format&fit=crop',
+    text_color: '#ffffff',
+    overlay_opacity: 0.4,
+    ribbon_text: 'OFERTA',
+    ribbon_tone: 'sale',
+    cta_text: 'Aprovecharla',
+    cta_href: '#'
+  },
+  banner_v: {
+    layout: 'banner_v',
+    title: 'Nuevo lanzamiento',
+    subtitle: 'Recién llegado',
+    body: 'Texto corto sobre una imagen vertical — perfecto para destacar un producto.',
+    image_url: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=900&q=80&auto=format&fit=crop',
+    text_color: '#ffffff',
+    overlay_opacity: 0.45,
+    ribbon_text: 'NUEVO',
+    ribbon_tone: 'new',
+    cta_text: 'Ver más',
+    cta_href: '#'
   }
 };
 
-function ManualCardsEditor({ cards, primary }: { cards: ManualCard[]; primary: string }) {
+/**
+ * Editor de la sección "Tarjetas" — manejada como sección propia, separada del catálogo.
+ * Permite mezclar tarjetas de info, producto (con precio + descuento + stock), link,
+ * banner horizontal y banner vertical (estos últimos con imagen de fondo + texto encima).
+ */
+export function CardsEditor({
+  initialTitle, initialSubtitle, initialColumns, items, primary
+}: {
+  initialTitle: string;
+  initialSubtitle: string;
+  initialColumns: 2 | 3 | 4;
+  items: ManualCard[];
+  primary: string;
+}) {
+  const [title, setTitle] = useState(initialTitle);
+  const [subtitle, setSubtitle] = useState(initialSubtitle);
+  const [columns, setColumns] = useState<2 | 3 | 4>(initialColumns);
+  const { pending, saved, fire } = useSave('cards');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <Field label="Subtítulo (opcional)" value={subtitle} onChange={setSubtitle} />
+        <div>
+          <label className="block text-xs text-white/60 mb-1">Columnas en grid</label>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            {([2, 3, 4] as const).map((c) => (
+              <button key={c} type="button" onClick={() => setColumns(c)}
+                className={`px-3 py-2 rounded border ${columns === c ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'}`}>
+                {c}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-white/40 mt-1">
+            💡 Las tarjetas tipo banner horizontal ocupan toda la fila — el grid solo afecta a info/producto/link.
+          </p>
+        </div>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, subtitle, columns: String(columns) })} />
+      </div>
+      <PreviewFrame>
+        <div className="p-3">
+          <h2 className="text-base font-bold">{title || '—'}</h2>
+          {subtitle && <p className="text-[10px] text-black/55 mb-2">{subtitle}</p>}
+          {items.length === 0 ? (
+            <div className="text-center text-[10px] text-black/40 py-6 border border-dashed border-black/15 rounded">
+              Sin tarjetas. Agregá una abajo.
+            </div>
+          ) : (
+            <div className={`grid gap-2 grid-cols-${columns}`}>
+              {items.slice(0, 6).map((c) => (
+                c.layout === 'banner_h' ? <BannerHPreview key={c.id} card={c} /> :
+                c.layout === 'banner_v' ? <BannerVPreview key={c.id} card={c} /> :
+                <ClassicPreviewCard key={c.id} card={c} primary={primary} />
+              ))}
+            </div>
+          )}
+        </div>
+      </PreviewFrame>
+
+      <div className="md:col-span-2 pt-6 border-t border-white/10">
+        <CardsManager items={items} primary={primary} />
+      </div>
+    </div>
+  );
+}
+
+function BannerHPreview({ card }: { card: ManualCard }) {
+  const ov = card.overlay_opacity ?? 0.4;
+  return (
+    <div className="col-span-full rounded overflow-hidden relative h-20 bg-gray-200">
+      {card.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={card.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      )}
+      <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${ov})` }} />
+      <div className="absolute inset-0 flex flex-col justify-center px-3" style={{ color: card.text_color ?? '#fff' }}>
+        <div className="text-[8px] opacity-80">{card.subtitle}</div>
+        <div className="text-xs font-bold">{card.title}</div>
+      </div>
+    </div>
+  );
+}
+
+function BannerVPreview({ card }: { card: ManualCard }) {
+  const ov = card.overlay_opacity ?? 0.45;
+  return (
+    <div className="rounded overflow-hidden relative aspect-[3/4] bg-gray-200">
+      {card.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={card.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      )}
+      <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${ov + 0.3}), rgba(0,0,0,${ov - 0.2}))` }} />
+      <div className="absolute inset-x-0 bottom-0 p-2" style={{ color: card.text_color ?? '#fff' }}>
+        <div className="text-[7px] opacity-80">{card.subtitle}</div>
+        <div className="text-[10px] font-bold leading-tight">{card.title}</div>
+      </div>
+    </div>
+  );
+}
+
+function CardsManager({ items, primary }: { items: ManualCard[]; primary: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [template, setTemplate] = useState<CardTemplate>('info');
@@ -1357,15 +1450,26 @@ function ManualCardsEditor({ cards, primary }: { cards: ManualCard[]; primary: s
     fd.set('ribbon_tone', d.ribbon_tone ?? 'featured');
     fd.set('cta_text', d.cta_text ?? '');
     fd.set('cta_href', d.cta_href ?? '');
+    fd.set('layout', d.layout ?? 'standard');
+    fd.set('text_color', d.text_color ?? '');
+    fd.set('overlay_opacity', d.overlay_opacity != null ? String(d.overlay_opacity) : '');
     return fd;
   }
+
+  const TEMPLATES: { v: CardTemplate; label: string; desc: string }[] = [
+    { v: 'info',     label: 'ℹ Info',           desc: 'Solo texto, sin botón' },
+    { v: 'product',  label: '🛒 Producto',       desc: 'Precio + descuento + stock' },
+    { v: 'link',     label: '🔗 Link',           desc: 'CTA a otra página' },
+    { v: 'banner_h', label: '🖼 Banner horizontal', desc: 'Imagen ancha con texto encima' },
+    { v: 'banner_v', label: '🎨 Banner vertical',   desc: 'Imagen alta con texto encima' }
+  ];
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold">🧩 Tarjetas manuales</h3>
-          <p className="text-[11px] text-white/45">{cards.length} {cards.length === 1 ? 'tarjeta' : 'tarjetas'} configurada{cards.length === 1 ? '' : 's'}.</p>
+          <h3 className="text-sm font-semibold">🧩 Tarjetas configuradas</h3>
+          <p className="text-[11px] text-white/45">{items.length} {items.length === 1 ? 'tarjeta' : 'tarjetas'}.</p>
         </div>
         {!showAddForm && (
           <button
@@ -1383,11 +1487,7 @@ function ManualCardsEditor({ cards, primary }: { cards: ManualCard[]; primary: s
           <div>
             <label className="block text-[10px] text-white/45 mb-1.5">Empezar con plantilla</label>
             <div className="grid grid-cols-3 gap-2">
-              {([
-                { v: 'info', label: 'ℹ Info', desc: 'Solo texto, sin botón' },
-                { v: 'product', label: '🛒 Producto', desc: 'Precio + descuento + stock' },
-                { v: 'link', label: '🔗 Link', desc: 'CTA a otra página' }
-              ] as { v: CardTemplate; label: string; desc: string }[]).map((t) => (
+              {TEMPLATES.map((t) => (
                 <button
                   key={t.v}
                   type="button"
@@ -1410,7 +1510,7 @@ function ManualCardsEditor({ cards, primary }: { cards: ManualCard[]; primary: s
               type="button"
               disabled={addPending || !draft.title?.trim()}
               onClick={() => startAdd(async () => {
-                await addManualCardAction(makeFormData(draft));
+                await addCardItemAction(makeFormData(draft));
                 setShowAddForm(false);
                 setDraft(TEMPLATE_DEFAULTS.info);
               })}
@@ -1429,17 +1529,18 @@ function ManualCardsEditor({ cards, primary }: { cards: ManualCard[]; primary: s
         </div>
       )}
 
-      {cards.length > 0 && (
+      {items.length > 0 && (
         <ul className="space-y-2">
-          {cards.map((card, idx) => {
+          {items.map((card, idx) => {
             const isEditing = editingId === card.id;
             const tone = RIBBON_TONES_UI.find((t) => t.value === card.ribbon_tone) ?? RIBBON_TONES_UI[0];
+            const layoutBadge = card.layout === 'banner_h' ? '🖼 H' : card.layout === 'banner_v' ? '🎨 V' : '';
             return (
               <li key={card.id} className="rounded-lg border border-white/10 bg-white/[0.02]">
                 {isEditing ? (
                   <InlineEditCard
                     card={card}
-                    onSave={(data) => updateManualCardAction(makeFormData(data, card.id)).then(() => setEditingId(null))}
+                    onSave={(data) => updateCardItemAction(makeFormData(data, card.id)).then(() => setEditingId(null))}
                     onCancel={() => setEditingId(null)}
                   />
                 ) : (
@@ -1453,8 +1554,11 @@ function ManualCardsEditor({ cards, primary }: { cards: ManualCard[]; primary: s
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <div className="text-sm font-semibold truncate">{card.title}</div>
+                        {layoutBadge && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white/60">{layoutBadge}</span>
+                        )}
                         {card.ribbon_text && (
                           <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider ${tone.cls}`}>
                             {card.ribbon_text}
@@ -1472,17 +1576,17 @@ function ManualCardsEditor({ cards, primary }: { cards: ManualCard[]; primary: s
                         disabled={movePending || idx === 0}
                         onClick={() => startMove(async () => {
                           const fd = new FormData(); fd.set('id', card.id); fd.set('dir', 'up');
-                          await moveManualCardAction(fd);
+                          await moveCardItemAction(fd);
                         })}
                         className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5 disabled:opacity-30 transition"
                         title="Subir"
                       >↑</button>
                       <button
                         type="button"
-                        disabled={movePending || idx === cards.length - 1}
+                        disabled={movePending || idx === items.length - 1}
                         onClick={() => startMove(async () => {
                           const fd = new FormData(); fd.set('id', card.id); fd.set('dir', 'down');
-                          await moveManualCardAction(fd);
+                          await moveCardItemAction(fd);
                         })}
                         className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5 disabled:opacity-30 transition"
                         title="Bajar"
@@ -1499,7 +1603,7 @@ function ManualCardsEditor({ cards, primary }: { cards: ManualCard[]; primary: s
                           if (!confirm('¿Eliminar esta tarjeta?')) return;
                           startDel(async () => {
                             const fd = new FormData(); fd.set('id', card.id);
-                            await deleteManualCardAction(fd);
+                            await deleteCardItemAction(fd);
                           });
                         }}
                         className="text-xs px-2 py-1 rounded border border-rose-500/30 text-rose-300 hover:bg-rose-500/10 transition"
@@ -1522,8 +1626,32 @@ function ManualCardForm({ value, onChange }: { value: Partial<ManualCard>; onCha
   function set<K extends keyof ManualCard>(k: K, v: ManualCard[K] | undefined) {
     onChange({ ...value, [k]: v });
   }
+  const layout = value.layout ?? 'standard';
+  const isBanner = layout === 'banner_h' || layout === 'banner_v';
+
   return (
     <div className="grid grid-cols-2 gap-2.5">
+      <div className="col-span-2">
+        <label className="block text-xs text-white/60 mb-1">Estilo de la tarjeta</label>
+        <div className="grid grid-cols-3 gap-1.5">
+          {([
+            { v: 'standard', label: '🎴 Estándar' },
+            { v: 'banner_h', label: '🖼 Banner H' },
+            { v: 'banner_v', label: '🎨 Banner V' }
+          ] as { v: 'standard' | 'banner_h' | 'banner_v'; label: string }[]).map((opt) => (
+            <button
+              key={opt.v}
+              type="button"
+              onClick={() => set('layout', opt.v)}
+              className={`text-[10px] px-2 py-1.5 rounded border transition ${
+                layout === opt.v ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="col-span-2">
         <Field label="Título *" value={value.title ?? ''} onChange={(v) => set('title', v)} placeholder="Nombre de la tarjeta" />
       </div>
@@ -1532,9 +1660,13 @@ function ManualCardForm({ value, onChange }: { value: Partial<ManualCard>; onCha
       <div className="col-span-2">
         <Textarea label="Descripción" value={value.body ?? ''} onChange={(v) => set('body', v)} rows={2} />
       </div>
-      <Field label="Precio (libre)" value={value.price ?? ''} onChange={(v) => set('price', v)} placeholder="$ 9.999  o  Gratis" />
-      <Field label="Precio anterior (tachado)" value={value.old_price ?? ''} onChange={(v) => set('old_price', v)} placeholder="$ 14.999" />
-      <Field label="Etiqueta de stock" value={value.stock_label ?? ''} onChange={(v) => set('stock_label', v)} placeholder="Pocas unidades" />
+      {!isBanner && (
+        <>
+          <Field label="Precio (libre)" value={value.price ?? ''} onChange={(v) => set('price', v)} placeholder="$ 9.999  o  Gratis" />
+          <Field label="Precio anterior (tachado)" value={value.old_price ?? ''} onChange={(v) => set('old_price', v)} placeholder="$ 14.999" />
+          <Field label="Etiqueta de stock" value={value.stock_label ?? ''} onChange={(v) => set('stock_label', v)} placeholder="Pocas unidades" />
+        </>
+      )}
       <Field label="Cinta destacada" value={value.ribbon_text ?? ''} onChange={(v) => set('ribbon_text', v)} placeholder="OFERTA, NUEVO…" />
       <div className="col-span-2">
         <label className="block text-xs text-white/60 mb-1">Color de la cinta</label>
@@ -1553,6 +1685,34 @@ function ManualCardForm({ value, onChange }: { value: Partial<ManualCard>; onCha
           ))}
         </div>
       </div>
+      {isBanner && (
+        <>
+          <div className="col-span-2 pt-2 border-t border-white/10">
+            <p className="text-[10px] uppercase tracking-wider text-white/45 mb-2">Personalización del banner</p>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-white/60 flex-1">Color del texto</label>
+                <input
+                  type="color"
+                  value={value.text_color ?? '#ffffff'}
+                  onChange={(e) => set('text_color', e.target.value)}
+                  className="w-7 h-7 rounded bg-transparent border border-white/15 cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] text-white/45 mb-1">Oscurecer imagen ({Math.round((value.overlay_opacity ?? 0.4) * 100)}%)</label>
+                <input
+                  type="range"
+                  min={0} max={1} step={0.05}
+                  value={value.overlay_opacity ?? 0.4}
+                  onChange={(e) => set('overlay_opacity', parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
       <Field label="Texto del botón (vacío = sin botón)" value={value.cta_text ?? ''} onChange={(v) => set('cta_text', v)} placeholder="Comprar ahora" />
       <div className="col-span-2">
         <HrefField label="Destino del botón" value={value.cta_href ?? ''} onChange={(v) => set('cta_href', v)} />
