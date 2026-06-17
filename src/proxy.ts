@@ -108,7 +108,13 @@ function buildResponse(req: NextRequest): { response: NextResponse; portal: stri
     if (pathname.startsWith('/v/')) {
       return { response: NextResponse.next({ request: req }), portal: 'app-public' };
     }
-    url.pathname = `/owner${pathname === '/' ? '/dashboard' : pathname}`;
+    // Si el user navegó a app.X/owner/algo (link viejo, bookmark, redirect mal
+    // formado), strippeamos el /owner duplicado antes de prefijar — sino el
+    // rewrite quedaría /owner/owner/algo y devolvería 404.
+    const cleanPath = pathname === '/owner' ? '/'
+      : pathname.startsWith('/owner/') ? pathname.slice(6)
+      : pathname;
+    url.pathname = `/owner${cleanPath === '/' ? '/dashboard' : cleanPath}`;
     return { response: NextResponse.rewrite(url, { request: req }), portal: 'owner' };
   }
 
