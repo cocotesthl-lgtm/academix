@@ -12,6 +12,7 @@ import { VslLanding } from "@/components/storefront/landings/VslLanding";
 import { resolveCheckoutConfig } from "@/lib/checkout/types";
 import { generateSlots, type AvailabilityRule, type BookingSlot, type CalendarMode, type CalendarDate, type AvailabilityOverride, type EventDate } from "@/lib/calendar/types";
 import { TicketPicker } from "@/components/storefront/TicketPicker";
+import { VipPackLanding, type VipMediaItem } from "@/components/storefront/VipPackLanding";
 
 export const dynamic = "force-dynamic";
 
@@ -352,6 +353,44 @@ export default async function CourseDetailPage({
   const tplConfig: LandingConfig = (useVariant
     ? useVariant.config
     : (course.landing_config ?? {})) as LandingConfig;
+
+  // ─── Branching por product_type ───
+  // Si es un VIP pack, ignoramos templates y renderizamos la galería bloqueada.
+  // Defensivo: si la migration 0031 falta, product_type será undefined y caemos al render normal.
+  try {
+    const { data: ptData } = await svc
+      .from('courses')
+      .select('product_type, media_items, preview_url, pack_description')
+      .eq('id', course.id)
+      .maybeSingle<{
+        product_type: string | null;
+        media_items: VipMediaItem[] | null;
+        preview_url: string | null;
+        pack_description: string | null;
+      }>();
+    if (ptData?.product_type === 'vip_pack') {
+      // ¿Está enrolled? (compró)
+      let isUnlocked = false;
+      if (currentUser) {
+        const { data: enr } = await svc
+          .from('enrollments')
+          .select('id').eq('course_id', course.id).eq('user_id', currentUser.id)
+          .maybeSingle<{ id: string }>();
+        isUnlocked = !!enr;
+      }
+      return (
+        <VipPackLanding
+          tenantId={tenantId}
+          course={{ ...course, pack_description: ptData.pack_description, preview_url: ptData.preview_url }}
+          mediaItems={(ptData.media_items ?? []) as VipMediaItem[]}
+          isUnlocked={isUnlocked}
+          buyerEmail={currentUser?.email ?? ''}
+          primary={primary}
+          checkoutConfig={checkoutConfig}
+        />
+      );
+    }
+  } catch { /* migration pendiente — sigo con landing default */ }
 
   // ─── Branching por landing template ───
   if (tpl === 'hotmart') {

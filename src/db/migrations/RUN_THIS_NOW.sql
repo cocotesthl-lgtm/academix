@@ -635,6 +635,19 @@ alter table public.crm_stages enable row level security;
 alter table public.crm_leads enable row level security;
 alter table public.crm_lead_activity enable row level security;
 
+-- ── 0031 VIP packs (courses generalizadas) ───────────────────
+alter table public.courses
+  add column if not exists product_type text default 'course',
+  add column if not exists media_items jsonb default '[]'::jsonb,
+  add column if not exists preview_url text,
+  add column if not exists pack_description text;
+do $$ begin
+  alter table public.courses
+    add constraint courses_product_type_check
+    check (product_type in ('course', 'vip_pack'));
+exception when duplicate_object then null; end $$;
+create index if not exists idx_courses_type on public.courses(tenant_id, product_type);
+
 -- ── 0026 Public listing + custom domains ─────────────────────
 alter table public.tenants
   add column if not exists public_listing boolean not null default true,
