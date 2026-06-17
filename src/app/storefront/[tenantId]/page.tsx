@@ -232,7 +232,7 @@ export default async function StorefrontHome({
 
             if (h.layout === 'split') {
               return (
-                <section key={key} {...dt} className="relative overflow-hidden px-6 pt-16 pb-24"
+                <section key={key} {...dt} id={key} className="relative overflow-hidden px-6 pt-16 pb-24"
                   style={sectionBgStyle(h, bg ?? `linear-gradient(135deg, ${primary}10 0%, transparent 55%)`)}>
                   {/* Decorative blob */}
                   <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-3xl opacity-30 -z-0" style={{ background: `radial-gradient(circle, ${primary} 0%, transparent 70%)` }} />
@@ -267,7 +267,7 @@ export default async function StorefrontHome({
               /* Amazon-style: imagen full-width grandota arriba que ocupa pantalla,
                  con CTA overlay encima del banner para empujar a la acción. */
               return (
-                <section key={key} {...dt} className="relative" style={sectionBgStyle(h, bg ?? '#0a0a0a')}>
+                <section key={key} {...dt} id={key} className="relative" style={sectionBgStyle(h, bg ?? '#0a0a0a')}>
                   {/* Banner principal */}
                   <div className="relative w-full h-[60vh] min-h-[440px] max-h-[680px] overflow-hidden">
                     {h.image_url ? (
@@ -332,7 +332,7 @@ export default async function StorefrontHome({
 
             // centered
             return (
-              <section key={key} {...dt} className="relative overflow-hidden px-6 py-24 text-center" style={{ background: bg ?? `linear-gradient(180deg, ${primary}12 0%, transparent 100%)` }}>
+              <section key={key} {...dt} id={key} className="relative overflow-hidden px-6 py-24 text-center" style={{ background: bg ?? `linear-gradient(180deg, ${primary}12 0%, transparent 100%)` }}>
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full blur-3xl opacity-20 -z-0" style={{ background: `radial-gradient(circle, ${primary} 0%, transparent 70%)` }} />
                 <FadeIn>
                   <div className="relative max-w-3xl mx-auto">
@@ -358,7 +358,7 @@ export default async function StorefrontHome({
             if (tb.items.length === 0) return null;
             const items = tb.items;
             return (
-              <section key={key} {...dt} className="px-0 py-12 overflow-hidden" style={{ background: bg ?? '#fafafa' }}>
+              <section key={key} {...dt} id={key} className="px-0 py-12 overflow-hidden" style={{ background: bg ?? '#fafafa' }}>
                 <div className="max-w-6xl mx-auto px-6">
                   <p className="text-xs text-center text-black/40 uppercase tracking-widest mb-8">{tb.title}</p>
                 </div>
@@ -402,7 +402,7 @@ export default async function StorefrontHome({
           case 'about': {
             const a = cfg.sections.about;
             return (
-              <section key={key} {...dt} className="px-6 py-20" style={{ background: bg ?? '#fafafa' }}>
+              <section key={key} {...dt} id={key} className="px-6 py-20" style={{ background: bg ?? '#fafafa' }}>
                 <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
                   <FadeIn>
                     {a.image_url ? (
@@ -456,7 +456,7 @@ export default async function StorefrontHome({
             };
 
             return (
-              <section key={key} {...dt} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id={key} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
                 <FadeIn>
                   <div className="text-center mb-12">
                     <div className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: primary }}>Quién enseña</div>
@@ -502,7 +502,7 @@ export default async function StorefrontHome({
             if (st.items.length === 0) return null;
             const cols = Math.min(st.items.length, 4);
             return (
-              <section key={key} {...dt} className="px-6 py-16" style={{ background: bg ?? `linear-gradient(180deg, ${primary}08 0%, transparent 100%)` }}>
+              <section key={key} {...dt} id={key} className="px-6 py-16" style={{ background: bg ?? `linear-gradient(180deg, ${primary}08 0%, transparent 100%)` }}>
                 <div className="max-w-5xl mx-auto">
                   <FadeIn>
                     <h2 className="text-xl md:text-2xl font-bold text-center mb-10">{st.title}</h2>
@@ -526,7 +526,7 @@ export default async function StorefrontHome({
             const lp = cfg.sections.learn_points;
             if (lp.items.length === 0) return null;
             return (
-              <section key={key} {...dt} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id={key} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-4xl mx-auto">
                   <FadeIn>
                     <div className="text-center mb-10">
@@ -554,7 +554,7 @@ export default async function StorefrontHome({
             const ft = cfg.sections.features;
             if (ft.items.length === 0) return null;
             return (
-              <section key={key} {...dt} className="px-6 py-20" style={{ background: bg ?? '#fafafa' }}>
+              <section key={key} {...dt} id={key} className="px-6 py-20" style={{ background: bg ?? '#fafafa' }}>
                 <div className="max-w-5xl mx-auto">
                   <FadeIn>
                     <div className="text-center mb-12">
@@ -581,7 +581,7 @@ export default async function StorefrontHome({
           case 'featured':
             if (featured.length === 0) return null;
             return (
-              <section key={key} {...dt} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-6xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-bold mb-6">{cfg.sections.featured.title}</h2>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -674,7 +674,7 @@ export default async function StorefrontHome({
           case 'before_after': {
             const ba = cfg.sections.before_after;
             return (
-              <section key={key} {...dt} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-5xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">{ba.title}</h2>
                   <div className="grid md:grid-cols-2 gap-6">
@@ -737,7 +737,7 @@ export default async function StorefrontHome({
           case 'offer': {
             const o = cfg.sections.offer;
             return (
-              <section key={key} {...dt} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-3xl mx-auto rounded-2xl text-center text-white p-10"
                   style={{ background: `linear-gradient(135deg, ${primary}, ${primary}cc)` }}>
                   <h2 className="text-2xl md:text-3xl font-bold">{o.title}</h2>
@@ -760,7 +760,7 @@ export default async function StorefrontHome({
             const pr = cfg.sections.pricing;
             if (pr.tiers.length === 0) return null;
             return (
-              <section key={key} {...dt} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-5xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-bold text-center">{pr.title}</h2>
                   {pr.subtitle && <p className="text-center text-black/60 mt-2">{pr.subtitle}</p>}
@@ -809,7 +809,7 @@ export default async function StorefrontHome({
               ? `https://www.youtube.com/embed/${vd.video_id}`
               : `https://drive.google.com/file/d/${vd.video_id}/preview`;
             return (
-              <section key={key} {...dt} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-4xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-bold text-center">{vd.title}</h2>
                   {vd.subtitle && <p className="text-center text-black/60 mt-2">{vd.subtitle}</p>}
@@ -832,7 +832,7 @@ export default async function StorefrontHome({
             if (g.items.length === 0) return null;
             const colsClass = g.columns === 2 ? 'md:grid-cols-2' : g.columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3';
             return (
-              <section key={key} {...dt} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-6xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-bold text-center">{g.title}</h2>
                   {g.subtitle && <p className="text-center text-black/60 mt-2">{g.subtitle}</p>}
@@ -853,7 +853,7 @@ export default async function StorefrontHome({
           case 'newsletter': {
             const n = cfg.sections.newsletter;
             return (
-              <section key={key} {...dt} className="px-6 py-16" style={{ background: bg ?? `${primary}10` }}>
+              <section key={key} {...dt} id={key} className="px-6 py-16" style={{ background: bg ?? `${primary}10` }}>
                 <div className="max-w-2xl mx-auto text-center">
                   <h2 className="text-2xl md:text-3xl font-bold">{n.title}</h2>
                   {n.subtitle && <p className="text-black/60 mt-2">{n.subtitle}</p>}
@@ -877,7 +877,7 @@ export default async function StorefrontHome({
             const pos = cb.image_pos ?? 'none';
             const hasImage = cb.image_url && pos !== 'none';
             return (
-              <section key={key} {...dt} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id={key} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-5xl mx-auto">
                   {pos === 'top' && hasImage && (
                     <FadeIn>
@@ -964,7 +964,7 @@ export default async function StorefrontHome({
           case 'cta_final': {
             const c = cfg.sections.cta_final;
             return (
-              <section key={key} {...dt} className="px-6 py-24 text-center"
+              <section key={key} {...dt} id={key} className="px-6 py-24 text-center"
                 style={{ background: bg ?? `linear-gradient(135deg, ${primary}, ${primary}dd)` }}>
                 <FadeIn>
                   <div className="max-w-2xl mx-auto text-white">
