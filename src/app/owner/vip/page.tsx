@@ -108,14 +108,14 @@ export default async function VipListPage() {
                   </span>
                 </div>
                 <div className="p-4">
-                  <Link href={`/owner/vip/${p.id}`} className="font-semibold hover:underline block">{p.title}</Link>
+                  <Link href={`/vip/${p.id}`} className="font-semibold hover:underline block">{p.title}</Link>
                   <div className="text-xs text-white/55 mt-1">
                     {itemCount} {itemCount === 1 ? 'item' : 'items'} ·{' '}
                     {p.price_cents === 0 ? 'Gratis' : `$ ${(p.price_cents / 100).toLocaleString('es-AR')} ARS`}
                   </div>
                   <div className="flex gap-2 mt-3">
                     <Link
-                      href={`/owner/vip/${p.id}`}
+                      href={`/vip/${p.id}`}
                       className="text-xs px-3 py-1.5 rounded border border-white/15 hover:bg-white/5 flex-1 text-center"
                     >
                       Editar

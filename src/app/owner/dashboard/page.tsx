@@ -460,7 +460,7 @@ async function VipMetrics({ tenantId }: { tenantId: string }) {
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <span className="text-base">🔒</span> Métricas de Contenido VIP
         </h2>
-        <Link href="/owner/vip" className="text-xs text-fuchsia-300 hover:text-fuchsia-200">Gestionar packs →</Link>
+        <Link href="/vip" className="text-xs text-fuchsia-300 hover:text-fuchsia-200">Gestionar packs →</Link>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCell label="Packs activos" value={String(packs.length)} />

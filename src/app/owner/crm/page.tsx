@@ -113,7 +113,7 @@ export default async function CrmPage({ searchParams }: {
           </p>
         </div>
         <Link
-          href="/owner/forms"
+          href="/forms"
           className="text-xs px-3 py-2 rounded border border-white/15 hover:bg-white/5 transition"
         >
           📝 Formularios →
@@ -133,7 +133,7 @@ export default async function CrmPage({ searchParams }: {
             {pipelines.map((p) => (
               <Link
                 key={p.id}
-                href={`/owner/crm?p=${p.id}`}
+                href={`/crm?p=${p.id}`}
                 className={`text-sm px-3 py-1.5 rounded-full transition ${
                   selectedPipeline?.id === p.id
                     ? 'bg-white text-black font-semibold'
@@ -186,13 +186,13 @@ export default async function CrmPage({ searchParams }: {
               {totalValue > 0 && <span>Valor total: <strong className="text-emerald-300">$ {(totalValue / 100).toLocaleString('es-AR')}</strong></span>}
               <div className="ml-auto flex gap-1 bg-white/5 rounded-full p-0.5 text-xs">
                 <Link
-                  href={`/owner/crm?p=${selectedPipeline.id}`}
+                  href={`/crm?p=${selectedPipeline.id}`}
                   className={`px-3 py-1 rounded-full transition ${filterMode === 'all' ? 'bg-white text-black font-semibold' : 'text-white/65 hover:text-white'}`}
                 >
                   Todos
                 </Link>
                 <Link
-                  href={`/owner/crm?p=${selectedPipeline.id}&filter=mine`}
+                  href={`/crm?p=${selectedPipeline.id}&filter=mine`}
                   className={`px-3 py-1 rounded-full transition ${filterMode === 'mine' ? 'bg-white text-black font-semibold' : 'text-white/65 hover:text-white'}`}
                 >
                   👤 Asignados a mí

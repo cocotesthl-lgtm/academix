@@ -102,7 +102,7 @@ export default async function FormsListPage() {
             <div key={f.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <Link href={`/owner/forms/${f.id}`} className="font-semibold hover:underline">{f.title}</Link>
+                  <Link href={`/forms/${f.id}`} className="font-semibold hover:underline">{f.title}</Link>
                   <span className="text-[10px] text-white/40 font-mono">/{f.slug}</span>
                 </div>
                 {f.description && <div className="text-xs text-white/55 mt-1">{f.description}</div>}
@@ -112,7 +112,7 @@ export default async function FormsListPage() {
               </div>
               <div className="flex gap-2 flex-shrink-0">
                 <Link
-                  href={`/owner/forms/${f.id}`}
+                  href={`/forms/${f.id}`}
                   className="text-xs px-3 py-1.5 rounded border border-white/15 hover:bg-white/5 transition"
                 >
                   Editar / Ver envíos

@@ -28,7 +28,7 @@ export async function createBundleAction(formData: FormData): Promise<void> {
     list_price_cents: Math.round(parseFloat(listPriceRaw || '0') * 100)
   });
   revalidatePath('/owner/bundles');
-  redirect(`/owner/bundles/${id}`);
+  redirect(`/bundles/${id}`);
 }
 
 export async function deleteBundleAction(formData: FormData): Promise<void> {

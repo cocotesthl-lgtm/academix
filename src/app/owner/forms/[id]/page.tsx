@@ -88,7 +88,7 @@ export default async function FormEditPage({ params }: { params: Promise<{ id: s
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <Link href="/owner/forms" className="text-xs text-white/50 hover:text-white">← Volver a formularios</Link>
+          <Link href="/forms" className="text-xs text-white/50 hover:text-white">← Volver a formularios</Link>
           <h1 className="text-2xl font-bold mt-1">{form.title}</h1>
           <p className="text-white/60 text-sm mt-1">
             URL pública: <code className="text-white/80 font-mono text-xs">{publicPath}</code>
@@ -259,7 +259,7 @@ export default async function FormEditPage({ params }: { params: Promise<{ id: s
             </div>
             <p className="text-[11px] text-white/55">
               💡 Cuando se conecta a un pipeline, cada envío del formulario crea automáticamente un lead
-              en la etapa elegida. Vas a verlos en <Link href="/owner/crm" className="underline">/owner/crm</Link>.
+              en la etapa elegida. Vas a verlos en <Link href="/crm" className="underline">/crm</Link>.
               Si necesitás cambiar de etapa por pipeline, guardá, refrescá y ajustá.
             </p>
             <button className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90">

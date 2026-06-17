@@ -54,7 +54,7 @@ export default async function VipPackEditPage({ params }: {
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <Link href="/owner/vip" className="text-xs text-white/50 hover:text-white">← Volver a Contenido VIP</Link>
+        <Link href="/vip" className="text-xs text-white/50 hover:text-white">← Volver a Contenido VIP</Link>
         <h1 className="text-2xl font-bold mt-1">{pack.title}</h1>
         <p className="text-white/55 text-sm mt-1">
           URL pública: <code className="font-mono text-xs text-white/80">{publicPath}</code>

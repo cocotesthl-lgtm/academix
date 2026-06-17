@@ -56,7 +56,7 @@ export default async function BundleEditPage({ params }: { params: Promise<{ id:
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <Link href="/owner/bundles" className="text-xs text-white/50 hover:text-white">← Bundles</Link>
+        <Link href="/bundles" className="text-xs text-white/50 hover:text-white">← Bundles</Link>
         <h1 className="text-2xl font-bold mt-1">{bundle.title}</h1>
       </div>
 

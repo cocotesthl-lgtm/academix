@@ -81,7 +81,7 @@ export async function createVipPackAction(formData: FormData): Promise<void> {
   }).select('id').single();
 
   revalidatePath('/owner/vip');
-  if (data?.id) redirect(`/owner/vip/${data.id}`);
+  if (data?.id) redirect(`/vip/${data.id}`);
 }
 
 export async function updateVipPackMetaAction(formData: FormData): Promise<void> {

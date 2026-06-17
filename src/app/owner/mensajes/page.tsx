@@ -94,7 +94,7 @@ export default async function MessagesPage({ searchParams }: {
                   return (
                     <li key={t.id}>
                       <Link
-                        href={`/owner/mensajes?t=${t.id}`}
+                        href={`/mensajes?t=${t.id}`}
                         className={`block px-4 py-3 border-b border-white/5 hover:bg-white/5 transition ${isOpen ? 'bg-white/5' : ''}`}
                       >
                         <div className="flex items-center justify-between gap-2">

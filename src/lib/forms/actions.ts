@@ -53,7 +53,7 @@ export async function createFormAction(formData: FormData): Promise<void> {
   ]);
 
   revalidatePath('/owner/forms');
-  redirect(`/owner/forms/${id}`);
+  redirect(`/forms/${id}`);
 }
 
 export async function deleteFormAction(formData: FormData): Promise<void> {

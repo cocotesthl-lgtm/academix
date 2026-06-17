@@ -98,7 +98,7 @@ export default async function BundlesPage() {
                   </span>
                 </div>
                 <div className="p-4">
-                  <Link href={`/owner/bundles/${b.id}`} className="font-semibold hover:underline block">
+                  <Link href={`/bundles/${b.id}`} className="font-semibold hover:underline block">
                     {b.title}
                   </Link>
                   <div className="text-xs text-white/55 mt-1">
@@ -110,7 +110,7 @@ export default async function BundlesPage() {
                     )}
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <Link href={`/owner/bundles/${b.id}`}
+                    <Link href={`/bundles/${b.id}`}
                       className="text-xs px-3 py-1.5 rounded border border-white/15 hover:bg-white/5 flex-1 text-center">
                       Editar items
                     </Link>
