@@ -1,5 +1,7 @@
 import { CouponInput } from './CouponInput';
 import { VipItemInteractions, type VipComment } from './VipItemInteractions';
+import { FanChatWidget, type FanChatMessage } from './FanChatWidget';
+import { TipButton } from './TipButton';
 import type { CheckoutConfig } from '@/lib/checkout/types';
 
 export type VipMediaItem = {
@@ -42,9 +44,14 @@ export function VipPackLanding({
   userLikedItems,
   commentsByItem,
   currentUserId,
-  ownerUserIds
+  ownerUserIds,
+  tenantId,
+  tenantName,
+  chatMessages,
+  chatUnread
 }: {
   tenantId: string;
+  tenantName: string;
   course: CoursePackDetail;
   mediaItems: VipMediaItem[];
   isUnlocked: boolean;
@@ -56,6 +63,8 @@ export function VipPackLanding({
   commentsByItem?: Record<string, VipComment[]>;
   currentUserId?: string | null;
   ownerUserIds?: string[];
+  chatMessages?: FanChatMessage[];
+  chatUnread?: number;
 }) {
   const likedSet = new Set(userLikedItems ?? []);
   const previewCover = course.preview_url || course.cover_url;
@@ -138,13 +147,21 @@ export function VipPackLanding({
         {/* Sticky CTA panel */}
         <aside className="md:sticky md:top-6 self-start space-y-4">
           {isUnlocked ? (
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5">
-              <div className="text-3xl mb-2">✅</div>
-              <h3 className="font-bold">Ya tenés acceso</h3>
-              <p className="text-sm text-white/70 mt-1">
-                Disfrutá del contenido completo. El acceso es permanente.
-              </p>
-            </div>
+            <>
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+                <div className="text-3xl mb-2">✅</div>
+                <h3 className="font-bold">Ya tenés acceso</h3>
+                <p className="text-sm text-white/70 mt-1">
+                  Disfrutá del contenido completo. El acceso es permanente.
+                </p>
+              </div>
+              <TipButton
+                tenantId={tenantId}
+                courseId={course.id}
+                buyerEmail={buyerEmail}
+                primary={primary}
+              />
+            </>
           ) : (
             <div className="rounded-xl border border-white/15 bg-white/[0.03] p-5 space-y-4">
               <div>
@@ -178,6 +195,16 @@ export function VipPackLanding({
           )}
         </aside>
       </div>
+
+      {isUnlocked && currentUserId && (
+        <FanChatWidget
+          tenantId={tenantId}
+          tenantName={tenantName}
+          initialMessages={chatMessages ?? []}
+          unreadForFan={chatUnread ?? 0}
+          primary={primary}
+        />
+      )}
     </div>
   );
 }

@@ -28,6 +28,7 @@ const NAV: NavEntry[] = [
       items: [
         { label: 'Cursos', href: '/courses' },
         { label: 'Contenido VIP', href: '/vip' },
+        { label: 'Bundles', href: '/bundles' },
         { label: 'Categorías', href: '/categories' }
       ]
     }
@@ -52,6 +53,7 @@ const NAV: NavEntry[] = [
         { label: 'CRM (leads)', href: '/crm' },
         { label: 'Formularios', href: '/forms' },
         { label: 'Equipo', href: '/equipo' },
+        { label: 'Mensajes', href: '/mensajes' },
         { label: 'Ventas', href: '/ventas' },
         { label: 'Suscripciones', href: '/suscripciones' },
         { label: 'Instructores', href: '/instructors' },

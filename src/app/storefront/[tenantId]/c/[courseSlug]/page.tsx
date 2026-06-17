@@ -429,9 +429,39 @@ export default async function CourseDetailPage({
         ownerUserIds = ((owners ?? []) as Array<{ user_id: string }>).map((m) => m.user_id);
       } catch { /* ignore */ }
 
+      // Chat fan: si está enrolled, cargar mensajes del thread con el owner
+      const chatMessages: Array<{ id: string; sender_kind: 'fan' | 'owner'; body: string; created_at: string }> = [];
+      let chatUnread = 0;
+      if (isUnlocked && currentUser) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: thread } = await (svc.from('dm_threads') as any)
+            .select('id, unread_for_fan').eq('tenant_id', tenantId).eq('fan_user_id', currentUser.id)
+            .maybeSingle();
+          if (thread?.id) {
+            chatUnread = (thread.unread_for_fan as number) ?? 0;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: msgs } = await (svc.from('dm_messages') as any)
+              .select('id, sender_kind, body, created_at')
+              .eq('thread_id', thread.id).order('created_at', { ascending: true }).limit(100);
+            for (const m of (msgs ?? []) as Array<{ id: string; sender_kind: string; body: string; created_at: string }>) {
+              if (m.sender_kind === 'fan' || m.sender_kind === 'owner') {
+                chatMessages.push({ id: m.id, sender_kind: m.sender_kind, body: m.body, created_at: m.created_at });
+              }
+            }
+            // Mark fan messages as read
+            if (chatUnread > 0) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (svc.from('dm_threads') as any).update({ unread_for_fan: 0 }).eq('id', thread.id);
+            }
+          }
+        } catch { /* migration 0033 falta */ }
+      }
+
       return (
         <VipPackLanding
           tenantId={tenantId}
+          tenantName={tenant?.name ?? 'Creador'}
           course={{ ...course, pack_description: ptData.pack_description, preview_url: ptData.preview_url }}
           mediaItems={items}
           isUnlocked={isUnlocked}
@@ -443,6 +473,8 @@ export default async function CourseDetailPage({
           commentsByItem={commentsByItem}
           currentUserId={currentUser?.id ?? null}
           ownerUserIds={ownerUserIds}
+          chatMessages={chatMessages}
+          chatUnread={chatUnread}
         />
       );
     }

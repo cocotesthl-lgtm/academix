@@ -251,6 +251,9 @@ export default async function OwnerDashboard() {
         />
       </div>
 
+      {/* ─── Métricas VIP / Creator ─── */}
+      <VipMetrics tenantId={tenant.id} />
+
       <div className="grid lg:grid-cols-2 gap-4">
         {/* ─── Próximos eventos (hasta 3) ─── */}
         {upcomingEvents.length > 0 && (
@@ -387,6 +390,94 @@ export default async function OwnerDashboard() {
           <Link href="/soporte" className="text-amber-200 hover:text-amber-100 font-medium">Ver →</Link>
         </div>
       )}
+    </div>
+  );
+}
+
+async function VipMetrics({ tenantId }: { tenantId: string }) {
+  const svc = getServiceClient();
+  type PackRow = { id: string; title: string; price_cents: number; pricing_mode: string | null };
+  let packs: PackRow[] = [];
+  let activeSubs = 0;
+  let totalEnrollments = 0;
+  let mrrCents = 0;
+  let tips30Cents = 0;
+  let tipsCount = 0;
+  let migrationMissing = false;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (svc.from('courses') as any)
+      .select('id, title, price_cents, pricing_mode')
+      .eq('tenant_id', tenantId)
+      .eq('product_type', 'vip_pack');
+    if (error?.message?.includes('does not exist') || error?.message?.includes('column')) migrationMissing = true;
+    packs = (data ?? []) as PackRow[];
+  } catch { migrationMissing = true; }
+
+  if (!migrationMissing && packs.length > 0) {
+    const packIds = packs.map((p) => p.id);
+    // Total enrollments en cualquier pack VIP
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count: enrCount } = await (svc.from('enrollments') as any)
+      .select('id', { count: 'exact', head: true })
+      .in('course_id', packIds);
+    totalEnrollments = enrCount ?? 0;
+
+    // Suscripciones activas (mp_subscriptions con status='active')
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: subs } = await (svc.from('mp_subscriptions') as any)
+        .select('course_id, amount_cents, status, frequency_type')
+        .in('course_id', packIds).eq('status', 'authorized');
+      const subRows = (subs ?? []) as Array<{ course_id: string; amount_cents: number; frequency_type: string | null }>;
+      activeSubs = subRows.length;
+      for (const s of subRows) {
+        // Normalizamos a mensual para el MRR
+        if (s.frequency_type === 'yearly') mrrCents += Math.round(s.amount_cents / 12);
+        else mrrCents += s.amount_cents;
+      }
+    } catch { /* tabla mp_subscriptions no existe — skip */ }
+
+    // Tips últimos 30 días
+    try {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: tipsRaw } = await (svc.from('tips') as any)
+        .select('amount_cents').eq('tenant_id', tenantId).eq('status', 'paid')
+        .gte('created_at', since);
+      const tipsList = (tipsRaw ?? []) as Array<{ amount_cents: number }>;
+      tipsCount = tipsList.length;
+      tips30Cents = tipsList.reduce((s, t) => s + (t.amount_cents || 0), 0);
+    } catch { /* migration 0033 falta — skip */ }
+  }
+
+  if (migrationMissing || packs.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold flex items-center gap-2">
+          <span className="text-base">🔒</span> Métricas de Contenido VIP
+        </h2>
+        <Link href="/owner/vip" className="text-xs text-fuchsia-300 hover:text-fuchsia-200">Gestionar packs →</Link>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <MetricCell label="Packs activos" value={String(packs.length)} />
+        <MetricCell label="Compras totales" value={String(totalEnrollments)} />
+        <MetricCell label="Suscripciones activas" value={String(activeSubs)} sub={activeSubs > 0 ? `MRR $ ${ars(mrrCents)}` : undefined} />
+        <MetricCell label="Tips (30d)" value={`$ ${ars(tips30Cents)}`} sub={`${tipsCount} propinas`} />
+      </div>
+    </div>
+  );
+}
+
+function MetricCell({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-lg bg-black/30 border border-white/10 p-3">
+      <div className="text-[10px] uppercase tracking-wider text-white/45 font-semibold">{label}</div>
+      <div className="text-xl font-bold mt-1 text-white">{value}</div>
+      {sub && <div className="text-[10px] text-white/55 mt-0.5">{sub}</div>}
     </div>
   );
 }

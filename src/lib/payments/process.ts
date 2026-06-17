@@ -46,6 +46,24 @@ export async function processMpPayment(opts: {
   const buyerEmail = payment.payer?.email ?? null;
   const courseIdFromMeta = (payment.metadata?.course_id as string | undefined) ?? null;
 
+  // ─── Branch: si external_reference es "tip:<id>", procesar como tip y salir.
+  if (payment.external_reference && String(payment.external_reference).startsWith('tip:')) {
+    const tipId = String(payment.external_reference).slice(4);
+    const status = payment.status === 'approved' ? 'paid'
+      : payment.status === 'refunded' ? 'refunded'
+      : payment.status === 'pending' ? 'pending'
+      : 'failed';
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('tips') as any).update({
+        status,
+        external_id: String(payment.id),
+        paid_at: status === 'paid' ? new Date().toISOString() : null
+      }).eq('id', tipId).eq('tenant_id', opts.tenantId);
+    } catch { /* ignore */ }
+    return { ok: true, saleId: null, reused: false };
+  }
+
   // Resolver curso del metadata o del external_reference (formato courseId::userId::affLinkId)
   let courseId: string | null = courseIdFromMeta;
   if (!courseId && payment.external_reference) {

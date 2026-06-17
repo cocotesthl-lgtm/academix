@@ -674,6 +674,85 @@ create index if not exists idx_vip_likes_item on public.vip_likes(course_id, ite
 alter table public.vip_comments enable row level security;
 alter table public.vip_likes    enable row level security;
 
+-- ── 0033 DMs + Tips + Bundles ───────────────────────────────
+create table if not exists public.dm_threads (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  fan_user_id uuid not null references auth.users(id) on delete cascade,
+  last_message_at timestamptz not null default now(),
+  last_message_preview text,
+  unread_for_owner int not null default 0,
+  unread_for_fan int not null default 0,
+  created_at timestamptz not null default now(),
+  unique (tenant_id, fan_user_id)
+);
+create index if not exists idx_dm_threads_tenant_last on public.dm_threads(tenant_id, last_message_at desc);
+
+create table if not exists public.dm_messages (
+  id uuid primary key default gen_random_uuid(),
+  thread_id uuid not null references public.dm_threads(id) on delete cascade,
+  sender_user_id uuid not null references auth.users(id) on delete cascade,
+  sender_kind text not null,
+  body text not null,
+  attachment_url text,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+do $$ begin
+  alter table public.dm_messages add constraint dm_messages_kind_check
+    check (sender_kind in ('fan','owner'));
+exception when duplicate_object then null; end $$;
+create index if not exists idx_dm_messages_thread on public.dm_messages(thread_id, created_at);
+
+create table if not exists public.tips (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  course_id uuid references public.courses(id) on delete set null,
+  fan_user_id uuid not null references auth.users(id) on delete cascade,
+  amount_cents bigint not null,
+  currency text not null default 'ARS',
+  message text,
+  status text not null default 'pending',
+  external_provider text default 'mercadopago',
+  external_id text,
+  paid_at timestamptz,
+  created_at timestamptz not null default now()
+);
+do $$ begin
+  alter table public.tips add constraint tips_status_check
+    check (status in ('pending','paid','failed','refunded'));
+exception when duplicate_object then null; end $$;
+create index if not exists idx_tips_tenant on public.tips(tenant_id, created_at desc);
+
+create table if not exists public.bundles (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  slug text not null,
+  title text not null,
+  description text,
+  cover_url text,
+  price_cents bigint not null default 0,
+  currency text not null default 'ARS',
+  status text not null default 'draft',
+  list_price_cents bigint default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (tenant_id, slug)
+);
+create table if not exists public.bundle_items (
+  id uuid primary key default gen_random_uuid(),
+  bundle_id uuid not null references public.bundles(id) on delete cascade,
+  course_id uuid not null references public.courses(id) on delete cascade,
+  position int not null default 0,
+  unique (bundle_id, course_id)
+);
+
+alter table public.dm_threads  enable row level security;
+alter table public.dm_messages enable row level security;
+alter table public.tips        enable row level security;
+alter table public.bundles     enable row level security;
+alter table public.bundle_items enable row level security;
+
 -- ── 0026 Public listing + custom domains ─────────────────────
 alter table public.tenants
   add column if not exists public_listing boolean not null default true,
