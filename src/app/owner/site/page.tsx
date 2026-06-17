@@ -36,7 +36,8 @@ import {
 } from "@/components/owner/site/SectionEditors";
 import { ColorAutoSave } from "@/components/owner/site/ColorAutoSave";
 import { SectionStyleEditor } from "@/components/owner/site/SectionStyleEditor";
-import { HrefTargetsProvider, buildCourseTargets } from "@/components/owner/site/HrefSelect";
+import { HrefTargetsProvider } from "@/components/owner/site/HrefSelect";
+import { buildCourseTargets } from "@/components/owner/site/href-targets";
 
 export const dynamic = "force-dynamic";
 

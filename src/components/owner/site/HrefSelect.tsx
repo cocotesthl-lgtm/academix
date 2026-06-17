@@ -15,26 +15,15 @@ import { useState, useEffect, createContext, useContext, type ReactNode } from '
  * Cada curso aparece como "/c/<slug>" y "/c/<slug>#comprar" para el checkout.
  */
 
-export type HrefTarget = { value: string; label: string; group: string };
+// HrefTarget type re-exportado desde el módulo plano para que server components
+// también puedan tiparlo sin importar este archivo 'use client'.
+export type { HrefTarget } from './href-targets';
+import type { HrefTarget } from './href-targets';
 
 const HrefTargetsContext = createContext<HrefTarget[]>([]);
 
 export function HrefTargetsProvider({ targets, children }: { targets: HrefTarget[]; children: ReactNode }) {
   return <HrefTargetsContext.Provider value={targets}>{children}</HrefTargetsContext.Provider>;
-}
-
-/**
- * Helper para que el server-side genere los targets dinámicos del tenant
- * (cursos + sus checkouts). Llamalo en el server component que carga la
- * página del builder y pasá el resultado al Provider.
- */
-export function buildCourseTargets(courses: Array<{ slug: string; title: string }>): HrefTarget[] {
-  const out: HrefTarget[] = [];
-  for (const c of courses) {
-    out.push({ value: `/c/${c.slug}`, label: `📚 ${c.title}`, group: 'Cursos' });
-    out.push({ value: `/c/${c.slug}#comprar`, label: `🛒 Checkout — ${c.title}`, group: 'Checkout / Compra' });
-  }
-  return out;
 }
 
 const COMMON_TARGETS: Array<{ value: string; label: string; group: string }> = [
