@@ -86,6 +86,18 @@ export default async function SiteBuilderPage() {
     .order("created_at", { ascending: false });
   const courseTargets = buildCourseTargets((ownerCourses ?? []) as Array<{ slug: string; title: string }>);
 
+  // Forms disponibles del tenant (para el dropdown del hero media_type='form').
+  // Defensivo: si la migración 0030 aún no corrió, fallback silencioso a [].
+  let availableForms: Array<{ id: string; title: string }> = [];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: fr } = await (svc.from('forms') as any)
+      .select('id, title')
+      .eq('tenant_id', tenant.id)
+      .order('created_at', { ascending: false });
+    availableForms = (fr ?? []) as Array<{ id: string; title: string }>;
+  } catch { /* migración pendiente */ }
+
   // CSS para que las previews del editor reflejen los colores reales.
   // Cada Section envuelve sus children con data-sec-editor={key}.
   // Si el owner picó text_color o bg_color, esos ganan en el preview también.
@@ -229,6 +241,10 @@ export default async function SiteBuilderPage() {
                 primary={primary}
                 layout={cfg.sections.hero.layout}
                 imageUrl={cfg.sections.hero.image_url}
+                mediaType={cfg.sections.hero.media_type ?? 'image'}
+                videoUrl={cfg.sections.hero.video_url ?? ''}
+                formId={cfg.sections.hero.form_id ?? ''}
+                availableForms={availableForms}
               />
             )}
             {key === 'trusted_by' && (

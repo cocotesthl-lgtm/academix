@@ -218,6 +218,12 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
   if (formData.has('marquee')) section.marquee = formData.get('marquee') === 'on';
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
+  if (formData.has('media_type')) {
+    const v = String(formData.get('media_type') ?? 'image');
+    section.media_type = ['image','video','carousel','form'].includes(v) ? v : 'image';
+  }
+  if (formData.has('video_url')) section.video_url = String(formData.get('video_url') ?? '').slice(0, 500);
+  if (formData.has('form_id')) section.form_id = String(formData.get('form_id') ?? '').slice(0, 50);
   if (formData.has('provider')) section.provider = String(formData.get('provider') ?? 'youtube');
   if (formData.has('display_mode')) section.display_mode = String(formData.get('display_mode') ?? 'single');
   if (formData.has('image_pos')) section.image_pos = String(formData.get('image_pos') ?? 'right');

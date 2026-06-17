@@ -226,11 +226,21 @@ type HeroValues = {
   caption: string;
 };
 
-export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }: {
+export function HeroEditor({
+  initial, fallbackTitle, primary, layout, imageUrl,
+  mediaType, videoUrl, formId, availableForms
+}: {
   initial: HeroValues; fallbackTitle: string; primary: string; layout: HeroLayout; imageUrl: string | null;
+  mediaType?: 'image' | 'video' | 'carousel' | 'form';
+  videoUrl?: string;
+  formId?: string;
+  availableForms?: Array<{ id: string; title: string }>;
 }) {
   const [v, setV] = useState(initial);
   const [layoutSel, setLayoutSel] = useState<HeroLayout>(layout);
+  const [mt, setMt] = useState<'image' | 'video' | 'carousel' | 'form'>(mediaType ?? 'image');
+  const [vUrl, setVUrl] = useState(videoUrl ?? '');
+  const [fId, setFId] = useState(formId ?? '');
   const { pending, saved, fire } = useSave('hero');
   const displayTitle = v.title || fallbackTitle;
 
@@ -266,16 +276,95 @@ export function HeroEditor({ initial, fallbackTitle, primary, layout, imageUrl }
             <HrefField label="Destino (href)" value={v.cta_href_2} onChange={(x) => setV({ ...v, cta_href_2: x })} />
           </div>
           <RichTextField label="Caption (texto chico debajo de los CTAs)" value={v.caption} onChange={(x) => setV({ ...v, caption: x })} />
-          <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, layout: layoutSel })} />
+          <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, layout: layoutSel, media_type: mt, video_url: vUrl, form_id: fId })} />
 
-          {(layoutSel === 'split' || layoutSel === 'gallery') && (
+          {layoutSel === 'split' && (
+            <div className="pt-3 mt-3 border-t border-white/5 space-y-3">
+              <div>
+                <label className="block text-xs text-white/60 mb-1.5">Qué mostrar al lado del texto</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {([
+                    { v: 'image',    label: '🖼 Imagen' },
+                    { v: 'video',    label: '🎬 Video' },
+                    { v: 'carousel', label: '🎞 Carrusel' },
+                    { v: 'form',     label: '📝 Formulario' }
+                  ] as { v: typeof mt; label: string }[]).map((opt) => (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setMt(opt.v)}
+                      className={`text-[10px] px-2 py-2 rounded border transition ${
+                        mt === opt.v ? 'border-white bg-white/10' : 'border-white/15 hover:bg-white/5'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-white/40 mt-1.5">Acordate de tocar Guardar para aplicar el cambio.</p>
+              </div>
+
+              {mt === 'image' && (
+                <UrlPicker
+                  label="URL de la imagen del Hero"
+                  section="hero"
+                  field="image_url"
+                  value={imageUrl}
+                  hint="Recomendado 1200×900px (4:3) — imagen al costado del texto"
+                />
+              )}
+              {mt === 'video' && (
+                <div>
+                  <label className="text-xs text-white/60 block mb-1">URL del video (YouTube o Google Drive)</label>
+                  <input
+                    type="url"
+                    value={vUrl}
+                    onChange={(e) => setVUrl(e.target.value)}
+                    placeholder="https://youtu.be/... o https://drive.google.com/file/d/..."
+                    className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono"
+                  />
+                </div>
+              )}
+              {mt === 'carousel' && (
+                <div className="text-xs text-white/55">
+                  📐 Carrusel de imágenes: por ahora se cargan automáticamente desde la sección{' '}
+                  <code className="text-white/80">🖼️ Galería</code> si está habilitada.
+                  El editor inline de carrusel viene en próxima fase.
+                </div>
+              )}
+              {mt === 'form' && (
+                <div>
+                  <label className="text-xs text-white/60 block mb-1">Formulario a mostrar</label>
+                  {(availableForms ?? []).length === 0 ? (
+                    <div className="rounded border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-200">
+                      Todavía no creaste ningún formulario.{' '}
+                      <a href="/owner/forms" className="underline">Crear uno ahora →</a>
+                    </div>
+                  ) : (
+                    <select
+                      value={fId}
+                      onChange={(e) => setFId(e.target.value)}
+                      className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
+                    >
+                      <option value="">— elegir formulario —</option>
+                      {(availableForms ?? []).map((f) => (
+                        <option key={f.id} value={f.id}>{f.title}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {layoutSel === 'gallery' && (
             <div className="pt-3 mt-3 border-t border-white/5">
               <UrlPicker
                 label="URL de la imagen del Hero"
                 section="hero"
                 field="image_url"
                 value={imageUrl}
-                hint={layoutSel === 'split' ? 'Recomendado 1200×900px (4:3) — imagen al costado del texto' : 'Recomendado 2400×1200px — banner ancho full-width Amazon-style'}
+                hint="Recomendado 2400×1200px — banner ancho full-width Amazon-style"
               />
             </div>
           )}

@@ -78,6 +78,9 @@ export type CustomImagePos = 'none' | 'left' | 'right' | 'top';
 
 export type HeroLayout = 'centered' | 'split' | 'gallery';
 
+/** Para layout='split': qué se muestra al lado del texto */
+export type HeroMediaType = 'image' | 'video' | 'carousel' | 'form';
+
 export type SectionKey =
   | 'hero'
   | 'trusted_by'
@@ -133,7 +136,13 @@ type SectionBase = {
 
 export type SiteConfig = {
   sections: {
-    hero:         SectionBase & { layout: HeroLayout; eyebrow: string; title: string | null; subtitle: string; cta_label: string; cta_href: string; cta_label_2: string; cta_href_2: string; caption: string; image_url: string | null; gallery_urls?: string[] };
+    hero:         SectionBase & { layout: HeroLayout; eyebrow: string; title: string | null; subtitle: string; cta_label: string; cta_href: string; cta_label_2: string; cta_href_2: string; caption: string; image_url: string | null; gallery_urls?: string[];
+      // Nuevo: media_type para layout='split' (qué va al lado del texto)
+      media_type?: HeroMediaType;        // default 'image'
+      video_url?: string;                 // youtube/drive URL si media_type='video'
+      carousel_urls?: string[];           // imágenes si media_type='carousel'
+      form_id?: string;                   // id del formulario si media_type='form'
+    };
     trusted_by:   SectionBase & { title: string; items: LogoItem[]; grayscale: boolean; marquee: boolean };
     about:        SectionBase & { title: string; body: string; image_url: string | null };
     instructor:   SectionBase & { title: string; display_mode: InstructorDisplay; name: string; bio: string; photo_url: string | null; credentials: string; items: InstructorItem[] };

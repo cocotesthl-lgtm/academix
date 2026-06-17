@@ -6,6 +6,7 @@ import { sectionBgStyle, textEffectStyle, buttonStyle, buttonsVisible } from "@/
 import { AnimatedCounter } from "@/components/storefront/AnimatedCounter";
 import { FadeIn } from "@/components/storefront/FadeIn";
 import { CatalogFilter } from "@/components/storefront/CatalogFilter";
+import { FormRenderer, type FormDef, type FormFieldDef } from "@/components/storefront/FormRenderer";
 
 /**
  * Render de un string que puede ser texto plano (legacy) o HTML del
@@ -84,6 +85,29 @@ export default async function StorefrontHome({
 
   const cfg = mergeConfig(tenantRow?.site_config);
   const allCourses = (coursesRaw ?? []) as PublicCourse[];
+
+  // Cargar el form del hero si media_type='form' y form_id está set.
+  // Defensivo: si la migración no corrió, fallback silencioso a undefined.
+  let heroForm: FormDef | undefined;
+  if (tenant && cfg.sections.hero.media_type === 'form' && cfg.sections.hero.form_id) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: fRow } = await (svc.from('forms') as any)
+        .select('id, title, description, submit_label')
+        .eq('id', cfg.sections.hero.form_id)
+        .eq('tenant_id', tenant.id)
+        .maybeSingle();
+      const heroFormRow = fRow as { id: string; title: string; description: string | null; submit_label: string | null } | null;
+      if (heroFormRow) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: ff } = await (svc.from('form_fields') as any)
+          .select('id, position, field_type, name, label, placeholder, required, options, help_text')
+          .eq('form_id', heroFormRow.id)
+          .order('position');
+        heroForm = { ...heroFormRow, fields: (ff ?? []) as FormFieldDef[] };
+      }
+    } catch { /* migración no corrida — render sin form */ }
+  }
   const categories = (catsRaw ?? []) as Category[];
   const catById = new Map(categories.map((c) => [c.id, c]));
   const selectedCat = selectedCatSlug ? categories.find((c) => c.slug === selectedCatSlug) ?? null : null;
@@ -232,19 +256,7 @@ export default async function StorefrontHome({
                     </FadeIn>
 
                     <FadeIn delay={150}>
-                      {h.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={h.image_url} alt="" className="rounded-2xl w-full max-h-[480px] object-cover shadow-2xl" />
-                      ) : (
-                        /* Sin URL: placeholder discreto. El owner debe pegar una URL en el builder. */
-                        <div className="rounded-2xl w-full aspect-[4/3] flex items-center justify-center border-2 border-dashed border-black/15 bg-black/5">
-                          <div className="text-center px-6">
-                            <div className="text-5xl opacity-30">🖼️</div>
-                            <p className="mt-3 text-sm text-black/40">Pegá la URL de tu imagen hero en el builder</p>
-                            <p className="mt-1 text-xs text-black/30">Recomendado 1200×900px</p>
-                          </div>
-                        </div>
-                      )}
+                      <HeroMedia h={h} primary={primary} heroForm={heroForm} />
                     </FadeIn>
                   </div>
                 </section>
@@ -1035,6 +1047,73 @@ function CountdownDisplay({ endsAt }: { endsAt: string }) {
           <div className="text-xs opacity-70 mt-1">{b.l}</div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ─── HeroMedia: lo que aparece al lado del texto en layout='split' ─── */
+
+type HeroData = {
+  image_url: string | null;
+  media_type?: 'image' | 'video' | 'carousel' | 'form';
+  video_url?: string;
+  carousel_urls?: string[];
+  form_id?: string;
+};
+
+function HeroMedia({ h, primary, heroForm }: { h: HeroData; primary: string; heroForm?: FormDef }) {
+  const mt = h.media_type ?? 'image';
+
+  if (mt === 'video' && h.video_url) {
+    // Extracción simple de id YouTube / Drive
+    const yt = h.video_url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{8,})/);
+    const drv = h.video_url.match(/\/file\/d\/([\w-]{15,})/);
+    const src = yt ? `https://www.youtube.com/embed/${yt[1]}`
+      : drv ? `https://drive.google.com/file/d/${drv[1]}/preview`
+      : h.video_url;
+    return (
+      <div className="rounded-2xl overflow-hidden shadow-2xl aspect-video">
+        <iframe src={src} className="w-full h-full" allowFullScreen title="Hero video" />
+      </div>
+    );
+  }
+
+  if (mt === 'carousel' && Array.isArray(h.carousel_urls) && h.carousel_urls.length > 0) {
+    return (
+      <div className="rounded-2xl overflow-hidden shadow-2xl relative aspect-[4/3] bg-gray-100">
+        <div className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth">
+          {h.carousel_urls.map((url, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={i} src={url} alt="" className="w-full h-full flex-shrink-0 object-cover snap-center" />
+          ))}
+        </div>
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+          {h.carousel_urls.map((_, i) => (
+            <span key={i} className="w-1.5 h-1.5 rounded-full bg-white/70" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (mt === 'form' && heroForm) {
+    return <FormRenderer form={heroForm} primary={primary} />;
+  }
+
+  // Default: image
+  if (h.image_url) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={h.image_url} alt="" className="rounded-2xl w-full max-h-[480px] object-cover shadow-2xl" />
+    );
+  }
+  return (
+    <div className="rounded-2xl w-full aspect-[4/3] flex items-center justify-center border-2 border-dashed border-black/15 bg-black/5">
+      <div className="text-center px-6">
+        <div className="text-5xl opacity-30">🖼️</div>
+        <p className="mt-3 text-sm text-black/40">Pegá la URL de tu imagen hero en el builder</p>
+        <p className="mt-1 text-xs text-black/30">Recomendado 1200×900px</p>
+      </div>
     </div>
   );
 }

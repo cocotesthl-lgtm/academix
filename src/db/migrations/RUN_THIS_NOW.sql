@@ -512,6 +512,129 @@ do $$ begin
     check (ribbon_tone in ('featured', 'sale', 'urgent', 'new', 'info'));
 exception when duplicate_object then null; end $$;
 
+-- ── 0030 Forms + CRM (MVP) ────────────────────────────────────
+create table if not exists public.forms (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  slug text not null,
+  title text not null,
+  description text,
+  success_message text default '¡Gracias! Recibimos tu mensaje.',
+  redirect_url text,
+  submit_label text default 'Enviar',
+  default_pipeline_id uuid,
+  default_stage_id uuid,
+  notify_email text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (tenant_id, slug)
+);
+create index if not exists idx_forms_tenant on public.forms(tenant_id);
+
+create table if not exists public.form_fields (
+  id uuid primary key default gen_random_uuid(),
+  form_id uuid not null references public.forms(id) on delete cascade,
+  position int not null default 0,
+  field_type text not null,
+  name text not null,
+  label text not null,
+  placeholder text,
+  required boolean not null default false,
+  options jsonb,
+  help_text text,
+  created_at timestamptz not null default now(),
+  unique (form_id, name)
+);
+do $$ begin
+  alter table public.form_fields add constraint form_fields_type_check
+    check (field_type in ('text','email','phone','textarea','select','checkbox','number'));
+exception when duplicate_object then null; end $$;
+create index if not exists idx_form_fields_form on public.form_fields(form_id, position);
+
+create table if not exists public.form_submissions (
+  id uuid primary key default gen_random_uuid(),
+  form_id uuid not null references public.forms(id) on delete cascade,
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  submitter_email text,
+  submitter_name text,
+  submitter_phone text,
+  source_url text,
+  user_agent text,
+  ip_hash text,
+  lead_id uuid,
+  submitted_at timestamptz not null default now()
+);
+create index if not exists idx_form_submissions_form on public.form_submissions(form_id, submitted_at desc);
+create index if not exists idx_form_submissions_tenant on public.form_submissions(tenant_id, submitted_at desc);
+
+create table if not exists public.crm_pipelines (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  name text not null,
+  description text,
+  is_default boolean not null default false,
+  position int not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_crm_pipelines_tenant on public.crm_pipelines(tenant_id);
+
+create table if not exists public.crm_stages (
+  id uuid primary key default gen_random_uuid(),
+  pipeline_id uuid not null references public.crm_pipelines(id) on delete cascade,
+  name text not null,
+  color text default '#a855f7',
+  position int not null default 0,
+  is_won boolean not null default false,
+  is_lost boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_crm_stages_pipeline on public.crm_stages(pipeline_id, position);
+
+create table if not exists public.crm_leads (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  pipeline_id uuid not null references public.crm_pipelines(id) on delete cascade,
+  stage_id uuid not null references public.crm_stages(id) on delete restrict,
+  name text,
+  email text,
+  phone text,
+  value_cents bigint default 0,
+  currency text default 'ARS',
+  source text default 'manual',
+  source_form_id uuid,
+  source_submission_id uuid,
+  data jsonb default '{}'::jsonb,
+  assigned_to_user_id uuid references auth.users(id) on delete set null,
+  notes text,
+  position int not null default 0,
+  archived_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_crm_leads_tenant on public.crm_leads(tenant_id);
+create index if not exists idx_crm_leads_stage on public.crm_leads(stage_id, position);
+create index if not exists idx_crm_leads_assigned on public.crm_leads(assigned_to_user_id);
+
+create table if not exists public.crm_lead_activity (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid not null references public.crm_leads(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null,
+  activity_type text not null,
+  payload jsonb,
+  comment text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_crm_lead_activity_lead on public.crm_lead_activity(lead_id, created_at desc);
+
+alter table public.forms enable row level security;
+alter table public.form_fields enable row level security;
+alter table public.form_submissions enable row level security;
+alter table public.crm_pipelines enable row level security;
+alter table public.crm_stages enable row level security;
+alter table public.crm_leads enable row level security;
+alter table public.crm_lead_activity enable row level security;
+
 -- ── 0026 Public listing + custom domains ─────────────────────
 alter table public.tenants
   add column if not exists public_listing boolean not null default true,

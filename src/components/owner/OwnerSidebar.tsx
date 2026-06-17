@@ -48,6 +48,8 @@ const NAV: NavEntry[] = [
       label: 'Personas', icon: '👥',
       items: [
         { label: 'Clientes', href: '/clientes' },
+        { label: 'CRM (leads)', href: '/crm' },
+        { label: 'Formularios', href: '/forms' },
         { label: 'Ventas', href: '/ventas' },
         { label: 'Suscripciones', href: '/suscripciones' },
         { label: 'Instructores', href: '/instructors' },
