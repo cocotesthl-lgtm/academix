@@ -241,6 +241,30 @@ export async function moveLeadAction(formData: FormData): Promise<void> {
   revalidatePath('/owner/crm');
 }
 
+/**
+ * Asigna un lead a un miembro del equipo (o lo desasigna pasando vacío).
+ * No valida que el user_id sea miembro del tenant — la UI ya filtra eso.
+ */
+export async function assignLeadAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const leadId = String(formData.get('lead_id') ?? '');
+  const userIdRaw = String(formData.get('user_id') ?? '').trim();
+  const userId = userIdRaw || null;
+  if (!leadId) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('crm_leads') as any).update({
+    assigned_to_user_id: userId,
+    updated_at: new Date().toISOString()
+  }).eq('id', leadId).eq('tenant_id', tenant.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('crm_lead_activity') as any).insert({
+    lead_id: leadId, activity_type: 'assigned',
+    payload: { user_id: userId }
+  });
+  revalidatePath('/owner/crm');
+}
+
 export async function addLeadCommentAction(formData: FormData): Promise<void> {
   await requireOwner();
   const leadId = String(formData.get('lead_id') ?? '');

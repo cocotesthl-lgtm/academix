@@ -3,8 +3,16 @@
 import { useState, useTransition } from 'react';
 import {
   createLeadAction, updateLeadAction, deleteLeadAction, moveLeadAction,
-  addStageAction, deleteStageAction, updateStageAction, addLeadCommentAction
+  addStageAction, deleteStageAction, updateStageAction, addLeadCommentAction,
+  assignLeadAction
 } from '@/lib/crm/actions';
+
+export type TeamMember = {
+  user_id: string;
+  email: string | null;
+  display_name: string | null;
+  role: string;
+};
 
 export type Stage = {
   id: string;
@@ -25,6 +33,7 @@ export type Lead = {
   currency: string | null;
   source: string | null;
   notes: string | null;
+  assigned_to_user_id: string | null;
   created_at: string;
 };
 
@@ -40,13 +49,23 @@ export function KanbanBoard({
   pipelineId,
   stages,
   leads,
-  activitiesByLead
+  activitiesByLead,
+  team,
+  currentUserId,
+  filterMode
 }: {
   pipelineId: string;
   stages: Stage[];
   leads: Lead[];
   activitiesByLead: Record<string, ActivityRow[]>;
+  team: TeamMember[];
+  currentUserId: string;
+  filterMode: 'all' | 'mine';
 }) {
+  const visibleLeads = filterMode === 'mine'
+    ? leads.filter((l) => l.assigned_to_user_id === currentUserId)
+    : leads;
+  const memberById = new Map(team.map((m) => [m.user_id, m]));
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [activeStageForAdd, setActiveStageForAdd] = useState<string | null>(null);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
@@ -55,7 +74,7 @@ export function KanbanBoard({
 
   const leadsByStage: Record<string, Lead[]> = {};
   for (const s of stages) leadsByStage[s.id] = [];
-  for (const l of leads) {
+  for (const l of visibleLeads) {
     if (leadsByStage[l.stage_id]) leadsByStage[l.stage_id].push(l);
   }
 
@@ -77,7 +96,7 @@ export function KanbanBoard({
   function onDrop(e: React.DragEvent, stageId: string) {
     e.preventDefault();
     if (!draggingId) return;
-    const lead = leads.find((l) => l.id === draggingId);
+    const lead = visibleLeads.find((l) => l.id === draggingId);
     setDraggingId(null);
     if (!lead || lead.stage_id === stageId) return;
     start(async () => {
@@ -95,6 +114,23 @@ export function KanbanBoard({
 
   const openLead = openLeadId ? leads.find((l) => l.id === openLeadId) ?? null : null;
   const openLeadActivities = openLeadId ? (activitiesByLead[openLeadId] ?? []) : [];
+
+  function avatarFor(userId: string | null) {
+    if (!userId) return null;
+    const m = memberById.get(userId);
+    if (!m) return null;
+    const initial = (m.display_name || m.email || '?').slice(0, 1).toUpperCase();
+    const isMe = userId === currentUserId;
+    return (
+      <span
+        className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold ${isMe ? 'ring-2 ring-emerald-400' : ''}`}
+        style={{ background: '#a855f7', color: 'white' }}
+        title={m.display_name || m.email || ''}
+      >
+        {initial}
+      </span>
+    );
+  }
 
   return (
     <>
@@ -170,7 +206,10 @@ export function KanbanBoard({
                       {fmt(lead.value_cents, lead.currency) ? (
                         <span className="text-[11px] font-semibold text-emerald-300">{fmt(lead.value_cents, lead.currency)}</span>
                       ) : <span />}
-                      <span className="text-[9px] text-white/40 uppercase">{lead.source}</span>
+                      <div className="flex items-center gap-1.5">
+                        {avatarFor(lead.assigned_to_user_id)}
+                        <span className="text-[9px] text-white/40 uppercase">{lead.source}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -210,6 +249,8 @@ export function KanbanBoard({
           lead={openLead}
           activities={openLeadActivities}
           stages={stages}
+          team={team}
+          currentUserId={currentUserId}
           onClose={() => setOpenLeadId(null)}
         />
       )}
@@ -352,8 +393,10 @@ function AddStageColumn({ pipelineId }: { pipelineId: string }) {
   );
 }
 
-function LeadDetailModal({ lead, activities, stages, onClose }: {
-  lead: Lead; activities: ActivityRow[]; stages: Stage[]; onClose: () => void;
+function LeadDetailModal({ lead, activities, stages, team, currentUserId, onClose }: {
+  lead: Lead; activities: ActivityRow[]; stages: Stage[];
+  team: TeamMember[]; currentUserId: string;
+  onClose: () => void;
 }) {
   const [pending, start] = useTransition();
   const [name, setName] = useState(lead.name ?? '');
@@ -361,9 +404,20 @@ function LeadDetailModal({ lead, activities, stages, onClose }: {
   const [phone, setPhone] = useState(lead.phone ?? '');
   const [valueCents, setValueCents] = useState(String(lead.value_cents || 0));
   const [notes, setNotes] = useState(lead.notes ?? '');
+  const [assignedTo, setAssignedTo] = useState(lead.assigned_to_user_id ?? '');
   const [comment, setComment] = useState('');
 
   const stageById = new Map(stages.map((s) => [s.id, s]));
+
+  function changeAssignment(userId: string) {
+    setAssignedTo(userId);
+    start(async () => {
+      const fd = new FormData();
+      fd.set('lead_id', lead.id);
+      fd.set('user_id', userId);
+      await assignLeadAction(fd);
+    });
+  }
 
   function save() {
     start(async () => {
@@ -424,6 +478,22 @@ function LeadDetailModal({ lead, activities, stages, onClose }: {
               <label className="block text-xs text-white/55 mb-1">Teléfono</label>
               <input value={phone} onChange={(e) => setPhone(e.target.value)}
                 className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs text-white/55 mb-1">Asignado a</label>
+              <select
+                value={assignedTo}
+                onChange={(e) => changeAssignment(e.target.value)}
+                disabled={pending}
+                className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
+              >
+                <option value="">— Sin asignar —</option>
+                {team.map((m) => (
+                  <option key={m.user_id} value={m.user_id}>
+                    {m.display_name || m.email || m.user_id}{m.user_id === currentUserId ? ' (yo)' : ''}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="col-span-2">
               <label className="block text-xs text-white/55 mb-1">Valor estimado (en centavos)</label>

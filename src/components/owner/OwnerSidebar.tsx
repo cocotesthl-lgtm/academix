@@ -50,6 +50,7 @@ const NAV: NavEntry[] = [
         { label: 'Clientes', href: '/clientes' },
         { label: 'CRM (leads)', href: '/crm' },
         { label: 'Formularios', href: '/forms' },
+        { label: 'Equipo', href: '/equipo' },
         { label: 'Ventas', href: '/ventas' },
         { label: 'Suscripciones', href: '/suscripciones' },
         { label: 'Instructores', href: '/instructors' },

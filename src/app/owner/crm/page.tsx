@@ -2,18 +2,45 @@ import Link from 'next/link';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { ensureDefaultPipeline, createPipelineAction, renamePipelineAction, deletePipelineAction } from '@/lib/crm/actions';
-import { KanbanBoard, type Stage, type Lead, type ActivityRow } from '@/components/owner/crm/KanbanBoard';
+import { KanbanBoard, type Stage, type Lead, type ActivityRow, type TeamMember } from '@/components/owner/crm/KanbanBoard';
 
 export const dynamic = 'force-dynamic';
 
 type Pipeline = { id: string; name: string; description: string | null; is_default: boolean };
 
 export default async function CrmPage({ searchParams }: {
-  searchParams: Promise<{ p?: string }>;
+  searchParams: Promise<{ p?: string; filter?: string }>;
 }) {
-  const { tenant } = await requireOwner();
-  const { p: selectedPipelineParam } = await searchParams;
+  const { tenant, userId } = await requireOwner();
+  const { p: selectedPipelineParam, filter } = await searchParams;
+  const filterMode: 'all' | 'mine' = filter === 'mine' ? 'mine' : 'all';
   const svc = getServiceClient();
+
+  // Equipo del tenant (owner + admin + staff)
+  type RawMember = {
+    user_id: string; role: string;
+    profiles: { email: string | null; display_name: string | null } | null;
+  };
+  let team: TeamMember[] = [];
+  try {
+    const { data: memRaw } = await svc
+      .from('memberships')
+      .select('user_id, role, profiles ( email, display_name )')
+      .eq('tenant_id', tenant.id)
+      .in('role', ['owner', 'admin', 'staff'])
+      .eq('status', 'active');
+    const dedup = new Map<string, TeamMember>();
+    for (const m of (memRaw ?? []) as unknown as RawMember[]) {
+      if (dedup.has(m.user_id)) continue;
+      dedup.set(m.user_id, {
+        user_id: m.user_id,
+        email: m.profiles?.email ?? null,
+        display_name: m.profiles?.display_name ?? null,
+        role: m.role
+      });
+    }
+    team = Array.from(dedup.values());
+  } catch { /* migration o RLS */ }
 
   let migrationMissing = false;
   let pipelines: Pipeline[] = [];
@@ -50,7 +77,7 @@ export default async function CrmPage({ searchParams }: {
     if (stages.length > 0) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const leadsRes = await (svc.from('crm_leads') as any)
-        .select('id, stage_id, name, email, phone, value_cents, currency, source, notes, created_at')
+        .select('id, stage_id, name, email, phone, value_cents, currency, source, notes, assigned_to_user_id, created_at')
         .eq('tenant_id', tenant.id)
         .eq('pipeline_id', selectedPipeline.id)
         .is('archived_at', null)
@@ -152,11 +179,25 @@ export default async function CrmPage({ searchParams }: {
             )}
           </div>
 
-          {/* Resumen */}
+          {/* Resumen + filtro mine/all */}
           {selectedPipeline && (
-            <div className="flex items-center gap-6 text-xs text-white/70">
+            <div className="flex items-center gap-6 text-xs text-white/70 flex-wrap">
               <span><strong className="text-white text-base">{totalLeads}</strong> {totalLeads === 1 ? 'lead' : 'leads'}</span>
               {totalValue > 0 && <span>Valor total: <strong className="text-emerald-300">$ {(totalValue / 100).toLocaleString('es-AR')}</strong></span>}
+              <div className="ml-auto flex gap-1 bg-white/5 rounded-full p-0.5 text-xs">
+                <Link
+                  href={`/owner/crm?p=${selectedPipeline.id}`}
+                  className={`px-3 py-1 rounded-full transition ${filterMode === 'all' ? 'bg-white text-black font-semibold' : 'text-white/65 hover:text-white'}`}
+                >
+                  Todos
+                </Link>
+                <Link
+                  href={`/owner/crm?p=${selectedPipeline.id}&filter=mine`}
+                  className={`px-3 py-1 rounded-full transition ${filterMode === 'mine' ? 'bg-white text-black font-semibold' : 'text-white/65 hover:text-white'}`}
+                >
+                  👤 Asignados a mí
+                </Link>
+              </div>
             </div>
           )}
 
@@ -170,6 +211,9 @@ export default async function CrmPage({ searchParams }: {
               stages={stages}
               leads={leads}
               activitiesByLead={activitiesByLead}
+              team={team}
+              currentUserId={userId}
+              filterMode={filterMode}
             />
           ) : selectedPipeline ? (
             <div className="rounded-xl border border-white/10 p-8 text-center text-white/40 text-sm">
