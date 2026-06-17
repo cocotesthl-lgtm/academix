@@ -4,7 +4,7 @@ import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import {
   addFieldAction, deleteFieldAction, moveFieldAction,
-  updateFormMetaAction
+  updateFieldAction, updateFormMetaAction
 } from '@/lib/forms/actions';
 import { setFormPipelineAction } from '@/lib/crm/actions';
 
@@ -29,8 +29,12 @@ type Submission = {
   submitter_name: string | null; submitter_email: string | null; submitter_phone: string | null;
 };
 
-export default async function FormEditPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FormEditPage({ params, searchParams }: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ edit?: string }>;
+}) {
   const { id } = await params;
+  const { edit: editingFieldId } = await searchParams;
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
 
@@ -146,44 +150,113 @@ export default async function FormEditPage({ params }: { params: Promise<{ id: s
           <p className="text-xs text-white/40">Sin campos todavía.</p>
         ) : (
           <ul className="space-y-2">
-            {fieldList.map((f, idx) => (
-              <li key={f.id} className="rounded-lg border border-white/10 p-3 flex items-center gap-3">
-                <div className="flex flex-col gap-1">
-                  <form action={moveFieldAction}>
-                    <input type="hidden" name="id" value={f.id} />
-                    <input type="hidden" name="form_id" value={form.id} />
-                    <input type="hidden" name="dir" value="up" />
-                    <button disabled={idx === 0} className="text-white/50 hover:text-white disabled:opacity-20 text-xs">▲</button>
-                  </form>
-                  <form action={moveFieldAction}>
-                    <input type="hidden" name="id" value={f.id} />
-                    <input type="hidden" name="form_id" value={form.id} />
-                    <input type="hidden" name="dir" value="down" />
-                    <button disabled={idx === fieldList.length - 1} className="text-white/50 hover:text-white disabled:opacity-20 text-xs">▼</button>
-                  </form>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">
-                    {f.label}
-                    {f.required && <span className="text-rose-400 ml-1">*</span>}
-                  </div>
-                  <div className="text-[11px] text-white/40">
-                    <span className="font-mono">{f.field_type}</span> · key: <span className="font-mono">{f.name}</span>
-                    {f.placeholder && <> · placeholder: "{f.placeholder}"</>}
-                  </div>
-                  {f.options && f.options.length > 0 && (
-                    <div className="text-[10px] text-white/40 mt-0.5">
-                      Opciones: {f.options.map((o) => o.label).join(', ')}
+            {fieldList.map((f, idx) => {
+              const isEditing = editingFieldId === f.id;
+              const hasOther = !!(f.options && f.options.some((o) => o.value === '__other__'));
+              const visibleOptions = (f.options ?? []).filter((o) => o.value !== '__other__');
+
+              if (isEditing) {
+                // Form inline de edición
+                return (
+                  <li key={f.id} className="rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/5 p-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-fuchsia-200">✎ Editando: {f.label}</span>
+                      <Link href={`/forms/${form.id}`} className="text-white/55 hover:text-white">✕ Cancelar</Link>
                     </div>
-                  )}
-                </div>
-                <form action={deleteFieldAction}>
-                  <input type="hidden" name="id" value={f.id} />
-                  <input type="hidden" name="form_id" value={form.id} />
-                  <button className="text-xs px-2 py-1 rounded border border-rose-500/30 text-rose-300 hover:bg-rose-500/10">✕</button>
-                </form>
-              </li>
-            ))}
+                    <form action={updateFieldAction} className="grid grid-cols-2 gap-2">
+                      <input type="hidden" name="id" value={f.id} />
+                      <input type="hidden" name="form_id" value={form.id} />
+                      <select name="field_type" defaultValue={f.field_type}
+                        className="col-span-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
+                        <option value="text">📝 Texto</option>
+                        <option value="email">✉ Email</option>
+                        <option value="phone">📞 Teléfono</option>
+                        <option value="textarea">📄 Texto largo</option>
+                        <option value="select">🔽 Lista desplegable</option>
+                        <option value="checkbox">☑ Checkbox</option>
+                        <option value="number">🔢 Número</option>
+                      </select>
+                      <input name="label" required defaultValue={f.label}
+                        className="col-span-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                      <input name="placeholder" defaultValue={f.placeholder ?? ''} placeholder="Placeholder"
+                        className="col-span-2 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                      <textarea name="options" rows={3}
+                        defaultValue={visibleOptions.map((o) => o.label).join('\n')}
+                        placeholder="Opciones (una por línea) — solo para select"
+                        className="col-span-2 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono" />
+                      <input name="help_text" defaultValue={f.help_text ?? ''} placeholder="Texto de ayuda"
+                        className="col-span-2 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                      <label className="col-span-2 flex items-center gap-2 text-xs">
+                        <input type="checkbox" name="required" defaultChecked={f.required} /> Campo obligatorio
+                      </label>
+                      <label className="col-span-2 flex items-center gap-2 text-xs text-white/75">
+                        <input type="checkbox" name="allow_other" defaultChecked={hasOther} />
+                        ➕ (Solo select) Permitir opción <strong className="text-white">&quot;Otro&quot;</strong> con texto libre
+                      </label>
+                      <div className="col-span-2 flex gap-2">
+                        <button className="flex-1 rounded bg-white text-black text-sm font-semibold py-2 hover:bg-white/90">
+                          Guardar cambios
+                        </button>
+                        <Link href={`/forms/${form.id}`}
+                          className="rounded border border-white/20 text-sm px-3 py-2 hover:bg-white/5">
+                          Cancelar
+                        </Link>
+                      </div>
+                      <p className="col-span-2 text-[10px] text-white/40">
+                        💡 La &quot;key&quot; interna ({f.name}) no se cambia para no romper envíos viejos.
+                      </p>
+                    </form>
+                  </li>
+                );
+              }
+
+              return (
+                <li key={f.id} className="rounded-lg border border-white/10 p-3 flex items-center gap-3">
+                  <div className="flex flex-col gap-1">
+                    <form action={moveFieldAction}>
+                      <input type="hidden" name="id" value={f.id} />
+                      <input type="hidden" name="form_id" value={form.id} />
+                      <input type="hidden" name="dir" value="up" />
+                      <button disabled={idx === 0} className="text-white/50 hover:text-white disabled:opacity-20 text-xs">▲</button>
+                    </form>
+                    <form action={moveFieldAction}>
+                      <input type="hidden" name="id" value={f.id} />
+                      <input type="hidden" name="form_id" value={form.id} />
+                      <input type="hidden" name="dir" value="down" />
+                      <button disabled={idx === fieldList.length - 1} className="text-white/50 hover:text-white disabled:opacity-20 text-xs">▼</button>
+                    </form>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">
+                      {f.label}
+                      {f.required && <span className="text-rose-400 ml-1">*</span>}
+                    </div>
+                    <div className="text-[11px] text-white/40">
+                      <span className="font-mono">{f.field_type}</span> · key: <span className="font-mono">{f.name}</span>
+                      {f.placeholder && <> · placeholder: &quot;{f.placeholder}&quot;</>}
+                    </div>
+                    {visibleOptions.length > 0 && (
+                      <div className="text-[10px] text-white/40 mt-0.5">
+                        Opciones: {visibleOptions.map((o) => o.label).join(', ')}
+                        {hasOther && <span className="text-fuchsia-300"> + Otro</span>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <Link
+                      href={`/forms/${form.id}?edit=${f.id}#campos`}
+                      className="text-xs px-2 py-1 rounded border border-white/15 hover:bg-white/5"
+                      title="Editar"
+                    >✎</Link>
+                    <form action={deleteFieldAction}>
+                      <input type="hidden" name="id" value={f.id} />
+                      <input type="hidden" name="form_id" value={form.id} />
+                      <button className="text-xs px-2 py-1 rounded border border-rose-500/30 text-rose-300 hover:bg-rose-500/10">✕</button>
+                    </form>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
 

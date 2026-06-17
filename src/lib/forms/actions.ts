@@ -128,6 +128,40 @@ export async function addFieldAction(formData: FormData): Promise<void> {
   revalidatePath(`/owner/forms/${formId}`);
 }
 
+export async function updateFieldAction(formData: FormData): Promise<void> {
+  await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const formId = String(formData.get('form_id') ?? '');
+  const label = String(formData.get('label') ?? '').trim();
+  if (!id || !formId || !label) return;
+
+  const typeRaw = String(formData.get('field_type') ?? 'text');
+  const field_type = VALID_FIELD_TYPES.has(typeRaw) ? typeRaw : 'text';
+
+  const optionsRaw = String(formData.get('options') ?? '').trim();
+  const allowOther = field_type === 'select' && formData.get('allow_other') === 'on';
+  let options: Array<{ value: string; label: string; __other?: boolean }> | null = null;
+  if (field_type === 'select' && optionsRaw) {
+    options = optionsRaw.split('\n').map((l) => l.trim()).filter(Boolean)
+      .map((l) => ({ value: slugify(l), label: l }));
+    if (allowOther) options.push({ value: '__other__', label: 'Otro (especificar)', __other: true });
+  }
+
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('form_fields') as any).update({
+    field_type,
+    label,
+    placeholder: String(formData.get('placeholder') ?? '').trim() || null,
+    required: formData.get('required') === 'on',
+    options,
+    help_text: String(formData.get('help_text') ?? '').trim() || null
+    // OJO: no actualizamos `name` para no romper submissions viejas
+  }).eq('id', id);
+
+  revalidatePath(`/owner/forms/${formId}`);
+}
+
 export async function deleteFieldAction(formData: FormData): Promise<void> {
   await requireOwner();
   const id = String(formData.get('id') ?? '');
