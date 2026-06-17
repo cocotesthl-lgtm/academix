@@ -378,15 +378,71 @@ export default async function CourseDetailPage({
           .maybeSingle<{ id: string }>();
         isUnlocked = !!enr;
       }
+      const items = (ptData.media_items ?? []) as VipMediaItem[];
+
+      // Likes + comments (defensivo si migration 0032 no corrió)
+      const likesByItem: Record<string, number> = {};
+      const userLikedItems = new Set<string>();
+      const commentsByItem: Record<string, Array<{
+        id: string; user_id: string; comment: string; created_at: string;
+        author_name: string | null; author_email: string | null;
+      }>> = {};
+      if (isUnlocked && items.length > 0) {
+        try {
+          // Likes — count + user's set
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: likes } = await (svc.from('vip_likes') as any)
+            .select('item_id, user_id').eq('course_id', course.id);
+          for (const l of (likes ?? []) as Array<{ item_id: string; user_id: string }>) {
+            likesByItem[l.item_id] = (likesByItem[l.item_id] ?? 0) + 1;
+            if (currentUser && l.user_id === currentUser.id) userLikedItems.add(l.item_id);
+          }
+          // Comments con join a profiles
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: comms } = await (svc.from('vip_comments') as any)
+            .select('id, item_id, user_id, comment, created_at, profiles ( display_name, email )')
+            .eq('course_id', course.id)
+            .order('created_at', { ascending: true })
+            .limit(500);
+          for (const c of (comms ?? []) as Array<{
+            id: string; item_id: string; user_id: string; comment: string; created_at: string;
+            profiles: { display_name: string | null; email: string | null } | null;
+          }>) {
+            if (!commentsByItem[c.item_id]) commentsByItem[c.item_id] = [];
+            commentsByItem[c.item_id].push({
+              id: c.id, user_id: c.user_id, comment: c.comment, created_at: c.created_at,
+              author_name: c.profiles?.display_name ?? null,
+              author_email: c.profiles?.email ?? null
+            });
+          }
+        } catch { /* migration 0032 pendiente */ }
+      }
+
+      // Lista de owners/admins del tenant (para moderación de comentarios)
+      let ownerUserIds: string[] = [];
+      try {
+        const { data: owners } = await svc
+          .from('memberships')
+          .select('user_id')
+          .eq('tenant_id', tenantId)
+          .in('role', ['owner', 'admin']);
+        ownerUserIds = ((owners ?? []) as Array<{ user_id: string }>).map((m) => m.user_id);
+      } catch { /* ignore */ }
+
       return (
         <VipPackLanding
           tenantId={tenantId}
           course={{ ...course, pack_description: ptData.pack_description, preview_url: ptData.preview_url }}
-          mediaItems={(ptData.media_items ?? []) as VipMediaItem[]}
+          mediaItems={items}
           isUnlocked={isUnlocked}
           buyerEmail={currentUser?.email ?? ''}
           primary={primary}
           checkoutConfig={checkoutConfig}
+          likesByItem={likesByItem}
+          userLikedItems={Array.from(userLikedItems)}
+          commentsByItem={commentsByItem}
+          currentUserId={currentUser?.id ?? null}
+          ownerUserIds={ownerUserIds}
         />
       );
     }

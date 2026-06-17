@@ -9,7 +9,8 @@ import {
   eventTicketConfirmedEmail,
   bookingConfirmedEmail,
   bookingRescheduledEmail,
-  instructorWelcomeEmail
+  instructorWelcomeEmail,
+  vipNewContentEmail
 } from './templates';
 
 /**
@@ -84,6 +85,54 @@ function formatAmount(cents: number, currency: string): string {
 }
 
 /** Después de confirmar una compra de curso */
+/**
+ * Notifica a todos los enrolled de un pack VIP que se agregó contenido nuevo.
+ * Se llama al final de addMediaItemAction. Manda en paralelo, no bloquea.
+ */
+export async function notifyVipNewContent(opts: {
+  tenantId: string;
+  courseId: string;
+  itemTitle?: string;
+  itemType: 'image' | 'video' | 'audio' | 'embed';
+  itemCount?: number;
+}): Promise<void> {
+  try {
+    const brand = await loadTenantBrand(opts.tenantId);
+    if (!brand) return;
+    const svc = getServiceClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: course } = await (svc.from('courses') as any)
+      .select('title, slug, product_type').eq('id', opts.courseId)
+      .maybeSingle();
+    if (!course || course.product_type !== 'vip_pack') return;
+
+    // Sacar emails de todos los enrolled (vía profiles)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: enrolled } = await (svc.from('enrollments') as any)
+      .select('user_id, profiles ( email )').eq('course_id', opts.courseId);
+    const emails: string[] = [];
+    for (const e of (enrolled ?? []) as Array<{ profiles: { email: string | null } | null }>) {
+      const em = e.profiles?.email;
+      if (em && !emails.includes(em)) emails.push(em);
+    }
+    if (emails.length === 0) return;
+
+    const origin = tenantOrigin(brand.slug);
+    const { subject, html } = vipNewContentEmail({
+      ...brandToLayout(brand),
+      packTitle: course.title,
+      itemTitle: opts.itemTitle,
+      itemType: opts.itemType,
+      itemCount: opts.itemCount ?? 1,
+      accessUrl: `${origin}/c/${course.slug}`
+    });
+    // Mandamos en paralelo. No esperamos todos para no bloquear el commit.
+    await Promise.all(emails.slice(0, 100).map((to) => sendEmail({ to, subject, html })));
+  } catch (e) {
+    console.error('[emails] notifyVipNewContent falló:', e);
+  }
+}
+
 export async function notifyPurchaseConfirmed(opts: {
   tenantId: string;
   courseId: string;

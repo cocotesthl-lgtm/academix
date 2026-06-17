@@ -8,6 +8,46 @@ import { renderLayout, ctaButton, infoTable, infoRow, esc, type LayoutOpts } fro
 
 type Brand = Pick<LayoutOpts, 'brandColor' | 'brandName' | 'logoUrl' | 'footerNote'>;
 
+/** Nuevo contenido agregado a un pack VIP — notifica a los suscriptores */
+export function vipNewContentEmail(opts: Brand & {
+  packTitle: string;
+  packDescription?: string;
+  itemTitle?: string;
+  itemType: 'image' | 'video' | 'audio' | 'embed';
+  itemCount: number;             // cuántos items se agregaron en este batch
+  accessUrl: string;
+}): { subject: string; html: string } {
+  const typeLabel = opts.itemType === 'video' ? '🎬 Video'
+    : opts.itemType === 'audio' ? '🎵 Audio'
+    : opts.itemType === 'embed' ? '🔗 Embed'
+    : '🖼 Imagen';
+  const countText = opts.itemCount === 1 ? `un nuevo item` : `${opts.itemCount} nuevos items`;
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f0a1e;">🔓 ¡Contenido nuevo!</h1>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#374151;">
+      Subimos ${countText} al pack <strong>${esc(opts.packTitle)}</strong>.
+      Ya está disponible para vos.
+    </p>
+    ${infoTable(
+      infoRow('Pack', opts.packTitle) +
+      infoRow('Tipo', typeLabel) +
+      (opts.itemTitle ? infoRow('Nuevo item', opts.itemTitle) : '')
+    )}
+    ${ctaButton({ href: opts.accessUrl, label: '🔓 Ver el contenido', color: opts.brandColor || '#a855f7' })}
+    <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+      ¡Esperamos que lo disfrutes!
+    </p>
+  `;
+  return {
+    subject: `🔓 Nuevo contenido en ${opts.packTitle}`,
+    html: renderLayout({
+      ...opts,
+      preheader: `${countText} agregados al pack ${opts.packTitle}`,
+      content
+    })
+  };
+}
+
 /** Compra de curso confirmada */
 export function purchaseConfirmedEmail(opts: Brand & {
   buyerName?: string;

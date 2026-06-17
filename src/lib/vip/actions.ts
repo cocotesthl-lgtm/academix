@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { randomUUID } from 'node:crypto';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
+import { notifyVipNewContent } from '@/lib/emails/dispatch';
 
 /**
  * VIP Packs — paquetes multimedia que se desbloquean con la compra.
@@ -149,15 +150,28 @@ export async function addMediaItemAction(formData: FormData): Promise<void> {
 
   const svc = getServiceClient();
   const items = await loadItems(svc, packId, tenant.id);
-  items.push({
+  const newItem: VipMediaItem = {
     id: randomUUID(),
     type,
     url,
     title: String(formData.get('title') ?? '').trim() || undefined,
     description: String(formData.get('description') ?? '').trim() || undefined
-  });
+  };
+  items.push(newItem);
   await saveItems(svc, packId, tenant.id, items);
   revalidatePath(`/owner/vip/${packId}`);
+
+  // Notificar a los enrolled del pack (no bloquea — fire and forget)
+  const notify = String(formData.get('notify') ?? '');
+  if (notify === 'on') {
+    void notifyVipNewContent({
+      tenantId: tenant.id,
+      courseId: packId,
+      itemTitle: newItem.title,
+      itemType: type,
+      itemCount: 1
+    });
+  }
 }
 
 export async function deleteMediaItemAction(formData: FormData): Promise<void> {

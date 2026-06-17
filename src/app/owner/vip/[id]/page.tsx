@@ -9,6 +9,7 @@ import {
   moveMediaItemAction,
   type VipMediaItem
 } from '@/lib/vip/actions';
+import { CourseSubscriptionConfig } from '@/components/owner/courses/CourseSubscriptionConfig';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,12 +35,17 @@ export default async function VipPackEditPage({ params }: {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: packRaw } = await (svc.from('courses') as any)
-    .select('id, slug, title, description, pack_description, price_cents, status, cover_url, preview_url, media_items')
+    .select('id, slug, title, description, pack_description, price_cents, currency, status, cover_url, preview_url, media_items, pricing_mode, subscription_frequency, subscription_trial_days')
     .eq('id', id)
     .eq('tenant_id', tenant.id)
     .eq('product_type', 'vip_pack')
     .maybeSingle();
-  const pack = packRaw as PackRow | null;
+  const pack = packRaw as (PackRow & {
+    currency: string;
+    pricing_mode: 'one_time' | 'subscription' | null;
+    subscription_frequency: 'monthly' | 'yearly' | null;
+    subscription_trial_days: number | null;
+  }) | null;
   if (!pack) notFound();
 
   const items: VipMediaItem[] = Array.isArray(pack.media_items) ? pack.media_items : [];
@@ -115,6 +121,27 @@ export default async function VipPackEditPage({ params }: {
         </form>
       </details>
 
+      {/* Subscription mode */}
+      <details className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-5">
+        <summary className="cursor-pointer font-semibold select-none">
+          💳 Modo de cobro (pago único vs suscripción recurrente)
+        </summary>
+        <div className="mt-4">
+          <p className="text-xs text-white/55 mb-3">
+            Cobrá una vez (pago único, acceso permanente) o configurá una suscripción mensual/anual
+            via Mercado Pago. Ideal para packs con contenido nuevo cada mes.
+          </p>
+          <CourseSubscriptionConfig
+            courseId={pack.id}
+            initialMode={(pack.pricing_mode ?? 'one_time') as 'one_time' | 'subscription'}
+            initialFrequency={pack.subscription_frequency}
+            initialTrialDays={pack.subscription_trial_days ?? 0}
+            priceCents={pack.price_cents}
+            currency={pack.currency}
+          />
+        </div>
+      </details>
+
       {/* Media items */}
       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5 space-y-4">
         <div className="flex items-center justify-between">
@@ -188,6 +215,10 @@ export default async function VipPackEditPage({ params }: {
               className="col-span-2 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono" />
             <input name="description" placeholder="Descripción (opcional)"
               className="col-span-2 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <label className="col-span-2 flex items-center gap-2 text-xs text-white/75 cursor-pointer">
+              <input type="checkbox" name="notify" defaultChecked />
+              📧 Notificar a todos los suscriptores actuales que hay contenido nuevo
+            </label>
             <button className="col-span-2 rounded bg-white text-black text-sm font-semibold py-2 hover:bg-white/90">
               Agregar al pack
             </button>

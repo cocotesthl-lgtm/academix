@@ -648,6 +648,32 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 create index if not exists idx_courses_type on public.courses(tenant_id, product_type);
 
+-- ── 0032 VIP comments + likes ───────────────────────────────
+create table if not exists public.vip_comments (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  course_id uuid not null references public.courses(id) on delete cascade,
+  item_id text not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  comment text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_vip_comments_item on public.vip_comments(course_id, item_id, created_at desc);
+
+create table if not exists public.vip_likes (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  course_id uuid not null references public.courses(id) on delete cascade,
+  item_id text not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (course_id, item_id, user_id)
+);
+create index if not exists idx_vip_likes_item on public.vip_likes(course_id, item_id);
+
+alter table public.vip_comments enable row level security;
+alter table public.vip_likes    enable row level security;
+
 -- ── 0026 Public listing + custom domains ─────────────────────
 alter table public.tenants
   add column if not exists public_listing boolean not null default true,

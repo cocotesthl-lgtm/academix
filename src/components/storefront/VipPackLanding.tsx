@@ -1,4 +1,5 @@
 import { CouponInput } from './CouponInput';
+import { VipItemInteractions, type VipComment } from './VipItemInteractions';
 import type { CheckoutConfig } from '@/lib/checkout/types';
 
 export type VipMediaItem = {
@@ -36,7 +37,12 @@ export function VipPackLanding({
   isUnlocked,
   buyerEmail,
   primary,
-  checkoutConfig
+  checkoutConfig,
+  likesByItem,
+  userLikedItems,
+  commentsByItem,
+  currentUserId,
+  ownerUserIds
 }: {
   tenantId: string;
   course: CoursePackDetail;
@@ -45,7 +51,13 @@ export function VipPackLanding({
   buyerEmail: string;
   primary: string;
   checkoutConfig: CheckoutConfig;
+  likesByItem?: Record<string, number>;
+  userLikedItems?: string[];
+  commentsByItem?: Record<string, VipComment[]>;
+  currentUserId?: string | null;
+  ownerUserIds?: string[];
 }) {
+  const likedSet = new Set(userLikedItems ?? []);
   const previewCover = course.preview_url || course.cover_url;
   const itemCount = mediaItems.length;
   const imageCount = mediaItems.filter((i) => i.type === 'image').length;
@@ -106,7 +118,17 @@ export function VipPackLanding({
             {itemCount === 0 ? (
               <p className="text-white/40 text-sm">El creador todavía no agregó contenido.</p>
             ) : isUnlocked ? (
-              <UnlockedGallery items={mediaItems} primary={primary} />
+              <UnlockedGallery
+                items={mediaItems}
+                primary={primary}
+                courseId={course.id}
+                slug={course.slug}
+                likesByItem={likesByItem ?? {}}
+                likedSet={likedSet}
+                commentsByItem={commentsByItem ?? {}}
+                currentUserId={currentUserId ?? null}
+                ownerUserIds={ownerUserIds ?? []}
+              />
             ) : (
               <LockedPreview items={mediaItems} primary={primary} />
             )}
@@ -160,11 +182,21 @@ export function VipPackLanding({
   );
 }
 
-function UnlockedGallery({ items, primary }: { items: VipMediaItem[]; primary: string }) {
+function UnlockedGallery({
+  items, primary, courseId, slug,
+  likesByItem, likedSet, commentsByItem, currentUserId, ownerUserIds
+}: {
+  items: VipMediaItem[]; primary: string; courseId: string; slug: string;
+  likesByItem: Record<string, number>;
+  likedSet: Set<string>;
+  commentsByItem: Record<string, VipComment[]>;
+  currentUserId: string | null;
+  ownerUserIds: string[];
+}) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
       {items.map((item) => (
-        <div key={item.id} className="rounded-lg overflow-hidden border border-white/10 bg-black/40 group">
+        <div key={item.id} className="rounded-lg overflow-hidden border border-white/10 bg-black/40 group flex flex-col">
           {item.type === 'image' && (
             <a href={item.url} target="_blank" rel="noopener noreferrer">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -185,6 +217,16 @@ function UnlockedGallery({ items, primary }: { items: VipMediaItem[]; primary: s
               {item.description && <div className="text-[10px] text-white/55 line-clamp-2">{item.description}</div>}
             </div>
           )}
+          <VipItemInteractions
+            courseId={courseId}
+            slug={slug}
+            itemId={item.id}
+            initialLikeCount={likesByItem[item.id] ?? 0}
+            initialLiked={likedSet.has(item.id)}
+            comments={commentsByItem[item.id] ?? []}
+            currentUserId={currentUserId}
+            ownerUserIds={ownerUserIds}
+          />
           <span className="hidden" style={{ color: primary }}>.</span>
         </div>
       ))}
