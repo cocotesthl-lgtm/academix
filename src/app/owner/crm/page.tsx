@@ -1,56 +1,96 @@
 import Link from 'next/link';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
+import { ensureDefaultPipeline, createPipelineAction, renamePipelineAction, deletePipelineAction } from '@/lib/crm/actions';
+import { KanbanBoard, type Stage, type Lead, type ActivityRow } from '@/components/owner/crm/KanbanBoard';
 
 export const dynamic = 'force-dynamic';
 
-type SubRow = {
-  id: string;
-  form_id: string;
-  data: Record<string, unknown>;
-  submitter_name: string | null;
-  submitter_email: string | null;
-  submitter_phone: string | null;
-  submitted_at: string;
-  lead_id: string | null;
-};
+type Pipeline = { id: string; name: string; description: string | null; is_default: boolean };
 
-type FormLite = { id: string; title: string };
-
-export default async function CrmPage() {
+export default async function CrmPage({ searchParams }: {
+  searchParams: Promise<{ p?: string }>;
+}) {
   const { tenant } = await requireOwner();
+  const { p: selectedPipelineParam } = await searchParams;
   const svc = getServiceClient();
 
   let migrationMissing = false;
-  let subs: SubRow[] = [];
-  let forms: FormLite[] = [];
+  let pipelines: Pipeline[] = [];
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const subRes = await (svc.from('form_submissions') as any)
-      .select('id, form_id, data, submitter_name, submitter_email, submitter_phone, submitted_at, lead_id')
-      .eq('tenant_id', tenant.id)
-      .order('submitted_at', { ascending: false })
-      .limit(100);
-    if (subRes.error?.message?.includes('does not exist')) migrationMissing = true;
-    subs = (subRes.data ?? []) as SubRow[];
+    // Auto-crear pipeline default si no hay ninguno
+    await ensureDefaultPipeline(tenant.id);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fRes = await (svc.from('forms') as any).select('id, title').eq('tenant_id', tenant.id);
-    forms = (fRes.data ?? []) as FormLite[];
+    const pipeRes = await (svc.from('crm_pipelines') as any)
+      .select('id, name, description, is_default')
+      .eq('tenant_id', tenant.id)
+      .order('position', { ascending: true });
+    if (pipeRes.error?.message?.includes('does not exist')) migrationMissing = true;
+    pipelines = (pipeRes.data ?? []) as Pipeline[];
   } catch {
     migrationMissing = true;
   }
 
-  const formTitleById = new Map(forms.map((f) => [f.id, f.title]));
+  const selectedPipeline = pipelines.find((p) => p.id === selectedPipelineParam) ?? pipelines.find((p) => p.is_default) ?? pipelines[0];
+
+  let stages: Stage[] = [];
+  let leads: Lead[] = [];
+  const activitiesByLead: Record<string, ActivityRow[]> = {};
+
+  if (selectedPipeline) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stagesRes = await (svc.from('crm_stages') as any)
+      .select('id, name, color, position, is_won, is_lost')
+      .eq('pipeline_id', selectedPipeline.id)
+      .order('position');
+    stages = (stagesRes.data ?? []) as Stage[];
+
+    if (stages.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const leadsRes = await (svc.from('crm_leads') as any)
+        .select('id, stage_id, name, email, phone, value_cents, currency, source, notes, created_at')
+        .eq('tenant_id', tenant.id)
+        .eq('pipeline_id', selectedPipeline.id)
+        .is('archived_at', null)
+        .order('position', { ascending: true });
+      leads = (leadsRes.data ?? []) as Lead[];
+
+      if (leads.length > 0) {
+        const leadIds = leads.map((l) => l.id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const actRes = await (svc.from('crm_lead_activity') as any)
+          .select('id, lead_id, activity_type, comment, created_at')
+          .in('lead_id', leadIds)
+          .order('created_at', { ascending: false })
+          .limit(200);
+        for (const a of (actRes.data ?? []) as ActivityRow[]) {
+          if (!activitiesByLead[a.lead_id]) activitiesByLead[a.lead_id] = [];
+          activitiesByLead[a.lead_id].push(a);
+        }
+      }
+    }
+  }
+
+  const totalValue = leads.reduce((sum, l) => sum + (l.value_cents || 0), 0);
+  const totalLeads = leads.length;
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-bold">📊 CRM — Leads</h1>
-        <p className="text-white/60 text-sm mt-1">
-          Gestión de leads y pipelines (kanban + asignación al equipo).
-        </p>
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold">📊 CRM — Leads</h1>
+          <p className="text-white/60 text-sm mt-1">
+            Tablero Kanban. Arrastrá los leads entre columnas para cambiar su etapa.
+          </p>
+        </div>
+        <Link
+          href="/owner/forms"
+          className="text-xs px-3 py-2 rounded border border-white/15 hover:bg-white/5 transition"
+        >
+          📝 Formularios →
+        </Link>
       </div>
 
       {migrationMissing && (
@@ -59,81 +99,101 @@ export default async function CrmPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-5">
-        <div className="flex items-start gap-3">
-          <span className="text-2xl">🚧</span>
-          <div className="space-y-2 text-sm">
-            <h2 className="font-semibold text-indigo-200">CRM Pipelines — próxima fase</h2>
-            <p className="text-white/70">
-              El tablero Kanban completo (pipelines con etapas drag&drop, asignación a miembros del equipo,
-              historial por lead, notas internas, valor del deal) viene en la próxima entrega.
-            </p>
-            <p className="text-white/55 text-xs">
-              Por ahora, abajo podés ver todos los envíos de tus formularios — esos son tus leads crudos.
-              Cuando habilitemos pipelines, vas a poder mover cada uno por etapas (Nuevo → Contactado → Cotizado → Cerrado).
-            </p>
-          </div>
-        </div>
-      </div>
+      {!migrationMissing && pipelines.length > 0 && (
+        <>
+          {/* Tabs de pipelines */}
+          <div className="flex items-center gap-2 flex-wrap border-b border-white/10 pb-3">
+            {pipelines.map((p) => (
+              <Link
+                key={p.id}
+                href={`/owner/crm?p=${p.id}`}
+                className={`text-sm px-3 py-1.5 rounded-full transition ${
+                  selectedPipeline?.id === p.id
+                    ? 'bg-white text-black font-semibold'
+                    : 'border border-white/15 text-white/70 hover:bg-white/5'
+                }`}
+              >
+                {p.name}
+              </Link>
+            ))}
 
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-sm">📥 Leads (envíos de formularios)</h2>
-          <Link href="/owner/forms" className="text-xs text-white/60 hover:text-white">
-            Ver formularios →
-          </Link>
-        </div>
+            <details className="relative">
+              <summary className="text-xs cursor-pointer text-white/50 hover:text-white px-3 py-1.5 rounded border border-dashed border-white/15 list-none">
+                + Nuevo pipeline
+              </summary>
+              <div className="absolute mt-2 right-0 z-20 w-72 rounded-xl border border-white/15 bg-[#111] p-3 shadow-xl">
+                <form action={createPipelineAction} className="space-y-2">
+                  <input name="name" required placeholder="Nombre del pipeline" autoFocus
+                    className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                  <input name="description" placeholder="Descripción (opcional)"
+                    className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                  <button className="w-full rounded bg-white text-black text-sm font-semibold py-1.5">
+                    Crear pipeline
+                  </button>
+                  <p className="text-[10px] text-white/40">Se crea con etapas Nuevo / Contactado / Cotizado / Ganado / Perdido.</p>
+                </form>
+              </div>
+            </details>
 
-        {!migrationMissing && subs.length === 0 ? (
-          <p className="text-xs text-white/40 py-4 text-center">
-            Sin leads aún. Creá un formulario y compartilo o embebelo en tu hero.
-          </p>
-        ) : !migrationMissing ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs text-white/50">
-                <tr>
-                  <th className="py-2 pr-4">Fecha</th>
-                  <th className="py-2 pr-4">Formulario</th>
-                  <th className="py-2 pr-4">Nombre</th>
-                  <th className="py-2 pr-4">Email</th>
-                  <th className="py-2 pr-4">Teléfono</th>
-                  <th className="py-2 pr-4">Datos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {subs.map((s) => (
-                  <tr key={s.id} className="border-t border-white/5">
-                    <td className="py-2 pr-4 text-xs text-white/60 whitespace-nowrap">
-                      {new Date(s.submitted_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
-                    </td>
-                    <td className="py-2 pr-4 text-xs">
-                      {formTitleById.get(s.form_id) ?? '—'}
-                    </td>
-                    <td className="py-2 pr-4">{s.submitter_name ?? '—'}</td>
-                    <td className="py-2 pr-4">
-                      {s.submitter_email ? (
-                        <a href={`mailto:${s.submitter_email}`} className="text-indigo-300 hover:underline">{s.submitter_email}</a>
-                      ) : '—'}
-                    </td>
-                    <td className="py-2 pr-4">
-                      {s.submitter_phone ? (
-                        <a href={`tel:${s.submitter_phone}`} className="text-indigo-300 hover:underline">{s.submitter_phone}</a>
-                      ) : '—'}
-                    </td>
-                    <td className="py-2 pr-4 text-xs text-white/55 max-w-md">
-                      <details>
-                        <summary className="cursor-pointer text-white/70">ver datos</summary>
-                        <pre className="text-[10px] whitespace-pre-wrap break-all mt-1 text-white/55">{JSON.stringify(s.data, null, 2)}</pre>
-                      </details>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {selectedPipeline && pipelines.length > 1 && (
+              <form action={deletePipelineAction} className="ml-auto">
+                <input type="hidden" name="id" value={selectedPipeline.id} />
+                <button
+                  className="text-xs text-rose-300 hover:text-rose-200 px-2 py-1 rounded border border-rose-500/30 hover:bg-rose-500/10"
+                  onClick={(e) => {
+                    if (!confirm(`¿Eliminar el pipeline "${selectedPipeline.name}" y todos sus leads?`)) {
+                      e.preventDefault();
+                    }
+                  }}
+                >
+                  Eliminar pipeline
+                </button>
+              </form>
+            )}
           </div>
-        ) : null}
-      </div>
+
+          {/* Resumen */}
+          {selectedPipeline && (
+            <div className="flex items-center gap-6 text-xs text-white/70">
+              <span><strong className="text-white text-base">{totalLeads}</strong> {totalLeads === 1 ? 'lead' : 'leads'}</span>
+              {totalValue > 0 && <span>Valor total: <strong className="text-emerald-300">$ {(totalValue / 100).toLocaleString('es-AR')}</strong></span>}
+            </div>
+          )}
+
+          {selectedPipeline && (
+            <PipelineRenameForm pipeline={selectedPipeline} />
+          )}
+
+          {selectedPipeline && stages.length > 0 ? (
+            <KanbanBoard
+              pipelineId={selectedPipeline.id}
+              stages={stages}
+              leads={leads}
+              activitiesByLead={activitiesByLead}
+            />
+          ) : selectedPipeline ? (
+            <div className="rounded-xl border border-white/10 p-8 text-center text-white/40 text-sm">
+              Sin etapas todavía. Agregá una columna desde el tablero.
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
+  );
+}
+
+function PipelineRenameForm({ pipeline }: { pipeline: Pipeline }) {
+  return (
+    <details className="text-xs">
+      <summary className="cursor-pointer text-white/50 hover:text-white inline-block">⚙ Renombrar pipeline</summary>
+      <form action={renamePipelineAction} className="mt-2 flex gap-2 items-center max-w-md">
+        <input type="hidden" name="id" value={pipeline.id} />
+        <input name="name" defaultValue={pipeline.name} required
+          className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm" />
+        <button className="rounded bg-white text-black text-xs font-semibold px-3 py-1.5">
+          Guardar
+        </button>
+      </form>
+    </details>
   );
 }

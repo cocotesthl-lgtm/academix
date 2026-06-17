@@ -6,6 +6,7 @@ import {
   addFieldAction, deleteFieldAction, moveFieldAction,
   updateFormMetaAction
 } from '@/lib/forms/actions';
+import { setFormPipelineAction } from '@/lib/crm/actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,31 @@ export default async function FormEditPage({ params }: { params: Promise<{ id: s
 
   // URL pública del form
   const publicPath = `/f/${form.slug}`;
+
+  // Pipelines + stages del tenant para el conector CRM (defensivo si migration falta)
+  type PipelineLite = { id: string; name: string };
+  type StageLite = { id: string; pipeline_id: string; name: string; position: number };
+  let pipelines: PipelineLite[] = [];
+  let stagesAll: StageLite[] = [];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pr = await (svc.from('crm_pipelines') as any)
+      .select('id, name').eq('tenant_id', tenant.id).order('position');
+    pipelines = (pr.data ?? []) as PipelineLite[];
+    if (pipelines.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sr = await (svc.from('crm_stages') as any)
+        .select('id, pipeline_id, name, position')
+        .in('pipeline_id', pipelines.map((p) => p.id))
+        .order('position');
+      stagesAll = (sr.data ?? []) as StageLite[];
+    }
+  } catch { /* migration pendiente */ }
+  const stagesByPipeline: Record<string, StageLite[]> = {};
+  for (const s of stagesAll) {
+    if (!stagesByPipeline[s.pipeline_id]) stagesByPipeline[s.pipeline_id] = [];
+    stagesByPipeline[s.pipeline_id].push(s);
+  }
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -191,6 +217,57 @@ export default async function FormEditPage({ params }: { params: Promise<{ id: s
           </form>
         </details>
       </div>
+
+      {/* CRM connection */}
+      {pipelines.length > 0 && (
+        <details className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-5" open>
+          <summary className="cursor-pointer font-semibold text-sm select-none">
+            📊 Conectar al CRM (crear lead automático con cada envío)
+          </summary>
+          <form action={setFormPipelineAction} className="space-y-3 mt-4">
+            <input type="hidden" name="form_id" value={form.id} />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-white/60">Pipeline donde caen los leads</label>
+                <select
+                  name="pipeline_id"
+                  defaultValue={form.default_pipeline_id ?? ''}
+                  className="w-full mt-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
+                >
+                  <option value="">— Sin pipeline (no crear lead) —</option>
+                  {pipelines.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-white/60">Etapa default</label>
+                <select
+                  name="stage_id"
+                  defaultValue={form.default_stage_id ?? ''}
+                  className="w-full mt-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
+                >
+                  <option value="">— Elegí una etapa —</option>
+                  {form.default_pipeline_id && (stagesByPipeline[form.default_pipeline_id] ?? []).map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                  {!form.default_pipeline_id && pipelines.length > 0 && (stagesByPipeline[pipelines[0].id] ?? []).map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <p className="text-[11px] text-white/55">
+              💡 Cuando se conecta a un pipeline, cada envío del formulario crea automáticamente un lead
+              en la etapa elegida. Vas a verlos en <Link href="/owner/crm" className="underline">/owner/crm</Link>.
+              Si necesitás cambiar de etapa por pipeline, guardá, refrescá y ajustá.
+            </p>
+            <button className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90">
+              Guardar conexión
+            </button>
+          </form>
+        </details>
+      )}
 
       {/* Submissions */}
       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5 space-y-3">
