@@ -104,9 +104,13 @@ export async function addFieldAction(formData: FormData): Promise<void> {
   const nextPos = ((existing?.[0]?.position as number | undefined) ?? -1) + 1;
 
   const optionsRaw = String(formData.get('options') ?? '').trim();
-  const options = field_type === 'select' && optionsRaw
-    ? optionsRaw.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => ({ value: slugify(l), label: l }))
-    : null;
+  const allowOther = field_type === 'select' && formData.get('allow_other') === 'on';
+  let options: Array<{ value: string; label: string; __other?: boolean }> | null = null;
+  if (field_type === 'select' && optionsRaw) {
+    options = optionsRaw.split('\n').map((l) => l.trim()).filter(Boolean)
+      .map((l) => ({ value: slugify(l), label: l }));
+    if (allowOther) options.push({ value: '__other__', label: 'Otro (especificar)', __other: true });
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('form_fields') as any).insert({
@@ -192,6 +196,14 @@ export async function submitFormAction(formData: FormData): Promise<{ ok: boolea
     }
     if (f.field_type === 'checkbox') data[f.name] = raw === 'on' || raw === 'true';
     else if (f.field_type === 'number') data[f.name] = Number(raw);
+    else if (f.field_type === 'select' && String(raw) === '__other__') {
+      // El user eligió "Otro" → tomar el texto del input adicional
+      const otherText = String(formData.get(`__other_${f.name}`) ?? '').trim();
+      if (!otherText && f.required) {
+        return { ok: false, message: `Completá tu opción "Otro" en "${f.label}"` };
+      }
+      data[f.name] = otherText || 'Otro';
+    }
     else data[f.name] = String(raw).slice(0, 5000);
   }
 

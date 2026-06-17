@@ -211,6 +211,10 @@ export default async function FormEditPage({ params }: { params: Promise<{ id: s
             <label className="col-span-2 flex items-center gap-2 text-xs">
               <input type="checkbox" name="required" /> Campo obligatorio
             </label>
+            <label className="col-span-2 flex items-center gap-2 text-xs text-white/75">
+              <input type="checkbox" name="allow_other" />
+              ➕ (Solo select) Permitir opción <strong className="text-white">&quot;Otro&quot;</strong> con texto libre que el visitante completa
+            </label>
             <button className="col-span-2 rounded bg-white text-black text-sm font-semibold py-2 hover:bg-white/90">
               Agregar campo
             </button>

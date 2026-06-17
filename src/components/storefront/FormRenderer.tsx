@@ -11,7 +11,7 @@ export type FormFieldDef = {
   label: string;
   placeholder: string | null;
   required: boolean;
-  options: Array<{ value: string; label: string }> | null;
+  options: Array<{ value: string; label: string; __other?: boolean }> | null;
   help_text: string | null;
 };
 
@@ -94,40 +94,76 @@ export function FormRenderer({ form, primary = '#a855f7', compact = false }: {
 }
 
 function FieldRow({ field }: { field: FormFieldDef }) {
-  const baseCls = 'w-full rounded-md border border-black/15 bg-white px-3 py-2.5 text-sm text-black focus:outline-none focus:border-black/40';
   return (
     <label className="block">
       <span className="block text-xs font-medium text-black/70 mb-1">
         {field.label}
         {field.required && <span className="text-rose-500 ml-0.5">*</span>}
       </span>
-      {field.field_type === 'textarea' ? (
-        <textarea
-          name={field.name}
-          required={field.required}
-          placeholder={field.placeholder ?? ''}
-          rows={3}
-          className={baseCls}
-        />
-      ) : field.field_type === 'select' ? (
-        <select name={field.name} required={field.required} className={baseCls} defaultValue="">
-          <option value="" disabled>— elegí una opción —</option>
-          {(field.options ?? []).map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-      ) : field.field_type === 'checkbox' ? (
-        <input type="checkbox" name={field.name} className="w-4 h-4 align-middle accent-current" />
-      ) : (
-        <input
-          type={field.field_type === 'email' ? 'email' : field.field_type === 'phone' ? 'tel' : field.field_type === 'number' ? 'number' : 'text'}
-          name={field.name}
-          required={field.required}
-          placeholder={field.placeholder ?? ''}
-          className={baseCls}
-        />
-      )}
+      <FieldInner field={field} />
       {field.help_text && <span className="block text-[10px] text-black/45 mt-1">{field.help_text}</span>}
     </label>
   );
 }
+
+function FieldInner({ field }: { field: FormFieldDef }) {
+  const baseCls = 'w-full rounded-md border border-black/15 bg-white px-3 py-2.5 text-sm text-black focus:outline-none focus:border-black/40';
+  if (field.field_type === 'select') {
+    return <SelectWithOther field={field} baseCls={baseCls} />;
+  }
+  if (field.field_type === 'textarea') {
+    return (
+      <textarea
+        name={field.name}
+        required={field.required}
+        placeholder={field.placeholder ?? ''}
+        rows={3}
+        className={baseCls}
+      />
+    );
+  }
+  if (field.field_type === 'checkbox') {
+    return <input type="checkbox" name={field.name} className="w-4 h-4 align-middle accent-current" />;
+  }
+  return (
+    <input
+      type={field.field_type === 'email' ? 'email' : field.field_type === 'phone' ? 'tel' : field.field_type === 'number' ? 'number' : 'text'}
+      name={field.name}
+      required={field.required}
+      placeholder={field.placeholder ?? ''}
+      className={baseCls}
+    />
+  );
+}
+
+function SelectWithOther({ field, baseCls }: { field: FormFieldDef; baseCls: string }) {
+  const [value, setValue] = useState('');
+  const isOther = value === '__other__';
+  return (
+    <>
+      <select
+        name={field.name}
+        required={field.required}
+        className={baseCls}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      >
+        <option value="" disabled>— elegí una opción —</option>
+        {(field.options ?? []).map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      {isOther && (
+        <input
+          type="text"
+          name={`__other_${field.name}`}
+          required={field.required}
+          placeholder="Escribí tu opción…"
+          className={`${baseCls} mt-1.5`}
+          autoFocus
+        />
+      )}
+    </>
+  );
+}
+
