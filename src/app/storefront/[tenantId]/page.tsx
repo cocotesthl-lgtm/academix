@@ -596,6 +596,7 @@ export default async function StorefrontHome({
           case 'catalog':
             return (
               <section key={key} {...dt} id="cursos" className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+                <span id="catalog" aria-hidden="true" />
                 <CatalogFilter
                   title={cfg.sections.catalog.title}
                   showFilters={cfg.sections.catalog.show_filters}
@@ -619,6 +620,7 @@ export default async function StorefrontHome({
             const colsCls = cols === 2 ? 'md:grid-cols-2' : cols === 4 ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2 lg:grid-cols-3';
             return (
               <section key={key} {...dt} id="bloques" className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+                <span id="cards" aria-hidden="true" />
                 <div className="max-w-6xl mx-auto">
                   {cs.title && <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">{cs.title}</h2>}
                   {cs.subtitle && <p className="text-center text-black/60 mb-8 max-w-2xl mx-auto">{cs.subtitle}</p>}
@@ -635,6 +637,7 @@ export default async function StorefrontHome({
             if (ts.items.length === 0) return null;
             return (
               <section key={key} {...dt} id="testimonios" className="px-6 py-20" style={{ background: bg ?? `linear-gradient(180deg, ${primary}06 0%, ${primary}12 100%)` }}>
+                <span id="testimonials" aria-hidden="true" />
                 <div className="max-w-5xl mx-auto">
                   <FadeIn>
                     <div className="text-center mb-12">
@@ -920,6 +923,7 @@ export default async function StorefrontHome({
             const formAction = ct.email ? `mailto:${ct.email}` : undefined;
             return (
               <section key={key} {...dt} id="contacto" className="px-6 py-20" style={{ background: bg ?? '#fafafa' }}>
+                <span id="contact" aria-hidden="true" />
                 <FadeIn>
                   <div className="max-w-2xl mx-auto">
                     <div className="text-center mb-10">
