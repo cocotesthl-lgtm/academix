@@ -451,12 +451,14 @@ export function HeroEditor({
  * TRUSTED BY
  * ===================================================================== */
 
-export function TrustedByEditor({ initialTitle, items, grayscale, marquee }: {
+export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqueeSpeed }: {
   initialTitle: string; items: LogoItem[]; grayscale: boolean; marquee: boolean;
+  marqueeSpeed?: number;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [gs, setGs] = useState(grayscale);
   const [mq, setMq] = useState(marquee);
+  const [speed, setSpeed] = useState(marqueeSpeed ?? 30);
   const { pending, saved, fire } = useSave('trusted_by');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
@@ -480,7 +482,31 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee }: {
           <input type="checkbox" checked={mq} onChange={(e) => setMq(e.target.checked)} />
           Modo cinta (auto-scroll infinito)
         </label>
-        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, grayscale: gs, marquee: mq })} />
+        {mq && (
+          <div className="pl-6 space-y-1.5">
+            <label className="text-xs text-white/60 flex items-center justify-between">
+              <span>Velocidad del scroll</span>
+              <span className="text-white/45 tabular-nums">{speed}s por loop</span>
+            </label>
+            <input
+              type="range"
+              min={5}
+              max={120}
+              step={1}
+              value={speed}
+              onChange={(e) => setSpeed(parseInt(e.target.value, 10))}
+              className="w-full accent-fuchsia-500"
+            />
+            <div className="flex items-center justify-between text-[10px] text-white/40">
+              <span>⚡ Rápido (5s)</span>
+              <span>🐢 Lento (120s)</span>
+            </div>
+            <p className="text-[10px] text-white/40">
+              💡 Para una cinta totalmente estática (logos sin moverse), desactivá el checkbox de arriba.
+            </p>
+          </div>
+        )}
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, grayscale: gs, marquee: mq, marquee_speed: String(speed) })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
           <label className="text-xs text-white/60 block mb-1">

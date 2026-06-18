@@ -147,7 +147,11 @@ export type SiteConfig = {
       carousel_urls?: string[];           // imágenes si media_type='carousel'
       form_id?: string;                   // id del formulario si media_type='form'
     };
-    trusted_by:   SectionBase & { title: string; items: LogoItem[]; grayscale: boolean; marquee: boolean };
+    trusted_by:   SectionBase & { title: string; items: LogoItem[]; grayscale: boolean; marquee: boolean;
+      /** Segundos que dura un loop completo del marquee. Menor = más rápido.
+       *  Si marquee=false, se ignora. Default 30s. Min 5, max 120. */
+      marquee_speed?: number;
+    };
     about:        SectionBase & { title: string; body: string; image_url: string | null };
     instructor:   SectionBase & { title: string; display_mode: InstructorDisplay; name: string; bio: string; photo_url: string | null; credentials: string; items: InstructorItem[] };
     stats:        SectionBase & { title: string; items: StatItem[] };

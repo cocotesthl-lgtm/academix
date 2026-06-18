@@ -217,6 +217,10 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   }
   if (formData.has('grayscale')) section.grayscale = formData.get('grayscale') === 'on';
   if (formData.has('marquee')) section.marquee = formData.get('marquee') === 'on';
+  if (formData.has('marquee_speed')) {
+    const n = parseInt(String(formData.get('marquee_speed') ?? '30'), 10);
+    section.marquee_speed = Math.min(120, Math.max(5, Number.isFinite(n) ? n : 30));
+  }
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
   if (formData.has('media_type')) {
     const v = String(formData.get('media_type') ?? 'image');

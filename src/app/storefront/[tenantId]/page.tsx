@@ -366,7 +366,7 @@ export default async function StorefrontHome({
                   <div className="relative">
                     <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(90deg, ${bg ?? '#fafafa'}, transparent)` }} />
                     <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(-90deg, ${bg ?? '#fafafa'}, transparent)` }} />
-                    <div className="flex gap-16 animate-marquee items-center" style={{ width: 'max-content' }}>
+                    <div className="flex gap-16 animate-marquee items-center" style={{ width: 'max-content', animationDuration: `${Math.max(5, Math.min(120, tb.marquee_speed ?? 30))}s` }}>
                       {[...items, ...items].map((l, idx) => {
                         const inner = l.logo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element

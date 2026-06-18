@@ -254,6 +254,7 @@ export default async function SiteBuilderPage() {
                 items={cfg.sections.trusted_by.items}
                 grayscale={cfg.sections.trusted_by.grayscale}
                 marquee={cfg.sections.trusted_by.marquee}
+                marqueeSpeed={cfg.sections.trusted_by.marquee_speed ?? 30}
               />
             )}
             {key === 'about' && (<>
