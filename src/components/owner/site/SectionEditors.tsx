@@ -451,14 +451,18 @@ export function HeroEditor({
  * TRUSTED BY
  * ===================================================================== */
 
-export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqueeSpeed }: {
+export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqueeSpeed, logoHeight, logoGap }: {
   initialTitle: string; items: LogoItem[]; grayscale: boolean; marquee: boolean;
   marqueeSpeed?: number;
+  logoHeight?: number;
+  logoGap?: number;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [gs, setGs] = useState(grayscale);
   const [mq, setMq] = useState(marquee);
   const [speed, setSpeed] = useState(marqueeSpeed ?? 30);
+  const [logoH, setLogoH] = useState(logoHeight ?? 40);
+  const [gap, setGap] = useState(logoGap ?? 64);
   const { pending, saved, fire } = useSave('trusted_by');
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
@@ -506,7 +510,47 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqu
             </p>
           </div>
         )}
-        <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, grayscale: gs, marquee: mq, marquee_speed: String(speed) })} />
+
+        {/* Tamaño + separación de logos (aplica con o sin marquee) */}
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-3">
+          <div className="space-y-1.5">
+            <label className="text-xs text-white/60 flex items-center justify-between">
+              <span>🔍 Tamaño de los logos</span>
+              <span className="text-white/45 tabular-nums">{logoH}px de alto</span>
+            </label>
+            <input
+              type="range" min={24} max={160} step={2}
+              value={logoH} onChange={(e) => setLogoH(parseInt(e.target.value, 10))}
+              className="w-full accent-fuchsia-500"
+            />
+            <div className="flex items-center justify-between text-[10px] text-white/40">
+              <span>🐜 Chico (24px)</span>
+              <span>🐘 Grande (160px)</span>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs text-white/60 flex items-center justify-between">
+              <span>📏 Separación entre logos</span>
+              <span className="text-white/45 tabular-nums">{gap}px</span>
+            </label>
+            <input
+              type="range" min={8} max={160} step={2}
+              value={gap} onChange={(e) => setGap(parseInt(e.target.value, 10))}
+              className="w-full accent-fuchsia-500"
+            />
+            <div className="flex items-center justify-between text-[10px] text-white/40">
+              <span>🤝 Pegados (8px)</span>
+              <span>🌌 Espaciosos (160px)</span>
+            </div>
+          </div>
+        </div>
+
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({
+          title, grayscale: gs, marquee: mq,
+          marquee_speed: String(speed),
+          logo_height: String(logoH),
+          logo_gap: String(gap)
+        })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
           <label className="text-xs text-white/60 block mb-1">

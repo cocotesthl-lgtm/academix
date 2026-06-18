@@ -221,6 +221,14 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
     const n = parseInt(String(formData.get('marquee_speed') ?? '30'), 10);
     section.marquee_speed = Math.min(120, Math.max(5, Number.isFinite(n) ? n : 30));
   }
+  if (formData.has('logo_height')) {
+    const n = parseInt(String(formData.get('logo_height') ?? '40'), 10);
+    section.logo_height = Math.min(160, Math.max(24, Number.isFinite(n) ? n : 40));
+  }
+  if (formData.has('logo_gap')) {
+    const n = parseInt(String(formData.get('logo_gap') ?? '64'), 10);
+    section.logo_gap = Math.min(160, Math.max(8, Number.isFinite(n) ? n : 64));
+  }
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
   if (formData.has('media_type')) {
     const v = String(formData.get('media_type') ?? 'image');

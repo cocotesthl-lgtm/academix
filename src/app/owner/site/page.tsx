@@ -255,6 +255,8 @@ export default async function SiteBuilderPage() {
                 grayscale={cfg.sections.trusted_by.grayscale}
                 marquee={cfg.sections.trusted_by.marquee}
                 marqueeSpeed={cfg.sections.trusted_by.marquee_speed ?? 30}
+                logoHeight={cfg.sections.trusted_by.logo_height ?? 40}
+                logoGap={cfg.sections.trusted_by.logo_gap ?? 64}
               />
             )}
             {key === 'about' && (<>

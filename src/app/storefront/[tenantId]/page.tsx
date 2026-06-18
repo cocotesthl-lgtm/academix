@@ -362,55 +362,58 @@ export default async function StorefrontHome({
                 <div className="max-w-6xl mx-auto px-6">
                   <p className="text-xs text-center text-black/40 uppercase tracking-widest mb-8">{tb.title}</p>
                 </div>
-                {tb.marquee ? (() => {
-                  // Loop seamless: necesitamos suficientes copias para que el contenido
-                  // total siempre llene el viewport, incluso con pocos logos.
-                  // Animación translateX(-50%) → tiene que caer exactamente al inicio
-                  // de la segunda mitad. Para garantizar eso: duplicamos N veces y la
-                  // animación va de 0 a -50% del total (que es N/2 copias).
-                  // Mínimo 8 logos visibles para cubrir la pantalla típica.
-                  const minCopies = Math.max(2, Math.ceil(16 / Math.max(items.length, 1)));
-                  // Aseguramos número PAR (para que -50% caiga en mitad exacta).
-                  const totalCopies = minCopies % 2 === 0 ? minCopies : minCopies + 1;
-                  const copies = Array.from({ length: totalCopies }, (_, i) => i);
-                  return (
-                    <div className="relative overflow-hidden">
-                      <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(90deg, ${bg ?? '#fafafa'}, transparent)` }} />
-                      <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(-90deg, ${bg ?? '#fafafa'}, transparent)` }} />
-                      <div className="flex w-max animate-marquee items-center" style={{ animationDuration: `${Math.max(5, Math.min(120, tb.marquee_speed ?? 30))}s` }}>
-                        {copies.map((copyIdx) => (
-                          <div key={copyIdx} className="flex gap-16 items-center pr-16 flex-shrink-0" aria-hidden={copyIdx > 0}>
-                            {items.map((l) => {
-                              const inner = l.logo_url ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={l.logo_url} alt={l.name} className={`h-10 object-contain ${tb.grayscale ? 'grayscale opacity-60' : ''}`} />
-                              ) : (
-                                <span className={`text-xl font-bold whitespace-nowrap ${tb.grayscale ? 'text-black/50' : 'text-black/70'}`}>{l.name}</span>
-                              );
-                              return l.href && copyIdx === 0 ? (
-                                <a key={`${l.id}-${copyIdx}`} href={l.href} target="_blank" rel="noopener" className="flex-shrink-0">{inner}</a>
-                              ) : <div key={`${l.id}-${copyIdx}`} className="flex-shrink-0">{inner}</div>;
-                            })}
-                          </div>
-                        ))}
+                {(() => {
+                  const logoH = Math.max(24, Math.min(160, tb.logo_height ?? 40));
+                  const gapPx = Math.max(8, Math.min(160, tb.logo_gap ?? 64));
+                  const logoStyle: React.CSSProperties = { height: `${logoH}px` };
+                  if (tb.marquee) {
+                    // Loop seamless: N copias suficientes para llenar viewport.
+                    const minCopies = Math.max(2, Math.ceil(16 / Math.max(items.length, 1)));
+                    const totalCopies = minCopies % 2 === 0 ? minCopies : minCopies + 1;
+                    const copies = Array.from({ length: totalCopies }, (_, i) => i);
+                    return (
+                      <div className="relative overflow-hidden">
+                        <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(90deg, ${bg ?? '#fafafa'}, transparent)` }} />
+                        <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(-90deg, ${bg ?? '#fafafa'}, transparent)` }} />
+                        <div className="flex w-max animate-marquee items-center" style={{ animationDuration: `${Math.max(5, Math.min(120, tb.marquee_speed ?? 30))}s` }}>
+                          {copies.map((copyIdx) => (
+                            <div key={copyIdx} className="flex items-center flex-shrink-0"
+                              style={{ gap: `${gapPx}px`, paddingRight: `${gapPx}px` }}
+                              aria-hidden={copyIdx > 0}>
+                              {items.map((l) => {
+                                const inner = l.logo_url ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={l.logo_url} alt={l.name} style={logoStyle} className={`object-contain ${tb.grayscale ? 'grayscale opacity-60' : ''}`} />
+                                ) : (
+                                  <span className={`font-bold whitespace-nowrap ${tb.grayscale ? 'text-black/50' : 'text-black/70'}`} style={{ fontSize: `${Math.round(logoH * 0.5)}px`, lineHeight: 1 }}>{l.name}</span>
+                                );
+                                return l.href && copyIdx === 0 ? (
+                                  <a key={`${l.id}-${copyIdx}`} href={l.href} target="_blank" rel="noopener" className="flex-shrink-0">{inner}</a>
+                                ) : <div key={`${l.id}-${copyIdx}`} className="flex-shrink-0">{inner}</div>;
+                              })}
+                            </div>
+                          ))}
+                        </div>
                       </div>
+                    );
+                  }
+                  return (
+                    <div className="max-w-5xl mx-auto px-6 flex flex-wrap justify-center items-center"
+                      style={{ gap: `${gapPx}px` }}>
+                      {items.map((l) => {
+                        const inner = l.logo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={l.logo_url} alt={l.name} style={logoStyle} className={`object-contain ${tb.grayscale ? 'grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition' : ''}`} />
+                        ) : (
+                          <span className={`font-bold ${tb.grayscale ? 'text-black/50' : 'text-black/70'}`} style={{ fontSize: `${Math.round(logoH * 0.5)}px`, lineHeight: 1 }}>{l.name}</span>
+                        );
+                        return l.href ? (
+                          <a key={l.id} href={l.href} target="_blank" rel="noopener">{inner}</a>
+                        ) : <div key={l.id}>{inner}</div>;
+                      })}
                     </div>
                   );
-                })() : (
-                  <div className="max-w-5xl mx-auto px-6 flex flex-wrap justify-center items-center gap-10">
-                    {items.map((l) => {
-                      const inner = l.logo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={l.logo_url} alt={l.name} className={`h-10 object-contain ${tb.grayscale ? 'grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition' : ''}`} />
-                      ) : (
-                        <span className={`text-lg font-bold ${tb.grayscale ? 'text-black/50' : 'text-black/70'}`}>{l.name}</span>
-                      );
-                      return l.href ? (
-                        <a key={l.id} href={l.href} target="_blank" rel="noopener">{inner}</a>
-                      ) : <div key={l.id}>{inner}</div>;
-                    })}
-                  </div>
-                )}
+                })()}
               </section>
             );
           }

@@ -151,6 +151,10 @@ export type SiteConfig = {
       /** Segundos que dura un loop completo del marquee. Menor = más rápido.
        *  Si marquee=false, se ignora. Default 30s. Min 5, max 120. */
       marquee_speed?: number;
+      /** Altura de cada logo en píxeles. Default 40, rango 24-160. */
+      logo_height?: number;
+      /** Separación entre logos en píxeles. Default 64, rango 8-160. */
+      logo_gap?: number;
     };
     about:        SectionBase & { title: string; body: string; image_url: string | null };
     instructor:   SectionBase & { title: string; display_mode: InstructorDisplay; name: string; bio: string; photo_url: string | null; credentials: string; items: InstructorItem[] };
