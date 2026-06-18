@@ -363,21 +363,28 @@ export default async function StorefrontHome({
                   <p className="text-xs text-center text-black/40 uppercase tracking-widest mb-8">{tb.title}</p>
                 </div>
                 {tb.marquee ? (
-                  <div className="relative">
+                  <div className="relative overflow-hidden">
                     <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(90deg, ${bg ?? '#fafafa'}, transparent)` }} />
                     <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(-90deg, ${bg ?? '#fafafa'}, transparent)` }} />
-                    <div className="flex gap-16 animate-marquee items-center" style={{ width: 'max-content', animationDuration: `${Math.max(5, Math.min(120, tb.marquee_speed ?? 30))}s` }}>
-                      {[...items, ...items].map((l, idx) => {
-                        const inner = l.logo_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={l.logo_url} alt={l.name} className={`h-10 object-contain ${tb.grayscale ? 'grayscale opacity-60' : ''}`} />
-                        ) : (
-                          <span className={`text-xl font-bold whitespace-nowrap ${tb.grayscale ? 'text-black/50' : 'text-black/70'}`}>{l.name}</span>
-                        );
-                        return l.href ? (
-                          <a key={`${l.id}-${idx}`} href={l.href} target="_blank" rel="noopener" className="flex-shrink-0">{inner}</a>
-                        ) : <div key={`${l.id}-${idx}`} className="flex-shrink-0">{inner}</div>;
-                      })}
+                    {/* Loop seamless: dos sub-flex idénticos, cada uno con su propio gap-16
+                        interno + pr-16 final para mantener el espaciado entre sets.
+                        animation translateX(-50%) cae exactamente al inicio del 2do set. */}
+                    <div className="flex w-max animate-marquee items-center" style={{ animationDuration: `${Math.max(5, Math.min(120, tb.marquee_speed ?? 30))}s` }}>
+                      {[0, 1].map((copyIdx) => (
+                        <div key={copyIdx} className="flex gap-16 items-center pr-16 flex-shrink-0" aria-hidden={copyIdx === 1}>
+                          {items.map((l) => {
+                            const inner = l.logo_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={l.logo_url} alt={l.name} className={`h-10 object-contain ${tb.grayscale ? 'grayscale opacity-60' : ''}`} />
+                            ) : (
+                              <span className={`text-xl font-bold whitespace-nowrap ${tb.grayscale ? 'text-black/50' : 'text-black/70'}`}>{l.name}</span>
+                            );
+                            return l.href && copyIdx === 0 ? (
+                              <a key={`${l.id}-${copyIdx}`} href={l.href} target="_blank" rel="noopener" className="flex-shrink-0">{inner}</a>
+                            ) : <div key={`${l.id}-${copyIdx}`} className="flex-shrink-0">{inner}</div>;
+                          })}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ) : (
