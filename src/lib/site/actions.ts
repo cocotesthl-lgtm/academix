@@ -183,7 +183,7 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   const cfg = await loadConfig(tenant.id);
   const section = cfg.sections[key] as Record<string, unknown>;
 
-  for (const f of ['title', 'subtitle', 'body', 'cta_label', 'cta_href', 'name', 'bio', 'credentials', 'ends_at',
+  for (const f of ['title', 'subtitle', 'body', 'cta_label', 'cta_href', 'name', 'bio', 'credentials', 'ends_at', 'eyebrow_text',
                    'before_label', 'after_label', 'before_body', 'after_body', 'video_id',
                    'eyebrow', 'cta_label_2', 'cta_href_2', 'caption']) {
     if (formData.has(f)) section[f] = String(formData.get(f) ?? '');

@@ -110,6 +110,10 @@ export type SectionKey =
  */
 type SectionBase = {
   enabled: boolean;
+  /** Pre-título / eyebrow en mayúsculas chico sobre el H2 (ej. "SOBRE NOSOTROS").
+   *  Si no se setea, las secciones que ya tienen uno hardcodeado mantienen
+   *  ese default. Vacío explícito = ocultar el eyebrow. */
+  eyebrow_text?: string | null;
   bg_color?: string | null;          // fondo de la sección
   text_color?: string | null;        // color de todos los texts (catch-all)
   // ─ Personalización fina (todos opcionales, nulos = usa el default) ─

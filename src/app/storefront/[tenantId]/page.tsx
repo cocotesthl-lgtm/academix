@@ -416,7 +416,7 @@ export default async function StorefrontHome({
                   </FadeIn>
                   <FadeIn delay={150}>
                     <div>
-                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Sobre nosotros</div>
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{a.eyebrow_text ?? 'Sobre nosotros'}</div>
                       <h2 className="text-3xl md:text-4xl font-bold mb-4"
                         dangerouslySetInnerHTML={richHtml(a.title)} />
                       <div className="text-black/70 whitespace-pre-line leading-relaxed text-lg"
@@ -459,7 +459,7 @@ export default async function StorefrontHome({
               <section key={key} {...dt} id={key} className="px-6 py-20" style={bg ? { background: bg } : undefined}>
                 <FadeIn>
                   <div className="text-center mb-12">
-                    <div className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: primary }}>Quién enseña</div>
+                    <div className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: primary }}>{ins.eyebrow_text ?? 'Quién enseña'}</div>
                     <h2 className="text-2xl md:text-3xl font-bold">{ins.title}</h2>
                   </div>
                 </FadeIn>
@@ -530,7 +530,7 @@ export default async function StorefrontHome({
                 <div className="max-w-4xl mx-auto">
                   <FadeIn>
                     <div className="text-center mb-10">
-                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Aprendizaje</div>
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{lp.eyebrow_text ?? 'Aprendizaje'}</div>
                       <h2 className="text-3xl md:text-4xl font-bold">{lp.title}</h2>
                       {lp.subtitle && <p className="text-black/60 mt-3 text-lg">{lp.subtitle}</p>}
                     </div>
@@ -558,7 +558,7 @@ export default async function StorefrontHome({
                 <div className="max-w-5xl mx-auto">
                   <FadeIn>
                     <div className="text-center mb-12">
-                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Beneficios</div>
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{ft.eyebrow_text ?? 'Beneficios'}</div>
                       <h2 className="text-3xl md:text-4xl font-bold">{ft.title}</h2>
                     </div>
                   </FadeIn>
@@ -641,7 +641,7 @@ export default async function StorefrontHome({
                 <div className="max-w-5xl mx-auto">
                   <FadeIn>
                     <div className="text-center mb-12">
-                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Testimonios</div>
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{ts.eyebrow_text ?? 'Testimonios'}</div>
                       <h2 className="text-3xl md:text-4xl font-bold">{ts.title}</h2>
                     </div>
                   </FadeIn>
@@ -715,7 +715,7 @@ export default async function StorefrontHome({
                 <div className="max-w-3xl mx-auto">
                   <FadeIn>
                     <div className="text-center mb-10">
-                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>FAQ</div>
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{fq.eyebrow_text ?? 'FAQ'}</div>
                       <h2 className="text-3xl md:text-4xl font-bold">{fq.title}</h2>
                     </div>
                   </FadeIn>
@@ -927,7 +927,7 @@ export default async function StorefrontHome({
                 <FadeIn>
                   <div className="max-w-2xl mx-auto">
                     <div className="text-center mb-10">
-                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>Contacto</div>
+                      <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{ct.eyebrow_text ?? 'Contacto'}</div>
                       <h2 className="text-3xl md:text-4xl font-bold">{ct.title}</h2>
                       {ct.subtitle && <p className="mt-3 text-black/60">{ct.subtitle}</p>}
                     </div>

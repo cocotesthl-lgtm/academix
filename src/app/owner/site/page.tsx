@@ -36,6 +36,7 @@ import {
 } from "@/components/owner/site/SectionEditors";
 import { ColorAutoSave } from "@/components/owner/site/ColorAutoSave";
 import { SectionStyleEditor } from "@/components/owner/site/SectionStyleEditor";
+import { EyebrowAutoSave } from "@/components/owner/site/EyebrowAutoSave";
 import { HrefTargetsProvider } from "@/components/owner/site/HrefSelect";
 import { buildCourseTargets } from "@/components/owner/site/href-targets";
 
@@ -255,14 +256,21 @@ export default async function SiteBuilderPage() {
                 marquee={cfg.sections.trusted_by.marquee}
               />
             )}
-            {key === 'about' && (
+            {key === 'about' && (<>
+              <div className="mb-4 max-w-md">
+                <EyebrowAutoSave sectionKey="about" initial={cfg.sections.about.eyebrow_text} placeholder="SOBRE NOSOTROS" />
+              </div>
               <AboutEditor
                 initial={{ title: cfg.sections.about.title, body: cfg.sections.about.body }}
                 imageUrl={cfg.sections.about.image_url}
                 primary={primary}
               />
-            )}
+            </>)}
             {key === 'instructor' && (
+              <>
+              <div className="mb-4 max-w-md">
+                <EyebrowAutoSave sectionKey="instructor" initial={cfg.sections.instructor.eyebrow_text} placeholder="QUIÉN ENSEÑA" />
+              </div>
               <InstructorEditor
                 initial={{
                   title: cfg.sections.instructor.title,
@@ -271,6 +279,7 @@ export default async function SiteBuilderPage() {
                 items={cfg.sections.instructor.items ?? []}
                 primary={primary}
               />
+            </>
             )}
             {key === 'stats' && (
               <StatsEditor
@@ -280,19 +289,29 @@ export default async function SiteBuilderPage() {
               />
             )}
             {key === 'learn_points' && (
+              <>
+              <div className="mb-4 max-w-md">
+                <EyebrowAutoSave sectionKey="learn_points" initial={cfg.sections.learn_points.eyebrow_text} placeholder="APRENDIZAJE" />
+              </div>
               <LearnPointsEditor
                 initialTitle={cfg.sections.learn_points.title}
                 initialSubtitle={cfg.sections.learn_points.subtitle}
                 items={cfg.sections.learn_points.items}
                 primary={primary}
               />
+            </>
             )}
             {key === 'features' && (
+              <>
+              <div className="mb-4 max-w-md">
+                <EyebrowAutoSave sectionKey="features" initial={cfg.sections.features.eyebrow_text} placeholder="BENEFICIOS" />
+              </div>
               <FeaturesEditor
                 initialTitle={cfg.sections.features.title}
                 items={cfg.sections.features.items}
                 primary={primary}
               />
+            </>
             )}
             {key === 'featured' && (
               <FeaturedEditor initialTitle={cfg.sections.featured.title} primary={primary} />
@@ -321,11 +340,16 @@ export default async function SiteBuilderPage() {
               />
             )}
             {key === 'testimonials' && (
+              <>
+              <div className="mb-4 max-w-md">
+                <EyebrowAutoSave sectionKey="testimonials" initial={cfg.sections.testimonials.eyebrow_text} placeholder="TESTIMONIOS" />
+              </div>
               <TestimonialsEditor
                 initialTitle={cfg.sections.testimonials.title}
                 items={cfg.sections.testimonials.items}
                 primary={primary}
               />
+            </>
             )}
             {key === 'before_after' && (
               <BeforeAfterEditor
@@ -342,7 +366,12 @@ export default async function SiteBuilderPage() {
               />
             )}
             {key === 'faq' && (
+              <>
+              <div className="mb-4 max-w-md">
+                <EyebrowAutoSave sectionKey="faq" initial={cfg.sections.faq.eyebrow_text} placeholder="FAQ" />
+              </div>
               <FaqEditor initialTitle={cfg.sections.faq.title} items={cfg.sections.faq.items} />
+            </>
             )}
             {key === 'offer' && (
               <OfferEditor
@@ -408,6 +437,10 @@ export default async function SiteBuilderPage() {
               />
             )}
             {key === 'contact' && (
+              <>
+              <div className="mb-4 max-w-md">
+                <EyebrowAutoSave sectionKey="contact" initial={cfg.sections.contact.eyebrow_text} placeholder="CONTACTO" />
+              </div>
               <ContactEditor
                 initial={{
                   title: cfg.sections.contact.title,
@@ -421,6 +454,7 @@ export default async function SiteBuilderPage() {
                 }}
                 primary={primary}
               />
+            </>
             )}
             {key === 'cta_final' && (
               <CtaFinalEditor
