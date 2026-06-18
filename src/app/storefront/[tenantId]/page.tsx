@@ -984,6 +984,54 @@ export default async function StorefrontHome({
             );
           }
 
+          case 'map': {
+            const m = cfg.sections.map;
+            if (!m.address.trim()) return null;
+            const encoded = encodeURIComponent(m.address);
+            const zoom = Math.max(1, Math.min(20, m.zoom ?? 15));
+            const heightPx = Math.max(200, Math.min(800, m.height_px ?? 400));
+            // Embed gratis sin API key
+            const embedSrc = `https://www.google.com/maps?q=${encoded}&z=${zoom}&output=embed`;
+            // Link a Cómo llegar (abre app de mapas)
+            const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encoded}`;
+            return (
+              <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+                <div className="max-w-5xl mx-auto">
+                  {(m.title || m.subtitle) && (
+                    <FadeIn>
+                      <div className="text-center mb-8">
+                        {m.title && <h2 className="text-3xl md:text-4xl font-bold mb-2">{m.title}</h2>}
+                        {m.subtitle && <p className="text-black/60">{m.subtitle}</p>}
+                      </div>
+                    </FadeIn>
+                  )}
+                  <div className="rounded-2xl overflow-hidden border border-black/10 shadow-lg" style={{ height: `${heightPx}px` }}>
+                    <iframe
+                      src={embedSrc}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title={m.address}
+                      allowFullScreen
+                    />
+                  </div>
+                  <div className="mt-5 text-center space-y-2">
+                    <p className="text-sm text-black/70">📍 {m.address}</p>
+                    {m.show_directions_cta && (
+                      <a href={directionsUrl} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold text-white shadow hover:shadow-md transition"
+                        style={{ background: primary }}>
+                        🗺 Cómo llegar
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </section>
+            );
+          }
+
           case 'cta_final': {
             const c = cfg.sections.cta_final;
             return (

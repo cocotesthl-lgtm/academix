@@ -102,6 +102,7 @@ export type SectionKey =
   | 'newsletter'
   | 'custom'
   | 'contact'
+  | 'map'
   | 'cta_final';
 
 /**
@@ -185,6 +186,14 @@ export type SiteConfig = {
     newsletter:   SectionBase & { title: string; subtitle: string; cta_label: string };
     custom:       SectionBase & { title: string; subtitle: string; body: string; image_url: string | null; image_pos: CustomImagePos; cta_label: string; cta_href: string };
     contact:      SectionBase & { title: string; subtitle: string; email: string; whatsapp: string; name_label: string; email_label: string; message_label: string; submit_label: string };
+    map:          SectionBase & {
+      title: string;
+      subtitle: string;
+      address: string;          // dirección completa que se embebe en Google Maps
+      zoom: number;             // nivel de zoom (1-20, default 15)
+      height_px: number;        // alto del mapa en px (200-800, default 400)
+      show_directions_cta: boolean;  // botón "Cómo llegar"
+    };
     cta_final:    SectionBase & { title: string; body: string; cta_label: string; cta_href: string };
   };
   order: SectionKey[];
@@ -213,7 +222,8 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'custom',
   'cta_final',
   'newsletter',
-  'contact'   // anteúltimo según pedido — pero al ser la última realmente queda como cierre
+  'contact',
+  'map'       // mapa al final, normalmente antes del footer
 ];
 
 /**
@@ -402,6 +412,15 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       email_label: 'Email',
       message_label: 'Mensaje',
       submit_label: 'Enviar'
+    },
+    map: {
+      enabled: false,
+      title: 'Encontranos',
+      subtitle: 'Visitanos en nuestra oficina',
+      address: '',
+      zoom: 15,
+      height_px: 400,
+      show_directions_cta: true
     },
     cta_final: {
       enabled: true,

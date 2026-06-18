@@ -30,6 +30,7 @@ import {
   NewsletterEditor,
   CtaFinalEditor,
   ContactEditor,
+  MapEditor,
   CustomEditor,
   NavEditor,
   FooterEditor
@@ -63,6 +64,7 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   newsletter:   { title: "📧 Newsletter", desc: "Capturá emails con un formulario simple." },
   custom:       { title: "🎨 Bloque personalizado", desc: "Comodín 100% editable: título + texto + imagen + CTA + posición." },
   contact:      { title: "✉️ Contacto", desc: "Formulario de contacto con email y WhatsApp opcionales." },
+  map:          { title: "📍 Mapa / Ubicación", desc: "Mostrá dónde estás con Google Maps embebido (sin API key)." },
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
 
@@ -458,6 +460,18 @@ export default async function SiteBuilderPage() {
                 primary={primary}
               />
             </>
+            )}
+            {key === 'map' && (
+              <MapEditor
+                initial={{
+                  title: cfg.sections.map.title,
+                  subtitle: cfg.sections.map.subtitle,
+                  address: cfg.sections.map.address ?? '',
+                  zoom: cfg.sections.map.zoom ?? 15,
+                  height_px: cfg.sections.map.height_px ?? 400,
+                  show_directions_cta: cfg.sections.map.show_directions_cta ?? true
+                }}
+              />
             )}
             {key === 'cta_final' && (
               <CtaFinalEditor

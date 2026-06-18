@@ -229,6 +229,16 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
     const n = parseInt(String(formData.get('logo_gap') ?? '64'), 10);
     section.logo_gap = Math.min(160, Math.max(8, Number.isFinite(n) ? n : 64));
   }
+  if (formData.has('address')) section.address = String(formData.get('address') ?? '').trim().slice(0, 500);
+  if (formData.has('zoom')) {
+    const n = parseInt(String(formData.get('zoom') ?? '15'), 10);
+    section.zoom = Math.min(20, Math.max(1, Number.isFinite(n) ? n : 15));
+  }
+  if (formData.has('height_px')) {
+    const n = parseInt(String(formData.get('height_px') ?? '400'), 10);
+    section.height_px = Math.min(800, Math.max(200, Number.isFinite(n) ? n : 400));
+  }
+  if (formData.has('show_directions_cta')) section.show_directions_cta = formData.get('show_directions_cta') === 'on';
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
   if (formData.has('media_type')) {
     const v = String(formData.get('media_type') ?? 'image');

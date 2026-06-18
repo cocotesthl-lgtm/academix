@@ -2697,6 +2697,117 @@ type ContactValues = {
   name_label: string; email_label: string; message_label: string; submit_label: string;
 };
 
+/* =====================================================================
+ * MAP — Google Maps embed (sin API key)
+ * ===================================================================== */
+
+type MapValues = {
+  title: string; subtitle: string; address: string;
+  zoom: number; height_px: number; show_directions_cta: boolean;
+};
+
+export function MapEditor({ initial }: { initial: MapValues }) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('map');
+  const encoded = encodeURIComponent(v.address.trim() || 'Buenos Aires, Argentina');
+  const embedSrc = `https://www.google.com/maps?q=${encoded}&z=${v.zoom}&output=embed`;
+  const searchLink = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+
+        <div>
+          <label className="block text-xs text-white/60 mb-1">Dirección (la que se muestra en el mapa)</label>
+          <input
+            value={v.address}
+            onChange={(e) => setV({ ...v, address: e.target.value })}
+            placeholder="Av. Corrientes 1234, CABA, Argentina"
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+          />
+          <p className="text-[10px] text-white/40 mt-1">
+            💡 Tipeá tu dirección lo más completa posible (calle + número + ciudad + país).
+            {' '}
+            <a href={searchLink} target="_blank" rel="noopener noreferrer" className="underline text-white/65 hover:text-white">
+              Verificá en Google Maps →
+            </a>
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-white/60 flex items-center justify-between">
+              <span>🔍 Zoom</span><span className="text-white/45 tabular-nums">{v.zoom}</span>
+            </label>
+            <input type="range" min={1} max={20} step={1}
+              value={v.zoom} onChange={(e) => setV({ ...v, zoom: parseInt(e.target.value, 10) })}
+              className="w-full mt-1 accent-fuchsia-500" />
+            <div className="flex justify-between text-[10px] text-white/40">
+              <span>🌍 Mundo</span><span>🏠 Detalle</span>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-white/60 flex items-center justify-between">
+              <span>📐 Alto</span><span className="text-white/45 tabular-nums">{v.height_px}px</span>
+            </label>
+            <input type="range" min={200} max={800} step={10}
+              value={v.height_px} onChange={(e) => setV({ ...v, height_px: parseInt(e.target.value, 10) })}
+              className="w-full mt-1 accent-fuchsia-500" />
+            <div className="flex justify-between text-[10px] text-white/40">
+              <span>Bajo</span><span>Alto</span>
+            </div>
+          </div>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={v.show_directions_cta}
+            onChange={(e) => setV({ ...v, show_directions_cta: e.target.checked })} />
+          Mostrar botón &quot;🗺 Cómo llegar&quot; debajo del mapa
+        </label>
+
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({
+          title: v.title, subtitle: v.subtitle, address: v.address,
+          zoom: String(v.zoom), height_px: String(v.height_px),
+          show_directions_cta: v.show_directions_cta
+        })} />
+
+        <p className="text-[10px] text-white/40 pt-2 border-t border-white/5">
+          ✅ Sin API key — usa el embed gratis de Google Maps.
+        </p>
+      </div>
+      <PreviewFrame>
+        <div className="p-3">
+          {(v.title || v.subtitle) && (
+            <div className="text-center mb-2">
+              {v.title && <h2 className="text-base font-bold">{v.title}</h2>}
+              {v.subtitle && <p className="text-[10px] text-black/55">{v.subtitle}</p>}
+            </div>
+          )}
+          {v.address.trim() ? (
+            <div className="rounded overflow-hidden border border-black/15" style={{ height: '180px' }}>
+              <iframe
+                src={embedSrc}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                title="preview map"
+              />
+            </div>
+          ) : (
+            <div className="rounded border-2 border-dashed border-black/15 flex items-center justify-center text-black/40 text-xs" style={{ height: '180px' }}>
+              📍 Tipeá una dirección
+            </div>
+          )}
+          {v.address.trim() && <p className="text-[10px] text-black/65 text-center mt-2">📍 {v.address}</p>}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
 export function ContactEditor({ initial, primary }: { initial: ContactValues; primary: string }) {
   const [v, setV] = useState(initial);
   const { pending, saved, fire } = useSave('contact');
