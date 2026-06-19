@@ -5,7 +5,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { CourseEditor, type Course, type Module, type Lesson, type Category } from "@/components/owner/courses/CourseEditor";
 import { GrantEnrollmentForm } from "@/components/owner/courses/GrantEnrollmentForm";
-import { deleteCourseAction } from "@/lib/courses/actions";
+import { deleteCourseAction, setCourseContentLabelsAction } from "@/lib/courses/actions";
 import { CourseCheckoutOverride } from "@/components/owner/checkout/CourseCheckoutOverride";
 import { CourseCalendarConfig } from "@/components/owner/courses/CourseCalendarConfig";
 import { CourseSubscriptionConfig } from "@/components/owner/courses/CourseSubscriptionConfig";
@@ -65,12 +65,16 @@ export default async function CourseEditPage({
     pricing_mode: 'one_time' | 'subscription' | null;
     subscription_frequency: 'monthly' | 'yearly' | null;
     subscription_trial_days: number | null;
+    content_title?: string | null;
+    module_label?: string | null;
+    lesson_label?: string | null;
+    show_content_section?: boolean | null;
   };
   let courseExtras: CourseExtras | null = null;
   try {
     const { data, error } = await svc
       .from("courses")
-      .select("checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days, pricing_mode, subscription_frequency, subscription_trial_days")
+      .select("checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days, pricing_mode, subscription_frequency, subscription_trial_days, content_title, module_label, lesson_label, show_content_section")
       .eq("id", course.id)
       .maybeSingle<CourseExtras>();
     if (!error && data) courseExtras = data;
@@ -208,6 +212,49 @@ export default async function CourseEditPage({
           priceCents={course.price_cents}
           currency={course.currency}
         />
+      </section>
+
+      <section className="max-w-3xl pt-8 border-t border-white/10">
+        <h2 className="text-lg font-semibold mb-1">Página pública — sección &quot;Contenido&quot;</h2>
+        <p className="text-sm text-white/60 mb-4">
+          Personalizá los textos de la sección que muestra los módulos/lecciones en la
+          página de venta del producto. Útil si no vendés un curso (ej. ecommerce → &quot;Detalles&quot; / &quot;variantes&quot; / &quot;opciones&quot;).
+        </p>
+        <form action={setCourseContentLabelsAction} className="grid sm:grid-cols-2 gap-3">
+          <input type="hidden" name="id" value={course.id} />
+          <label className="block sm:col-span-2">
+            <span className="text-xs text-white/55">Título de la sección</span>
+            <input name="content_title" defaultValue={courseExtras?.content_title ?? ''}
+              placeholder="Contenido del curso"
+              maxLength={80}
+              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </label>
+          <label className="block">
+            <span className="text-xs text-white/55">Etiqueta &quot;módulos&quot; (plural)</span>
+            <input name="module_label" defaultValue={courseExtras?.module_label ?? ''}
+              placeholder="módulos"
+              maxLength={40}
+              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </label>
+          <label className="block">
+            <span className="text-xs text-white/55">Etiqueta &quot;lecciones&quot; (plural)</span>
+            <input name="lesson_label" defaultValue={courseExtras?.lesson_label ?? ''}
+              placeholder="lecciones"
+              maxLength={40}
+              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </label>
+          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+            <input type="checkbox" name="show_content_section"
+              defaultChecked={courseExtras?.show_content_section !== false} />
+            Mostrar la sección de contenido en la página pública
+          </label>
+          <div className="sm:col-span-2">
+            <button type="submit"
+              className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90">
+              Guardar
+            </button>
+          </div>
+        </form>
       </section>
 
       <section className="max-w-3xl pt-8 border-t border-white/10">

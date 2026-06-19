@@ -74,16 +74,24 @@ export default async function CourseDetailPage({
     calendar_label: string | null;
     calendar_required: boolean | null;
     calendar_horizon_days: number | null;
+    content_title?: string | null;
+    module_label?: string | null;
+    lesson_label?: string | null;
+    show_content_section?: boolean | null;
   };
   let courseExtras: CourseExtras | null = null;
   try {
     const { data, error } = await svc
       .from("courses")
-      .select("checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days")
+      .select("checkout_config, calendar_mode, calendar_label, calendar_required, calendar_horizon_days, content_title, module_label, lesson_label, show_content_section")
       .eq("id", course.id)
       .maybeSingle<CourseExtras>();
     if (!error && data) courseExtras = data;
   } catch { /* migration no corrida — defaults */ }
+  const contentTitle = courseExtras?.content_title?.trim() || 'Contenido del curso';
+  const moduleLabel = courseExtras?.module_label?.trim() || 'módulos';
+  const lessonLabel = courseExtras?.lesson_label?.trim() || 'lecciones';
+  const showContentSection = courseExtras?.show_content_section !== false;
 
   let tenantCheckoutCfg: unknown = null;
   try {
@@ -554,17 +562,18 @@ export default async function CourseDetailPage({
             </div>
           )}
 
+          {showContentSection && (
           <section>
-            <h2 className="text-xl font-bold mb-3">Contenido del curso</h2>
+            <h2 className="text-xl font-bold mb-3">{contentTitle}</h2>
             <p className="text-sm text-black/50 mb-4">
-              {modules.length} módulos · {totalLessons} lecciones
+              {modules.length} {moduleLabel} · {totalLessons} {lessonLabel}
             </p>
             <div className="space-y-3">
               {modules.map((m) => (
                 <details key={m.id} className="rounded-lg border border-black/10 overflow-hidden">
                   <summary className="cursor-pointer px-4 py-3 bg-black/[0.02] font-medium flex justify-between">
                     <span>{m.title}</span>
-                    <span className="text-xs text-black/50">{m.lessons.length} lecciones</span>
+                    <span className="text-xs text-black/50">{m.lessons.length} {lessonLabel}</span>
                   </summary>
                   <ul className="divide-y divide-black/5">
                     {m.lessons.map((l) => (
@@ -593,6 +602,7 @@ export default async function CourseDetailPage({
               )}
             </div>
           </section>
+          )}
         </div>
 
         <aside className="md:col-span-1">

@@ -172,6 +172,28 @@ export async function updateCourseAction(
   return { ok: true };
 }
 
+/** Labels editables de la sección "Contenido del curso" en la página
+ *  pública del producto (defensivo: ignora silenciosamente si migration
+ *  0035 no corrió). */
+export async function setCourseContentLabelsAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const svc = getServiceClient();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const payload: Record<string, unknown> = {
+    content_title: String(formData.get('content_title') ?? '').trim().slice(0, 80) || null,
+    module_label: String(formData.get('module_label') ?? '').trim().slice(0, 40) || null,
+    lesson_label: String(formData.get('lesson_label') ?? '').trim().slice(0, 40) || null,
+    show_content_section: formData.get('show_content_section') === 'on',
+    updated_at: new Date().toISOString()
+  };
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('courses') as any).update(payload).eq('id', id).eq('tenant_id', tenant.id);
+  } catch { /* migration pendiente */ }
+  revalidatePath(`/courses/${id}`);
+}
+
 export async function setCourseStatusAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();

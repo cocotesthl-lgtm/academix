@@ -856,4 +856,10 @@ create policy "platform_sub_payments: owner read" on public.platform_subscriptio
         and m.user_id = auth.uid() and m.role = 'owner' and m.status = 'active')
   );
 
+-- ── 0035 Labels editables sección "Contenido del curso" ───
+alter table public.courses add column if not exists content_title text;
+alter table public.courses add column if not exists module_label text;
+alter table public.courses add column if not exists lesson_label text;
+alter table public.courses add column if not exists show_content_section boolean not null default true;
+
 -- ✓ Listo. Recargá la app.
