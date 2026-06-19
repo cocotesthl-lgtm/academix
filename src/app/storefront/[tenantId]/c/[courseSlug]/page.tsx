@@ -98,9 +98,15 @@ export default async function CourseDetailPage({
   // el ReservationWidget en lugar del CouponInput.
   let productType: string | null = null;
   let linkedVenues: Array<{ id: string; name: string; address: string | null }> = [];
+  let resPaymentMode: 'none' | 'deposit' | 'full' | 'choice' = 'none';
+  let resDepositPercent = 30;
   try {
-    const { data: pt } = await svc.from('courses').select('product_type').eq('id', course.id).maybeSingle<{ product_type: string | null }>();
+    const { data: pt } = await svc.from('courses')
+      .select('product_type, payment_mode, deposit_percent').eq('id', course.id)
+      .maybeSingle<{ product_type: string | null; payment_mode: string | null; deposit_percent: number | null }>();
     productType = pt?.product_type ?? null;
+    resPaymentMode = (pt?.payment_mode as typeof resPaymentMode) ?? 'none';
+    resDepositPercent = pt?.deposit_percent ?? 30;
     const { data: cv } = await svc.from('course_venues').select('venue_id, venues(id, name, address, active)').eq('course_id', course.id);
     type Row = { venue_id: string; venues: { id: string; name: string; address: string | null; active: boolean } | null };
     linkedVenues = ((cv ?? []) as unknown as Row[])
@@ -640,6 +646,10 @@ export default async function CourseDetailPage({
                 primary={primary}
                 venues={linkedVenues}
                 ctaText={productType === 'restaurant' ? 'Reservar mesa' : 'Reservar lugar'}
+                paymentMode={resPaymentMode}
+                depositPercent={resDepositPercent}
+                priceCents={course.price_cents}
+                currency={course.currency}
               />
             ) : calendarMode === 'event_tickets' ? (
               <TicketPicker

@@ -11,7 +11,7 @@ import { CourseCalendarConfig } from "@/components/owner/courses/CourseCalendarC
 import { CourseSubscriptionConfig } from "@/components/owner/courses/CourseSubscriptionConfig";
 import { CourseRibbonEditor } from "@/components/owner/courses/CourseRibbonEditor";
 import { VenueLinker, type VenueOpt } from "@/components/owner/courses/VenueLinker";
-import { setCourseDepositAction } from "@/lib/venues/actions";
+import { setCoursePaymentModeAction } from "@/lib/venues/actions";
 import { mergeCheckoutConfig } from "@/lib/checkout/types";
 import type { CalendarMode } from "@/lib/calendar/types";
 
@@ -301,14 +301,31 @@ export default async function CourseEditPage({
   );
 }
 
+function PaymentModeRadio({ value, label, hint, current }: {
+  value: string; label: string; hint: string; current: string;
+}) {
+  const selected = current === value;
+  return (
+    <label className={`flex items-start gap-3 rounded border p-3 cursor-pointer transition ${
+      selected ? 'border-emerald-400/60 bg-emerald-400/5' : 'border-white/10 hover:border-white/25 hover:bg-white/[0.04]'
+    }`}>
+      <input type="radio" name="payment_mode" value={value} defaultChecked={selected} className="mt-1" />
+      <div className="min-w-0">
+        <div className="text-sm font-semibold">{label}</div>
+        <div className="text-xs text-white/55 leading-snug mt-0.5">{hint}</div>
+      </div>
+    </label>
+  );
+}
+
 /** Server component que carga sedes del tenant + las vinculadas a este producto */
 async function VenueLinkerBlock({ courseId, tenantId }: { courseId: string; tenantId: string }) {
   const svc = getServiceClient();
   let venues: VenueOpt[] = [];
   let linkedIds: string[] = [];
   let migrationMissing = false;
-  let depositCents = 0;
-  let depositRequired = false;
+  let paymentMode: 'none' | 'deposit' | 'full' | 'choice' = 'none';
+  let depositPercent = 30;
   try {
     const { data: vs, error } = await svc.from('venues')
       .select('id, name, address, active').eq('tenant_id', tenantId)
@@ -318,10 +335,10 @@ async function VenueLinkerBlock({ courseId, tenantId }: { courseId: string; tena
     const { data: linked } = await svc.from('course_venues').select('venue_id').eq('course_id', courseId);
     linkedIds = ((linked ?? []) as Array<{ venue_id: string }>).map((r) => r.venue_id);
     const { data: dep } = await svc.from('courses')
-      .select('deposit_cents, deposit_required').eq('id', courseId)
-      .maybeSingle<{ deposit_cents: number | null; deposit_required: boolean | null }>();
-    depositCents = dep?.deposit_cents ?? 0;
-    depositRequired = !!dep?.deposit_required;
+      .select('payment_mode, deposit_percent').eq('id', courseId)
+      .maybeSingle<{ payment_mode: string | null; deposit_percent: number | null }>();
+    paymentMode = (dep?.payment_mode as typeof paymentMode) ?? 'none';
+    depositPercent = dep?.deposit_percent ?? 30;
   } catch { migrationMissing = true; }
   if (migrationMissing) return null;
   return (
@@ -336,22 +353,31 @@ async function VenueLinkerBlock({ courseId, tenantId }: { courseId: string; tena
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-1">💰 Seña para reservar (opcional)</h2>
+        <h2 className="text-lg font-semibold mb-1">💰 Pago online para reservar</h2>
         <p className="text-sm text-white/60 mb-4">
-          Si querés cobrar un anticipo para confirmar la reserva, activá esto. El cliente
-          paga vía MercadoPago y la reserva queda confirmada automáticamente.
+          Decidís si el cliente paga algo al reservar y cuánto. Si no, cobrás en el lugar.
+          El cliente paga por MercadoPago y la reserva queda <strong>confirmada automáticamente</strong>.
         </p>
-        <form action={setCourseDepositAction} className="rounded-lg border border-white/10 bg-white/[0.02] p-4 space-y-3">
+        <form action={setCoursePaymentModeAction} className="rounded-lg border border-white/10 bg-white/[0.02] p-4 space-y-4">
           <input type="hidden" name="course_id" value={courseId} />
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="deposit_required" defaultChecked={depositRequired} />
-            Cobrar seña para confirmar reserva
-          </label>
-          <label className="block">
-            <span className="text-xs text-white/55">Monto de la seña (ARS)</span>
-            <input type="number" name="deposit" min={0} step="1" defaultValue={(depositCents / 100).toString()}
-              className="mt-1 w-40 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono" />
-          </label>
+
+          <div className="space-y-2">
+            <PaymentModeRadio value="none"    label="Sin pago online" hint="Cliente reserva sin pagar. Vos cobrás cuando llega." current={paymentMode} />
+            <PaymentModeRadio value="deposit" label="Solo seña"        hint="Cliente paga un porcentaje del precio para confirmar." current={paymentMode} />
+            <PaymentModeRadio value="full"    label="Pago total"       hint="Cliente paga el precio completo al reservar." current={paymentMode} />
+            <PaymentModeRadio value="choice"  label="El cliente elige" hint="En el storefront, el cliente decide: pagar total o pagar seña." current={paymentMode} />
+          </div>
+
+          <div className="flex items-center gap-3 pt-2 border-t border-white/10">
+            <label className="text-sm flex items-center gap-2">
+              <span className="text-white/70">% de seña sobre el precio:</span>
+              <input type="number" name="deposit_percent" min={1} max={99} defaultValue={depositPercent}
+                className="w-20 rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm font-mono text-center" />
+              <span className="text-white/55">%</span>
+            </label>
+            <span className="text-[11px] text-white/40">(aplica si el modo incluye seña)</span>
+          </div>
+
           <button type="submit" className="rounded bg-white text-black text-sm font-semibold px-4 py-1.5">
             Guardar
           </button>

@@ -938,6 +938,21 @@ alter table public.courses add column if not exists deposit_required boolean not
 alter table public.reservations add column if not exists deposit_paid boolean not null default false;
 alter table public.reservations add column if not exists deposit_external_id text;
 
+-- ── 0039 Modo de pago de reservas ───
+alter table public.courses add column if not exists payment_mode text not null default 'none';
+do $$ begin
+  alter table public.courses add constraint courses_payment_mode_check
+    check (payment_mode in ('none','deposit','full','choice'));
+exception when duplicate_object then null; end $$;
+alter table public.courses add column if not exists deposit_percent smallint not null default 30;
+do $$ begin
+  alter table public.courses add constraint courses_deposit_percent_check
+    check (deposit_percent between 1 and 99);
+exception when duplicate_object then null; end $$;
+update public.courses set payment_mode = 'deposit' where deposit_required = true and payment_mode = 'none';
+alter table public.reservations add column if not exists payment_choice text;
+alter table public.reservations add column if not exists payment_amount_cents bigint;
+
 -- ── 0035 Labels editables sección "Contenido del curso" ───
 alter table public.courses add column if not exists content_title text;
 alter table public.courses add column if not exists module_label text;

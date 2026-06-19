@@ -129,17 +129,23 @@ export async function setVenueScheduleAction(formData: FormData): Promise<void> 
   revalidatePath('/owner/venues');
 }
 
-/** Setear seña del producto */
-export async function setCourseDepositAction(formData: FormData): Promise<void> {
+/** Setear modo de pago de reservas + % de seña */
+export async function setCoursePaymentModeAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const courseId = String(formData.get('course_id') ?? '');
   if (!courseId) return;
-  const required = formData.get('deposit_required') === 'on';
-  const cents = Math.max(0, Math.round(parseFloat(String(formData.get('deposit') ?? '0').replace(/[^0-9.]/g, '') || '0') * 100));
+  const modeRaw = String(formData.get('payment_mode') ?? 'none');
+  const mode = ['none', 'deposit', 'full', 'choice'].includes(modeRaw) ? modeRaw : 'none';
+  const pctRaw = parseInt(String(formData.get('deposit_percent') ?? '30'), 10);
+  const pct = Math.max(1, Math.min(99, Number.isNaN(pctRaw) ? 30 : pctRaw));
   const svc = getServiceClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('courses') as any).update({
-    deposit_cents: cents, deposit_required: required, updated_at: new Date().toISOString()
+    payment_mode: mode,
+    deposit_percent: pct,
+    // Mantenemos deposit_required sincronizado para back-compat con UI/queries viejas
+    deposit_required: mode !== 'none',
+    updated_at: new Date().toISOString()
   }).eq('id', courseId).eq('tenant_id', tenant.id);
   revalidatePath(`/owner/courses/${courseId}`);
 }

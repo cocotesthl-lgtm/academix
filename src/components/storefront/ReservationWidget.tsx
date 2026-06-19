@@ -5,13 +5,18 @@ import { useState, useEffect } from 'react';
 type Venue = { id: string; name: string; address: string | null };
 
 export function ReservationWidget({
-  tenantId, courseId, primary, venues, ctaText
+  tenantId, courseId, primary, venues, ctaText,
+  paymentMode = 'none', depositPercent = 30, priceCents = 0, currency = 'ARS'
 }: {
   tenantId: string;
   courseId: string;
   primary: string;
   venues: Venue[];
   ctaText: string;
+  paymentMode?: 'none' | 'deposit' | 'full' | 'choice';
+  depositPercent?: number;
+  priceCents?: number;
+  currency?: string;
 }) {
   const [selectedVenue, setSelectedVenue] = useState<string>(venues[0]?.id ?? '');
   const [date, setDate] = useState('');
@@ -21,6 +26,11 @@ export function ReservationWidget({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
+  // Selección de pago — sólo relevante si paymentMode='choice'
+  const [paymentChoice, setPaymentChoice] = useState<'full' | 'deposit'>('deposit');
+
+  const depositCents = Math.round((priceCents * depositPercent) / 100);
+  const fmt = (c: number) => `${(c / 100).toLocaleString('es-AR')} ${currency}`;
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +72,8 @@ export function ReservationWidget({
           reservation_date: date,
           reservation_time: time || undefined,
           party_size: party,
-          notes: notes || undefined
+          notes: notes || undefined,
+          payment_choice: paymentMode === 'choice' ? paymentChoice : undefined
         })
       });
       const j = await r.json().catch(() => ({}));
@@ -189,6 +200,48 @@ export function ReservationWidget({
           className="w-full rounded border border-black/15 px-3 py-2 text-sm" />
       </div>
 
+      {/* ── Selector de pago (solo si payment_mode='choice') ── */}
+      {paymentMode === 'choice' && priceCents > 0 && (
+        <div className="rounded-lg border border-black/15 p-3 space-y-2 bg-black/[0.02]">
+          <div className="text-xs font-semibold text-black/70 mb-1">¿Cómo querés pagar?</div>
+          <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
+            paymentChoice === 'full' ? 'border-black bg-white' : 'border-black/10 hover:border-black/30'
+          }`}>
+            <input type="radio" checked={paymentChoice === 'full'} onChange={() => setPaymentChoice('full')} className="mt-0.5" />
+            <div className="min-w-0">
+              <div className="text-sm font-semibold">Pagar total: {fmt(priceCents)}</div>
+              <div className="text-[11px] text-black/55">Tu reserva queda confirmada y lista.</div>
+            </div>
+          </label>
+          <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
+            paymentChoice === 'deposit' ? 'border-black bg-white' : 'border-black/10 hover:border-black/30'
+          }`}>
+            <input type="radio" checked={paymentChoice === 'deposit'} onChange={() => setPaymentChoice('deposit')} className="mt-0.5" />
+            <div className="min-w-0">
+              <div className="text-sm font-semibold">Pagar seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}%)</span></div>
+              <div className="text-[11px] text-black/55">El resto lo pagás en el lugar.</div>
+            </div>
+          </label>
+        </div>
+      )}
+
+      {/* ── Pago obligatorio (deposit/full fijo) — mostrar cuánto se va a cobrar ── */}
+      {(paymentMode === 'deposit' || paymentMode === 'full') && priceCents > 0 && (
+        <div className="rounded-lg border border-black/15 bg-black/[0.02] p-3 text-sm">
+          {paymentMode === 'full' ? (
+            <>
+              <div className="font-semibold">Pago total: {fmt(priceCents)}</div>
+              <div className="text-[11px] text-black/55 mt-0.5">Pagás ahora vía MercadoPago.</div>
+            </>
+          ) : (
+            <>
+              <div className="font-semibold">Seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}% de {fmt(priceCents)})</span></div>
+              <div className="text-[11px] text-black/55 mt-0.5">El resto ({fmt(priceCents - depositCents)}) lo pagás en el lugar.</div>
+            </>
+          )}
+        </div>
+      )}
+
       {error && (
         <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>
       )}
@@ -196,10 +249,10 @@ export function ReservationWidget({
       <button type="submit" disabled={submitting || (slots !== null && slots.length === 0 && !!date)}
         className="w-full rounded-lg text-white font-semibold py-3 disabled:opacity-50"
         style={{ background: primary }}>
-        {submitting ? 'Procesando…' : ctaText}
+        {submitting ? 'Procesando…' : paymentMode === 'none' ? ctaText : `${ctaText} y pagar`}
       </button>
       <p className="text-[10px] text-black/45 text-center">
-        Te enviamos email de confirmación.
+        {paymentMode === 'none' ? 'Reserva sin cargo. Te contactamos para confirmar.' : 'Pago seguro vía MercadoPago.'}
       </p>
     </form>
   );
