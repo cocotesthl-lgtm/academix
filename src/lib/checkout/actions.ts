@@ -53,6 +53,33 @@ async function saveCourseConfig(courseId: string, tenantId: string, cfg: Checkou
     .eq('id', courseId).eq('tenant_id', tenantId);
 }
 
+/** ───── Presets de checkout (reducen fricción al configurar) ─────
+ *  El owner elige un preset y aplica un set predefinido de campos en 1 click,
+ *  en vez de tildar checkbox por checkbox. Puede afinar después.
+ *  Definiciones en ./presets.ts (no se pueden exportar consts desde 'use server'). */
+
+import { PRESETS, type CheckoutPresetId } from './presets';
+
+export async function applyTenantCheckoutPresetAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const preset = String(formData.get('preset') ?? '') as CheckoutPresetId;
+  if (!(preset in PRESETS)) return;
+  // deep clone para evitar mutar el preset
+  const cfg = JSON.parse(JSON.stringify(PRESETS[preset])) as CheckoutConfig;
+  await saveTenantConfig(tenant.id, cfg);
+  revalidatePath('/owner/checkout');
+}
+
+export async function applyCourseCheckoutPresetAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const courseId = String(formData.get('course_id') ?? '');
+  const preset = String(formData.get('preset') ?? '') as CheckoutPresetId;
+  if (!courseId || !(preset in PRESETS)) return;
+  const cfg = JSON.parse(JSON.stringify(PRESETS[preset])) as CheckoutConfig;
+  await saveCourseConfig(courseId, tenant.id, cfg);
+  revalidatePath(`/owner/courses/${courseId}`);
+}
+
 /** ───── Acciones a nivel TENANT (default global) ───── */
 
 /** Toggle global del modo carrito (tenants.cart_enabled boolean) */

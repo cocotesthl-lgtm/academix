@@ -11,6 +11,7 @@ import {
   parseVideoUrl
 } from '@/lib/courses/landing';
 import { LandingPreview } from '@/components/owner/courses/LandingPreview';
+import { TemplateMockup } from '@/components/owner/courses/TemplateMockup';
 
 /**
  * Editor de la landing del curso con TODAS las secciones editables
@@ -195,24 +196,31 @@ export function LandingEditor({
           <h3 className="text-sm font-bold text-white/80 mb-2">
             Plantilla {activeVariant !== 'A' && <span className="text-fuchsia-300">— editando variante {activeVariant}</span>}
           </h3>
-          <div className="grid md:grid-cols-2 gap-2">
+          <div className="grid md:grid-cols-2 gap-3">
             {(Object.entries(TEMPLATE_LABELS) as Array<[LandingTemplate, typeof TEMPLATE_LABELS[LandingTemplate]]>).map(([k, meta]) => {
+              const isSelected = tplForView === k;
               return (
                 <button
                   key={k}
                   type="button"
                   onClick={() => chooseTemplate(k)}
-                  className={`text-left rounded-lg border p-3 transition ${
-                    tplForView === k
-                      ? 'border-fuchsia-400 bg-fuchsia-500/10'
-                      : 'border-white/15 bg-white/[0.02] hover:bg-white/[0.05]'
+                  className={`text-left rounded-lg border p-3 transition relative ${
+                    isSelected
+                      ? 'border-fuchsia-400 bg-fuchsia-500/10 ring-1 ring-fuchsia-400/40'
+                      : 'border-white/15 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/25'
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{meta.emoji}</span>
+                  {isSelected && (
+                    <span className="absolute top-2 right-2 text-[9px] uppercase tracking-wide bg-fuchsia-400 text-black font-bold px-1.5 py-0.5 rounded">
+                      Activa
+                    </span>
+                  )}
+                  <TemplateMockup template={k} primary={primaryColor} />
+                  <div className="flex items-center gap-2 mt-2.5">
+                    <span className="text-lg leading-none">{meta.emoji}</span>
                     <span className="font-semibold text-sm">{meta.label}</span>
                   </div>
-                  <p className="text-xs text-white/55 mt-1.5 leading-snug">{meta.description}</p>
+                  <p className="text-[11px] text-white/55 mt-1 leading-snug">{meta.description}</p>
                 </button>
               );
             })}

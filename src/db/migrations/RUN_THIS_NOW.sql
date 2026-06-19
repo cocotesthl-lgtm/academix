@@ -856,6 +856,16 @@ create policy "platform_sub_payments: owner read" on public.platform_subscriptio
         and m.user_id = auth.uid() and m.role = 'owner' and m.status = 'active')
   );
 
+-- ── 0036 Ampliar product_type a tipos generales ───
+do $$
+begin
+  alter table public.courses drop constraint if exists courses_product_type_check;
+exception when undefined_table then null;
+end $$;
+alter table public.courses
+  add constraint courses_product_type_check
+  check (product_type in ('course', 'event', 'mentorship', 'vip_pack', 'digital', 'physical', 'service'));
+
 -- ── 0035 Labels editables sección "Contenido del curso" ───
 alter table public.courses add column if not exists content_title text;
 alter table public.courses add column if not exists module_label text;

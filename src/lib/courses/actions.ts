@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { extractDriveFileId, buildEmbedUrl } from '@/lib/drive/embed';
+import { getProductTypeSpec, type ProductType } from '@/lib/courses/product-types';
 
 export type Result<T = unknown> =
   | { ok: true; data?: T }
@@ -51,6 +52,8 @@ export async function createCourseAction(
   const description = String(formData.get('description') ?? '').trim();
   const priceRaw = String(formData.get('price') ?? '0').replace(/[^0-9.]/g, '');
   const currency = String(formData.get('currency') ?? 'ARS').toUpperCase();
+  const productTypeRaw = String(formData.get('product_type') ?? 'course').trim() as ProductType;
+  const spec = getProductTypeSpec(productTypeRaw);
 
   if (!title) return { ok: false, error: 'El título es obligatorio.' };
   const priceCents = Math.round(parseFloat(priceRaw || '0') * 100);
@@ -78,7 +81,8 @@ export async function createCourseAction(
     }
   }
 
-  const payload = {
+  // Base payload (siempre se inserta)
+  const basePayload: Record<string, unknown> = {
     tenant_id: tenant.id,
     slug,
     title,
@@ -89,11 +93,31 @@ export async function createCourseAction(
     affiliate_enabled: true,
     created_by: userId
   };
+
+  // Defaults inteligentes según tipo de producto (migration 0036 + 0035 + 0012)
+  // Si la migración no corrió, retry sin esas cols para no romper.
+  const richPayload: Record<string, unknown> = {
+    ...basePayload,
+    product_type: spec.id,
+    landing_template: spec.landingTemplate,
+    calendar_mode: spec.calendarMode,
+    pricing_mode: spec.pricingMode,
+    content_title: spec.contentTitle,
+    module_label: spec.moduleLabel,
+    lesson_label: spec.lessonLabel,
+    show_content_section: spec.showContentSection
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (svc.from('courses') as any)
-    .insert(payload)
-    .select('id')
-    .single();
+  let { data, error } = await (svc.from('courses') as any)
+    .insert(richPayload).select('id').single();
+
+  if (error) {
+    // Retry con sólo base si alguna columna no existe (migration pendiente)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('courses') as any).insert(basePayload).select('id').single();
+    data = retry.data; error = retry.error;
+  }
 
   if (error) return { ok: false, error: error.message };
   revalidatePath('/courses');
