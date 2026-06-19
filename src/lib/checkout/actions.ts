@@ -55,6 +55,18 @@ async function saveCourseConfig(courseId: string, tenantId: string, cfg: Checkou
 
 /** ───── Acciones a nivel TENANT (default global) ───── */
 
+/** Toggle global del modo carrito (tenants.cart_enabled boolean) */
+export async function setCartEnabledAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const enabled = formData.get('cart_enabled') === 'on' || formData.get('cart_enabled') === 'true';
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('tenants') as any)
+    .update({ cart_enabled: enabled, updated_at: new Date().toISOString() })
+    .eq('id', tenant.id);
+  revalidatePath('/owner/checkout');
+}
+
 export async function setTenantBaseFieldAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const key = String(formData.get('field') ?? '') as BaseFieldKey;

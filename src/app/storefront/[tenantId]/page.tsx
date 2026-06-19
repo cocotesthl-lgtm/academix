@@ -7,6 +7,7 @@ import { AnimatedCounter } from "@/components/storefront/AnimatedCounter";
 import { FadeIn } from "@/components/storefront/FadeIn";
 import { CatalogFilter } from "@/components/storefront/CatalogFilter";
 import { FormRenderer, type FormDef, type FormFieldDef } from "@/components/storefront/FormRenderer";
+import { CartWidget } from "@/components/storefront/cart/CartWidget";
 
 /**
  * Render de un string que puede ser texto plano (legacy) o HTML del
@@ -85,6 +86,17 @@ export default async function StorefrontHome({
 
   const cfg = mergeConfig(tenantRow?.site_config);
   const allCourses = (coursesRaw ?? []) as PublicCourse[];
+
+  // Cart mode (defensivo si migration 0034 no corrió)
+  let cartEnabled = false;
+  if (tenant) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: tcart } = await (svc.from('tenants') as any)
+        .select('cart_enabled').eq('id', tenant.id).maybeSingle();
+      cartEnabled = (tcart as { cart_enabled?: boolean })?.cart_enabled ?? false;
+    } catch { /* migration pendiente */ }
+  }
 
   // Cargar el form del hero si media_type='form' y form_id está set.
   // Defensivo: si la migración no corrió, fallback silencioso a undefined.
@@ -628,6 +640,8 @@ export default async function StorefrontHome({
                   ctaMode={cfg.sections.catalog.cta_mode ?? 'course_link'}
                   ctaCustomHref={cfg.sections.catalog.cta_custom_href ?? ''}
                   cardStyle={cfg.sections.catalog.card_style ?? 'classic'}
+                  cartEnabled={cartEnabled}
+                  tenantId={tenant?.id ?? ''}
                 />
               </section>
             );
@@ -1058,6 +1072,10 @@ export default async function StorefrontHome({
             return null;
         }
       })}
+
+      {cartEnabled && tenant && (
+        <CartWidget tenantId={tenant.id} primary={primary} />
+      )}
     </div>
   );
 }

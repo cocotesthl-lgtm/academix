@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { addToCart } from './cart/CartWidget';
 
 export type ManualCard = {
   id: string;
@@ -71,7 +72,9 @@ export function CatalogFilter({
   manualCards = [],
   manualCardsPosition = 'before',
   showAutoCourses = true,
-  cardStyle = 'classic'
+  cardStyle = 'classic',
+  cartEnabled = false,
+  tenantId = ''
 }: {
   title: string;
   showFilters: boolean;
@@ -87,6 +90,8 @@ export function CatalogFilter({
   manualCardsPosition?: 'before' | 'after';
   showAutoCourses?: boolean;
   cardStyle?: 'classic' | 'compact';
+  cartEnabled?: boolean;
+  tenantId?: string;
 }) {
   const gridCls = cardStyle === 'compact'
     ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 catalog-fade-in'
@@ -212,6 +217,8 @@ export function CatalogFilter({
                 ctaMode={ctaMode}
                 ctaCustomHref={ctaCustomHref}
                 cardStyle={cardStyle}
+                cartEnabled={cartEnabled}
+                tenantId={tenantId}
               />
             ))}
             {manualCardsPosition === 'after' && manualCards.map((m) => (
@@ -325,11 +332,25 @@ function getPageNumbers(current: number, total: number): Array<number | '…'> {
 }
 
 function CourseCard({
-  c, primary, category, ctaMode, ctaCustomHref, cardStyle = 'classic'
+  c, primary, category, ctaMode, ctaCustomHref, cardStyle = 'classic',
+  cartEnabled = false, tenantId = ''
 }: {
   c: Course; primary: string; category?: Category | null;
   ctaMode: CtaMode; ctaCustomHref: string; cardStyle?: 'classic' | 'compact';
+  cartEnabled?: boolean; tenantId?: string;
 }) {
+  const [adding, setAdding] = useState(false);
+  function handleAdd(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(tenantId, {
+      id: c.id, slug: c.slug, title: c.title,
+      price_cents: c.price_cents, currency: c.currency,
+      cover_url: c.cover_url
+    });
+    setAdding(true);
+    setTimeout(() => setAdding(false), 1200);
+  }
   const ribbonCls = c.ribbon_text ? (RIBBON_TONE_CLS[c.ribbon_tone ?? 'featured'] ?? RIBBON_TONE_CLS.featured) : '';
 
   // Resolver href según mode
@@ -372,9 +393,20 @@ function CourseCard({
             {c.price_cents === 0 ? 'Gratis' : `$ ${(c.price_cents / 100).toLocaleString('es-AR')} ${c.currency}`}
           </span>
           {ctaMode !== 'no_button' && (
-            <span className={`${compact ? 'text-[10px] px-2 py-1 text-center' : 'text-xs px-2 py-1'} font-medium rounded text-white`} style={{ background: primary }}>
-              {ctaMode === 'custom_url' ? 'Ver más →' : 'Ver curso →'}
-            </span>
+            cartEnabled && c.price_cents > 0 && ctaMode === 'course_link' ? (
+              <button
+                type="button"
+                onClick={handleAdd}
+                className={`${compact ? 'text-[10px] px-2 py-1' : 'text-xs px-2 py-1'} font-medium rounded text-white transition`}
+                style={{ background: adding ? '#10b981' : primary }}
+              >
+                {adding ? '✓ Agregado' : '🛒 Agregar'}
+              </button>
+            ) : (
+              <span className={`${compact ? 'text-[10px] px-2 py-1 text-center' : 'text-xs px-2 py-1'} font-medium rounded text-white`} style={{ background: primary }}>
+                {ctaMode === 'custom_url' ? 'Ver más →' : 'Ver curso →'}
+              </span>
+            )
           )}
         </div>
       </div>

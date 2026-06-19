@@ -46,6 +46,47 @@ export async function processMpPayment(opts: {
   const buyerEmail = payment.payer?.email ?? null;
   const courseIdFromMeta = (payment.metadata?.course_id as string | undefined) ?? null;
 
+  // ─── Branch: si external_reference es "cart:<id>", procesar como carrito multi-item.
+  if (payment.external_reference && String(payment.external_reference).startsWith('cart:')) {
+    const cartId = String(payment.external_reference).slice(5);
+    const status = payment.status === 'approved' ? 'paid'
+      : payment.status === 'refunded' ? 'refunded'
+      : payment.status === 'pending' ? 'pending'
+      : 'failed';
+    try {
+      // Resolver buyer_user_id desde email
+      let cartBuyerId: string | null = null;
+      if (buyerEmail) {
+        const { data: prof } = await svc.from('profiles').select('id').eq('email', buyerEmail).maybeSingle<{ id: string }>();
+        cartBuyerId = prof?.id ?? null;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('cart_orders') as any).update({
+        status, external_id: String(payment.id),
+        paid_at: status === 'paid' ? new Date().toISOString() : null,
+        buyer_user_id: cartBuyerId, buyer_email: buyerEmail
+      }).eq('id', cartId).eq('tenant_id', opts.tenantId);
+
+      // Si está pagado, crear enrollments por cada item
+      if (status === 'paid' && cartBuyerId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: order } = await (svc.from('cart_orders') as any)
+          .select('items').eq('id', cartId).maybeSingle();
+        const cartItems = (order?.items ?? []) as Array<{ id: string; qty: number }>;
+        for (const ci of cartItems) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (svc.from('enrollments') as any).upsert({
+            tenant_id: opts.tenantId,
+            course_id: ci.id,
+            user_id: cartBuyerId,
+            status: 'active'
+          }, { onConflict: 'tenant_id,course_id,user_id', ignoreDuplicates: true });
+        }
+      }
+    } catch { /* ignore */ }
+    return { ok: true, saleId: null, reused: false };
+  }
+
   // ─── Branch: si external_reference es "tip:<id>", procesar como tip y salir.
   if (payment.external_reference && String(payment.external_reference).startsWith('tip:')) {
     const tipId = String(payment.external_reference).slice(4);

@@ -6,7 +6,8 @@ import {
   addTenantExtraFieldAction,
   updateTenantExtraFieldAction,
   deleteTenantExtraFieldAction,
-  moveTenantExtraFieldAction
+  moveTenantExtraFieldAction,
+  setCartEnabledAction
 } from "@/lib/checkout/actions";
 import { CheckoutFieldsEditor } from "@/components/owner/checkout/CheckoutFieldsEditor";
 import { PageHeader } from "@/components/owner/PageHeader";
@@ -18,11 +19,15 @@ export default async function CheckoutDefaultPage() {
   const svc = getServiceClient();
   let storedCfg: unknown = null;
   let migrationMissing = false;
+  let cartEnabled = false;
   try {
     const { data, error } = await svc
-      .from('tenants').select('checkout_config').eq('id', tenant.id).single();
+      .from('tenants').select('checkout_config, cart_enabled').eq('id', tenant.id).single();
     if (error) migrationMissing = true;
-    else storedCfg = (data as { checkout_config: unknown })?.checkout_config;
+    else {
+      storedCfg = (data as { checkout_config: unknown; cart_enabled?: boolean })?.checkout_config;
+      cartEnabled = (data as { cart_enabled?: boolean })?.cart_enabled ?? false;
+    }
   } catch {
     migrationMissing = true;
   }
@@ -50,6 +55,36 @@ export default async function CheckoutDefaultPage() {
         title="Checkout"
         description="Qué datos pedís al comprador antes del pago. Aplica a todos los cursos por default — cada curso puede sobreescribir."
       />
+
+      {/* Modo carrito toggle */}
+      <div className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              🛒 Modo carrito
+              {cartEnabled && <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">ACTIVO</span>}
+            </h2>
+            <p className="text-sm text-white/65 mt-1">
+              Cuando está activo: aparece un carrito flotante 🛒 en tu sitio público.
+              Los visitantes pueden agregar varios cursos / packs / tickets y pagar todo junto en un solo checkout.
+              Cuando está desactivado: cada producto se paga individualmente (default).
+            </p>
+          </div>
+          <form action={setCartEnabledAction}>
+            <input type="hidden" name="cart_enabled" value={cartEnabled ? 'false' : 'true'} />
+            <button
+              type="submit"
+              className={`rounded-md px-5 py-2.5 text-sm font-semibold whitespace-nowrap transition ${
+                cartEnabled
+                  ? 'border border-rose-500/30 text-rose-300 hover:bg-rose-500/10'
+                  : 'bg-white text-black hover:bg-white/90'
+              }`}
+            >
+              {cartEnabled ? 'Desactivar carrito' : '🛒 Activar carrito'}
+            </button>
+          </form>
+        </div>
+      </div>
 
       <CheckoutFieldsEditor
         config={cfg}

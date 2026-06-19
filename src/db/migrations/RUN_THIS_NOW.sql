@@ -753,6 +753,30 @@ alter table public.tips        enable row level security;
 alter table public.bundles     enable row level security;
 alter table public.bundle_items enable row level security;
 
+-- ── 0034 Cart mode (toggle + tabla de órdenes multi-item) ───
+alter table public.tenants
+  add column if not exists cart_enabled boolean not null default false;
+
+create table if not exists public.cart_orders (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  items jsonb not null default '[]'::jsonb,        -- [{id, qty}]
+  total_cents bigint not null,
+  buyer_email text,
+  buyer_user_id uuid references auth.users(id) on delete set null,
+  status text not null default 'pending',           -- pending/paid/failed
+  external_provider text default 'mercadopago',
+  external_id text,
+  paid_at timestamptz,
+  created_at timestamptz not null default now()
+);
+do $$ begin
+  alter table public.cart_orders add constraint cart_orders_status_check
+    check (status in ('pending','paid','failed','refunded'));
+exception when duplicate_object then null; end $$;
+create index if not exists idx_cart_orders_tenant on public.cart_orders(tenant_id, created_at desc);
+alter table public.cart_orders enable row level security;
+
 -- ── 0026 Public listing + custom domains ─────────────────────
 alter table public.tenants
   add column if not exists public_listing boolean not null default true,
