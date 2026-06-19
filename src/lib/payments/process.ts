@@ -46,6 +46,47 @@ export async function processMpPayment(opts: {
   const buyerEmail = payment.payer?.email ?? null;
   const courseIdFromMeta = (payment.metadata?.course_id as string | undefined) ?? null;
 
+  // ─── Branch: si external_reference es "res:<id>", procesar como seña de reserva.
+  if (payment.external_reference && String(payment.external_reference).startsWith('res:')) {
+    const resId = String(payment.external_reference).slice(4);
+    const status = payment.status === 'approved' ? 'paid'
+      : payment.status === 'refunded' ? 'refunded'
+      : 'pending';
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('reservations') as any).update({
+        deposit_paid: status === 'paid',
+        deposit_external_id: String(payment.id),
+        status: status === 'paid' ? 'confirmed' : 'pending'
+      }).eq('id', resId).eq('tenant_id', opts.tenantId);
+
+      // Email "confirmada" cuando se paga la seña
+      if (status === 'paid') {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: r } = await (svc.from('reservations') as any)
+            .select('customer_name, customer_email, reservation_date, reservation_time, party_size, courses(title), venues(name)')
+            .eq('id', resId).maybeSingle();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: t } = await (svc.from('tenants') as any).select('name').eq('id', opts.tenantId).maybeSingle();
+          if (r) {
+            const { sendReservationStatusEmail } = await import('@/lib/venues/emails');
+            await sendReservationStatusEmail({
+              to: r.customer_email, customerName: r.customer_name,
+              productTitle: r.courses?.title ?? '—',
+              venueName: r.venues?.name ?? null,
+              date: r.reservation_date, time: r.reservation_time,
+              partySize: r.party_size,
+              tenantName: t?.name ?? 'Curplat',
+              status: 'confirmed'
+            });
+          }
+        } catch { /* email best-effort */ }
+      }
+    } catch { /* ignore */ }
+    return { ok: true, saleId: null, reused: false };
+  }
+
   // ─── Branch: si external_reference es "cart:<id>", procesar como carrito multi-item.
   if (payment.external_reference && String(payment.external_reference).startsWith('cart:')) {
     const cartId = String(payment.external_reference).slice(5);

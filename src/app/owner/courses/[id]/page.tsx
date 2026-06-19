@@ -11,6 +11,7 @@ import { CourseCalendarConfig } from "@/components/owner/courses/CourseCalendarC
 import { CourseSubscriptionConfig } from "@/components/owner/courses/CourseSubscriptionConfig";
 import { CourseRibbonEditor } from "@/components/owner/courses/CourseRibbonEditor";
 import { VenueLinker, type VenueOpt } from "@/components/owner/courses/VenueLinker";
+import { setCourseDepositAction } from "@/lib/venues/actions";
 import { mergeCheckoutConfig } from "@/lib/checkout/types";
 import type { CalendarMode } from "@/lib/calendar/types";
 
@@ -306,6 +307,8 @@ async function VenueLinkerBlock({ courseId, tenantId }: { courseId: string; tena
   let venues: VenueOpt[] = [];
   let linkedIds: string[] = [];
   let migrationMissing = false;
+  let depositCents = 0;
+  let depositRequired = false;
   try {
     const { data: vs, error } = await svc.from('venues')
       .select('id, name, address, active').eq('tenant_id', tenantId)
@@ -314,16 +317,46 @@ async function VenueLinkerBlock({ courseId, tenantId }: { courseId: string; tena
     venues = (vs ?? []) as VenueOpt[];
     const { data: linked } = await svc.from('course_venues').select('venue_id').eq('course_id', courseId);
     linkedIds = ((linked ?? []) as Array<{ venue_id: string }>).map((r) => r.venue_id);
+    const { data: dep } = await svc.from('courses')
+      .select('deposit_cents, deposit_required').eq('id', courseId)
+      .maybeSingle<{ deposit_cents: number | null; deposit_required: boolean | null }>();
+    depositCents = dep?.deposit_cents ?? 0;
+    depositRequired = !!dep?.deposit_required;
   } catch { migrationMissing = true; }
   if (migrationMissing) return null;
   return (
-    <section className="max-w-3xl pt-8 border-t border-white/10">
-      <h2 className="text-lg font-semibold mb-1">📍 Sedes que ofrecen este producto</h2>
-      <p className="text-sm text-white/60 mb-4">
-        Si tu producto se ofrece en varias sucursales, tildá acá cuáles. En el storefront
-        el cliente va a elegir sede antes de reservar.
-      </p>
-      <VenueLinker courseId={courseId} allVenues={venues} linkedIds={linkedIds} />
+    <section className="max-w-3xl pt-8 border-t border-white/10 space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold mb-1">📍 Sedes que ofrecen este producto</h2>
+        <p className="text-sm text-white/60 mb-4">
+          Si tu producto se ofrece en varias sucursales, tildá acá cuáles. En el storefront
+          el cliente va a elegir sede antes de reservar.
+        </p>
+        <VenueLinker courseId={courseId} allVenues={venues} linkedIds={linkedIds} />
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-1">💰 Seña para reservar (opcional)</h2>
+        <p className="text-sm text-white/60 mb-4">
+          Si querés cobrar un anticipo para confirmar la reserva, activá esto. El cliente
+          paga vía MercadoPago y la reserva queda confirmada automáticamente.
+        </p>
+        <form action={setCourseDepositAction} className="rounded-lg border border-white/10 bg-white/[0.02] p-4 space-y-3">
+          <input type="hidden" name="course_id" value={courseId} />
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="deposit_required" defaultChecked={depositRequired} />
+            Cobrar seña para confirmar reserva
+          </label>
+          <label className="block">
+            <span className="text-xs text-white/55">Monto de la seña (ARS)</span>
+            <input type="number" name="deposit" min={0} step="1" defaultValue={(depositCents / 100).toString()}
+              className="mt-1 w-40 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono" />
+          </label>
+          <button type="submit" className="rounded bg-white text-black text-sm font-semibold px-4 py-1.5">
+            Guardar
+          </button>
+        </form>
+      </div>
     </section>
   );
 }

@@ -2,12 +2,17 @@ import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { createVenueAction, updateVenueAction, deleteVenueAction } from '@/lib/venues/actions';
 import { PageHeader } from '@/components/owner/PageHeader';
+import { VenueScheduleEditor } from '@/components/owner/venues/VenueScheduleEditor';
+import type { VenueHours } from '@/lib/venues/slots';
 
 export const dynamic = 'force-dynamic';
 
 type Venue = {
   id: string; name: string; address: string | null; phone: string | null;
   notes: string | null; active: boolean;
+  hours?: VenueHours | null;
+  blackout_dates?: string[] | null;
+  slot_minutes?: number | null;
 };
 
 export default async function VenuesPage() {
@@ -19,7 +24,7 @@ export default async function VenuesPage() {
   try {
     const { data, error } = await svc
       .from('venues')
-      .select('id, name, address, phone, notes, active')
+      .select('id, name, address, phone, notes, active, hours, blackout_dates, slot_minutes')
       .eq('tenant_id', tenant.id).order('position').order('created_at');
     if (error?.message?.includes('does not exist')) migrationMissing = true;
     venues = (data ?? []) as Venue[];
@@ -99,6 +104,14 @@ export default async function VenuesPage() {
                   </button>
                 </div>
               </form>
+              <div className="px-4 pb-4">
+                <VenueScheduleEditor
+                  venueId={v.id}
+                  initialHours={(v.hours ?? {}) as VenueHours}
+                  initialBlackouts={Array.isArray(v.blackout_dates) ? v.blackout_dates : []}
+                  initialSlotMinutes={v.slot_minutes ?? 60}
+                />
+              </div>
               <form action={deleteVenueAction} className="px-4 pb-4">
                 <input type="hidden" name="id" value={v.id} />
                 <button type="submit" className="text-xs text-rose-300 hover:underline">

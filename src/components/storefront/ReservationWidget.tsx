@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type Venue = { id: string; name: string; address: string | null };
 
@@ -10,7 +10,7 @@ export function ReservationWidget({
   tenantId: string;
   courseId: string;
   primary: string;
-  venues: Venue[];      // si está vacío, el widget igual funciona pero sin selector de sede
+  venues: Venue[];
   ctaText: string;
 }) {
   const [selectedVenue, setSelectedVenue] = useState<string>(venues[0]?.id ?? '');
@@ -25,8 +25,25 @@ export function ReservationWidget({
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mínimo: hoy
+  // Slots disponibles (cargados del API según sede + fecha)
+  const [slots, setSlots] = useState<string[] | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
   const today = new Date().toISOString().slice(0, 10);
+
+  // Cargar slots cada vez que cambia sede + fecha
+  useEffect(() => {
+    if (!date) { setSlots(null); return; }
+    setLoadingSlots(true);
+    setTime('');
+    const params = new URLSearchParams({ date, course_id: courseId });
+    if (selectedVenue) params.set('venue_id', selectedVenue);
+    fetch(`/api/reservations/${tenantId}/slots?${params.toString()}`)
+      .then((r) => r.json())
+      .then((j) => setSlots(j.ok ? (j.slots as string[]) : []))
+      .catch(() => setSlots([]))
+      .finally(() => setLoadingSlots(false));
+  }, [date, selectedVenue, courseId, tenantId]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -53,6 +70,11 @@ export function ReservationWidget({
         setError(j?.error === 'invalid_email' ? 'Email inválido' : j?.error === 'missing_fields' ? 'Faltan datos obligatorios' : 'No se pudo enviar la reserva.');
         return;
       }
+      // Si hay seña → redirigir a MP
+      if (j.mp_init_point) {
+        window.location.href = j.mp_init_point as string;
+        return;
+      }
       setDone(true);
     } catch {
       setError('Error de red. Probá de nuevo.');
@@ -67,7 +89,7 @@ export function ReservationWidget({
         <div className="text-3xl mb-2">✅</div>
         <div className="font-semibold text-black">¡Reserva enviada!</div>
         <p className="text-sm text-black/60 mt-1">
-          Te vamos a contactar a <strong>{email}</strong> para confirmarla.
+          Te enviamos un email a <strong>{email}</strong>. Te contactamos para confirmarla.
         </p>
       </div>
     );
@@ -77,7 +99,7 @@ export function ReservationWidget({
     <form onSubmit={submit} className="space-y-3">
       {venues.length > 1 && (
         <div>
-          <label className="block text-xs text-black/55 mb-1">Sede</label>
+          <label className="block text-xs text-black/55 mb-1">Elegí sede</label>
           <div className="grid sm:grid-cols-2 gap-2">
             {venues.map((v) => (
               <button
@@ -85,9 +107,7 @@ export function ReservationWidget({
                 type="button"
                 onClick={() => setSelectedVenue(v.id)}
                 className={`text-left rounded-lg border px-3 py-2 transition text-sm ${
-                  selectedVenue === v.id
-                    ? 'border-black bg-black/5'
-                    : 'border-black/15 hover:border-black/40'
+                  selectedVenue === v.id ? 'border-black bg-black/5' : 'border-black/15 hover:border-black/40'
                 }`}
               >
                 <div className="font-semibold">📍 {v.name}</div>
@@ -104,19 +124,38 @@ export function ReservationWidget({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="block text-xs text-black/55 mb-1">Fecha</label>
-          <input type="date" min={today} required value={date} onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded border border-black/15 px-3 py-2 text-sm" />
-        </div>
-        <div>
-          <label className="block text-xs text-black/55 mb-1">Hora</label>
-          <input type="time" value={time} onChange={(e) => setTime(e.target.value)}
-            placeholder="20:30"
-            className="w-full rounded border border-black/15 px-3 py-2 text-sm" />
-        </div>
+      <div>
+        <label className="block text-xs text-black/55 mb-1">Fecha</label>
+        <input type="date" min={today} required value={date} onChange={(e) => setDate(e.target.value)}
+          className="w-full rounded border border-black/15 px-3 py-2 text-sm" />
       </div>
+
+      {date && (
+        <div>
+          <label className="block text-xs text-black/55 mb-1">Horario disponible</label>
+          {loadingSlots ? (
+            <div className="text-xs text-black/45 italic py-2">Buscando horarios…</div>
+          ) : !slots || slots.length === 0 ? (
+            <div className="text-xs text-rose-600 bg-rose-50 rounded px-3 py-2">
+              No hay horarios disponibles para esta fecha. Elegí otra.
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {slots.map((s) => (
+                <button key={s} type="button" onClick={() => setTime(s)}
+                  className={`text-xs px-3 py-1.5 rounded border transition ${
+                    time === s
+                      ? 'text-white font-semibold border-transparent'
+                      : 'border-black/15 hover:border-black/40 bg-white'
+                  }`}
+                  style={time === s ? { background: primary } : undefined}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div>
         <label className="block text-xs text-black/55 mb-1">¿Cuántas personas?</label>
@@ -154,13 +193,13 @@ export function ReservationWidget({
         <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>
       )}
 
-      <button type="submit" disabled={submitting}
+      <button type="submit" disabled={submitting || (slots !== null && slots.length === 0 && !!date)}
         className="w-full rounded-lg text-white font-semibold py-3 disabled:opacity-50"
         style={{ background: primary }}>
-        {submitting ? 'Enviando…' : ctaText}
+        {submitting ? 'Procesando…' : ctaText}
       </button>
       <p className="text-[10px] text-black/45 text-center">
-        Reserva sin cargo. Te contactamos para confirmarla.
+        Te enviamos email de confirmación.
       </p>
     </form>
   );

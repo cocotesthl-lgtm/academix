@@ -72,7 +72,7 @@ export async function toggleCourseVenueAction(formData: FormData): Promise<void>
   revalidatePath(`/owner/courses/${courseId}`);
 }
 
-/** Cambiar estado de una reserva (confirmar / cancelar / completada / no_show) */
+/** Cambiar estado de una reserva (confirmar / cancelar / completada / no_show) + email */
 export async function setReservationStatusAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const id = String(formData.get('id') ?? '');
@@ -81,5 +81,65 @@ export async function setReservationStatusAction(formData: FormData): Promise<vo
   const svc = getServiceClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('reservations') as any).update({ status }).eq('id', id).eq('tenant_id', tenant.id);
+
+  // Email al cliente cuando cambia a confirmed o cancelled
+  if (status === 'confirmed' || status === 'cancelled') {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: r } = await (svc.from('reservations') as any)
+        .select('customer_name, customer_email, reservation_date, reservation_time, party_size, courses(title), venues(name)')
+        .eq('id', id).maybeSingle();
+      if (r) {
+        const { sendReservationStatusEmail } = await import('@/lib/venues/emails');
+        await sendReservationStatusEmail({
+          to: r.customer_email, customerName: r.customer_name,
+          productTitle: r.courses?.title ?? '—',
+          venueName: r.venues?.name ?? null,
+          date: r.reservation_date, time: r.reservation_time,
+          partySize: r.party_size,
+          tenantName: tenant.name,
+          status
+        });
+      }
+    } catch { /* email best-effort */ }
+  }
   revalidatePath('/owner/reservas');
+}
+
+/** Editar horarios + blackouts + slot_minutes de una sede */
+export async function setVenueScheduleAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const hoursRaw = String(formData.get('hours_json') ?? '{}');
+  const blackoutsRaw = String(formData.get('blackouts_json') ?? '[]');
+  const slotMinutesRaw = parseInt(String(formData.get('slot_minutes') ?? '60'), 10);
+  let hours: unknown = {};
+  let blackouts: unknown = [];
+  try { hours = JSON.parse(hoursRaw); } catch {}
+  try { blackouts = JSON.parse(blackoutsRaw); } catch {}
+  const slotMinutes = [30, 60, 90, 120, 180].includes(slotMinutesRaw) ? slotMinutesRaw : 60;
+
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('venues') as any).update({
+    hours, blackout_dates: blackouts, slot_minutes: slotMinutes,
+    updated_at: new Date().toISOString()
+  }).eq('id', id).eq('tenant_id', tenant.id);
+  revalidatePath('/owner/venues');
+}
+
+/** Setear seña del producto */
+export async function setCourseDepositAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const courseId = String(formData.get('course_id') ?? '');
+  if (!courseId) return;
+  const required = formData.get('deposit_required') === 'on';
+  const cents = Math.max(0, Math.round(parseFloat(String(formData.get('deposit') ?? '0').replace(/[^0-9.]/g, '') || '0') * 100));
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('courses') as any).update({
+    deposit_cents: cents, deposit_required: required, updated_at: new Date().toISOString()
+  }).eq('id', courseId).eq('tenant_id', tenant.id);
+  revalidatePath(`/owner/courses/${courseId}`);
 }

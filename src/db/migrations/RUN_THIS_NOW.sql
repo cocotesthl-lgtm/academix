@@ -866,6 +866,15 @@ alter table public.courses
   add constraint courses_product_type_check
   check (product_type in ('course','event','mentorship','vip_pack','digital','physical','service','multi_venue','restaurant'));
 
+-- ── 0038 V2 venues: horarios + seña + emails ───
+alter table public.venues add column if not exists hours jsonb not null default '{}'::jsonb;
+alter table public.venues add column if not exists blackout_dates jsonb not null default '[]'::jsonb;
+alter table public.venues add column if not exists slot_minutes smallint not null default 60;
+alter table public.courses add column if not exists deposit_cents bigint not null default 0;
+alter table public.courses add column if not exists deposit_required boolean not null default false;
+alter table public.reservations add column if not exists deposit_paid boolean not null default false;
+alter table public.reservations add column if not exists deposit_external_id text;
+
 -- ── 0037 Multi-sede + reservas ───
 create table if not exists public.venues (
   id uuid primary key default gen_random_uuid(),
