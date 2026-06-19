@@ -10,7 +10,9 @@ export type ProductType =
   | 'vip_pack'
   | 'digital'
   | 'physical'
-  | 'service';
+  | 'service'
+  | 'multi_venue'
+  | 'restaurant';
 
 export type ProductTypeSpec = {
   id: ProductType;
@@ -139,6 +141,36 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     lessonLabel: 'items',
     showContentSection: true,
     ctaText: 'Contratar'
+  },
+  {
+    id: 'multi_venue',
+    emoji: '🎯',
+    label: 'Experiencia con sedes',
+    short: 'Cliente elige sede → fecha → hora. Sin pago online (cobrás en el lugar).',
+    examples: 'Ej: "Tiro al blanco", "Escape room", "Paintball", "Gimnasio".',
+    landingTemplate: 'hotmart',
+    calendarMode: 'none', // el calendario vive por-sede vía ReservationWidget
+    pricingMode: 'one_time',
+    contentTitle: 'Qué incluye la experiencia',
+    moduleLabel: 'actividades',
+    lessonLabel: 'items',
+    showContentSection: true,
+    ctaText: 'Reservar lugar'
+  },
+  {
+    id: 'restaurant',
+    emoji: '🍽️',
+    label: 'Restaurante / Reserva',
+    short: 'Reservas con fecha, hora y cantidad de personas. Sin pago online.',
+    examples: 'Ej: "Cena en La Cabrera", "Almuerzo Don Julio".',
+    landingTemplate: 'classic',
+    calendarMode: 'none',
+    pricingMode: 'one_time',
+    contentTitle: 'La carta / menú',
+    moduleLabel: 'secciones',
+    lessonLabel: 'platos',
+    showContentSection: false,
+    ctaText: 'Reservar mesa'
   }
 ];
 

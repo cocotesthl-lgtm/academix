@@ -197,19 +197,23 @@ function titlePlaceholderFor(t: ProductType): string {
     case 'vip_pack':   return 'Pack Premium — Acceso total';
     case 'digital':    return 'Notion template Productividad Pro';
     case 'physical':   return 'Remera edición limitada';
-    case 'service':    return 'Logo + branding completo';
+    case 'service':     return 'Logo + branding completo';
+    case 'multi_venue': return 'Experiencia de tiro al blanco';
+    case 'restaurant':  return 'La Parrilla del Centro';
   }
 }
 
 function descPlaceholderFor(t: ProductType): string {
   switch (t) {
-    case 'course':     return 'Lo que el alumno va a aprender en una frase corta.';
-    case 'event':      return 'Lugar, hora y qué va a pasar en el evento.';
-    case 'mentorship': return 'A quién le sirve esta mentoría y qué se llevan.';
-    case 'vip_pack':   return 'Qué contenido exclusivo van a recibir.';
-    case 'digital':    return 'Qué resuelve el producto, en una línea.';
-    case 'physical':   return 'Características del producto físico.';
-    case 'service':    return 'El servicio que ofrecés y a quién está dirigido.';
+    case 'course':      return 'Lo que el alumno va a aprender en una frase corta.';
+    case 'event':       return 'Lugar, hora y qué va a pasar en el evento.';
+    case 'mentorship':  return 'A quién le sirve esta mentoría y qué se llevan.';
+    case 'vip_pack':    return 'Qué contenido exclusivo van a recibir.';
+    case 'digital':     return 'Qué resuelve el producto, en una línea.';
+    case 'physical':    return 'Características del producto físico.';
+    case 'service':     return 'El servicio que ofrecés y a quién está dirigido.';
+    case 'multi_venue': return 'Qué experiencia van a vivir + en qué sedes está disponible.';
+    case 'restaurant':  return 'Tipo de cocina, horarios y ambiente.';
   }
 }
 

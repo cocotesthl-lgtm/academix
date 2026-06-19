@@ -40,7 +40,9 @@ const NAV: NavEntry[] = [
       items: [
         { label: 'Calendario', href: '/eventos/calendario' },
         { label: 'Validar entradas', href: '/eventos/validar' },
-        { label: 'Asistencia', href: '/eventos/asistencia' }
+        { label: 'Asistencia', href: '/eventos/asistencia' },
+        { label: 'Sedes', href: '/venues' },
+        { label: 'Reservas', href: '/reservas' }
       ]
     }
   },

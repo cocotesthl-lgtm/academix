@@ -10,6 +10,7 @@ import { CourseCheckoutOverride } from "@/components/owner/checkout/CourseChecko
 import { CourseCalendarConfig } from "@/components/owner/courses/CourseCalendarConfig";
 import { CourseSubscriptionConfig } from "@/components/owner/courses/CourseSubscriptionConfig";
 import { CourseRibbonEditor } from "@/components/owner/courses/CourseRibbonEditor";
+import { VenueLinker, type VenueOpt } from "@/components/owner/courses/VenueLinker";
 import { mergeCheckoutConfig } from "@/lib/checkout/types";
 import type { CalendarMode } from "@/lib/calendar/types";
 
@@ -214,6 +215,8 @@ export default async function CourseEditPage({
         />
       </section>
 
+      <VenueLinkerBlock courseId={course.id} tenantId={tenant.id} />
+
       <section className="max-w-3xl pt-8 border-t border-white/10">
         <h2 className="text-lg font-semibold mb-1">Página pública — sección &quot;Contenido&quot;</h2>
         <p className="text-sm text-white/60 mb-4">
@@ -294,5 +297,33 @@ export default async function CourseEditPage({
         <GrantEnrollmentForm courseId={course.id} />
       </section>
     </div>
+  );
+}
+
+/** Server component que carga sedes del tenant + las vinculadas a este producto */
+async function VenueLinkerBlock({ courseId, tenantId }: { courseId: string; tenantId: string }) {
+  const svc = getServiceClient();
+  let venues: VenueOpt[] = [];
+  let linkedIds: string[] = [];
+  let migrationMissing = false;
+  try {
+    const { data: vs, error } = await svc.from('venues')
+      .select('id, name, address, active').eq('tenant_id', tenantId)
+      .order('position').order('created_at');
+    if (error?.message?.includes('does not exist')) migrationMissing = true;
+    venues = (vs ?? []) as VenueOpt[];
+    const { data: linked } = await svc.from('course_venues').select('venue_id').eq('course_id', courseId);
+    linkedIds = ((linked ?? []) as Array<{ venue_id: string }>).map((r) => r.venue_id);
+  } catch { migrationMissing = true; }
+  if (migrationMissing) return null;
+  return (
+    <section className="max-w-3xl pt-8 border-t border-white/10">
+      <h2 className="text-lg font-semibold mb-1">📍 Sedes que ofrecen este producto</h2>
+      <p className="text-sm text-white/60 mb-4">
+        Si tu producto se ofrece en varias sucursales, tildá acá cuáles. En el storefront
+        el cliente va a elegir sede antes de reservar.
+      </p>
+      <VenueLinker courseId={courseId} allVenues={venues} linkedIds={linkedIds} />
+    </section>
   );
 }

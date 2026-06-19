@@ -13,6 +13,7 @@ import { resolveCheckoutConfig } from "@/lib/checkout/types";
 import { generateSlots, type AvailabilityRule, type BookingSlot, type CalendarMode, type CalendarDate, type AvailabilityOverride, type EventDate } from "@/lib/calendar/types";
 import { TicketPicker } from "@/components/storefront/TicketPicker";
 import { VipPackLanding, type VipMediaItem } from "@/components/storefront/VipPackLanding";
+import { ReservationWidget } from "@/components/storefront/ReservationWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +93,23 @@ export default async function CourseDetailPage({
   const moduleLabel = courseExtras?.module_label?.trim() || 'módulos';
   const lessonLabel = courseExtras?.lesson_label?.trim() || 'lecciones';
   const showContentSection = courseExtras?.show_content_section !== false;
+
+  // ─── Sedes vinculadas + product_type para deducir si renderizamos
+  // el ReservationWidget en lugar del CouponInput.
+  let productType: string | null = null;
+  let linkedVenues: Array<{ id: string; name: string; address: string | null }> = [];
+  try {
+    const { data: pt } = await svc.from('courses').select('product_type').eq('id', course.id).maybeSingle<{ product_type: string | null }>();
+    productType = pt?.product_type ?? null;
+    const { data: cv } = await svc.from('course_venues').select('venue_id, venues(id, name, address, active)').eq('course_id', course.id);
+    type Row = { venue_id: string; venues: { id: string; name: string; address: string | null; active: boolean } | null };
+    linkedVenues = ((cv ?? []) as unknown as Row[])
+      .map((r) => r.venues)
+      .filter((v): v is { id: string; name: string; address: string | null; active: boolean } => !!v && v.active)
+      .map((v) => ({ id: v.id, name: v.name, address: v.address }));
+  } catch { /* migration pendiente */ }
+  const isReservationProduct = productType === 'multi_venue' || productType === 'restaurant';
+  const useReservationWidget = isReservationProduct || linkedVenues.length > 0;
 
   let tenantCheckoutCfg: unknown = null;
   try {
@@ -615,7 +633,15 @@ export default async function CourseDetailPage({
               </div>
               <p className="text-xs text-black/50 mt-1">Pago único · Acceso permanente</p>
             </div>
-            {calendarMode === 'event_tickets' ? (
+            {useReservationWidget ? (
+              <ReservationWidget
+                tenantId={tenantId}
+                courseId={course.id}
+                primary={primary}
+                venues={linkedVenues}
+                ctaText={productType === 'restaurant' ? 'Reservar mesa' : 'Reservar lugar'}
+              />
+            ) : calendarMode === 'event_tickets' ? (
               <TicketPicker
                 courseId={course.id}
                 priceCents={course.price_cents}
