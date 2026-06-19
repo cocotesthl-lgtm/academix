@@ -197,7 +197,14 @@ export type SiteConfig = {
     cta_final:    SectionBase & { title: string; body: string; cta_label: string; cta_href: string };
   };
   order: SectionKey[];
-  nav: { links: NavLink[]; show_login: boolean };
+  nav: {
+    links: NavLink[];
+    show_login: boolean;
+    show_my_courses?: boolean;        // default true (backwards compat)
+    show_affiliates?: boolean;        // default true
+    my_courses_label?: string;        // ej. "Mis cursos" o "Mi cuenta" o "Mis compras"
+    affiliates_label?: string;        // ej. "Afiliados" o "Ser embajador"
+  };
   footer: { text: string; socials: SocialLink[]; links: NavLink[] };
 };
 

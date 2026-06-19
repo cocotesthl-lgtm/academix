@@ -960,6 +960,31 @@ export async function toggleNavLoginAction(): Promise<void> {
   revalidatePath('/site');
 }
 
+/** Toggle genérico para banderas opcionales del nav (show_my_courses, show_affiliates) */
+export async function toggleNavFlagAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const flag = String(formData.get('flag') ?? '');
+  if (flag !== 'show_my_courses' && flag !== 'show_affiliates') return;
+  const cfg = await loadConfig(tenant.id);
+  const current = cfg.nav[flag];
+  // default es true (undefined → true), entonces toggle: undefined→false, false→true, true→false
+  cfg.nav[flag] = current === false ? true : false;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+/** Editar el label de "Mis cursos" o "Afiliados" en el nav (string libre) */
+export async function setNavLabelAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const key = String(formData.get('key') ?? '');
+  const value = String(formData.get('value') ?? '').trim().slice(0, 40);
+  if (key !== 'my_courses_label' && key !== 'affiliates_label') return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.nav[key] = value || undefined;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
 /* ===== Footer ===== */
 
 export async function updateFooterTextAction(formData: FormData): Promise<void> {

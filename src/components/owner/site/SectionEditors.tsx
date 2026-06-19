@@ -59,6 +59,8 @@ import {
   addNavLinkAction,
   deleteNavLinkAction,
   toggleNavLoginAction,
+  toggleNavFlagAction,
+  setNavLabelAction,
   updateFooterTextAction,
   addFooterLinkAction,
   deleteFooterLinkAction,
@@ -2918,8 +2920,14 @@ export function CustomEditor({ initial, imageUrl, primary }: {
  * NAV EDITOR
  * ===================================================================== */
 
-export function NavEditor({ links, showLogin, primary, tenantName }: {
+export function NavEditor({
+  links, showLogin, primary, tenantName,
+  showMyCourses = true, showAffiliates = true,
+  myCoursesLabel = '', affiliatesLabel = ''
+}: {
   links: NavLink[]; showLogin: boolean; primary: string; tenantName: string;
+  showMyCourses?: boolean; showAffiliates?: boolean;
+  myCoursesLabel?: string; affiliatesLabel?: string;
 }) {
   const [addPending, startAdd] = useTransition();
   const [delPending, startDel] = useTransition();
@@ -2939,6 +2947,67 @@ export function NavEditor({ links, showLogin, primary, tenantName }: {
             onChange={() => startToggle(async () => { await toggleNavLoginAction(); })} />
           Mostrar botón "Iniciar sesión" en el nav
         </label>
+
+        <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
+          <div className="text-[11px] uppercase tracking-wide text-white/45 font-semibold">
+            Links automáticos del nav
+          </div>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={showMyCourses} disabled={togglePending}
+              onChange={() => startToggle(async () => {
+                const fd = new FormData(); fd.set('flag', 'show_my_courses');
+                await toggleNavFlagAction(fd);
+              })} />
+            Mostrar &quot;{myCoursesLabel || 'Mis cursos'}&quot;
+          </label>
+          {showMyCourses && (
+            <input
+              defaultValue={myCoursesLabel}
+              placeholder="Mis cursos"
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                if (v === (myCoursesLabel ?? '').trim()) return;
+                startToggle(async () => {
+                  const fd = new FormData();
+                  fd.set('key', 'my_courses_label'); fd.set('value', v);
+                  await setNavLabelAction(fd);
+                });
+              }}
+              className="w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-xs"
+            />
+          )}
+
+          <label className="flex items-center gap-2 text-sm mt-2">
+            <input type="checkbox" checked={showAffiliates} disabled={togglePending}
+              onChange={() => startToggle(async () => {
+                const fd = new FormData(); fd.set('flag', 'show_affiliates');
+                await toggleNavFlagAction(fd);
+              })} />
+            Mostrar &quot;{affiliatesLabel || 'Afiliados'}&quot;
+          </label>
+          {showAffiliates && (
+            <input
+              defaultValue={affiliatesLabel}
+              placeholder="Afiliados"
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                if (v === (affiliatesLabel ?? '').trim()) return;
+                startToggle(async () => {
+                  const fd = new FormData();
+                  fd.set('key', 'affiliates_label'); fd.set('value', v);
+                  await setNavLabelAction(fd);
+                });
+              }}
+              className="w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-xs"
+            />
+          )}
+
+          <p className="text-[10px] text-white/35 mt-1">
+            Si tu sitio no vende cursos (ej. e-commerce), podés ocultar ambos.
+            El label es libre: &quot;Mis compras&quot;, &quot;Mi cuenta&quot;, &quot;Ser embajador&quot;, etc.
+          </p>
+        </div>
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
           <label className="text-xs text-white/60 block mb-1">

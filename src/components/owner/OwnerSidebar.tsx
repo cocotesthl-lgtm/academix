@@ -24,9 +24,9 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'Mis creaciones', icon: '✨',
+      label: 'Mis ventas', icon: '🛍️',
       items: [
-        { label: 'Cursos', href: '/courses' },
+        { label: 'Productos', href: '/courses' },
         { label: 'Contenido VIP', href: '/vip' },
         { label: 'Bundles', href: '/bundles' },
         { label: 'Categorías', href: '/categories' }

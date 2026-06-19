@@ -494,6 +494,10 @@ export default async function SiteBuilderPage() {
           <NavEditor
             links={cfg.nav.links}
             showLogin={cfg.nav.show_login}
+            showMyCourses={cfg.nav.show_my_courses !== false}
+            showAffiliates={cfg.nav.show_affiliates !== false}
+            myCoursesLabel={cfg.nav.my_courses_label ?? ''}
+            affiliatesLabel={cfg.nav.affiliates_label ?? ''}
             primary={primary}
             tenantName={tenant.name}
           />

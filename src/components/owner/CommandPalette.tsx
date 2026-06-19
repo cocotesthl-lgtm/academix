@@ -30,7 +30,7 @@ type CmdItem = {
 const items: CmdItem[] = [
   // Navegación
   { id: 'nav-inicio', label: 'Inicio', group: 'Ir a', icon: '🏠', href: '/dashboard', keywords: 'home dashboard panel resumen' },
-  { id: 'nav-cursos', label: 'Cursos', group: 'Ir a', icon: '📚', href: '/courses', keywords: 'cursos products productos' },
+  { id: 'nav-cursos', label: 'Productos', group: 'Ir a', icon: '🛍️', href: '/courses', keywords: 'cursos products productos ventas ecommerce' },
   { id: 'nav-cats', label: 'Categorías', group: 'Ir a', icon: '🏷️', href: '/categories', keywords: 'categorias tags' },
   { id: 'nav-cal', label: 'Calendario de eventos', group: 'Ir a', icon: '🗓️', href: '/eventos/calendario', keywords: 'disponibilidad fechas eventos calendar slots' },
   { id: 'nav-validar', label: 'Validar entradas', group: 'Ir a', icon: '🎟️', href: '/eventos/validar', keywords: 'scanner qr tickets entradas validacion molinete' },

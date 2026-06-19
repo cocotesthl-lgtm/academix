@@ -118,8 +118,12 @@ export default async function StorefrontLayout({
             {cfg.nav.links.map((l) => (
               <a key={l.id} href={l.href} className="hover:text-black">{l.label}</a>
             ))}
-            <a href="/learn" className="hover:text-black">Mis cursos</a>
-            <a href="/affiliate" className="hover:text-black">Afiliados</a>
+            {cfg.nav.show_my_courses !== false && (
+              <a href="/learn" className="hover:text-black">{cfg.nav.my_courses_label || 'Mis cursos'}</a>
+            )}
+            {cfg.nav.show_affiliates !== false && (
+              <a href="/affiliate" className="hover:text-black">{cfg.nav.affiliates_label || 'Afiliados'}</a>
+            )}
           </nav>
           {cfg.nav.show_login && (
             <a href="/login" className="rounded-md text-sm font-medium px-4 py-2 text-white whitespace-nowrap" style={{ background: primary }}>
