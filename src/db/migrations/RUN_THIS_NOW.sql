@@ -866,15 +866,6 @@ alter table public.courses
   add constraint courses_product_type_check
   check (product_type in ('course','event','mentorship','vip_pack','digital','physical','service','multi_venue','restaurant'));
 
--- ── 0038 V2 venues: horarios + seña + emails ───
-alter table public.venues add column if not exists hours jsonb not null default '{}'::jsonb;
-alter table public.venues add column if not exists blackout_dates jsonb not null default '[]'::jsonb;
-alter table public.venues add column if not exists slot_minutes smallint not null default 60;
-alter table public.courses add column if not exists deposit_cents bigint not null default 0;
-alter table public.courses add column if not exists deposit_required boolean not null default false;
-alter table public.reservations add column if not exists deposit_paid boolean not null default false;
-alter table public.reservations add column if not exists deposit_external_id text;
-
 -- ── 0037 Multi-sede + reservas ───
 create table if not exists public.venues (
   id uuid primary key default gen_random_uuid(),
@@ -937,6 +928,15 @@ do $$ begin
   create policy reservations_owner_read on public.reservations for select
     using (exists (select 1 from public.memberships m where m.tenant_id = reservations.tenant_id and m.user_id = auth.uid() and m.role = 'owner' and m.status = 'active'));
 exception when duplicate_object then null; end $$;
+
+-- ── 0038 V2 venues: horarios + seña + emails ───
+alter table public.venues add column if not exists hours jsonb not null default '{}'::jsonb;
+alter table public.venues add column if not exists blackout_dates jsonb not null default '[]'::jsonb;
+alter table public.venues add column if not exists slot_minutes smallint not null default 60;
+alter table public.courses add column if not exists deposit_cents bigint not null default 0;
+alter table public.courses add column if not exists deposit_required boolean not null default false;
+alter table public.reservations add column if not exists deposit_paid boolean not null default false;
+alter table public.reservations add column if not exists deposit_external_id text;
 
 -- ── 0035 Labels editables sección "Contenido del curso" ───
 alter table public.courses add column if not exists content_title text;
