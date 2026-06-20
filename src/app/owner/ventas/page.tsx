@@ -25,6 +25,7 @@ type SaleRow = {
   currency: string;
   status: string;
   occurred_at: string;
+  payment_kind?: string | null;
   buyer_name: string | null;
   buyer_email: string | null;
   buyer_phone: string | null;
@@ -46,7 +47,7 @@ export default async function OwnerVentasPage({
 
   let query = svc
     .from('sales')
-    .select('id, course_id, buyer_user_id, external_provider, external_id, amount_gross_cents, amount_net_cents, currency, status, occurred_at, buyer_name, buyer_email, buyer_phone, buyer_dni')
+    .select('id, course_id, buyer_user_id, external_provider, external_id, amount_gross_cents, amount_net_cents, currency, status, occurred_at, payment_kind, buyer_name, buyer_email, buyer_phone, buyer_dni')
     .eq('tenant_id', tenant.id)
     .order('occurred_at', { ascending: false });
 
@@ -229,7 +230,12 @@ export default async function OwnerVentasPage({
                     </td>
                     <td className="px-3 py-2.5 text-white/70">{course?.title ?? '—'}</td>
                     <td className="px-3 py-2.5 text-right font-mono">
-                      {s.currency} {(s.amount_gross_cents / 100).toLocaleString('es-AR')}
+                      <div>{s.currency} {(s.amount_gross_cents / 100).toLocaleString('es-AR')}</div>
+                      {s.payment_kind === 'deposit' && (
+                        <span className="inline-block mt-0.5 text-[9px] uppercase font-bold tracking-wider bg-amber-500/20 text-amber-200 px-1.5 py-0.5 rounded">
+                          🪙 Pago parcial
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-2.5">
                       <StatusBadge status={s.status} />

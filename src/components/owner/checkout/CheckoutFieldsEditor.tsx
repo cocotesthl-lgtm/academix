@@ -16,6 +16,8 @@ const TYPE_LABELS: Record<CheckoutFieldType, string> = {
   tel:      'Teléfono',
   textarea: 'Texto largo',
   select:   'Lista desplegable',
+  radio:    '⦿ Radio (elegí UNA — visible)',
+  multi:    '☑ Múltiple (varios checkboxes)',
   checkbox: 'Sí / No',
   date:     'Fecha',
   number:   'Número'
@@ -265,7 +267,7 @@ function ExtraFieldRow({
     fd.set('helper', helper);
     fd.set('required', required ? 'true' : 'false');
     fd.set('type', type);
-    if (type === 'select') fd.set('options', optionsCsv);
+    if (type === 'select' || type === 'radio' || type === 'multi') fd.set('options', optionsCsv);
     start(async () => {
       await actions.updateExtra(fd);
       setSaved(true);
@@ -326,12 +328,12 @@ function ExtraFieldRow({
           </div>
           <Field label="Placeholder (texto gris dentro del input)" value={placeholder} onChange={setPlaceholder} maxLength={120} />
           <Field label="Ayuda (texto chico debajo)" value={helper} onChange={setHelper} maxLength={200} />
-          {type === 'select' && (
+          {(type === 'select' || type === 'radio' || type === 'multi') && (
             <Field
-              label="Opciones (separadas por coma)"
+              label={`Opciones (separadas por coma)${type === 'multi' ? ' — el cliente puede elegir varias' : ''}`}
               value={optionsCsv}
               onChange={setOptionsCsv}
-              placeholder="Opción A, Opción B, Opción C"
+              placeholder="Sede Palermo, Sede CABA, Sede Belgrano"
             />
           )}
           <label className="flex items-center gap-2 text-sm">

@@ -579,7 +579,10 @@ export async function POST(
         booking_id:     createdBookingId,
         booking_date:   bookingDate,
         // Event tickets: ids creados pending → webhook los marca confirmed
-        event_ticket_ids: eventTicketIds.length > 0 ? eventTicketIds : null
+        event_ticket_ids: eventTicketIds.length > 0 ? eventTicketIds : null,
+        // Tipo de pago: 'full' (precio total) o 'deposit' (seña). Lo usa el
+        // webhook para marcar la venta como "pago parcial" en el panel.
+        payment_kind: paidChargeKind
       }
     });
 

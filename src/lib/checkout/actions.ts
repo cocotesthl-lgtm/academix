@@ -13,7 +13,7 @@ import {
   type BaseFieldKey
 } from './types';
 
-const FIELD_TYPES: CheckoutFieldType[] = ['text', 'email', 'tel', 'textarea', 'select', 'checkbox', 'date', 'number'];
+const FIELD_TYPES: CheckoutFieldType[] = ['text', 'email', 'tel', 'textarea', 'select', 'radio', 'multi', 'checkbox', 'date', 'number'];
 
 /** ───── Helpers de carga/guardado ───── */
 

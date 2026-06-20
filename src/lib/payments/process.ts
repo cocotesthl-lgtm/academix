@@ -227,7 +227,10 @@ export async function processMpPayment(opts: {
     buyer_location: buyerLocation,
     buyer_email:    buyerEmailForRow,
     buyer_phone:    buyerPhone,
-    buyer_extra:    buyerExtra
+    buyer_extra:    buyerExtra,
+    // 'full' o 'deposit' — viene del checkout endpoint en meta.payment_kind.
+    // Si la migration 0040 no corrió, el insert que sigue retryea sin esta col.
+    payment_kind:   (meta.payment_kind === 'deposit' || meta.payment_kind === 'full') ? meta.payment_kind : null
   };
 
   let saleId: string | null = null;

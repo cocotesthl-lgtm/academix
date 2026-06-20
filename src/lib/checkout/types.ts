@@ -10,6 +10,8 @@ export type CheckoutFieldType =
   | 'tel'
   | 'textarea'
   | 'select'
+  | 'radio'     // 1 opción visible (cards), elegís una. Ej "Sede".
+  | 'multi'     // varias opciones visibles, podés elegir N (checkboxes en grupo).
   | 'checkbox'
   | 'date'
   | 'number';
@@ -21,7 +23,7 @@ export type CheckoutField = {
   type: CheckoutFieldType;
   required: boolean;
   placeholder?: string;
-  options?: string[];      // sólo para 'select'
+  options?: string[];      // para 'select' | 'radio' | 'multi'
   helper?: string;         // texto descriptivo debajo del input
   position: number;
 };

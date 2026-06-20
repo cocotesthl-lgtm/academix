@@ -83,16 +83,9 @@ export function CouponInput({
     paymentMode === 'deposit' ? 'deposit' : 'full'
   );
 
-  // ── Campos de reserva (sede + fecha + hora + personas) ──
-  const showsReservationFields = isReservation || venues.length > 0;
-  const [selectedVenue, setSelectedVenue] = useState<string>(venues[0]?.id ?? '');
-  const [resDate, setResDate] = useState('');
-  const [resTime, setResTime] = useState('');
-  const [resParty, setResParty] = useState(2);
-  const today = new Date().toISOString().slice(0, 10);
-  const reservationValid =
-    !showsReservationFields ||
-    (resDate.length > 0 && (venues.length === 0 || selectedVenue.length > 0));
+  // Props venues/isReservation se mantienen para compat pero ya no auto-renderean
+  // campos. El owner usa el form builder personalizado para sede + reserva.
+  void venues; void isReservation;
   const depositCents = Math.round((priceCents * depositPercent) / 100);
   const fmt = (c: number) => `$${(c / 100).toLocaleString('es-AR')} ${currency}`;
   // Cuánto va a cobrar realmente:
@@ -113,7 +106,7 @@ export function CouponInput({
     if (f.type === 'checkbox') return v === true;
     return typeof v === 'string' && v.trim().length > 0;
   });
-  const dataReady = baseValid && emailValid && passwordOk && extrasValid && reservationValid;
+  const dataReady = baseValid && emailValid && passwordOk && extrasValid;
 
   return (
     <form
@@ -141,17 +134,31 @@ export function CouponInput({
         </button>
       )}
 
-      {/* Curso pago: botón para expandir el form. El monto refleja la
-          elección de pago (total/seña) cuando aplica. */}
+      {/* Curso pago: botón para expandir el form. Cuando payment_mode='choice',
+          mostramos 2 botones (total + seña) para que el cliente decida desde
+          afuera, sin tener que abrir un menú adentro del form. */}
       {!isFree && !expanded && (
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          className="w-full rounded-md py-3 font-semibold text-white"
-          style={{ background: primary }}
-        >
-          {ctaText} · ${(effectiveChargeCents / 100).toLocaleString('es-AR')} {currency}
-        </button>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => { setPaymentChoice('full'); setExpanded(true); }}
+            className="w-full rounded-md py-3 font-semibold text-white"
+            style={{ background: primary }}
+          >
+            {ctaText} · ${(priceCents / 100).toLocaleString('es-AR')} {currency}
+          </button>
+
+          {(paymentMode === 'choice' || paymentMode === 'deposit') && priceCents > 0 && (
+            <button
+              type="button"
+              onClick={() => { setPaymentChoice('deposit'); setExpanded(true); }}
+              className="w-full rounded-md py-2.5 text-sm font-semibold border-2 hover:bg-black/[0.04] transition"
+              style={{ borderColor: primary, color: primary }}
+            >
+              🪙 Reservar bajo seña · ${(depositCents / 100).toLocaleString('es-AR')} {currency} <span className="font-normal opacity-70">({depositPercent}%)</span>
+            </button>
+          )}
+        </div>
       )}
 
       {!isFree && expanded && (
@@ -167,102 +174,26 @@ export function CouponInput({
             </button>
           </div>
 
-          {/* ── Campos de reserva (sede + fecha + hora + personas) ── */}
-          {showsReservationFields && (
-            <div className="rounded-lg border border-black/15 p-3 space-y-3 bg-white">
-              <div className="text-xs font-semibold text-black/70">Detalles de la reserva</div>
-
-              {venues.length > 1 && (
-                <div>
-                  <label className="block text-xs text-black/55 mb-1">Sede <span className="text-red-500">*</span></label>
-                  <div className="grid grid-cols-1 gap-1.5">
-                    {venues.map((v) => (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => setSelectedVenue(v.id)}
-                        className={`text-left rounded-md border px-3 py-2 text-sm transition ${
-                          selectedVenue === v.id ? 'border-black bg-black/5' : 'border-black/15 hover:border-black/40'
-                        }`}
-                      >
-                        <div className="font-semibold">📍 {v.name}</div>
-                        {v.address && <div className="text-[11px] text-black/55 truncate">{v.address}</div>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {venues.length === 1 && (
-                <div className="text-xs text-black/55">
-                  📍 <strong>{venues[0].name}</strong>{venues[0].address && ` · ${venues[0].address}`}
-                  <input type="hidden" name="reservation_venue_id" value={venues[0].id} />
-                </div>
-              )}
-              {venues.length > 1 && (
-                <input type="hidden" name="reservation_venue_id" value={selectedVenue} />
-              )}
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs text-black/55 mb-1">Fecha <span className="text-red-500">*</span></label>
-                  <input type="date" name="reservation_date" required min={today}
-                    value={resDate} onChange={(e) => setResDate(e.target.value)}
-                    className="w-full rounded border border-black/15 px-3 py-2 text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs text-black/55 mb-1">Hora</label>
-                  <input type="time" name="reservation_time"
-                    value={resTime} onChange={(e) => setResTime(e.target.value)}
-                    className="w-full rounded border border-black/15 px-3 py-2 text-sm" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-black/55 mb-1">¿Cuántas personas?</label>
-                <input type="number" name="reservation_party_size" min={1} max={50}
-                  value={resParty} onChange={(e) => setResParty(Number(e.target.value))}
-                  className="w-full rounded border border-black/15 px-3 py-2 text-sm" />
-              </div>
-            </div>
-          )}
-
-          {/* ── Selector de pago ARRIBA del form (total vs seña) ── */}
-          {paymentMode === 'choice' && priceCents > 0 && (
-            <div className="rounded-lg border border-black/15 p-3 space-y-2 bg-white">
-              <div className="text-xs font-semibold text-black/70">¿Cómo querés pagar?</div>
-              <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
-                paymentChoice === 'full' ? 'border-black bg-black/[0.04]' : 'border-black/10 hover:border-black/30'
-              }`}>
-                <input type="radio" checked={paymentChoice === 'full'} onChange={() => setPaymentChoice('full')} className="mt-0.5" />
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold">Pagar total: {fmt(priceCents)}</div>
-                  <div className="text-[11px] text-black/55">Quedás listo y sin saldo pendiente.</div>
-                </div>
-              </label>
-              <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
-                paymentChoice === 'deposit' ? 'border-black bg-black/[0.04]' : 'border-black/10 hover:border-black/30'
-              }`}>
-                <input type="radio" checked={paymentChoice === 'deposit'} onChange={() => setPaymentChoice('deposit')} className="mt-0.5" />
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold">Pagar seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}%)</span></div>
-                  <div className="text-[11px] text-black/55">El resto ({fmt(priceCents - depositCents)}) lo pagás en el lugar.</div>
-                </div>
-              </label>
-            </div>
-          )}
-
-          {(paymentMode === 'deposit' || paymentMode === 'full') && priceCents > 0 && (
+          {/* ── Resumen del pago elegido (siempre cuando hay monto > 0 y modo activo) ── */}
+          {paymentMode !== 'none' && priceCents > 0 && (
             <div className="rounded-lg border border-black/15 bg-white p-3 text-sm">
-              {paymentMode === 'full' ? (
+              {paymentChoice === 'full' ? (
                 <>
-                  <div className="font-semibold">Pago total: {fmt(priceCents)}</div>
-                  <div className="text-[11px] text-black/55 mt-0.5">Pagás ahora vía MercadoPago.</div>
+                  <div className="font-semibold">💵 Pago total: {fmt(priceCents)}</div>
+                  <div className="text-[11px] text-black/55 mt-0.5">Pagás ahora vía MercadoPago. Quedás sin saldo pendiente.</div>
                 </>
               ) : (
                 <>
-                  <div className="font-semibold">Seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}% de {fmt(priceCents)})</span></div>
+                  <div className="font-semibold">🪙 Seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}% de {fmt(priceCents)})</span></div>
                   <div className="text-[11px] text-black/55 mt-0.5">El resto ({fmt(priceCents - depositCents)}) lo pagás en el lugar.</div>
                 </>
+              )}
+              {paymentMode === 'choice' && (
+                <button type="button"
+                  onClick={() => setPaymentChoice(paymentChoice === 'full' ? 'deposit' : 'full')}
+                  className="text-[11px] text-black/55 hover:text-black underline mt-1.5">
+                  ↔ cambiar a {paymentChoice === 'full' ? 'pagar seña' : 'pagar total'}
+                </button>
               )}
             </div>
           )}
@@ -563,6 +494,69 @@ function ExtraInput({
             <option key={o} value={o}>{o}</option>
           ))}
         </select>
+        {helper}
+      </div>
+    );
+  }
+
+  if (field.type === 'radio') {
+    const current = (value as string) ?? '';
+    return (
+      <div>
+        <label className="block text-xs text-black/60 mb-1.5">{field.label}{reqStar}</label>
+        <div className="space-y-1.5">
+          {(field.options ?? []).map((o) => (
+            <label key={o}
+              className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer transition ${
+                current === o ? 'border-black bg-black/5' : 'border-black/15 hover:border-black/40'
+              }`}>
+              <input
+                name={inputName}
+                type="radio"
+                value={o}
+                checked={current === o}
+                onChange={() => onChange(o)}
+                required={field.required}
+              />
+              <span>{o}</span>
+            </label>
+          ))}
+        </div>
+        {helper}
+      </div>
+    );
+  }
+
+  if (field.type === 'multi') {
+    // Guardamos como string CSV (ej "Opcion A,Opcion C") porque el backend
+    // recibe `extra_${key}` como string único. El owner ve la lista separada
+    // por coma en el panel.
+    const selected = new Set(((value as string) ?? '').split(',').map((s) => s.trim()).filter(Boolean));
+    function toggle(o: string) {
+      const next = new Set(selected);
+      if (next.has(o)) next.delete(o); else next.add(o);
+      onChange(Array.from(next).join(','));
+    }
+    return (
+      <div>
+        <label className="block text-xs text-black/60 mb-1.5">{field.label}{reqStar}</label>
+        <div className="space-y-1.5">
+          {(field.options ?? []).map((o) => (
+            <label key={o}
+              className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer transition ${
+                selected.has(o) ? 'border-black bg-black/5' : 'border-black/15 hover:border-black/40'
+              }`}>
+              <input
+                type="checkbox"
+                checked={selected.has(o)}
+                onChange={() => toggle(o)}
+              />
+              <span>{o}</span>
+            </label>
+          ))}
+        </div>
+        {/* Hidden con el valor CSV para que el form lo envíe */}
+        <input type="hidden" name={inputName} value={(value as string) ?? ''} />
         {helper}
       </div>
     );

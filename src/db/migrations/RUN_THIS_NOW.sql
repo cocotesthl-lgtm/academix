@@ -938,6 +938,13 @@ alter table public.courses add column if not exists deposit_required boolean not
 alter table public.reservations add column if not exists deposit_paid boolean not null default false;
 alter table public.reservations add column if not exists deposit_external_id text;
 
+-- ── 0040 Trazabilidad de pago parcial ───
+alter table public.sales add column if not exists payment_kind text;
+do $$ begin
+  alter table public.sales add constraint sales_payment_kind_check
+    check (payment_kind is null or payment_kind in ('full','deposit'));
+exception when duplicate_object then null; end $$;
+
 -- ── 0039 Modo de pago de reservas ───
 alter table public.courses add column if not exists payment_mode text not null default 'none';
 do $$ begin
