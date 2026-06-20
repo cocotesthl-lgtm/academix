@@ -49,10 +49,11 @@ export default async function CourseDetailPage({
   searchParams
 }: {
   params: Promise<{ tenantId: string; courseSlug: string }>;
-  searchParams: Promise<{ ref?: string; v?: string }>;
+  searchParams: Promise<{ ref?: string; v?: string; debug?: string }>;
 }) {
   const { tenantId, courseSlug } = await params;
-  const { ref, v: variantParam } = await searchParams;
+  const { ref, v: variantParam, debug } = await searchParams;
+  const isDebug = debug === '1';
   const tenant = await getTenantById(tenantId);
   const primary = tenant?.brand?.primary_color ?? '#0a0a0a';
 
@@ -103,26 +104,37 @@ export default async function CourseDetailPage({
   const lessonLabel = courseExtras?.lesson_label?.trim() || 'lecciones';
   const showContentSection = courseExtras?.show_content_section !== false;
 
-  // ─── Sedes vinculadas + product_type para deducir si renderizamos
-  // el ReservationWidget en lugar del CouponInput.
+  // ─── Sedes vinculadas + product_type + payment_mode para deducir si
+  // renderizamos el ReservationWidget. Cada query AISLADA en su propio
+  // try-catch así si una migration no corrió, no rompe el resto.
   let productType: string | null = null;
   let linkedVenues: Array<{ id: string; name: string; address: string | null }> = [];
   let resPaymentMode: 'none' | 'deposit' | 'full' | 'choice' = 'none';
   let resDepositPercent = 30;
   try {
-    const { data: pt } = await svc.from('courses')
-      .select('product_type, payment_mode, deposit_percent').eq('id', course.id)
-      .maybeSingle<{ product_type: string | null; payment_mode: string | null; deposit_percent: number | null }>();
-    productType = pt?.product_type ?? null;
-    resPaymentMode = (pt?.payment_mode as typeof resPaymentMode) ?? 'none';
-    resDepositPercent = pt?.deposit_percent ?? 30;
-    const { data: cv } = await svc.from('course_venues').select('venue_id, venues(id, name, address, active)').eq('course_id', course.id);
-    type Row = { venue_id: string; venues: { id: string; name: string; address: string | null; active: boolean } | null };
-    linkedVenues = ((cv ?? []) as unknown as Row[])
-      .map((r) => r.venues)
-      .filter((v): v is { id: string; name: string; address: string | null; active: boolean } => !!v && v.active)
-      .map((v) => ({ id: v.id, name: v.name, address: v.address }));
-  } catch { /* migration pendiente */ }
+    const { data } = await svc.from('courses').select('product_type').eq('id', course.id)
+      .maybeSingle<{ product_type: string | null }>();
+    productType = data?.product_type ?? null;
+  } catch { /* migration 0031/0036 pendiente */ }
+  try {
+    const { data } = await svc.from('courses').select('payment_mode, deposit_percent').eq('id', course.id)
+      .maybeSingle<{ payment_mode: string | null; deposit_percent: number | null }>();
+    resPaymentMode = (data?.payment_mode as typeof resPaymentMode) ?? 'none';
+    resDepositPercent = data?.deposit_percent ?? 30;
+  } catch { /* migration 0039 pendiente */ }
+  try {
+    // 2 queries simples (más robusto que el JOIN inline si el FK
+    // no está detectado por Supabase): primero las venue_ids, después las sedes.
+    const { data: cvRaw } = await svc.from('course_venues')
+      .select('venue_id').eq('course_id', course.id);
+    const venueIds = ((cvRaw ?? []) as Array<{ venue_id: string }>).map((r) => r.venue_id);
+    if (venueIds.length > 0) {
+      const { data: vsRaw } = await svc.from('venues')
+        .select('id, name, address, active').in('id', venueIds).eq('active', true);
+      linkedVenues = ((vsRaw ?? []) as Array<{ id: string; name: string; address: string | null; active: boolean }>)
+        .map((v) => ({ id: v.id, name: v.name, address: v.address }));
+    }
+  } catch { /* migration 0037 pendiente */ }
   const isReservationProduct = productType === 'multi_venue' || productType === 'restaurant';
   const useReservationWidget = isReservationProduct || linkedVenues.length > 0;
 
@@ -648,6 +660,17 @@ export default async function CourseDetailPage({
               </div>
               <p className="text-xs text-black/50 mt-1">Pago único · Acceso permanente</p>
             </div>
+            {isDebug && (
+              <div className="rounded-md border border-amber-400 bg-amber-50 p-3 text-[10px] font-mono space-y-0.5">
+                <div className="font-bold">🐛 DEBUG</div>
+                <div>product_type: <strong>{productType ?? 'null'}</strong></div>
+                <div>payment_mode: <strong>{resPaymentMode}</strong></div>
+                <div>deposit_percent: <strong>{resDepositPercent}</strong></div>
+                <div>linked_venues: <strong>{linkedVenues.length}</strong> ({linkedVenues.map((v) => v.name).join(', ') || '—'})</div>
+                <div>useReservationWidget: <strong>{String(useReservationWidget)}</strong></div>
+                <div>calendarMode: <strong>{calendarMode}</strong></div>
+              </div>
+            )}
             {useReservationWidget ? (
               <ReservationWidget
                 tenantId={tenantId}
