@@ -673,6 +673,8 @@ export default async function CourseDetailPage({
                 calendarLabel={courseExtras?.calendar_label ?? null}
                 calendarRequired={courseExtras?.calendar_required ?? true}
                 calendarSlots={calendarSlots}
+                paymentMode={resPaymentMode}
+                depositPercent={resDepositPercent}
               />
             )}
             <p className="text-xs text-center text-black/40">

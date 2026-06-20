@@ -28,7 +28,9 @@ export function CouponInput({
   calendarMode = 'none',
   calendarLabel = null,
   calendarRequired = true,
-  calendarSlots
+  calendarSlots,
+  paymentMode = 'none',
+  depositPercent = 30
 }: {
   courseId: string;
   priceCents: number;
@@ -42,6 +44,8 @@ export function CouponInput({
   calendarLabel?: string | null;
   calendarRequired?: boolean;
   calendarSlots?: BookingSlot[];
+  paymentMode?: 'none' | 'deposit' | 'full' | 'choice';
+  depositPercent?: number;
 }) {
   const cfg = checkoutConfig ?? DEFAULT_CHECKOUT_CONFIG;
   const [showCoupon, setShowCoupon] = useState(false);
@@ -64,6 +68,18 @@ export function CouponInput({
   const isFree = priceCents === 0;
   const isLoggedIn = defaultEmail.length > 0;
   const passwordOk = isLoggedIn || (password.length >= 6 && password === password2);
+
+  // Selector de pago: total vs seña — sólo si paymentMode='choice'
+  const [paymentChoice, setPaymentChoice] = useState<'full' | 'deposit'>(
+    paymentMode === 'deposit' ? 'deposit' : 'full'
+  );
+  const depositCents = Math.round((priceCents * depositPercent) / 100);
+  const fmt = (c: number) => `$${(c / 100).toLocaleString('es-AR')} ${currency}`;
+  // Cuánto va a cobrar realmente:
+  const effectiveChargeCents = paymentMode === 'none' ? priceCents
+    : paymentMode === 'full' ? priceCents
+    : paymentMode === 'deposit' ? depositCents
+    : (paymentChoice === 'full' ? priceCents : depositCents);
 
   const baseValid =
     (!cfg.base_fields.name.enabled     || !cfg.base_fields.name.required     || name.trim().length >= 3) &&
@@ -260,13 +276,62 @@ export function CouponInput({
             y contactarte si hace falta. No los compartimos con terceros.
           </p>
 
+          {/* ── Selector de pago (total vs seña) — sólo si payment_mode='choice' ── */}
+          {paymentMode === 'choice' && priceCents > 0 && (
+            <div className="rounded-lg border border-black/15 p-3 space-y-2 bg-black/[0.02]">
+              <div className="text-xs font-semibold text-black/70">¿Cómo querés pagar?</div>
+              <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
+                paymentChoice === 'full' ? 'border-black bg-white' : 'border-black/10 hover:border-black/30'
+              }`}>
+                <input type="radio" checked={paymentChoice === 'full'} onChange={() => setPaymentChoice('full')} className="mt-0.5" />
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">Pagar total: {fmt(priceCents)}</div>
+                  <div className="text-[11px] text-black/55">Quedás listo y sin saldo pendiente.</div>
+                </div>
+              </label>
+              <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
+                paymentChoice === 'deposit' ? 'border-black bg-white' : 'border-black/10 hover:border-black/30'
+              }`}>
+                <input type="radio" checked={paymentChoice === 'deposit'} onChange={() => setPaymentChoice('deposit')} className="mt-0.5" />
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">Pagar seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}%)</span></div>
+                  <div className="text-[11px] text-black/55">El resto ({fmt(priceCents - depositCents)}) lo pagás en el lugar.</div>
+                </div>
+              </label>
+            </div>
+          )}
+
+          {/* ── Info-card (no-choice) — payment_mode 'deposit' o 'full' fijos ── */}
+          {(paymentMode === 'deposit' || paymentMode === 'full') && priceCents > 0 && (
+            <div className="rounded-lg border border-black/15 bg-black/[0.02] p-3 text-sm">
+              {paymentMode === 'full' ? (
+                <>
+                  <div className="font-semibold">Pago total: {fmt(priceCents)}</div>
+                  <div className="text-[11px] text-black/55 mt-0.5">Pagás ahora vía MercadoPago.</div>
+                </>
+              ) : (
+                <>
+                  <div className="font-semibold">Seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}% de {fmt(priceCents)})</span></div>
+                  <div className="text-[11px] text-black/55 mt-0.5">El resto ({fmt(priceCents - depositCents)}) lo pagás en el lugar.</div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Pasamos la elección al endpoint como hidden input */}
+          {paymentMode !== 'none' && (
+            <input type="hidden" name="payment_choice" value={
+              paymentMode === 'choice' ? paymentChoice : paymentMode === 'deposit' ? 'deposit' : 'full'
+            } />
+          )}
+
           <button
             type="submit"
             disabled={!dataReady}
             className="w-full rounded-md py-3 font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: primary }}
           >
-            {buyLabel} · ${(priceCents / 100).toLocaleString('es-AR')} {currency}
+            {buyLabel} · ${(effectiveChargeCents / 100).toLocaleString('es-AR')} {currency}
           </button>
           {!dataReady && (
             <p className="text-[11px] text-amber-700 text-center">

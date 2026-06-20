@@ -21,6 +21,8 @@ type Course = {
   pricing_mode: 'one_time' | 'subscription' | null;
   subscription_frequency: 'monthly' | 'yearly' | null;
   subscription_trial_days: number | null;
+  payment_mode?: 'none' | 'deposit' | 'full' | 'choice' | null;
+  deposit_percent?: number | null;
 };
 
 export async function POST(
@@ -33,7 +35,7 @@ export async function POST(
   // Resolve course (base — sin columnas nuevas para sobrevivir migrations pendientes)
   const { data: courseBase } = await svc
     .from('courses')
-    .select('id, tenant_id, slug, title, price_cents, currency, status')
+    .select('id, tenant_id, slug, title, price_cents, currency, status, payment_mode, deposit_percent')
     .eq('id', courseId)
     .maybeSingle<Omit<Course, 'pricing_mode' | 'subscription_frequency' | 'subscription_trial_days'>>();
   if (!courseBase || courseBase.status !== 'published') {
@@ -297,6 +299,25 @@ export async function POST(
   if (couponCode && !isEventTickets) {
     couponValid = await validateCoupon(course.tenant_id, couponCode, course.id, course.price_cents);
     if (couponValid) finalPrice = couponValid.final_cents;
+  }
+
+  // ── Modo de pago (none/deposit/full/choice) — si el owner habilitó seña ──
+  // Mode 'full' o 'none' usa finalPrice tal cual (precio total).
+  // Mode 'deposit' o 'choice' (con elección 'deposit') → finalPrice * pct / 100.
+  // Sólo aplica si NO es event_tickets (esos manejan precio aparte).
+  let paidChargeKind: 'full' | 'deposit' = 'full';
+  if (!isEventTickets) {
+    const pm = course.payment_mode ?? 'none';
+    const pct = Math.max(1, Math.min(99, course.deposit_percent ?? 30));
+    const chosenRaw = String(form?.get('payment_choice') ?? '');
+    const chosen: 'full' | 'deposit' | null = chosenRaw === 'full' || chosenRaw === 'deposit' ? chosenRaw : null;
+    const shouldChargeDeposit =
+      pm === 'deposit' ||
+      (pm === 'choice' && chosen === 'deposit');
+    if (shouldChargeDeposit && finalPrice > 0) {
+      finalPrice = Math.round((finalPrice * pct) / 100);
+      paidChargeKind = 'deposit';
+    }
   }
 
   // ─── Reservar booking si el comprador picó slot (mentorship_slot) ───
