@@ -5,7 +5,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { CourseEditor, type Course, type Module, type Lesson, type Category } from "@/components/owner/courses/CourseEditor";
 import { GrantEnrollmentForm } from "@/components/owner/courses/GrantEnrollmentForm";
-import { deleteCourseAction, setCourseContentLabelsAction } from "@/lib/courses/actions";
+import { deleteCourseAction, setCourseContentLabelsAction, setCourseStatusAction } from "@/lib/courses/actions";
 import { CourseCheckoutOverride } from "@/components/owner/checkout/CourseCheckoutOverride";
 import { CourseCalendarConfig } from "@/components/owner/courses/CourseCalendarConfig";
 import { CourseSubscriptionConfig } from "@/components/owner/courses/CourseSubscriptionConfig";
@@ -178,6 +178,25 @@ export default async function CourseEditPage({
           </button>
         </form>
       </div>
+
+      {/* Banner draft — el producto NO es visible públicamente hasta publicarlo */}
+      {course.status !== 'published' && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-amber-200">📝 En borrador — invisible para tus visitantes</div>
+            <p className="text-xs text-amber-200/80 mt-1">
+              Este producto existe pero no aparece en tu sitio público. Tu URL pública (/c/{course.slug}) devuelve 404 hasta que lo publiques.
+            </p>
+          </div>
+          <form action={setCourseStatusAction}>
+            <input type="hidden" name="id" value={course.id} />
+            <input type="hidden" name="status" value="published" />
+            <button className="rounded-md bg-emerald-500 text-white font-semibold px-5 py-2 hover:bg-emerald-400 whitespace-nowrap">
+              🚀 Publicar ahora
+            </button>
+          </form>
+        </div>
+      )}
 
       <CourseEditor
         course={course}

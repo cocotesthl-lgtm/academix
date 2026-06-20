@@ -66,7 +66,7 @@ export default async function CourseDetailPage({
     .eq("slug", courseSlug)
     .maybeSingle<CourseDetail>();
 
-  if (!course || course.status !== 'published') {
+  if (!course) {
     // Fallback: ¿es un bundle? Si sí, redirigir a /b/<slug>.
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,6 +75,27 @@ export default async function CourseDetailPage({
       if (bundle && bundle.status === 'published') redirect(`/b/${courseSlug}`);
     } catch { /* tabla bundles puede no existir todavía */ }
     notFound();
+  }
+  if (course.status !== 'published') {
+    // Producto existe pero está en borrador → mensaje claro para el owner
+    return (
+      <article className="max-w-2xl mx-auto px-6 py-20 text-center space-y-4">
+        <div className="text-5xl">📝</div>
+        <h1 className="text-2xl font-bold">Este producto todavía no está publicado</h1>
+        <p className="text-black/60">
+          &quot;{course.title}&quot; existe pero está en estado <strong>borrador</strong>. Sólo
+          vos podés verlo. Cuando lo publiques, va a aparecer acá para tus visitantes.
+        </p>
+        <div className="pt-4">
+          <a href="/courses" className="inline-block rounded-md text-white font-semibold px-6 py-3" style={{ background: primary }}>
+            Ir al panel a publicarlo →
+          </a>
+        </div>
+        <p className="text-xs text-black/40 pt-2">
+          (Andá a /courses → tu producto → cambiá el estado de &quot;Borrador&quot; a &quot;Publicado&quot;)
+        </p>
+      </article>
+    );
   }
 
   // Query separada para columnas nuevas (checkout + calendar). Si la
