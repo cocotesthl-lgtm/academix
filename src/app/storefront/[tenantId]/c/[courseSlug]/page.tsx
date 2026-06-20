@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -65,7 +65,16 @@ export default async function CourseDetailPage({
     .eq("slug", courseSlug)
     .maybeSingle<CourseDetail>();
 
-  if (!course || course.status !== 'published') notFound();
+  if (!course || course.status !== 'published') {
+    // Fallback: ¿es un bundle? Si sí, redirigir a /b/<slug>.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: bundle } = await (svc.from('bundles') as any)
+        .select('slug, status').eq('tenant_id', tenantId).eq('slug', courseSlug).maybeSingle();
+      if (bundle && bundle.status === 'published') redirect(`/b/${courseSlug}`);
+    } catch { /* tabla bundles puede no existir todavía */ }
+    notFound();
+  }
 
   // Query separada para columnas nuevas (checkout + calendar). Si la
   // migration todavía no corrió, falla silencioso y caemos a defaults.
