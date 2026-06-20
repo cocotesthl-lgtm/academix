@@ -692,19 +692,7 @@ export default async function CourseDetailPage({
                 <div>calendarMode: <strong>{calendarMode}</strong></div>
               </div>
             )}
-            {useReservationWidget ? (
-              <ReservationWidget
-                tenantId={tenantId}
-                courseId={course.id}
-                primary={primary}
-                venues={linkedVenues}
-                ctaText={productType === 'restaurant' ? 'Reservar mesa' : 'Reservar lugar'}
-                paymentMode={resPaymentMode}
-                depositPercent={resDepositPercent}
-                priceCents={course.price_cents}
-                currency={course.currency}
-              />
-            ) : calendarMode === 'event_tickets' ? (
+            {calendarMode === 'event_tickets' ? (
               <TicketPicker
                 courseId={course.id}
                 priceCents={course.price_cents}
@@ -729,6 +717,8 @@ export default async function CourseDetailPage({
                 paymentMode={resPaymentMode}
                 depositPercent={resDepositPercent}
                 ctaText={ctaTextForType(productType)}
+                venues={linkedVenues}
+                isReservation={isReservationProduct}
               />
             )}
             <p className="text-xs text-center text-black/40">

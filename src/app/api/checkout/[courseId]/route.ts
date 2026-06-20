@@ -301,6 +301,33 @@ export async function POST(
     if (couponValid) finalPrice = couponValid.final_cents;
   }
 
+  // ── Reserva (sede + fecha + hora + personas) — si el form los mandó ──
+  // Insertamos una fila en reservations linkeada al curso. Sobrevive si la
+  // migration 0037 no corrió todavía.
+  const resDate = String(form?.get('reservation_date') ?? '').trim();
+  const resTime = String(form?.get('reservation_time') ?? '').trim() || null;
+  const resVenueId = String(form?.get('reservation_venue_id') ?? '').trim() || null;
+  const resPartyRaw = parseInt(String(form?.get('reservation_party_size') ?? '1'), 10);
+  const resParty = Math.max(1, Math.min(200, Number.isNaN(resPartyRaw) ? 1 : resPartyRaw));
+  if (resDate && /^\d{4}-\d{2}-\d{2}$/.test(resDate)) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('reservations') as any).insert({
+        tenant_id: course.tenant_id,
+        course_id: course.id,
+        venue_id: resVenueId,
+        customer_name: buyerInfo.name ?? 'Cliente',
+        customer_email: buyerInfo.email ?? user?.email ?? 'no-email@example.com',
+        customer_phone: buyerInfo.phone ?? null,
+        reservation_date: resDate,
+        reservation_time: resTime,
+        party_size: resParty,
+        notes: null,
+        status: 'pending'
+      });
+    } catch { /* migration 0037 pendiente — ignoramos en silencio */ }
+  }
+
   // ── Modo de pago (none/deposit/full/choice) — si el owner habilitó seña ──
   // Mode 'full' o 'none' usa finalPrice tal cual (precio total).
   // Mode 'deposit' o 'choice' (con elección 'deposit') → finalPrice * pct / 100.

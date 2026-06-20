@@ -31,7 +31,9 @@ export function CouponInput({
   calendarSlots,
   paymentMode = 'none',
   depositPercent = 30,
-  ctaText = 'Comprar curso'
+  ctaText = 'Comprar curso',
+  venues = [],
+  isReservation = false
 }: {
   courseId: string;
   priceCents: number;
@@ -49,6 +51,10 @@ export function CouponInput({
   depositPercent?: number;
   /** CTA basado en product_type — ej "Comprar entrada", "Reservar mentoría". */
   ctaText?: string;
+  /** Si el producto tiene sedes vinculadas, las mostramos como selector. */
+  venues?: Array<{ id: string; name: string; address: string | null }>;
+  /** Si el producto es multi_venue/restaurant, pedimos fecha + hora + personas. */
+  isReservation?: boolean;
 }) {
   const cfg = checkoutConfig ?? DEFAULT_CHECKOUT_CONFIG;
   const [showCoupon, setShowCoupon] = useState(false);
@@ -76,6 +82,17 @@ export function CouponInput({
   const [paymentChoice, setPaymentChoice] = useState<'full' | 'deposit'>(
     paymentMode === 'deposit' ? 'deposit' : 'full'
   );
+
+  // ── Campos de reserva (sede + fecha + hora + personas) ──
+  const showsReservationFields = isReservation || venues.length > 0;
+  const [selectedVenue, setSelectedVenue] = useState<string>(venues[0]?.id ?? '');
+  const [resDate, setResDate] = useState('');
+  const [resTime, setResTime] = useState('');
+  const [resParty, setResParty] = useState(2);
+  const today = new Date().toISOString().slice(0, 10);
+  const reservationValid =
+    !showsReservationFields ||
+    (resDate.length > 0 && (venues.length === 0 || selectedVenue.length > 0));
   const depositCents = Math.round((priceCents * depositPercent) / 100);
   const fmt = (c: number) => `$${(c / 100).toLocaleString('es-AR')} ${currency}`;
   // Cuánto va a cobrar realmente:
@@ -96,7 +113,7 @@ export function CouponInput({
     if (f.type === 'checkbox') return v === true;
     return typeof v === 'string' && v.trim().length > 0;
   });
-  const dataReady = baseValid && emailValid && passwordOk && extrasValid;
+  const dataReady = baseValid && emailValid && passwordOk && extrasValid && reservationValid;
 
   return (
     <form
@@ -149,6 +166,65 @@ export function CouponInput({
               ✕
             </button>
           </div>
+
+          {/* ── Campos de reserva (sede + fecha + hora + personas) ── */}
+          {showsReservationFields && (
+            <div className="rounded-lg border border-black/15 p-3 space-y-3 bg-white">
+              <div className="text-xs font-semibold text-black/70">Detalles de la reserva</div>
+
+              {venues.length > 1 && (
+                <div>
+                  <label className="block text-xs text-black/55 mb-1">Sede <span className="text-red-500">*</span></label>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {venues.map((v) => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setSelectedVenue(v.id)}
+                        className={`text-left rounded-md border px-3 py-2 text-sm transition ${
+                          selectedVenue === v.id ? 'border-black bg-black/5' : 'border-black/15 hover:border-black/40'
+                        }`}
+                      >
+                        <div className="font-semibold">📍 {v.name}</div>
+                        {v.address && <div className="text-[11px] text-black/55 truncate">{v.address}</div>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {venues.length === 1 && (
+                <div className="text-xs text-black/55">
+                  📍 <strong>{venues[0].name}</strong>{venues[0].address && ` · ${venues[0].address}`}
+                  <input type="hidden" name="reservation_venue_id" value={venues[0].id} />
+                </div>
+              )}
+              {venues.length > 1 && (
+                <input type="hidden" name="reservation_venue_id" value={selectedVenue} />
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-black/55 mb-1">Fecha <span className="text-red-500">*</span></label>
+                  <input type="date" name="reservation_date" required min={today}
+                    value={resDate} onChange={(e) => setResDate(e.target.value)}
+                    className="w-full rounded border border-black/15 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs text-black/55 mb-1">Hora</label>
+                  <input type="time" name="reservation_time"
+                    value={resTime} onChange={(e) => setResTime(e.target.value)}
+                    className="w-full rounded border border-black/15 px-3 py-2 text-sm" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-black/55 mb-1">¿Cuántas personas?</label>
+                <input type="number" name="reservation_party_size" min={1} max={50}
+                  value={resParty} onChange={(e) => setResParty(Number(e.target.value))}
+                  className="w-full rounded border border-black/15 px-3 py-2 text-sm" />
+              </div>
+            </div>
+          )}
 
           {/* ── Selector de pago ARRIBA del form (total vs seña) ── */}
           {paymentMode === 'choice' && priceCents > 0 && (
