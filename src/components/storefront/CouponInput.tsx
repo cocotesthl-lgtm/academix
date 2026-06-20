@@ -30,7 +30,8 @@ export function CouponInput({
   calendarRequired = true,
   calendarSlots,
   paymentMode = 'none',
-  depositPercent = 30
+  depositPercent = 30,
+  ctaText = 'Comprar curso'
 }: {
   courseId: string;
   priceCents: number;
@@ -46,6 +47,8 @@ export function CouponInput({
   calendarSlots?: BookingSlot[];
   paymentMode?: 'none' | 'deposit' | 'full' | 'choice';
   depositPercent?: number;
+  /** CTA basado en product_type — ej "Comprar entrada", "Reservar mentoría". */
+  ctaText?: string;
 }) {
   const cfg = checkoutConfig ?? DEFAULT_CHECKOUT_CONFIG;
   const [showCoupon, setShowCoupon] = useState(false);
@@ -121,7 +124,8 @@ export function CouponInput({
         </button>
       )}
 
-      {/* Curso pago: botón para expandir el form */}
+      {/* Curso pago: botón para expandir el form. El monto refleja la
+          elección de pago (total/seña) cuando aplica. */}
       {!isFree && !expanded && (
         <button
           type="button"
@@ -129,7 +133,7 @@ export function CouponInput({
           className="w-full rounded-md py-3 font-semibold text-white"
           style={{ background: primary }}
         >
-          Comprar curso · ${(priceCents / 100).toLocaleString('es-AR')} {currency}
+          {ctaText} · ${(effectiveChargeCents / 100).toLocaleString('es-AR')} {currency}
         </button>
       )}
 
@@ -145,6 +149,47 @@ export function CouponInput({
               ✕
             </button>
           </div>
+
+          {/* ── Selector de pago ARRIBA del form (total vs seña) ── */}
+          {paymentMode === 'choice' && priceCents > 0 && (
+            <div className="rounded-lg border border-black/15 p-3 space-y-2 bg-white">
+              <div className="text-xs font-semibold text-black/70">¿Cómo querés pagar?</div>
+              <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
+                paymentChoice === 'full' ? 'border-black bg-black/[0.04]' : 'border-black/10 hover:border-black/30'
+              }`}>
+                <input type="radio" checked={paymentChoice === 'full'} onChange={() => setPaymentChoice('full')} className="mt-0.5" />
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">Pagar total: {fmt(priceCents)}</div>
+                  <div className="text-[11px] text-black/55">Quedás listo y sin saldo pendiente.</div>
+                </div>
+              </label>
+              <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
+                paymentChoice === 'deposit' ? 'border-black bg-black/[0.04]' : 'border-black/10 hover:border-black/30'
+              }`}>
+                <input type="radio" checked={paymentChoice === 'deposit'} onChange={() => setPaymentChoice('deposit')} className="mt-0.5" />
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">Pagar seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}%)</span></div>
+                  <div className="text-[11px] text-black/55">El resto ({fmt(priceCents - depositCents)}) lo pagás en el lugar.</div>
+                </div>
+              </label>
+            </div>
+          )}
+
+          {(paymentMode === 'deposit' || paymentMode === 'full') && priceCents > 0 && (
+            <div className="rounded-lg border border-black/15 bg-white p-3 text-sm">
+              {paymentMode === 'full' ? (
+                <>
+                  <div className="font-semibold">Pago total: {fmt(priceCents)}</div>
+                  <div className="text-[11px] text-black/55 mt-0.5">Pagás ahora vía MercadoPago.</div>
+                </>
+              ) : (
+                <>
+                  <div className="font-semibold">Seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}% de {fmt(priceCents)})</span></div>
+                  <div className="text-[11px] text-black/55 mt-0.5">El resto ({fmt(priceCents - depositCents)}) lo pagás en el lugar.</div>
+                </>
+              )}
+            </div>
+          )}
 
           {/* ─── Campos base ─── */}
           {cfg.base_fields.name.enabled && (
@@ -276,49 +321,7 @@ export function CouponInput({
             y contactarte si hace falta. No los compartimos con terceros.
           </p>
 
-          {/* ── Selector de pago (total vs seña) — sólo si payment_mode='choice' ── */}
-          {paymentMode === 'choice' && priceCents > 0 && (
-            <div className="rounded-lg border border-black/15 p-3 space-y-2 bg-black/[0.02]">
-              <div className="text-xs font-semibold text-black/70">¿Cómo querés pagar?</div>
-              <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
-                paymentChoice === 'full' ? 'border-black bg-white' : 'border-black/10 hover:border-black/30'
-              }`}>
-                <input type="radio" checked={paymentChoice === 'full'} onChange={() => setPaymentChoice('full')} className="mt-0.5" />
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold">Pagar total: {fmt(priceCents)}</div>
-                  <div className="text-[11px] text-black/55">Quedás listo y sin saldo pendiente.</div>
-                </div>
-              </label>
-              <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
-                paymentChoice === 'deposit' ? 'border-black bg-white' : 'border-black/10 hover:border-black/30'
-              }`}>
-                <input type="radio" checked={paymentChoice === 'deposit'} onChange={() => setPaymentChoice('deposit')} className="mt-0.5" />
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold">Pagar seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}%)</span></div>
-                  <div className="text-[11px] text-black/55">El resto ({fmt(priceCents - depositCents)}) lo pagás en el lugar.</div>
-                </div>
-              </label>
-            </div>
-          )}
-
-          {/* ── Info-card (no-choice) — payment_mode 'deposit' o 'full' fijos ── */}
-          {(paymentMode === 'deposit' || paymentMode === 'full') && priceCents > 0 && (
-            <div className="rounded-lg border border-black/15 bg-black/[0.02] p-3 text-sm">
-              {paymentMode === 'full' ? (
-                <>
-                  <div className="font-semibold">Pago total: {fmt(priceCents)}</div>
-                  <div className="text-[11px] text-black/55 mt-0.5">Pagás ahora vía MercadoPago.</div>
-                </>
-              ) : (
-                <>
-                  <div className="font-semibold">Seña: {fmt(depositCents)} <span className="font-normal text-black/55">({depositPercent}% de {fmt(priceCents)})</span></div>
-                  <div className="text-[11px] text-black/55 mt-0.5">El resto ({fmt(priceCents - depositCents)}) lo pagás en el lugar.</div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Pasamos la elección al endpoint como hidden input */}
+          {/* Hidden input con la elección de pago (la UI ya está arriba del form) */}
           {paymentMode !== 'none' && (
             <input type="hidden" name="payment_choice" value={
               paymentMode === 'choice' ? paymentChoice : paymentMode === 'deposit' ? 'deposit' : 'full'
@@ -331,7 +334,7 @@ export function CouponInput({
             className="w-full rounded-md py-3 font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: primary }}
           >
-            {buyLabel} · ${(effectiveChargeCents / 100).toLocaleString('es-AR')} {currency}
+            {ctaText} · ${(effectiveChargeCents / 100).toLocaleString('es-AR')} {currency}
           </button>
           {!dataReady && (
             <p className="text-[11px] text-amber-700 text-center">

@@ -675,6 +675,7 @@ export default async function CourseDetailPage({
                 calendarSlots={calendarSlots}
                 paymentMode={resPaymentMode}
                 depositPercent={resDepositPercent}
+                ctaText={ctaTextForType(productType)}
               />
             )}
             <p className="text-xs text-center text-black/40">
@@ -685,4 +686,20 @@ export default async function CourseDetailPage({
       </div>
     </article>
   );
+}
+
+/** CTA según tipo de producto (usa los textos del spec en product-types.ts). */
+function ctaTextForType(t: string | null): string {
+  switch (t) {
+    case 'event':       return 'Comprar entrada';
+    case 'mentorship':  return 'Reservar mentoría';
+    case 'vip_pack':    return 'Suscribirme';
+    case 'digital':     return 'Comprar ahora';
+    case 'physical':    return 'Comprar';
+    case 'service':     return 'Contratar';
+    case 'multi_venue': return 'Reservar lugar';
+    case 'restaurant':  return 'Reservar mesa';
+    case 'course':
+    default:            return 'Comprar curso';
+  }
 }
