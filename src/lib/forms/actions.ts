@@ -261,13 +261,55 @@ export async function submitFormAction(formData: FormData): Promise<{ ok: boolea
     ip_hash: ipHash
   }).select('id').single();
 
-  // Si el form tiene pipeline default, crear lead en el CRM
-  if (form.default_pipeline_id && form.default_stage_id && sub?.id) {
+  // Crear lead en el CRM. Si el form NO tiene pipeline default, hacemos
+  // fallback al primer pipeline + primer stage del tenant — así los leads
+  // siempre aparecen en el Kanban (antes se perdían silenciosamente).
+  let pipelineId: string | null = form.default_pipeline_id ?? null;
+  let stageId: string | null = form.default_stage_id ?? null;
+  if (!pipelineId || !stageId) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: p } = await (svc.from('crm_pipelines') as any)
+        .select('id').eq('tenant_id', form.tenant_id).order('position').limit(1).maybeSingle();
+      if (p?.id) {
+        pipelineId = p.id;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: s } = await (svc.from('crm_stages') as any)
+          .select('id').eq('pipeline_id', p.id).order('position').limit(1).maybeSingle();
+        stageId = s?.id ?? null;
+      } else {
+        // No hay NINGÚN pipeline en el tenant → creamos uno default "Ventas"
+        // con 4 stages estándar (Contactado, Cotizado, Ganado, Perdido).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: newP } = await (svc.from('crm_pipelines') as any).insert({
+          tenant_id: form.tenant_id, name: 'Ventas', position: 0
+        }).select('id').single();
+        if (newP?.id) {
+          pipelineId = newP.id;
+          const defaultStages = [
+            { name: 'Contactado', position: 0, color: '#3b82f6' },
+            { name: 'Cotizado',   position: 1, color: '#eab308' },
+            { name: 'Ganado',     position: 2, color: '#10b981' },
+            { name: 'Perdido',    position: 3, color: '#ef4444' }
+          ];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: insertedStages } = await (svc.from('crm_stages') as any)
+            .insert(defaultStages.map((s) => ({ ...s, pipeline_id: newP.id })))
+            .select('id, position');
+          const firstStage = (insertedStages as Array<{ id: string; position: number }> ?? [])
+            .sort((a, b) => a.position - b.position)[0];
+          stageId = firstStage?.id ?? null;
+        }
+      }
+    } catch { /* falla silenciosa → submission queda guardada */ }
+  }
+
+  if (pipelineId && stageId && sub?.id) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: lead } = await (svc.from('crm_leads') as any).insert({
       tenant_id: form.tenant_id,
-      pipeline_id: form.default_pipeline_id,
-      stage_id: form.default_stage_id,
+      pipeline_id: pipelineId,
+      stage_id: stageId,
       name: submitter_name,
       email: submitter_email,
       phone: submitter_phone,
