@@ -336,12 +336,20 @@ function ExtraFieldRow({
           <Field label="Placeholder (texto gris dentro del input)" value={placeholder} onChange={setPlaceholder} maxLength={120} />
           <Field label="Ayuda (texto chico debajo)" value={helper} onChange={setHelper} maxLength={200} />
           {(type === 'select' || type === 'radio' || type === 'multi') && (
-            <Field
-              label={`Opciones (separadas por coma)${type === 'multi' ? ' — el cliente puede elegir varias' : ''}`}
-              value={optionsCsv}
-              onChange={setOptionsCsv}
-              placeholder="Sede Palermo, Sede CABA, Sede Belgrano"
-            />
+            <div className="space-y-1">
+              <Field
+                label={`Opciones (separadas por coma)${type === 'multi' ? ' — el cliente puede elegir varias' : ''}`}
+                value={optionsCsv}
+                onChange={setOptionsCsv}
+                placeholder="Plan básico|+0, Plan pro|+5000, Plan VIP|+15000"
+              />
+              {(type === 'radio' || type === 'multi') && (
+                <p className="text-[10px] text-white/45 leading-relaxed">
+                  💡 Para sumar/restar al precio total, agregale <code className="bg-black/40 px-1 rounded text-white/70">|+5000</code> o <code className="bg-black/40 px-1 rounded text-white/70">|-1500</code> al final de cada opción.
+                  Ej: <code className="bg-black/40 px-1 rounded text-white/70">Sede VIP|+5000</code>.
+                </p>
+              )}
+            </div>
           )}
           {type === 'checkbox' && (
             <div className="grid grid-cols-2 gap-3 rounded-md bg-white/[0.02] border border-white/10 p-3">

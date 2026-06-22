@@ -24,12 +24,30 @@ export type CheckoutField = {
   type: CheckoutFieldType;
   required: boolean;
   placeholder?: string;
-  options?: string[];      // para 'select' | 'radio' | 'multi'
+  /** para 'select' | 'radio' | 'multi'. Cada string puede llevar un sufijo
+   *  `|+5000` o `|-2000` para sumar/restar pesos al total cuando se elige.
+   *  Ej: "Sede Premium|+5000" o "Pack básico|-3000".
+   *  Parsear con `parseOption()`. */
+  options?: string[];
   helper?: string;         // texto descriptivo debajo del input
   position: number;
   default_checked?: boolean;     // sólo 'checkbox' — viene pre-tildado
   price_delta_cents?: number;    // sólo 'checkbox' — suma este monto al total si está tildado
 };
+
+/** Parsea una opción con sufijo `|+5000` o `|-1000` (pesos) y devuelve
+ *  label limpio + delta en CENTAVOS. Sin sufijo → delta=0. */
+export function parseOption(raw: string): { label: string; deltaCents: number } {
+  const i = raw.lastIndexOf('|');
+  if (i < 0) return { label: raw.trim(), deltaCents: 0 };
+  const label = raw.slice(0, i).trim();
+  const rest = raw.slice(i + 1).trim().replace(/\s/g, '');
+  // Acepta "+5000", "-1000", "5000", "+5.000", "-1.500"
+  const sign = rest.startsWith('-') ? -1 : 1;
+  const num = parseFloat(rest.replace(/[+,-]/g, '').replace(/\./g, ''));
+  if (Number.isNaN(num)) return { label: raw.trim(), deltaCents: 0 };
+  return { label, deltaCents: sign * Math.round(num * 100) };
+}
 
 export type BaseFieldKey = 'name' | 'dni' | 'phone' | 'location';
 

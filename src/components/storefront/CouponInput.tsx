@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { CheckoutConfig, CheckoutField } from '@/lib/checkout/types';
-import { DEFAULT_CHECKOUT_CONFIG } from '@/lib/checkout/types';
+import { DEFAULT_CHECKOUT_CONFIG, parseOption } from '@/lib/checkout/types';
 import type { BookingSlot, CalendarMode } from '@/lib/calendar/types';
 import { CalendarPicker } from './CalendarPicker';
 
@@ -78,11 +78,26 @@ export function CouponInput({
     }
     return init;
   });
-  // Suma de price_delta_cents de todos los checkbox tildados
+  // Suma de price_delta de:
+  //  - checkbox tildados (price_delta_cents del field)
+  //  - radio: la opción seleccionada (sufijo |+5000 en la opción)
+  //  - multi: cada opción seleccionada (idem)
   const addonsCents = cfg.extra_fields.reduce((sum, f) => {
-    if (f.type !== 'checkbox') return sum;
-    const checked = extras[f.id] === true;
-    return checked ? sum + (f.price_delta_cents ?? 0) : sum;
+    if (f.type === 'checkbox') {
+      return extras[f.id] === true ? sum + (f.price_delta_cents ?? 0) : sum;
+    }
+    if (f.type === 'radio') {
+      const v = (extras[f.id] as string) ?? '';
+      if (!v) return sum;
+      return sum + parseOption(v).deltaCents;
+    }
+    if (f.type === 'multi') {
+      const csv = (extras[f.id] as string) ?? '';
+      if (!csv) return sum;
+      return csv.split(',').map((s) => s.trim()).filter(Boolean)
+        .reduce((s2, opt) => s2 + parseOption(opt).deltaCents, sum);
+    }
+    return sum;
   }, 0);
   const setExtra = (id: string, v: string | boolean) =>
     setExtras((s) => ({ ...s, [id]: v }));
@@ -555,23 +570,31 @@ function ExtraInput({
           </div>
         ) : (
           <div className="space-y-2">
-            {opts.map((o) => (
-              <label key={o}
-                className={`flex items-center gap-3 rounded-md border-2 px-3 py-2.5 text-sm cursor-pointer transition ${
-                  current === o ? 'border-black bg-black/[0.04]' : 'border-black/15 hover:border-black/40'
-                }`}>
-                <input
-                  name={inputName}
-                  type="radio"
-                  value={o}
-                  checked={current === o}
-                  onChange={() => onChange(o)}
-                  required={field.required}
-                  className="w-4 h-4 accent-black"
-                />
-                <span className="font-medium">{o}</span>
-              </label>
-            ))}
+            {opts.map((o) => {
+              const parsed = parseOption(o);
+              return (
+                <label key={o}
+                  className={`flex items-center gap-3 rounded-md border-2 px-3 py-2.5 text-sm cursor-pointer transition ${
+                    current === o ? 'border-black bg-black/[0.04]' : 'border-black/15 hover:border-black/40'
+                  }`}>
+                  <input
+                    name={inputName}
+                    type="radio"
+                    value={o}
+                    checked={current === o}
+                    onChange={() => onChange(o)}
+                    required={field.required}
+                    className="w-4 h-4 accent-black"
+                  />
+                  <span className="font-medium flex-1">{parsed.label}</span>
+                  {parsed.deltaCents !== 0 && (
+                    <span className={`text-xs font-bold whitespace-nowrap ${parsed.deltaCents > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                      {parsed.deltaCents > 0 ? '+' : ''}${(parsed.deltaCents / 100).toLocaleString('es-AR')}
+                    </span>
+                  )}
+                </label>
+              );
+            })}
           </div>
         )}
         {helper}
@@ -596,20 +619,28 @@ function ExtraInput({
           </div>
         ) : (
           <div className="space-y-2">
-            {opts.map((o) => (
-              <label key={o}
-                className={`flex items-center gap-3 rounded-md border-2 px-3 py-2.5 text-sm cursor-pointer transition ${
-                  selected.has(o) ? 'border-black bg-black/[0.04]' : 'border-black/15 hover:border-black/40'
-                }`}>
-                <input
-                  type="checkbox"
-                  checked={selected.has(o)}
-                  onChange={() => toggle(o)}
-                  className="w-4 h-4 accent-black"
-                />
-                <span className="font-medium">{o}</span>
-              </label>
-            ))}
+            {opts.map((o) => {
+              const parsed = parseOption(o);
+              return (
+                <label key={o}
+                  className={`flex items-center gap-3 rounded-md border-2 px-3 py-2.5 text-sm cursor-pointer transition ${
+                    selected.has(o) ? 'border-black bg-black/[0.04]' : 'border-black/15 hover:border-black/40'
+                  }`}>
+                  <input
+                    type="checkbox"
+                    checked={selected.has(o)}
+                    onChange={() => toggle(o)}
+                    className="w-4 h-4 accent-black"
+                  />
+                  <span className="font-medium flex-1">{parsed.label}</span>
+                  {parsed.deltaCents !== 0 && (
+                    <span className={`text-xs font-bold whitespace-nowrap ${parsed.deltaCents > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                      {parsed.deltaCents > 0 ? '+' : ''}${(parsed.deltaCents / 100).toLocaleString('es-AR')}
+                    </span>
+                  )}
+                </label>
+              );
+            })}
           </div>
         )}
         <input type="hidden" name={inputName} value={(value as string) ?? ''} />

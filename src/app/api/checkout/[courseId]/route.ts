@@ -6,7 +6,7 @@ import { createPreference, createPreapproval } from '@/lib/payments/mercadopago'
 import { verifyAffiliateCookie, cookieName } from '@/lib/affiliates/cookie';
 import { validateCoupon } from '@/lib/coupons/actions';
 import { env } from '@/lib/env';
-import { mergeCheckoutConfig, type CheckoutConfig } from '@/lib/checkout/types';
+import { mergeCheckoutConfig, parseOption, type CheckoutConfig } from '@/lib/checkout/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -351,17 +351,35 @@ export async function POST(
   try {
     const checkedAddons: string[] = [];
     for (const f of checkoutCfg.extra_fields) {
-      if (f.type !== 'checkbox') continue;
-      const delta = f.price_delta_cents ?? 0;
-      if (delta === 0) continue;
-      const v = String(form?.get(`extra_${f.key}`) ?? '');
-      if (v === 'on' || v === 'true' || v === '1') {
-        addonsCents += delta;
-        checkedAddons.push(`${f.label} (${delta > 0 ? '+' : ''}${delta / 100})`);
+      const formVal = String(form?.get(`extra_${f.key}`) ?? '');
+      if (f.type === 'checkbox') {
+        const delta = f.price_delta_cents ?? 0;
+        if (delta === 0) continue;
+        if (formVal === 'on' || formVal === 'true' || formVal === '1') {
+          addonsCents += delta;
+          checkedAddons.push(`${f.label} (${delta > 0 ? '+' : ''}${delta / 100})`);
+        }
+      } else if (f.type === 'radio') {
+        if (!formVal) continue;
+        const { label, deltaCents } = parseOption(formVal);
+        if (deltaCents !== 0) {
+          addonsCents += deltaCents;
+          checkedAddons.push(`${f.label}: ${label} (${deltaCents > 0 ? '+' : ''}${deltaCents / 100})`);
+        }
+      } else if (f.type === 'multi') {
+        if (!formVal) continue;
+        const parts = formVal.split(',').map((s) => s.trim()).filter(Boolean);
+        for (const opt of parts) {
+          const { label, deltaCents } = parseOption(opt);
+          if (deltaCents !== 0) {
+            addonsCents += deltaCents;
+            checkedAddons.push(`${f.label}: ${label} (${deltaCents > 0 ? '+' : ''}${deltaCents / 100})`);
+          }
+        }
       }
     }
     if (addonsCents !== 0 && !isEventTickets) {
-      finalPrice += addonsCents;
+      finalPrice = Math.max(0, finalPrice + addonsCents);
       console.log('[checkout] addons aplicados', { addonsCents, items: checkedAddons });
     }
   } catch (e) {
