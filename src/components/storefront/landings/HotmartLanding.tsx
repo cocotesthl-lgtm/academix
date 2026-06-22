@@ -310,6 +310,7 @@ export function HotmartLanding({
               primary={primary}
               defaultEmail={buyerEmail}
               buyLabel={config.cta_label || 'Continuar al pago'}
+              ctaText={config.cta_label || 'Comprar curso'}
               checkoutConfig={checkoutConfig}
               calendarMode={calendarMode}
               calendarLabel={calendarLabel}

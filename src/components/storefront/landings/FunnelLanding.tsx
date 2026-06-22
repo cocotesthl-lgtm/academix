@@ -103,6 +103,7 @@ export function FunnelLanding({
         calendarRequired={calendarRequired}
         calendarSlots={calendarSlots}
         buyLabel={label ?? ctaLabel}
+        ctaText={label ?? ctaLabel}
       />
       {ctaCaption && <p className="text-xs text-black/55 mt-2 max-w-md mx-auto">{ctaCaption}</p>}
     </div>
@@ -148,6 +149,7 @@ export function FunnelLanding({
         calendarRequired={calendarRequired}
         calendarSlots={calendarSlots}
               buyLabel={ctaLabel}
+              ctaText={ctaLabel}
             />
             {ctaCaption && <p className="text-xs text-black/55 mt-2.5">{ctaCaption}</p>}
           </div>
@@ -377,6 +379,7 @@ export function FunnelLanding({
         calendarRequired={calendarRequired}
         calendarSlots={calendarSlots}
               buyLabel={ctaLabel}
+              ctaText={ctaLabel}
             />
             <p className="text-xs text-black/55 mt-2">{ctaCaption ?? 'Pago seguro vía MercadoPago'}</p>
           </div>

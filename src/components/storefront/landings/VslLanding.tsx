@@ -310,6 +310,7 @@ export function VslLanding({
                 primary={accent}
                 defaultEmail={formData.email || buyerEmail}
                 buyLabel={ctaLabel}
+                ctaText={ctaLabel}
                 checkoutConfig={checkoutConfig}
                 calendarMode={calendarMode}
                 calendarLabel={calendarLabel}
