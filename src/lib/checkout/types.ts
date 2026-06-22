@@ -10,11 +10,12 @@ export type CheckoutFieldType =
   | 'tel'
   | 'textarea'
   | 'select'
-  | 'radio'     // 1 opción visible (cards), elegís una. Ej "Sede".
-  | 'multi'     // varias opciones visibles, podés elegir N (checkboxes en grupo).
+  | 'radio'      // 1 opción visible (cards), elegís una. Ej "Sede".
+  | 'multi'      // varias opciones visibles, podés elegir N (checkboxes en grupo).
   | 'checkbox'
   | 'date'
-  | 'number';
+  | 'number'
+  | 'heading';   // No es input — sólo título/separador visual entre secciones del form
 
 export type CheckoutField = {
   id: string;
@@ -26,6 +27,8 @@ export type CheckoutField = {
   options?: string[];      // para 'select' | 'radio' | 'multi'
   helper?: string;         // texto descriptivo debajo del input
   position: number;
+  default_checked?: boolean;     // sólo 'checkbox' — viene pre-tildado
+  price_delta_cents?: number;    // sólo 'checkbox' — suma este monto al total si está tildado
 };
 
 export type BaseFieldKey = 'name' | 'dni' | 'phone' | 'location';

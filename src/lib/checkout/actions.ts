@@ -13,7 +13,7 @@ import {
   type BaseFieldKey
 } from './types';
 
-const FIELD_TYPES: CheckoutFieldType[] = ['text', 'email', 'tel', 'textarea', 'select', 'radio', 'multi', 'checkbox', 'date', 'number'];
+const FIELD_TYPES: CheckoutFieldType[] = ['text', 'email', 'tel', 'textarea', 'select', 'radio', 'multi', 'checkbox', 'date', 'number', 'heading'];
 
 /** ───── Helpers de carga/guardado ───── */
 
@@ -157,6 +157,16 @@ export async function updateTenantExtraFieldAction(formData: FormData): Promise<
     const t = String(typeRaw) as CheckoutFieldType;
     if (FIELD_TYPES.includes(t)) field.type = t;
   }
+  // Checkbox: default_checked + price_delta_cents
+  const defaultChecked = formData.get('default_checked');
+  if (defaultChecked !== null) {
+    field.default_checked = defaultChecked === 'true' || defaultChecked === 'on';
+  }
+  const priceDeltaRaw = formData.get('price_delta');
+  if (priceDeltaRaw !== null) {
+    const cents = Math.round(parseFloat(String(priceDeltaRaw).replace(/[^0-9.-]/g, '') || '0') * 100);
+    field.price_delta_cents = Number.isNaN(cents) ? 0 : cents;
+  }
   await saveTenantConfig(tenant.id, cfg);
   revalidatePath('/checkout');
 }
@@ -282,6 +292,15 @@ export async function updateCourseExtraFieldAction(formData: FormData): Promise<
     if (typeRaw !== null) {
       const t = String(typeRaw) as CheckoutFieldType;
       if (FIELD_TYPES.includes(t)) field.type = t;
+    }
+    const defaultChecked = formData.get('default_checked');
+    if (defaultChecked !== null) {
+      field.default_checked = defaultChecked === 'true' || defaultChecked === 'on';
+    }
+    const priceDeltaRaw = formData.get('price_delta');
+    if (priceDeltaRaw !== null) {
+      const cents = Math.round(parseFloat(String(priceDeltaRaw).replace(/[^0-9.-]/g, '') || '0') * 100);
+      field.price_delta_cents = Number.isNaN(cents) ? 0 : cents;
     }
   });
 }

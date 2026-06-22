@@ -18,9 +18,10 @@ const TYPE_LABELS: Record<CheckoutFieldType, string> = {
   select:   'Lista desplegable',
   radio:    '⦿ Radio (elegí UNA — visible)',
   multi:    '☑ Múltiple (varios checkboxes)',
-  checkbox: 'Sí / No',
+  checkbox: '✓ Sí / No (puede sumar al precio)',
   date:     'Fecha',
-  number:   'Número'
+  number:   'Número',
+  heading:  '🪧 Título de sección'
 };
 
 type Actions = {
@@ -251,6 +252,8 @@ function ExtraFieldRow({
   const [optionsCsv, setOptionsCsv] = useState((field.options ?? []).join(', '));
   const [required, setRequired] = useState(field.required);
   const [type, setType] = useState<CheckoutFieldType>(field.type);
+  const [defaultChecked, setDefaultChecked] = useState(field.default_checked ?? false);
+  const [priceDelta, setPriceDelta] = useState(((field.price_delta_cents ?? 0) / 100).toString());
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
 
@@ -268,6 +271,10 @@ function ExtraFieldRow({
     fd.set('required', required ? 'true' : 'false');
     fd.set('type', type);
     if (type === 'select' || type === 'radio' || type === 'multi') fd.set('options', optionsCsv);
+    if (type === 'checkbox') {
+      fd.set('default_checked', defaultChecked ? 'true' : 'false');
+      fd.set('price_delta', priceDelta || '0');
+    }
     start(async () => {
       await actions.updateExtra(fd);
       setSaved(true);
@@ -335,6 +342,22 @@ function ExtraFieldRow({
               onChange={setOptionsCsv}
               placeholder="Sede Palermo, Sede CABA, Sede Belgrano"
             />
+          )}
+          {type === 'checkbox' && (
+            <div className="grid grid-cols-2 gap-3 rounded-md bg-white/[0.02] border border-white/10 p-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={defaultChecked} onChange={(e) => setDefaultChecked(e.target.checked)} />
+                Pre-tildado por default
+              </label>
+              <label className="block text-xs text-white/55">
+                Suma al precio (ARS) si está tildado
+                <input
+                  type="number" step="1" value={priceDelta} onChange={(e) => setPriceDelta(e.target.value)}
+                  placeholder="0 = no modifica"
+                  className="block mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm font-mono text-white"
+                />
+              </label>
+            </div>
           )}
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />

@@ -6,6 +6,7 @@ import { createPreference, createPreapproval } from '@/lib/payments/mercadopago'
 import { verifyAffiliateCookie, cookieName } from '@/lib/affiliates/cookie';
 import { validateCoupon } from '@/lib/coupons/actions';
 import { env } from '@/lib/env';
+import { mergeCheckoutConfig, type CheckoutConfig } from '@/lib/checkout/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -326,6 +327,45 @@ export async function POST(
         status: 'pending'
       });
     } catch { /* migration 0037 pendiente — ignoramos en silencio */ }
+  }
+
+  // ── Addons del form (checkboxes con price_delta_cents tildados) ──
+  // RE-validamos server-side leyendo la config del checkout efectiva (override
+  // del curso si existe, sino default del tenant) para evitar tampering.
+  let checkoutCfg: CheckoutConfig = mergeCheckoutConfig(null);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: cRow } = await (svc.from('courses') as any)
+      .select('checkout_config').eq('id', course.id).maybeSingle();
+    const courseCfgRaw = cRow?.checkout_config;
+    if (courseCfgRaw && typeof courseCfgRaw === 'object' && Object.keys(courseCfgRaw).length > 0) {
+      checkoutCfg = mergeCheckoutConfig(courseCfgRaw);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: tRow } = await (svc.from('tenants') as any)
+        .select('checkout_config').eq('id', course.tenant_id).maybeSingle();
+      checkoutCfg = mergeCheckoutConfig(tRow?.checkout_config);
+    }
+  } catch { /* fallback al default vacío */ }
+  let addonsCents = 0;
+  try {
+    const checkedAddons: string[] = [];
+    for (const f of checkoutCfg.extra_fields) {
+      if (f.type !== 'checkbox') continue;
+      const delta = f.price_delta_cents ?? 0;
+      if (delta === 0) continue;
+      const v = String(form?.get(`extra_${f.key}`) ?? '');
+      if (v === 'on' || v === 'true' || v === '1') {
+        addonsCents += delta;
+        checkedAddons.push(`${f.label} (${delta > 0 ? '+' : ''}${delta / 100})`);
+      }
+    }
+    if (addonsCents !== 0 && !isEventTickets) {
+      finalPrice += addonsCents;
+      console.log('[checkout] addons aplicados', { addonsCents, items: checkedAddons });
+    }
+  } catch (e) {
+    console.warn('[checkout] addons calc falló', e);
   }
 
   // ── Modo de pago (none/deposit/full/choice) — si el owner habilitó seña ──

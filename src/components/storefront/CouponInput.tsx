@@ -70,7 +70,20 @@ export function CouponInput({
   const [password2, setPassword2] = useState('');
 
   // Estado de los campos extra custom. Map { fieldId → string|boolean }.
-  const [extras, setExtras] = useState<Record<string, string | boolean>>({});
+  // Inicializamos extras con default_checked para checkboxes que vienen pre-tildados.
+  const [extras, setExtras] = useState<Record<string, string | boolean>>(() => {
+    const init: Record<string, string | boolean> = {};
+    for (const f of cfg.extra_fields) {
+      if (f.type === 'checkbox' && f.default_checked) init[f.id] = true;
+    }
+    return init;
+  });
+  // Suma de price_delta_cents de todos los checkbox tildados
+  const addonsCents = cfg.extra_fields.reduce((sum, f) => {
+    if (f.type !== 'checkbox') return sum;
+    const checked = extras[f.id] === true;
+    return checked ? sum + (f.price_delta_cents ?? 0) : sum;
+  }, 0);
   const setExtra = (id: string, v: string | boolean) =>
     setExtras((s) => ({ ...s, [id]: v }));
 
@@ -89,10 +102,15 @@ export function CouponInput({
   const depositCents = Math.round((priceCents * depositPercent) / 100);
   const fmt = (c: number) => `$${(c / 100).toLocaleString('es-AR')} ${currency}`;
   // Cuánto va a cobrar realmente:
-  const effectiveChargeCents = paymentMode === 'none' ? priceCents
+  const basePayCents = paymentMode === 'none' ? priceCents
     : paymentMode === 'full' ? priceCents
     : paymentMode === 'deposit' ? depositCents
     : (paymentChoice === 'full' ? priceCents : depositCents);
+  // El total efectivo incluye los addons sumados sólo si el cliente paga total
+  // (o ningún modo de pago activo). Si paga seña, los addons NO se prorratean
+  // — quedan para el pago en el lugar.
+  const isPayingFull = paymentMode === 'none' || paymentMode === 'full' || (paymentMode === 'choice' && paymentChoice === 'full');
+  const effectiveChargeCents = isPayingFull ? basePayCents + addonsCents : basePayCents;
 
   const baseValid =
     (!cfg.base_fields.name.enabled     || !cfg.base_fields.name.required     || name.trim().length >= 3) &&
@@ -101,6 +119,7 @@ export function CouponInput({
     (!cfg.base_fields.location.enabled || !cfg.base_fields.location.required || location.trim().length >= 2);
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const extrasValid = cfg.extra_fields.every((f) => {
+    if (f.type === 'heading') return true; // heading no es input
     if (!f.required) return true;
     const v = extras[f.id];
     if (f.type === 'checkbox') return v === true;
@@ -334,6 +353,11 @@ export function CouponInput({
               paymentMode === 'choice' ? paymentChoice : paymentMode === 'deposit' ? 'deposit' : 'full'
             } />
           )}
+          {/* Hidden con suma de addons (checkbox con price_delta_cents tildados).
+              El server REvalida igual leyendo cfg.extra_fields, esto es solo UX. */}
+          {addonsCents !== 0 && (
+            <input type="hidden" name="addons_total_cents" value={String(addonsCents)} />
+          )}
 
           <button
             type="submit"
@@ -439,23 +463,43 @@ function ExtraInput({
   const reqStar = field.required && <span className="text-red-500"> *</span>;
   const helper = field.helper && <p className="text-[10px] text-black/45 mt-1">{field.helper}</p>;
 
-  if (field.type === 'checkbox') {
+  if (field.type === 'heading') {
+    // No input, sólo título visual entre secciones del form
     return (
-      <div>
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            name={inputName}
-            type="checkbox"
-            checked={value === true}
-            onChange={(e) => onChange(e.target.checked)}
-            value="on"
-            required={field.required}
-            className="mt-0.5"
-          />
-          <span>{field.label}{reqStar}</span>
-        </label>
-        {helper}
+      <div className="pt-3 pb-1 border-t border-black/10 first:border-t-0 first:pt-0">
+        <div className="text-sm font-bold text-black">{field.label}</div>
+        {field.helper && <p className="text-xs text-black/55 mt-0.5">{field.helper}</p>}
       </div>
+    );
+  }
+
+  if (field.type === 'checkbox') {
+    const delta = field.price_delta_cents ?? 0;
+    return (
+      <label className={`flex items-start gap-3 rounded-md border p-3 text-sm cursor-pointer transition ${
+        value === true ? 'border-black bg-black/[0.04]' : 'border-black/15 hover:border-black/40'
+      }`}>
+        <input
+          name={inputName}
+          type="checkbox"
+          checked={value === true}
+          onChange={(e) => onChange(e.target.checked)}
+          value="on"
+          required={field.required}
+          className="mt-0.5 w-4 h-4 accent-black"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-medium">{field.label}{reqStar}</span>
+            {delta !== 0 && (
+              <span className={`text-xs font-bold whitespace-nowrap ${delta > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {delta > 0 ? '+' : ''}${(delta / 100).toLocaleString('es-AR')}
+              </span>
+            )}
+          </div>
+          {field.helper && <div className="text-[11px] text-black/55 mt-0.5">{field.helper}</div>}
+        </div>
+      </label>
     );
   }
 
@@ -501,61 +545,73 @@ function ExtraInput({
 
   if (field.type === 'radio') {
     const current = (value as string) ?? '';
+    const opts = field.options ?? [];
     return (
       <div>
-        <label className="block text-xs text-black/60 mb-1.5">{field.label}{reqStar}</label>
-        <div className="space-y-1.5">
-          {(field.options ?? []).map((o) => (
-            <label key={o}
-              className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer transition ${
-                current === o ? 'border-black bg-black/5' : 'border-black/15 hover:border-black/40'
-              }`}>
-              <input
-                name={inputName}
-                type="radio"
-                value={o}
-                checked={current === o}
-                onChange={() => onChange(o)}
-                required={field.required}
-              />
-              <span>{o}</span>
-            </label>
-          ))}
-        </div>
+        <label className="block text-sm font-semibold text-black mb-2">{field.label}{reqStar}</label>
+        {opts.length === 0 ? (
+          <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded p-2">
+            ⚠️ Este campo radio no tiene opciones cargadas. Andá al panel y agregale opciones separadas por coma.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {opts.map((o) => (
+              <label key={o}
+                className={`flex items-center gap-3 rounded-md border-2 px-3 py-2.5 text-sm cursor-pointer transition ${
+                  current === o ? 'border-black bg-black/[0.04]' : 'border-black/15 hover:border-black/40'
+                }`}>
+                <input
+                  name={inputName}
+                  type="radio"
+                  value={o}
+                  checked={current === o}
+                  onChange={() => onChange(o)}
+                  required={field.required}
+                  className="w-4 h-4 accent-black"
+                />
+                <span className="font-medium">{o}</span>
+              </label>
+            ))}
+          </div>
+        )}
         {helper}
       </div>
     );
   }
 
   if (field.type === 'multi') {
-    // Guardamos como string CSV (ej "Opcion A,Opcion C") porque el backend
-    // recibe `extra_${key}` como string único. El owner ve la lista separada
-    // por coma en el panel.
     const selected = new Set(((value as string) ?? '').split(',').map((s) => s.trim()).filter(Boolean));
     function toggle(o: string) {
       const next = new Set(selected);
       if (next.has(o)) next.delete(o); else next.add(o);
       onChange(Array.from(next).join(','));
     }
+    const opts = field.options ?? [];
     return (
       <div>
-        <label className="block text-xs text-black/60 mb-1.5">{field.label}{reqStar}</label>
-        <div className="space-y-1.5">
-          {(field.options ?? []).map((o) => (
-            <label key={o}
-              className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer transition ${
-                selected.has(o) ? 'border-black bg-black/5' : 'border-black/15 hover:border-black/40'
-              }`}>
-              <input
-                type="checkbox"
-                checked={selected.has(o)}
-                onChange={() => toggle(o)}
-              />
-              <span>{o}</span>
-            </label>
-          ))}
-        </div>
-        {/* Hidden con el valor CSV para que el form lo envíe */}
+        <label className="block text-sm font-semibold text-black mb-2">{field.label}{reqStar}</label>
+        {opts.length === 0 ? (
+          <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded p-2">
+            ⚠️ Este campo múltiple no tiene opciones cargadas.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {opts.map((o) => (
+              <label key={o}
+                className={`flex items-center gap-3 rounded-md border-2 px-3 py-2.5 text-sm cursor-pointer transition ${
+                  selected.has(o) ? 'border-black bg-black/[0.04]' : 'border-black/15 hover:border-black/40'
+                }`}>
+                <input
+                  type="checkbox"
+                  checked={selected.has(o)}
+                  onChange={() => toggle(o)}
+                  className="w-4 h-4 accent-black"
+                />
+                <span className="font-medium">{o}</span>
+              </label>
+            ))}
+          </div>
+        )}
         <input type="hidden" name={inputName} value={(value as string) ?? ''} />
         {helper}
       </div>
