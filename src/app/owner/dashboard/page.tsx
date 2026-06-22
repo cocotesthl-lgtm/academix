@@ -182,15 +182,15 @@ export default async function OwnerDashboard() {
     },
     {
       id: 'course',
-      title: 'Creá tu primer curso',
-      description: 'Curso online, evento con tickets o mentoría.',
+      title: 'Creá tu primer producto',
+      description: 'Curso, evento, mentoría, servicio, producto físico o digital.',
       href: '/courses/new',
       done: totalCourses > 0
     },
     {
       id: 'publish',
-      title: 'Publicá al menos un curso',
-      description: 'Los borradores no aparecen en tu storefront público.',
+      title: 'Publicá al menos un producto',
+      description: 'Los borradores no aparecen en tu sitio público.',
       href: '/courses',
       done: totalPublished > 0
     }
@@ -202,7 +202,7 @@ export default async function OwnerDashboard() {
         <div>
           <h1 className="text-2xl font-bold">Hola, {tenant.name}</h1>
           <p className="text-white/55 text-sm mt-1">
-            Resumen de tu academia.
+            Resumen de tu sitio.
           </p>
         </div>
         <a
@@ -221,7 +221,7 @@ export default async function OwnerDashboard() {
       {/* ─── Alertas críticas (no redundantes con el checklist) ─── */}
       {balance > 0 && (
         <Alert tone="amber" title={`Tenés $ ${ars(balance)} de comisión a pagar`}
-          desc="Pagar a tiempo evita la suspensión de tu academia."
+          desc="Pagar a tiempo evita la suspensión de tu sitio."
           cta={{ label: 'Ver finanzas', href: '/finance' }} />
       )}
 
@@ -534,7 +534,7 @@ function QuickActions({ isNew, hasMp, storefrontUrl }: {
   const actions = isNew
     ? [
         { label: '✨ Personalizá tu marca', href: '/branding', sub: 'Logo y colores' },
-        { label: '📚 Creá tu primer curso', href: '/courses/new', sub: 'Empezá a vender' },
+        { label: '🛍️ Creá tu primer producto', href: '/courses/new', sub: 'Empezá a vender' },
         { label: hasMp ? '✓ MP conectado' : '💳 Conectá MercadoPago', href: '/integrations', sub: hasMp ? 'Listo para cobrar' : 'Para recibir pagos' },
         { label: '🎨 Editá tu landing', href: '/site', sub: 'Diseñá tu home' }
       ]

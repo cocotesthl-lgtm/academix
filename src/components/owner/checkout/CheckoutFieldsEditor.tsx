@@ -20,6 +20,7 @@ const TYPE_LABELS: Record<CheckoutFieldType, string> = {
   multi:    '☑ Múltiple (varios checkboxes)',
   checkbox: '✓ Sí / No (puede sumar al precio)',
   date:     'Fecha',
+  time:     '🕐 Hora (HH:MM)',
   number:   'Número',
   heading:  '🪧 Título de sección'
 };

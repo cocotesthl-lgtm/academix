@@ -14,6 +14,7 @@ export type CheckoutFieldType =
   | 'multi'      // varias opciones visibles, podés elegir N (checkboxes en grupo).
   | 'checkbox'
   | 'date'
+  | 'time'       // input HTML <input type="time"> (HH:MM)
   | 'number'
   | 'heading';   // No es input — sólo título/separador visual entre secciones del form
 

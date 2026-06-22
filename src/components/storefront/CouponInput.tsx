@@ -649,10 +649,11 @@ function ExtraInput({
     );
   }
 
-  // text / email / tel / date / number
+  // text / email / tel / date / time / number
   const htmlType =
     field.type === 'number' ? 'number'
     : field.type === 'date' ? 'date'
+    : field.type === 'time' ? 'time'
     : field.type === 'email' ? 'email'
     : field.type === 'tel' ? 'tel'
     : 'text';

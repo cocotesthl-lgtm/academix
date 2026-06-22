@@ -52,7 +52,7 @@ export default async function OnboardingPage() {
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
           <Link href="/" className="text-2xl font-bold tracking-tight">Curplat</Link>
-          <h1 className="mt-6 text-3xl font-bold">Configurá tu academia</h1>
+          <h1 className="mt-6 text-3xl font-bold">Configurá tu sitio</h1>
           <p className="mt-2 text-white/60">Estos datos los podés cambiar después.</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
