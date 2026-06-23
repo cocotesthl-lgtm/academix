@@ -70,6 +70,10 @@ export type InstructorItem = {
   credentials?: string;
   bio?: string;
   photo_url: string | null;
+  /** Posición de la cara dentro del recorte circular. CSS object-position. */
+  photo_position?: 'top' | 'center' | 'bottom';
+  /** cover = recorta para llenar (default), contain = ve todo con bandas. */
+  photo_fit?: 'cover' | 'contain';
 };
 
 export type InstructorDisplay = 'single' | 'grid' | 'carousel';
@@ -157,7 +161,7 @@ export type SiteConfig = {
       /** Separación entre logos en píxeles. Default 64, rango 8-160. */
       logo_gap?: number;
     };
-    about:        SectionBase & { title: string; body: string; image_url: string | null };
+    about:        SectionBase & { title: string; body: string; image_url: string | null; image_position?: 'top' | 'center' | 'bottom'; image_fit?: 'cover' | 'contain' };
     instructor:   SectionBase & { title: string; display_mode: InstructorDisplay; name: string; bio: string; photo_url: string | null; credentials: string; items: InstructorItem[] };
     stats:        SectionBase & { title: string; items: StatItem[] };
     learn_points: SectionBase & { title: string; subtitle: string; items: LearnItem[] };

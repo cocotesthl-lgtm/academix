@@ -438,7 +438,12 @@ export default async function StorefrontHome({
                   <FadeIn>
                     {a.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={a.image_url} alt="" className="rounded-2xl w-full object-cover max-h-96 shadow-lg" />
+                      <img src={a.image_url} alt="" className="rounded-2xl w-full max-h-96 shadow-lg"
+                        style={{
+                          objectFit: a.image_fit ?? 'cover',
+                          objectPosition: a.image_position ?? 'center',
+                          height: a.image_fit === 'contain' ? 'auto' : undefined
+                        }} />
                     ) : (
                       <div className="rounded-2xl w-full h-80 flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, ${primary}20, ${primary}05)` }}>
                         <span className="text-7xl">👋</span>
@@ -466,13 +471,18 @@ export default async function StorefrontHome({
             }];
             const mode = ins.display_mode ?? 'single';
 
-            const renderCard = (p: { id: string; name: string; credentials?: string; bio?: string; photo_url: string | null }, opts?: { compact?: boolean }) => {
+            const renderCard = (p: { id: string; name: string; credentials?: string; bio?: string; photo_url: string | null; photo_position?: 'top' | 'center' | 'bottom'; photo_fit?: 'cover' | 'contain' }, opts?: { compact?: boolean }) => {
               const compact = opts?.compact;
               return (
                 <div className="text-center">
                   {p.photo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.photo_url} alt={p.name} className={`${compact ? 'w-24 h-24' : 'w-36 h-36'} rounded-full mx-auto object-cover shadow-xl ring-4 ring-white`} />
+                    <img src={p.photo_url} alt={p.name}
+                      className={`${compact ? 'w-24 h-24' : 'w-36 h-36'} rounded-full mx-auto shadow-xl ring-4 ring-white`}
+                      style={{
+                        objectFit: p.photo_fit ?? 'cover',
+                        objectPosition: p.photo_position ?? 'center'
+                      }} />
                   ) : (
                     <div className={`${compact ? 'w-24 h-24 text-3xl' : 'w-36 h-36 text-5xl'} rounded-full mx-auto flex items-center justify-center font-bold text-white shadow-xl ring-4 ring-white`} style={{ background: `linear-gradient(135deg, ${primary}, ${primary}aa)` }}>
                       {p.name.slice(0, 1).toUpperCase() || '👤'}

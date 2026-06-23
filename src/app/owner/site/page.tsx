@@ -266,7 +266,12 @@ export default async function SiteBuilderPage() {
                 <EyebrowAutoSave sectionKey="about" initial={cfg.sections.about.eyebrow_text} placeholder="SOBRE NOSOTROS" />
               </div>
               <AboutEditor
-                initial={{ title: cfg.sections.about.title, body: cfg.sections.about.body }}
+                initial={{
+                  title: cfg.sections.about.title,
+                  body: cfg.sections.about.body,
+                  image_position: cfg.sections.about.image_position,
+                  image_fit: cfg.sections.about.image_fit
+                }}
                 imageUrl={cfg.sections.about.image_url}
                 primary={primary}
               />

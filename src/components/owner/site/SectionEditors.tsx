@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from 'react';
 import { withSaveStatus } from '@/lib/ui/save-status';
 import { RichTextField } from './RichTextField';
 import { HrefField } from './HrefSelect';
+import { ImageFitControls } from './ImageFitControls';
 
 /**
  * Helper para renderizar un string que puede ser HTML (del RichTextField)
@@ -642,7 +643,11 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqu
  * ABOUT
  * ===================================================================== */
 
-type AboutValues = { title: string; body: string };
+type AboutValues = {
+  title: string; body: string;
+  image_position?: 'top' | 'center' | 'bottom';
+  image_fit?: 'cover' | 'contain';
+};
 
 export function AboutEditor({ initial, imageUrl, primary }: {
   initial: AboutValues; imageUrl: string | null; primary: string;
@@ -657,7 +662,7 @@ export function AboutEditor({ initial, imageUrl, primary }: {
         <RichTextField label="Texto" value={v.body} onChange={(x) => setV({ ...v, body: x })} multiline />
         <SaveBar pending={pending} saved={saved} onSave={() => fire(v)} />
 
-        <div className="pt-3 mt-3 border-t border-white/5">
+        <div className="pt-3 mt-3 border-t border-white/5 space-y-3">
           <UrlPicker
             label="URL de la foto (opcional)"
             section="about"
@@ -665,13 +670,25 @@ export function AboutEditor({ initial, imageUrl, primary }: {
             value={imageUrl}
             hint="Recomendado 1200×900px, formato 4:3"
           />
+          {imageUrl && (
+            <ImageFitControls
+              fit={v.image_fit}
+              position={v.image_position}
+              onChangeFit={(x) => { const next = { ...v, image_fit: x }; setV(next); fire(next); }}
+              onChangePosition={(x) => { const next = { ...v, image_position: x }; setV(next); fire(next); }}
+            />
+          )}
         </div>
       </div>
       <PreviewFrame>
         <div className="p-5 grid grid-cols-2 gap-4 items-center" style={{ background: 'rgba(0,0,0,0.02)' }}>
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="" className="rounded-lg w-full h-32 object-cover" />
+            <img src={imageUrl} alt="" className="rounded-lg w-full h-32"
+              style={{
+                objectFit: v.image_fit ?? 'cover',
+                objectPosition: v.image_position ?? 'center'
+              }} />
           ) : (
             <div className="rounded-lg w-full h-32 flex items-center justify-center text-3xl" style={{ background: `${primary}15` }}>👋</div>
           )}
@@ -705,12 +722,19 @@ export function InstructorEditor({ initial, items, primary }: {
   const [credentials, setCredentials] = useState('');
   const [bio, setBio] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
+  const [photoPos, setPhotoPos] = useState<'top' | 'center' | 'bottom'>('center');
+  const [photoFit, setPhotoFit] = useState<'cover' | 'contain'>('cover');
 
   function startEdit(it: InstructorItem) {
     setEditingId(it.id); setName(it.name); setCredentials(it.credentials ?? '');
     setBio(it.bio ?? ''); setPhotoUrl(it.photo_url ?? '');
+    setPhotoPos(it.photo_position ?? 'center');
+    setPhotoFit(it.photo_fit ?? 'cover');
   }
-  function reset() { setEditingId(null); setName(''); setCredentials(''); setBio(''); setPhotoUrl(''); }
+  function reset() {
+    setEditingId(null); setName(''); setCredentials(''); setBio(''); setPhotoUrl('');
+    setPhotoPos('center'); setPhotoFit('cover');
+  }
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -740,12 +764,22 @@ export function InstructorEditor({ initial, items, primary }: {
           <input type="url" value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)}
             placeholder="URL de la foto (opcional, cuadrada 400×400)"
             className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          {photoUrl && (
+            <ImageFitControls
+              fit={photoFit}
+              position={photoPos}
+              onChangeFit={setPhotoFit}
+              onChangePosition={setPhotoPos}
+              compact
+            />
+          )}
           <div className="flex gap-2">
             <button type="button" disabled={addPending || !name}
               onClick={() => {
                 startAdd(async () => {
                   const fd = new FormData();
                   fd.set('name', name); fd.set('credentials', credentials); fd.set('bio', bio); fd.set('photo_url', photoUrl);
+                  fd.set('photo_position', photoPos); fd.set('photo_fit', photoFit);
                   if (editingId) { fd.set('id', editingId); await updateInstructorItemAction(fd); }
                   else { await addInstructorItemAction(fd); }
                   reset();

@@ -296,9 +296,15 @@ export async function addInstructorItemAction(formData: FormData): Promise<void>
   const photoUrlRaw = String(formData.get('photo_url') ?? '');
   if (!name) return;
   const photo_url = safeImageUrl(photoUrlRaw);
+  const photoPosRaw = String(formData.get('photo_position') ?? 'center');
+  const photoFitRaw = String(formData.get('photo_fit') ?? 'cover');
+  const photo_position = (['top', 'center', 'bottom'].includes(photoPosRaw)
+    ? photoPosRaw : 'center') as 'top' | 'center' | 'bottom';
+  const photo_fit = (['cover', 'contain'].includes(photoFitRaw)
+    ? photoFitRaw : 'cover') as 'cover' | 'contain';
 
   const cfg = await loadConfig(tenant.id);
-  const item: InstructorItem = { id: randomUUID(), name, credentials, bio, photo_url };
+  const item: InstructorItem = { id: randomUUID(), name, credentials, bio, photo_url, photo_position, photo_fit };
   cfg.sections.instructor.items.push(item);
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
@@ -662,11 +668,17 @@ export async function updateInstructorItemAction(formData: FormData): Promise<vo
   const credentials = String(formData.get('credentials') ?? '').trim() || undefined;
   const bio = String(formData.get('bio') ?? '').trim() || undefined;
   const photo_url = safeImageUrl(String(formData.get('photo_url') ?? ''));
+  const photoPosRaw = String(formData.get('photo_position') ?? 'center');
+  const photoFitRaw = String(formData.get('photo_fit') ?? 'cover');
+  const photo_position = (['top', 'center', 'bottom'].includes(photoPosRaw)
+    ? photoPosRaw : 'center') as 'top' | 'center' | 'bottom';
+  const photo_fit = (['cover', 'contain'].includes(photoFitRaw)
+    ? photoFitRaw : 'cover') as 'cover' | 'contain';
   const cfg = await loadConfig(tenant.id);
   const arr = cfg.sections.instructor.items;
   const idx = arr.findIndex((i) => i.id === id);
   if (idx === -1) return;
-  arr[idx] = { id, name, credentials, bio, photo_url };
+  arr[idx] = { id, name, credentials, bio, photo_url, photo_position, photo_fit };
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }
