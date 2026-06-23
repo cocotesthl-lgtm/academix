@@ -188,6 +188,17 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
                    'eyebrow', 'cta_label_2', 'cta_href_2', 'caption']) {
     if (formData.has(f)) section[f] = String(formData.get(f) ?? '');
   }
+  // image_position acepta '50% 50%' o keywords, image_fit acepta cover|contain.
+  // Usado por about (y cualquier sección con imagen recortable).
+  if (formData.has('image_position')) {
+    const raw = String(formData.get('image_position') ?? '').trim().slice(0, 30);
+    section.image_position = /^(top|center|bottom|left|right|\d{1,3}%\s+\d{1,3}%)$/i.test(raw)
+      ? raw : '50% 50%';
+  }
+  if (formData.has('image_fit')) {
+    const raw = String(formData.get('image_fit') ?? 'cover').trim().toLowerCase();
+    section.image_fit = raw === 'contain' ? 'contain' : 'cover';
+  }
   if (formData.has('show_filters')) section.show_filters = formData.get('show_filters') === 'on';
   if (formData.has('max_visible')) {
     const n = parseInt(String(formData.get('max_visible') ?? '3'), 10);
