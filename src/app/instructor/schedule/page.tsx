@@ -49,7 +49,7 @@ export default async function InstructorSchedule() {
       <div>
         <h1 className="text-2xl font-bold">Agenda</h1>
         <p className="text-white/60 text-sm mt-1">
-          Todas tus próximas reservas en todos los cursos que tenés asignados, ordenadas por día.
+          Todas tus próximas reservas en todos los publicaciones que tenés asignados, ordenadas por día.
         </p>
       </div>
       {groups.size === 0 ? (

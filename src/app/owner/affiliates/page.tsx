@@ -240,7 +240,7 @@ export default async function OwnerAffiliates() {
           {validatorsCount > 0 && ` Actualmente ${validatorsCount} habilitado${validatorsCount === 1 ? '' : 's'}.`}
         </p>
         {affiliates.length === 0 ? (
-          <p className="text-sm text-white/45 py-3">Todavía no hay afiliados activos en tu academia.</p>
+          <p className="text-sm text-white/45 py-3">Todavía no hay afiliados activos en tu sitio.</p>
         ) : (
           <div className="space-y-1.5">
             {affiliates.map((a) => (
@@ -278,14 +278,14 @@ export default async function OwnerAffiliates() {
         <div className="rounded-xl border border-white/10 overflow-hidden">
           {rows.length === 0 ? (
             <div className="p-10 text-center text-white/50 text-sm">
-              Todavía nadie generó links de afiliado para tu academia.
+              Todavía nadie generó links de afiliado para tu sitio.
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
                 <tr>
                   <th className="text-left px-4 py-2.5">Afiliado</th>
-                  <th className="text-left px-4 py-2.5">Curso</th>
+                  <th className="text-left px-4 py-2.5">Publicación</th>
                   <th className="text-left px-4 py-2.5">Código</th>
                   <th className="text-right px-4 py-2.5">Clicks</th>
                   <th className="text-right px-4 py-2.5">Comisiones</th>

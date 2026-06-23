@@ -107,7 +107,7 @@ export function LoginForm({
             href={next ? `/signup?next=${encodeURIComponent(next)}` : '/signup'}
             className={linkCls}
           >
-            {next?.startsWith('/affiliate') ? 'Registrarme como afiliado' : 'Crear academia'}
+            {next?.startsWith('/affiliate') ? 'Registrarme como afiliado' : 'Crear sitio'}
           </Link>
         </p>
       )}

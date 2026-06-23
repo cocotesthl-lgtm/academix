@@ -115,7 +115,7 @@ export default async function DomainPage({
           <div>
             <h2 className="font-semibold">Aparecer en el marketplace público</h2>
             <p className="text-xs text-white/55 mt-1">
-              Cuando está activado, tu plataforma aparece en el listado público de Curplat (donde la gente busca academias).
+              Cuando está activado, tu plataforma aparece en el listado público de Curplat (donde la gente busca sitios).
               Si lo apagás, sigue funcionando todo pero solo aparece a quienes tienen el link directo.
             </p>
           </div>

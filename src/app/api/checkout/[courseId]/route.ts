@@ -112,7 +112,7 @@ export async function POST(
     ?? '';
 
   // Buyer info pegada en el form de checkout (nombre/DNI/ubicación/email/celular)
-  // Es opcional para cursos gratis (ya tenemos el user_id). Para cursos pagos
+  // Es opcional para publicaciones gratis (ya tenemos el user_id). Para publicaciones pagos
   // el front lo exige; el back es tolerante (no rechaza si falta).
   const buyerNameRaw     = String(form?.get('buyer_name')     ?? '').trim().slice(0, 120);
   const buyerDniRaw      = String(form?.get('buyer_dni')      ?? '').trim().slice(0, 20);
@@ -129,7 +129,7 @@ export async function POST(
   };
 
   // Campos extra custom (definidos por el owner en /owner/checkout o en el
-  // override del curso). Llegan al form como `extra_${key}`. Los juntamos
+  // override del publicación). Llegan al form como `extra_${key}`. Los juntamos
   // todos en un solo jsonb que se guarda en sales.buyer_extra y
   // enrollments.buyer_extra, así el owner los puede consultar después.
   const buyerExtra: Record<string, string | boolean> = {};
@@ -288,7 +288,7 @@ export async function POST(
     }
     eventTicketIds = (inserted as Array<{ id: string }>).map((r) => r.id);
   } else if (course.price_cents <= 0) {
-    // Curso gratis SIN event tickets → no procesamos checkout (legacy behavior)
+    // Publicación gratis SIN event tickets → no procesamos checkout (legacy behavior)
     return NextResponse.json({ error: 'free_course_no_checkout' }, { status: 400 });
   }
 
@@ -303,7 +303,7 @@ export async function POST(
   }
 
   // ── Reserva (sede + fecha + hora + personas) — si el form los mandó ──
-  // Insertamos una fila en reservations linkeada al curso. Sobrevive si la
+  // Insertamos una fila en reservations linkeada al publicación. Sobrevive si la
   // migration 0037 no corrió todavía.
   const resDate = String(form?.get('reservation_date') ?? '').trim();
   const resTime = String(form?.get('reservation_time') ?? '').trim() || null;
@@ -331,7 +331,7 @@ export async function POST(
 
   // ── Addons del form (checkboxes con price_delta_cents tildados) ──
   // RE-validamos server-side leyendo la config del checkout efectiva (override
-  // del curso si existe, sino default del tenant) para evitar tampering.
+  // del publicación si existe, sino default del tenant) para evitar tampering.
   let checkoutCfg: CheckoutConfig = mergeCheckoutConfig(null);
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -411,7 +411,7 @@ export async function POST(
   // Si MP falla / no vuelve, el booking queda 'pending' (limpiable luego).
   let createdBookingId: string | null = null;
   if (bookingSlotStart) {
-    // Computar slot_end + asignar instructor (si el curso tiene asignados).
+    // Computar slot_end + asignar instructor (si el publicación tiene asignados).
     // Si dos instructores tienen el mismo slot, asignamos al PRIMERO que
     // tenga la rule + el slot todavía libre (anti double-booking por DB).
     const slotDate = new Date(bookingSlotStart);
@@ -423,7 +423,7 @@ export async function POST(
       weekday: number; start_min: number; end_min: number;
       slot_duration_min: number; timezone: string; instructor_user_id: string | null;
     }>;
-    // Limitamos a rules de instructores asignados al curso (o tenant-wide)
+    // Limitamos a rules de instructores asignados al publicación (o tenant-wide)
     const { data: assignedRaw } = await svc
       .from('course_instructors')
       .select('user_id')
@@ -541,7 +541,7 @@ export async function POST(
   }
 
   // ─── Suscripción recurrente (MP Preapproval) ───
-  // Si el curso es pricing_mode='subscription', creamos un preapproval
+  // Si el publicación es pricing_mode='subscription', creamos un preapproval
   // en vez de una preference. MP cobra recurrente y notifica via
   // /api/webhooks/mercadopago-preapproval/[tenantId].
   if (course.pricing_mode === 'subscription' && course.subscription_frequency) {

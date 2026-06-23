@@ -5,7 +5,7 @@ import { setCourseCalendarAction, setCourseCalendarSourceAction } from '@/lib/ca
 import type { CalendarMode } from '@/lib/calendar/types';
 
 /**
- * Editor del modo de calendario para un curso. 3 opciones:
+ * Editor del modo de calendario para un publicación. 3 opciones:
  *  - none: no se pide nada en el checkout (default).
  *  - start_date: el comprador elige una fecha de inicio (sin checks de disponibilidad).
  *  - mentorship_slot: el comprador elige un slot puntual de la disponibilidad
@@ -122,7 +122,7 @@ export function CourseCalendarConfig({
                     }`}
                   >
                     <div className="font-semibold">👨‍🏫 Disponibilidad del instructor</div>
-                    <div className="text-white/55 mt-0.5">Slots de los instructores asignados al curso.</div>
+                    <div className="text-white/55 mt-0.5">Slots de los instructores asignados al publicación.</div>
                   </button>
                   <button
                     type="button"

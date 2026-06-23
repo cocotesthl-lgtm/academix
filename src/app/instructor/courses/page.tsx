@@ -17,10 +17,10 @@ export default async function InstructorCoursesList() {
   }>;
   return (
     <div className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-bold">Mis cursos</h1>
+      <h1 className="text-2xl font-bold">Mis publicaciones</h1>
       {assigns.length === 0 ? (
         <div className="rounded-xl border border-dashed border-white/15 p-10 text-center text-white/40 text-sm">
-          El owner todavía no te asignó cursos.
+          El owner todavía no te asignó publicaciones.
         </div>
       ) : (
         <div className="space-y-2">

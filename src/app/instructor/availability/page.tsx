@@ -56,7 +56,7 @@ export default async function InstructorAvailability() {
         <h1 className="text-2xl font-bold">Mi disponibilidad</h1>
         <p className="text-white/60 text-sm mt-1">
           Tus horarios semanales recurrentes. Los compradores ven la <strong>unión</strong> de
-          los horarios de todos los instructores asignados al curso. Si sos el único asignado,
+          los horarios de todos los instructores asignados al publicación. Si sos el único asignado,
           solo se ven los tuyos.
         </p>
       </div>

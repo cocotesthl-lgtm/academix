@@ -54,7 +54,7 @@ export default async function FounderUsersPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat label="Usuarios totales" value={totalUsers} />
         <Stat label="Super admins" value={totalAdmins} />
-        <Stat label="Owners de academia" value={totalOwners} />
+        <Stat label="Owners de sitio" value={totalOwners} />
         <Stat label="Alumnos activos" value={totalStudents} />
       </div>
 
@@ -68,7 +68,7 @@ export default async function FounderUsersPage() {
                 <th className="text-left px-4 py-2.5">Nombre</th>
                 <th className="text-left px-4 py-2.5">Email</th>
                 <th className="text-left px-4 py-2.5">Rol</th>
-                <th className="text-left px-4 py-2.5">Academias</th>
+                <th className="text-left px-4 py-2.5">Sitios</th>
                 <th className="text-left px-4 py-2.5">Inscripciones</th>
                 <th className="text-left px-4 py-2.5">Alta</th>
                 <th className="text-right px-4 py-2.5">Acciones</th>

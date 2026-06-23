@@ -33,7 +33,7 @@ export default async function InstructorCourseDetail({
     .maybeSingle<{ id: string; slug: string; title: string; calendar_mode: string | null; calendar_horizon_days: number | null }>();
   if (!course) notFound();
 
-  // Bookings de este curso (próximos + recientes)
+  // Bookings de este publicación (próximos + recientes)
   let upcoming: Array<{
     id: string; slot_start: string; slot_end: string; status: string;
     buyer_name: string | null; buyer_email: string | null;
@@ -74,7 +74,7 @@ export default async function InstructorCourseDetail({
     students = (data ?? []) as typeof students;
   }
 
-  // Slots disponibles para reschedule (si permite + curso es mentorship)
+  // Slots disponibles para reschedule (si permite + publicación es mentorship)
   let availableSlots: BookingSlot[] = [];
   if (assign.can_reschedule && course.calendar_mode === 'mentorship_slot') {
     try {
@@ -101,7 +101,7 @@ export default async function InstructorCourseDetail({
   return (
     <div className="space-y-8 max-w-5xl">
       <div className="flex items-center gap-3 text-sm text-white/50">
-        <Link href="/instructor/courses" className="hover:text-white">← Mis cursos</Link>
+        <Link href="/instructor/courses" className="hover:text-white">← Mis publicaciones</Link>
         <span>/</span>
         <span className="text-white">{course.title}</span>
       </div>

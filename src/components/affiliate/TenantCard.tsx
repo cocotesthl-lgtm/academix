@@ -4,13 +4,13 @@ import { useState, useTransition } from 'react';
 import { blockTenantAction } from '@/lib/users/blocks';
 
 /**
- * Card de academia en el panel del afiliado/instructor. Click en el cuerpo
- * abre el panel del tenant. Botón ⋮ abre menú con "Bloquear academia".
+ * Card de sitio en el panel del afiliado/instructor. Click en el cuerpo
+ * abre el panel del tenant. Botón ⋮ abre menú con "Bloquear sitio".
  *
  * Al bloquear:
  *  1. Desactiva memberships del user en ese tenant
- *  2. Limpia asignaciones de cursos como instructor
- *  3. La academia ya no puede re-sumarlo (filtro silencioso en addInstructorAction)
+ *  2. Limpia asignaciones de publicaciones como instructor
+ *  3. La sitio ya no puede re-sumarlo (filtro silencioso en addInstructorAction)
  *  4. Acción reversible desde la sección "Bloqueadas"
  */
 export function TenantCard({
@@ -30,8 +30,8 @@ export function TenantCard({
   function block() {
     if (!confirm(
       `¿Bloquear "${tenant.name}"?\n\n` +
-      'La academia no va a poder volver a sumarte como instructor ni vas ' +
-      'a aparecerle en ninguna lista. Tu rol de afiliado en esa academia ' +
+      'La sitio no va a poder volver a sumarte como instructor ni vas ' +
+      'a aparecerle en ninguna lista. Tu rol de afiliado en esa sitio ' +
       'también se desactiva.\n\n' +
       'Podés desbloquear cuando quieras desde la sección "Bloqueadas".'
     )) return;
@@ -69,10 +69,10 @@ export function TenantCard({
               disabled={pending}
               className="w-full text-left px-3 py-2 text-xs text-red-300 hover:bg-red-500/10 disabled:opacity-50"
             >
-              🚫 Bloquear academia
+              🚫 Bloquear sitio
             </button>
             <p className="text-[10px] text-white/40 px-3 py-1.5 leading-snug">
-              Te saca de la academia. No pueden volver a sumarte.
+              Te saca de la sitio. No pueden volver a sumarte.
               Reversible.
             </p>
           </div>

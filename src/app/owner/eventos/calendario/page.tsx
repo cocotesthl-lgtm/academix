@@ -75,7 +75,7 @@ export default async function AvailabilityPage() {
     status: string; buyer_email: string | null; buyer_name: string | null;
   }>;
 
-  // Cursos para mostrar nombre en la lista de bookings + dropdown
+  // Publicaciones para mostrar nombre en la lista de bookings + dropdown
   const { data: coursesRaw } = await svc
     .from('courses').select('id, title').eq('tenant_id', tenant.id)
     .order('title', { ascending: true });
@@ -228,13 +228,13 @@ export default async function AvailabilityPage() {
       <div className="pt-6 border-t border-white/10">
         <h2 className="text-lg font-semibold mb-1">📅 Fechas puntuales</h2>
         <p className="text-xs text-white/55 mb-3">
-          Para cursos / eventos que se dan en fechas concretas (no recurrentes).
+          Para publicaciones / eventos que se dan en fechas concretas (no recurrentes).
           Ej: "el sábado 15 de marzo de 10 a 14".
         </p>
         <form action={addOwnerCalendarDateAction} className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
           <div className="grid sm:grid-cols-2 md:grid-cols-5 gap-3">
             <div>
-              <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Curso</label>
+              <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Publicación</label>
               <select name="course_id" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
                 <option value="">Todos (tenant-wide)</option>
                 {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
@@ -273,7 +273,7 @@ export default async function AvailabilityPage() {
 
           {/* ─── Config de evento (capacity + asientos) ─── */}
           <div className="rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-3 space-y-3">
-            <p className="text-xs text-fuchsia-200 font-semibold">🎫 Si el curso es evento con tickets, completá esto:</p>
+            <p className="text-xs text-fuchsia-200 font-semibold">🎫 Si el publicación es evento con tickets, completá esto:</p>
             <div className="grid sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Capacidad total</label>
@@ -391,12 +391,12 @@ export default async function AvailabilityPage() {
         <h2 className="text-lg font-semibold mb-1">⏸️ Pausas / cancelaciones</h2>
         <p className="text-xs text-white/55 mb-3">
           Cualquier slot que caiga en este rango queda fuera del calendario.
-          Usalo para vacaciones, feriados, emergencias o cancelar un curso puntual.
+          Usalo para vacaciones, feriados, emergencias o cancelar un publicación puntual.
         </p>
         <form action={addOwnerOverrideAction} className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Curso afectado</label>
+              <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Publicación afectado</label>
               <select name="course_id" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
                 <option value="">Todos (tenant-wide)</option>
                 {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
@@ -434,7 +434,7 @@ export default async function AvailabilityPage() {
                     {new Date(o.end_at).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </div>
                   <div className="text-xs text-white/55">
-                    {courseMap.get(o.course_id ?? '')?.title ?? 'Toda la academia'}
+                    {courseMap.get(o.course_id ?? '')?.title ?? 'Toda la sitio'}
                     {o.reason && ` · ${o.reason}`}
                   </div>
                 </div>
@@ -459,7 +459,7 @@ export default async function AvailabilityPage() {
               <thead className="bg-white/[0.03] text-white/50 text-xs uppercase">
                 <tr>
                   <th className="text-left px-3 py-2">Cuando</th>
-                  <th className="text-left px-3 py-2">Curso</th>
+                  <th className="text-left px-3 py-2">Publicación</th>
                   <th className="text-left px-3 py-2">Comprador</th>
                 </tr>
               </thead>

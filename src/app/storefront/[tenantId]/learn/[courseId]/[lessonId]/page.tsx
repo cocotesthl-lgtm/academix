@@ -59,7 +59,7 @@ export default async function LessonPlayer({
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 space-y-6">
       <div className="flex items-center gap-3 text-sm text-black/50">
-        <Link href={`/learn/${courseId}`} className="hover:text-black">← Volver al curso</Link>
+        <Link href={`/learn/${courseId}`} className="hover:text-black">← Volver al publicación</Link>
       </div>
 
       <h1 className="text-2xl md:text-3xl font-bold">{lesson.title}</h1>

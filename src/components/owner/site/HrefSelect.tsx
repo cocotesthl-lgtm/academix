@@ -4,15 +4,15 @@ import { useState, useEffect, createContext, useContext, type ReactNode } from '
 
 /**
  * Dropdown smart para el campo href de un CTA.
- * Sugiere las secciones existentes (#cursos, #features, etc) y permite
+ * Sugiere las secciones existentes (#publicaciones, #features, etc) y permite
  * tipear una URL custom o un path interno.
  *
  * Se usa dentro de los forms de las secciones en lugar de un input texto
  * plano. Cuando el owner elige una sección, se pone "#section_id" en el
  * input subyacente.
  *
- * Cursos del tenant: se inyectan via HrefTargetsProvider en el árbol.
- * Cada curso aparece como "/c/<slug>" y "/c/<slug>#comprar" para el checkout.
+ * Publicaciones del tenant: se inyectan via HrefTargetsProvider en el árbol.
+ * Cada publicación aparece como "/c/<slug>" y "/c/<slug>#comprar" para el checkout.
  */
 
 // HrefTarget type re-exportado desde el módulo plano para que server components
@@ -31,7 +31,7 @@ const COMMON_TARGETS: Array<{ value: string; label: string; group: string }> = [
   { value: '#hero',         label: '#hero', group: 'Secciones del sitio' },
   { value: '#about',        label: '#about (Sobre nosotros)', group: 'Secciones del sitio' },
   { value: '#features',     label: '#features (Beneficios)', group: 'Secciones del sitio' },
-  { value: '#catalog',      label: '#catalog (Cursos)', group: 'Secciones del sitio' },
+  { value: '#catalog',      label: '#catalog (Publicaciones)', group: 'Secciones del sitio' },
   { value: '#featured',     label: '#featured (Destacados)', group: 'Secciones del sitio' },
   { value: '#pricing',      label: '#pricing (Planes)', group: 'Secciones del sitio' },
   { value: '#testimonials', label: '#testimonials', group: 'Secciones del sitio' },
@@ -42,7 +42,7 @@ const COMMON_TARGETS: Array<{ value: string; label: string; group: string }> = [
   { value: '#cta_final',    label: '#cta_final', group: 'Secciones del sitio' },
   // Páginas internas
   { value: '/buscar',       label: '/buscar (Marketplace)', group: 'Páginas internas' },
-  { value: '/learn',        label: '/learn (Mis cursos)', group: 'Páginas internas' },
+  { value: '/learn',        label: '/learn (Mis publicaciones)', group: 'Páginas internas' },
   { value: '/login',        label: '/login', group: 'Páginas internas' },
   { value: '/signup',       label: '/signup', group: 'Páginas internas' },
   { value: '/affiliate',    label: '/affiliate (Ser afiliado)', group: 'Páginas internas' }

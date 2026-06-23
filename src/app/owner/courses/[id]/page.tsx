@@ -153,7 +153,7 @@ export default async function CourseEditPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 text-sm text-white/50">
-        <Link href="/courses" className="hover:text-white">← Cursos</Link>
+        <Link href="/courses" className="hover:text-white">← Publicaciones</Link>
         <span>/</span>
         <span className="text-white">{course.title}</span>
         <a
@@ -223,7 +223,7 @@ export default async function CourseEditPage({
         <h2 className="text-lg font-semibold mb-1">Modelo de cobro</h2>
         <p className="text-sm text-white/60 mb-4">
           Cobrá una vez o seteá una suscripción recurrente (mensual o anual)
-          via MercadoPago. El monto sale del precio del curso.
+          via MercadoPago. El monto sale del precio del publicación.
         </p>
         <CourseSubscriptionConfig
           courseId={course.id}
@@ -241,14 +241,14 @@ export default async function CourseEditPage({
         <h2 className="text-lg font-semibold mb-1">Página pública — sección &quot;Contenido&quot;</h2>
         <p className="text-sm text-white/60 mb-4">
           Personalizá los textos de la sección que muestra los módulos/lecciones en la
-          página de venta del producto. Útil si no vendés un curso (ej. ecommerce → &quot;Detalles&quot; / &quot;variantes&quot; / &quot;opciones&quot;).
+          página de venta del producto. Útil si no vendés un publicación (ej. ecommerce → &quot;Detalles&quot; / &quot;variantes&quot; / &quot;opciones&quot;).
         </p>
         <form action={setCourseContentLabelsAction} className="grid sm:grid-cols-2 gap-3">
           <input type="hidden" name="id" value={course.id} />
           <label className="block sm:col-span-2">
             <span className="text-xs text-white/55">Título de la sección</span>
             <input name="content_title" defaultValue={courseExtras?.content_title ?? ''}
-              placeholder="Contenido del curso"
+              placeholder="Contenido del publicación"
               maxLength={80}
               className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </label>
@@ -298,8 +298,8 @@ export default async function CourseEditPage({
       <section className="max-w-3xl pt-8 border-t border-white/10">
         <h2 className="text-lg font-semibold mb-1">Checkout — campos que se piden al comprar</h2>
         <p className="text-sm text-white/60 mb-4">
-          Por default usa la config global de tu academia. Activá el override
-          si este curso necesita campos diferentes.
+          Por default usa la config global de tu sitio. Activá el override
+          si este publicación necesita campos diferentes.
         </p>
         <CourseCheckoutOverride
           courseId={course.id}
@@ -311,7 +311,7 @@ export default async function CourseEditPage({
       <section className="max-w-3xl pt-8 border-t border-white/10">
         <h2 className="text-lg font-semibold mb-1">Conceder acceso manual</h2>
         <p className="text-sm text-white/60 mb-4">
-          Usalo para regalar el curso, dar acceso a beta testers o procesar ventas hechas
+          Usalo para regalar el publicación, dar acceso a beta testers o procesar ventas hechas
           por fuera de la plataforma.
         </p>
         <GrantEnrollmentForm courseId={course.id} />

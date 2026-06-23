@@ -19,8 +19,8 @@ function ars(cents: number) {
  * - Alertas arriba (MP no conectado, próximo evento, deuda alta)
  * - 4 KPIs con comparativa 30d
  * - Próximo evento destacado (si hay)
- * - Acciones rápidas según estado (sin cursos → "creá tu primer curso";
- *   con cursos → "crear nuevo evento" + "ver storefront")
+ * - Acciones rápidas según estado (sin publicaciones → "creá tu primer publicación";
+ *   con publicaciones → "crear nuevo evento" + "ver storefront")
  * - Actividad reciente (últimas 5 ventas)
  */
 export default async function OwnerDashboard() {
@@ -82,7 +82,7 @@ export default async function OwnerDashboard() {
   const gmvPrev30 = salesPrev30.reduce((s, r) => s + Number(r.amount_gross_cents), 0);
   const gmvDelta = gmvPrev30 > 0 ? Math.round(((gmv30 - gmvPrev30) / gmvPrev30) * 100) : null;
 
-  // Sparkline data: ventas por día últimos 30 días + top cursos
+  // Sparkline data: ventas por día últimos 30 días + top publicaciones
   const { data: salesWithDateRes } = await svc.from('sales')
     .select('amount_gross_cents, occurred_at, course_id')
     .eq('tenant_id', tenant.id).eq('status', 'paid').gte('occurred_at', since30);
@@ -100,7 +100,7 @@ export default async function OwnerDashboard() {
     }
   }
 
-  // Top 5 cursos por revenue 30d
+  // Top 5 publicaciones por revenue 30d
   const topCourseIds = Array.from(revenueByCourse.entries())
     .sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5).map((e) => e[0]);
   let topCourses: Array<{ id: string; title: string; revenue: number; count: number }> = [];
@@ -108,7 +108,7 @@ export default async function OwnerDashboard() {
     const { data: titles } = await svc.from('courses').select('id, title').in('id', topCourseIds);
     const titleMap = new Map(((titles ?? []) as Array<{ id: string; title: string }>).map((c) => [c.id, c.title]));
     topCourses = topCourseIds.map((id) => ({
-      id, title: titleMap.get(id) ?? 'Curso eliminado',
+      id, title: titleMap.get(id) ?? 'Publicación eliminado',
       revenue: revenueByCourse.get(id)!.revenue,
       count: revenueByCourse.get(id)!.count
     }));
@@ -183,7 +183,7 @@ export default async function OwnerDashboard() {
     {
       id: 'course',
       title: 'Creá tu primer producto',
-      description: 'Curso, evento, mentoría, servicio, producto físico o digital.',
+      description: 'Publicación, evento, mentoría, servicio, producto físico o digital.',
       href: '/courses/new',
       done: totalCourses > 0
     },
@@ -240,7 +240,7 @@ export default async function OwnerDashboard() {
           sub={totalClients === 0 ? 'Compartí tu sitio' : `${upcomingEvents.length > 0 ? upcomingEvents[0].ticketsSold + ' tickets en próximo evento' : ''}`}
         />
         <Kpi
-          label="Cursos publicados"
+          label="Publicaciones publicados"
           value={String(totalPublished)}
           sub={totalCourses > totalPublished ? `${totalCourses - totalPublished} en borrador` : 'Todos publicados'}
         />
@@ -309,10 +309,10 @@ export default async function OwnerDashboard() {
         />
       </div>
 
-      {/* ─── Top cursos ─── */}
+      {/* ─── Top publicaciones ─── */}
       {topCourses.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-white/55 mb-3">Top cursos · últimos 30 días</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-white/55 mb-3">Top publicaciones · últimos 30 días</h2>
           <div className="rounded-xl border border-white/10 overflow-hidden">
             <ul className="divide-y divide-white/5">
               {topCourses.map((c, i) => {
@@ -539,7 +539,7 @@ function QuickActions({ isNew, hasMp, storefrontUrl }: {
         { label: '🎨 Editá tu landing', href: '/site', sub: 'Diseñá tu home' }
       ]
     : [
-        { label: '📚 Crear nuevo curso', href: '/courses/new', sub: 'Curso o evento' },
+        { label: '📚 Crear nuevo publicación', href: '/courses/new', sub: 'Publicación o evento' },
         { label: '🎟️ Programar evento', href: '/eventos/calendario', sub: 'Fecha + capacidad' },
         { label: '🎨 Editar landing', href: '/site', sub: 'Mi sitio público' },
         { label: '↗ Ver mi storefront', href: storefrontUrl, sub: 'Como lo ve el cliente', external: true }

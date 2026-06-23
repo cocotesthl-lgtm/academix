@@ -8,7 +8,7 @@ import { tenantOrigin } from "@/lib/env";
 export const dynamic = "force-dynamic";
 
 /**
- * Panel de Clientes — gente que compró cursos/eventos en la academia.
+ * Panel de Clientes — gente que compró publicaciones/eventos en la sitio.
  * Antes se llamaba "Alumnos" pero terminológicamente "cliente" es más
  * consistente con todo el flujo de venta (compra → cliente → enrollment).
  *
@@ -219,7 +219,7 @@ export default async function OwnerClientesPage({
     <div className="space-y-6 max-w-6xl">
       <PageHeader
         title="Clientes"
-        description="Datos de contacto de quienes compraron cursos o tickets. También aparecen los pagos pendientes."
+        description="Datos de contacto de quienes compraron publicaciones o tickets. También aparecen los pagos pendientes."
         actions={
           <>
             <HeaderSecondary href="/api/export/clientes">⬇ Exportar CSV</HeaderSecondary>
@@ -232,9 +232,9 @@ export default async function OwnerClientesPage({
         <EmptyState
           icon="👥"
           title="Todavía no tenés clientes"
-          description="Cuando alguien compre un curso, una mentoría o un ticket, va a aparecer acá con sus datos completos."
+          description="Cuando alguien compre un publicación, una mentoría o un ticket, va a aparecer acá con sus datos completos."
           primary={{ label: '↗ Ver mi sitio público', href: storefrontUrl }}
-          secondary={{ label: 'Editar cursos', href: '/courses' }}
+          secondary={{ label: 'Editar publicaciones', href: '/courses' }}
         />
       ) : (
       <>
@@ -256,7 +256,7 @@ export default async function OwnerClientesPage({
           />
         </div>
         <div className="min-w-[180px]">
-          <label className="block text-xs text-white/50 mb-1">Curso</label>
+          <label className="block text-xs text-white/50 mb-1">Publicación</label>
           <select
             name="course"
             defaultValue={filterCourse}
@@ -294,7 +294,7 @@ export default async function OwnerClientesPage({
                 <th className="text-left px-3 py-2.5">Email</th>
                 <th className="text-left px-3 py-2.5">Celular</th>
                 <th className="text-left px-3 py-2.5">Ubicación</th>
-                <th className="text-left px-3 py-2.5">Curso</th>
+                <th className="text-left px-3 py-2.5">Publicación</th>
                 <th className="text-left px-3 py-2.5">Estado</th>
                 <th className="text-left px-3 py-2.5">Fecha</th>
                 <th className="text-right px-3 py-2.5">Acciones</th>

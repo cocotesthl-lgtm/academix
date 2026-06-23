@@ -24,7 +24,7 @@ type SubRow = {
 
 /**
  * Página del owner para gestionar las suscripciones recurrentes de SUS
- * clientes a sus cursos. Diferente a /mi-plan (donde el owner paga al
+ * clientes a sus publicaciones. Diferente a /mi-plan (donde el owner paga al
  * founder) — acá el owner cobra a sus propios compradores.
  *
  * El dinero va directo al MP del owner (no pasa por Curplat).
@@ -70,7 +70,7 @@ export default async function OwnerSubscriptionsPage({
     );
   }
 
-  // Fetch cursos + profiles para mostrar nombres
+  // Fetch publicaciones + profiles para mostrar nombres
   const courseIds = Array.from(new Set(subs.map((s) => s.course_id)));
   const userIds = Array.from(new Set(subs.map((s) => s.user_id).filter((id): id is string => !!id)));
   const [{ data: courses }, { data: profiles }] = await Promise.all([
@@ -111,16 +111,16 @@ export default async function OwnerSubscriptionsPage({
     <div className="max-w-6xl space-y-6">
       <PageHeader
         title="Suscripciones"
-        description="Clientes con pago recurrente activo en alguno de tus cursos. El dinero entra directo a tu MercadoPago."
-        actions={<HeaderSecondary href="/courses">Ver cursos</HeaderSecondary>}
+        description="Clientes con pago recurrente activo en alguno de tus publicaciones. El dinero entra directo a tu MercadoPago."
+        actions={<HeaderSecondary href="/courses">Ver publicaciones</HeaderSecondary>}
       />
 
       {subs.length === 0 ? (
         <EmptyState
           icon="🔁"
           title="Todavía no tenés clientes con suscripción"
-          description="Para activar pagos recurrentes, andá a un curso → Modelo de cobro → 'Suscripción mensual / anual'. Cuando alguien compre, va a aparecer acá."
-          primary={{ label: 'Ver cursos', href: '/courses' }}
+          description="Para activar pagos recurrentes, andá a un publicación → Modelo de cobro → 'Suscripción mensual / anual'. Cuando alguien compre, va a aparecer acá."
+          primary={{ label: 'Ver publicaciones', href: '/courses' }}
         />
       ) : (
         <>
@@ -137,7 +137,7 @@ export default async function OwnerSubscriptionsPage({
               <label className="block text-xs text-white/50 mb-1">Buscar</label>
               <input
                 type="text" name="q" defaultValue={sp.q ?? ''}
-                placeholder="Nombre, email, curso, ID externo"
+                placeholder="Nombre, email, publicación, ID externo"
                 className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
               />
             </div>
@@ -169,7 +169,7 @@ export default async function OwnerSubscriptionsPage({
                 <thead className="bg-[#0f0f0f] text-white/55 text-xs uppercase tracking-wider sticky top-0 z-10">
                   <tr>
                     <th className="text-left px-3 py-2.5">Cliente</th>
-                    <th className="text-left px-3 py-2.5">Curso</th>
+                    <th className="text-left px-3 py-2.5">Publicación</th>
                     <th className="text-left px-3 py-2.5">Frecuencia</th>
                     <th className="text-right px-3 py-2.5">Monto</th>
                     <th className="text-left px-3 py-2.5">Estado</th>

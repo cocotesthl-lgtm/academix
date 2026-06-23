@@ -34,7 +34,7 @@ export default async function BuscarAcademiasPage() {
     data = fallback.data;
   }
 
-  const academias: AcademiaCard[] = ((data ?? []) as TenantRow[]).map((t) => ({
+  const sitios: AcademiaCard[] = ((data ?? []) as TenantRow[]).map((t) => ({
     id: t.id,
     slug: t.slug,
     name: t.name,
@@ -63,19 +63,19 @@ export default async function BuscarAcademiasPage() {
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 py-12 space-y-12">
-        {/* ─── Buscar academia (alumnos) ─── */}
+        {/* ─── Buscar sitio (alumnos) ─── */}
         <div>
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Encontrá tu academia
+              Encontrá tu sitio
             </h1>
             <p className="mt-3 text-white/60">
-              ¿Sos alumno? Buscá la academia donde te inscribiste y entrá desde ahí.
+              ¿Sos alumno? Buscá la sitio donde te inscribiste y entrá desde ahí.
             </p>
           </div>
 
           <AcademiaSearch
-            academias={academias}
+            sitios={sitios}
             rootDomain={env.rootDomain}
             isLocal={isLocal}
           />

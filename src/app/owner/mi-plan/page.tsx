@@ -32,7 +32,7 @@ export default async function MiPlanPage({
     <div className="max-w-6xl space-y-8">
       <PageHeader
         title="Mi plan"
-        description="Elegí el plan que mejor se adapta a tu academia. Podés cambiarlo cuando quieras."
+        description="Elegí el plan que mejor se adapta a tu sitio. Podés cambiarlo cuando quieras."
       />
 
       {plans.length === 0 ? (

@@ -262,7 +262,7 @@ export function VslLanding({
             <div className="text-4xl mb-3">🎥</div>
             <div className="font-bold text-amber-900">Configurá tu video VSL</div>
             <p className="text-sm text-amber-800/85 mt-2 leading-snug max-w-md mx-auto">
-              Andá a <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">Editar curso</code> → tab{' '}
+              Andá a <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">Editar publicación</code> → tab{' '}
               <strong>Landing page</strong> → sección <strong>🎥 Video + gating VSL</strong> y pegá el
               ID de tu video de YouTube o Vimeo.
             </p>

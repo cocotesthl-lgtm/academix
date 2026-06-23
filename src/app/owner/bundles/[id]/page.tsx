@@ -43,7 +43,7 @@ export default async function BundleEditPage({ params }: { params: Promise<{ id:
   const items = (itemRaw ?? []) as unknown as ItemRow[];
   const includedIds = new Set(items.map((i) => i.course_id));
 
-  // Todos los cursos/packs del tenant para agregar
+  // Todos los publicaciones/packs del tenant para agregar
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: optsRaw } = await (svc.from('courses') as any)
     .select('id, title, product_type, price_cents')
@@ -129,7 +129,7 @@ export default async function BundleEditPage({ params }: { params: Promise<{ id:
                 <div className="min-w-0">
                   <div className="text-sm font-medium truncate">{it.courses?.title ?? '—'}</div>
                   <div className="text-[10px] text-white/45">
-                    {it.courses?.product_type === 'vip_pack' ? '🔒 VIP Pack' : '📚 Curso'} · $ {((it.courses?.price_cents ?? 0) / 100).toLocaleString('es-AR')}
+                    {it.courses?.product_type === 'vip_pack' ? '🔒 VIP Pack' : '📚 Publicación'} · $ {((it.courses?.price_cents ?? 0) / 100).toLocaleString('es-AR')}
                   </div>
                 </div>
                 <form action={removeBundleItemAction}>
@@ -150,7 +150,7 @@ export default async function BundleEditPage({ params }: { params: Promise<{ id:
               <input type="hidden" name="bundle_id" value={bundle.id} />
               <select name="course_id" required
                 className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
-                <option value="">— elegí un curso o pack —</option>
+                <option value="">— elegí un publicación o pack —</option>
                 {available.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.product_type === 'vip_pack' ? '🔒 ' : '📚 '}{o.title} · $ {(o.price_cents / 100).toLocaleString('es-AR')}

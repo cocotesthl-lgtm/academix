@@ -24,7 +24,7 @@ export default async function InstructorDashboard() {
   const { userId, tenant } = await requireInstructor();
   const svc = getServiceClient();
 
-  // Cursos asignados (intento con calendar_mode; fallback sin si migration 0012 falta)
+  // Publicaciones asignados (intento con calendar_mode; fallback sin si migration 0012 falta)
   let assigns: AssignedCourse[] = [];
   try {
     const { data, error } = await svc
@@ -36,7 +36,7 @@ export default async function InstructorDashboard() {
 
   const courseIds = assigns.map((a) => a.course_id);
 
-  // Próximas reservas en esos cursos
+  // Próximas reservas en esos publicaciones
   let upcoming: BookingRow[] = [];
   if (courseIds.length > 0) {
     try {
@@ -57,21 +57,21 @@ export default async function InstructorDashboard() {
       <div>
         <h1 className="text-2xl font-bold">Hola, esto es lo que tenés</h1>
         <p className="text-white/60 text-sm mt-1">
-          Cursos asignados por el owner de <strong>{tenant.name}</strong>.
+          Publicaciones asignados por el owner de <strong>{tenant.name}</strong>.
         </p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <Stat label="Cursos asignados" value={assigns.length.toString()} />
+        <Stat label="Publicaciones asignados" value={assigns.length.toString()} />
         <Stat label="Próximas reservas" value={upcoming.length.toString()} />
         <Stat label="Con permiso reagendar" value={assigns.filter((a) => a.can_reschedule).length.toString()} />
       </div>
 
       <section>
-        <h2 className="text-lg font-semibold mb-3">Tus cursos</h2>
+        <h2 className="text-lg font-semibold mb-3">Tus publicaciones</h2>
         {assigns.length === 0 ? (
           <div className="rounded-xl border border-dashed border-white/15 p-10 text-center text-white/40 text-sm">
-            El owner todavía no te asignó cursos.
+            El owner todavía no te asignó publicaciones.
           </div>
         ) : (
           <div className="space-y-2">
@@ -111,7 +111,7 @@ export default async function InstructorDashboard() {
                 <tr>
                   <th className="text-left px-3 py-2">Cuándo</th>
                   <th className="text-left px-3 py-2">Alumno</th>
-                  <th className="text-left px-3 py-2">Curso</th>
+                  <th className="text-left px-3 py-2">Publicación</th>
                 </tr>
               </thead>
               <tbody>

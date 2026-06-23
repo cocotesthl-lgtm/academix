@@ -120,7 +120,7 @@ export default async function CourseDetailPage({
       .maybeSingle<CourseExtras>();
     if (!error && data) courseExtras = data;
   } catch { /* migration no corrida — defaults */ }
-  const contentTitle = courseExtras?.content_title?.trim() || 'Contenido del curso';
+  const contentTitle = courseExtras?.content_title?.trim() || 'Contenido del publicación';
   const moduleLabel = courseExtras?.module_label?.trim() || 'módulos';
   const lessonLabel = courseExtras?.lesson_label?.trim() || 'lecciones';
   const showContentSection = courseExtras?.show_content_section !== false;
@@ -172,7 +172,7 @@ export default async function CourseDetailPage({
     courseConfig: courseExtras?.checkout_config ?? null
   });
 
-  // ─── Calendario: si el curso tiene mentorship_slot, calculamos los slots
+  // ─── Calendario: si el publicación tiene mentorship_slot, calculamos los slots
   // disponibles desde las reglas del tenant menos los ya tomados ───
   const calendarMode = (courseExtras?.calendar_mode ?? 'none') as CalendarMode;
   let calendarSlots: BookingSlot[] = [];
@@ -265,7 +265,7 @@ export default async function CourseDetailPage({
         } else {
           datesQuery = datesQuery.in('instructor_user_id', assignedIds);
         }
-        // Solo dates de este curso o tenant-wide (course_id null)
+        // Solo dates de este publicación o tenant-wide (course_id null)
         const { data: dRaw } = await datesQuery;
         oneOffDates = ((dRaw ?? []) as Array<CalendarDate & { course_id: string | null }>)
           .filter((d) => d.course_id === null || d.course_id === course.id);
@@ -279,7 +279,7 @@ export default async function CourseDetailPage({
           .lte('start_at', horizonDate.toISOString());
         const allOverrides = (ovRaw ?? []) as AvailabilityOverride[];
         overrides = allOverrides.filter((ov) => {
-          // Si tiene course_id ≠ este curso → no aplica
+          // Si tiene course_id ≠ este publicación → no aplica
           if (ov.course_id && ov.course_id !== course.id) return false;
           // Si tiene instructor_user_id, solo aplica si ese instructor está en juego
           if (ov.instructor_user_id) {
@@ -743,6 +743,6 @@ function ctaTextForType(t: string | null): string {
     case 'multi_venue': return 'Reservar lugar';
     case 'restaurant':  return 'Reservar mesa';
     case 'course':
-    default:            return 'Comprar curso';
+    default:            return 'Comprar publicación';
   }
 }

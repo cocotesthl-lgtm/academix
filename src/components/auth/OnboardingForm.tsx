@@ -17,14 +17,14 @@ export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
     <form action={formAction} className="space-y-5">
       <div>
         <label className="block text-sm mb-1.5 text-white/70" htmlFor="name">
-          Nombre de tu academia
+          Nombre de tu sitio
         </label>
         <input
           id="name"
           name="name"
           required
           maxLength={80}
-          placeholder="Academia de Diseño UX"
+          placeholder="Sitio de Diseño UX"
           className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/40"
         />
       </div>
@@ -52,7 +52,7 @@ export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
         </div>
         {slug && (
           <p className="text-xs text-white/50 mt-1.5">
-            Tu academia va a estar en <span className="text-white">{slug}.{rootDomain}</span>
+            Tu sitio va a estar en <span className="text-white">{slug}.{rootDomain}</span>
           </p>
         )}
       </div>
@@ -84,7 +84,7 @@ export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
         disabled={pending}
         className="w-full rounded-md bg-white text-black py-3 font-semibold hover:bg-white/90 transition disabled:opacity-50"
       >
-        {pending ? 'Creando tu academia…' : 'Crear academia'}
+        {pending ? 'Creando tu sitio…' : 'Crear sitio'}
       </button>
     </form>
   );

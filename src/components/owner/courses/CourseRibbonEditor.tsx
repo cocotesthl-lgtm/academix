@@ -5,7 +5,7 @@ import { setCourseRibbonAction } from '@/lib/courses/actions';
 import { showToast } from '@/components/owner/ToastBus';
 
 /**
- * Editor de la "cinta" del curso — aparece sobre la tarjeta del curso
+ * Editor de la "cinta" del publicación — aparece sobre la tarjeta del publicación
  * en el catálogo del storefront. Ej. "OFERTA", "ÚLTIMOS DÍAS", "NUEVO".
  */
 
@@ -45,7 +45,7 @@ export function CourseRibbonEditor({
     <section className="max-w-3xl pt-8 border-t border-white/10">
       <h2 className="text-lg font-semibold mb-1">Cinta del catálogo</h2>
       <p className="text-sm text-white/60 mb-4">
-        Texto destacado que aparece sobre la tarjeta del curso en el catálogo público.
+        Texto destacado que aparece sobre la tarjeta del publicación en el catálogo público.
         Dejá vacío para no mostrar cinta.
       </p>
 
@@ -87,7 +87,7 @@ export function CourseRibbonEditor({
                 </div>
               )}
             </div>
-            <div className="mt-2 text-black text-sm font-semibold">Nombre del curso</div>
+            <div className="mt-2 text-black text-sm font-semibold">Nombre del publicación</div>
             <div className="text-black/60 text-xs">$10.000 ARS</div>
           </div>
         </div>

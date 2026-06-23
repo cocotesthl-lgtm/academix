@@ -65,7 +65,7 @@ export default async function AffiliateGlobalPage({
       .select('id, tenant_id, level, amount_cents, status, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }).limit(50),
-    // Para CTA "afiliate a más" — mostramos academias donde NO está aún
+    // Para CTA "afiliate a más" — mostramos sitios donde NO está aún
     svc.from('tenants')
       .select('id, slug, name, brand')
       .eq('status', 'active')
@@ -102,7 +102,7 @@ export default async function AffiliateGlobalPage({
     accruedByTenant.set(c.tenant_id, (accruedByTenant.get(c.tenant_id) ?? 0) + Number(c.amount_cents));
   }
 
-  // Otras academias para explorar (no soy afiliado todavía)
+  // Otras sitios para explorar (no soy afiliado todavía)
   const allTenants = (allTenantsRaw ?? []) as TenantRow[];
   const exploreTenants = allTenants.filter((t) => !memberTenantIds.has(t.id)).slice(0, 12);
 
@@ -127,7 +127,7 @@ export default async function AffiliateGlobalPage({
 
   const tenantById = new Map<string, TenantRow>(myTenants.map((t) => [t.id, t]));
 
-  // ¿También es instructor en alguna academia? → mostramos link al portal
+  // ¿También es instructor en alguna sitio? → mostramos link al portal
   const { data: instructorMems } = await svc
     .from('memberships')
     .select('tenant_id, tenants ( id, slug, name )')
@@ -137,7 +137,7 @@ export default async function AffiliateGlobalPage({
     tenant_id: string; tenants: { id: string; slug: string; name: string } | null;
   }>).filter((r) => r.tenants).map((r) => r.tenants!);
 
-  // Academias bloqueadas por el user (para mostrar en sección aparte)
+  // Sitios bloqueadas por el user (para mostrar en sección aparte)
   let blockedTenants: Array<{ id: string; slug: string; name: string }> = [];
   try {
     const { data: blocksRaw } = await svc
@@ -157,7 +157,7 @@ export default async function AffiliateGlobalPage({
           <Link href="/" className="text-xl font-bold tracking-tight">Curplat</Link>
           <div className="flex items-center gap-3">
             <Link href="/buscar" className="text-sm text-white/80 hover:text-white">
-              🔍 Explorar academias
+              🔍 Explorar sitios
             </Link>
           </div>
         </div>
@@ -170,8 +170,8 @@ export default async function AffiliateGlobalPage({
           </div>
           <h1 className="text-3xl md:text-4xl font-bold">Tu panel global de afiliado</h1>
           <p className="text-white/60 mt-2 max-w-2xl">
-            Una sola cuenta para promocionar cursos de todas las academias de la plataforma.
-            Acá ves tus comisiones, las academias donde estás activo y las que podés sumar.
+            Una sola cuenta para promocionar publicaciones de todas las sitios de la plataforma.
+            Acá ves tus comisiones, las sitios donde estás activo y las que podés sumar.
           </p>
         </div>
 
@@ -182,7 +182,7 @@ export default async function AffiliateGlobalPage({
             <div className="flex-1 min-w-[200px]">
               <div className="font-semibold text-sm">También sos instructor</div>
               <div className="text-xs text-white/55 mt-0.5">
-                Te asignaron como instructor en {instructorTenants.length === 1 ? '1 academia' : `${instructorTenants.length} academias`}.
+                Te asignaron como instructor en {instructorTenants.length === 1 ? '1 sitio' : `${instructorTenants.length} sitios`}.
               </div>
             </div>
             <a
@@ -204,16 +204,16 @@ export default async function AffiliateGlobalPage({
         <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Stat label="Acumulado total" value={`$${(accruedTotal / 100).toLocaleString('es-AR')}`} />
           <Stat label="Cobrado total" value={`$${(paidTotal / 100).toLocaleString('es-AR')}`} />
-          <Stat label="Academias activas" value={myTenants.length.toString()} />
+          <Stat label="Sitios activas" value={myTenants.length.toString()} />
         </section>
 
-        {/* Mis academias */}
+        {/* Mis sitios */}
         <section>
-          <h2 className="text-xl font-bold mb-3">🏫 Tus academias</h2>
+          <h2 className="text-xl font-bold mb-3">🏫 Tus sitios</h2>
           {myTenants.length === 0 ? (
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-white/60">
-              <p>Todavía no generaste links en ninguna academia.</p>
-              <p className="text-sm mt-2">Explorá las academias abajo y entrá a su sección de afiliados para empezar.</p>
+              <p>Todavía no generaste links en ninguna sitio.</p>
+              <p className="text-sm mt-2">Explorá las sitios abajo y entrá a su sección de afiliados para empezar.</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -254,10 +254,10 @@ export default async function AffiliateGlobalPage({
           )}
         </section>
 
-        {/* Academias bloqueadas (sólo visibles para el user) */}
+        {/* Sitios bloqueadas (sólo visibles para el user) */}
         {blockedTenants.length > 0 && (
           <section>
-            <h2 className="text-xl font-bold mb-1">🚫 Academias bloqueadas</h2>
+            <h2 className="text-xl font-bold mb-1">🚫 Sitios bloqueadas</h2>
             <p className="text-xs text-white/55 mb-3">
               No te pueden sumar como instructor ni te ven en ninguna lista. Desbloqueá si cambiaste de opinión.
             </p>
@@ -335,12 +335,12 @@ export default async function AffiliateGlobalPage({
           </section>
         )}
 
-        {/* Explorar más academias */}
+        {/* Explorar más sitios */}
         {exploreTenants.length > 0 && (
           <section>
-            <h2 className="text-xl font-bold mb-1">🚀 Sumá más academias</h2>
+            <h2 className="text-xl font-bold mb-1">🚀 Sumá más sitios</h2>
             <p className="text-sm text-white/60 mb-4">
-              Entrá a cualquier academia y generá tu primer link en su panel de afiliados — la sumás automáticamente acá.
+              Entrá a cualquier sitio y generá tu primer link en su panel de afiliados — la sumás automáticamente acá.
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {exploreTenants.map((t) => {
@@ -374,7 +374,7 @@ export default async function AffiliateGlobalPage({
             </div>
             <div className="text-center mt-4">
               <Link href="/buscar" className="text-sm text-fuchsia-300 hover:text-fuchsia-200">
-                Ver todas las academias →
+                Ver todas las sitios →
               </Link>
             </div>
           </section>
@@ -389,7 +389,7 @@ export default async function AffiliateGlobalPage({
                 <thead className="bg-white/[0.03] text-white/50 text-xs uppercase">
                   <tr>
                     <th className="text-left px-4 py-2">Fecha</th>
-                    <th className="text-left px-4 py-2">Academia</th>
+                    <th className="text-left px-4 py-2">Sitio</th>
                     <th className="text-left px-4 py-2">Nivel</th>
                     <th className="text-left px-4 py-2">Estado</th>
                     <th className="text-right px-4 py-2">Monto</th>
@@ -443,8 +443,8 @@ function NotLoggedIn() {
         <div className="text-5xl mb-4">💼</div>
         <h1 className="text-3xl md:text-4xl font-bold">Volvete afiliado de Curplat</h1>
         <p className="text-white/65 mt-4 max-w-md mx-auto">
-          Una sola cuenta para promocionar cursos de <strong>todas</strong> las academias
-          de la plataforma. Generás link único por curso, te damos material promocional,
+          Una sola cuenta para promocionar publicaciones de <strong>todas</strong> las sitios
+          de la plataforma. Generás link único por publicación, te damos material promocional,
           ganás comisión por cada venta.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
@@ -462,10 +462,10 @@ function NotLoggedIn() {
           </Link>
         </div>
         <ul className="text-sm text-white/55 mt-10 space-y-2 max-w-sm mx-auto text-left">
-          <li>✅ 1 cuenta para todas las academias</li>
+          <li>✅ 1 cuenta para todas las sitios</li>
           <li>✅ Aprobación inmediata, gratis</li>
-          <li>✅ Link único por curso + material promocional</li>
-          <li>✅ Panel global con comisiones de todas las academias</li>
+          <li>✅ Link único por publicación + material promocional</li>
+          <li>✅ Panel global con comisiones de todas las sitios</li>
         </ul>
       </main>
     </div>
@@ -487,7 +487,7 @@ function BecomeAffiliate({ displayName }: { displayName: string | null }) {
         </h1>
         <p className="text-white/65 mt-4 max-w-md mx-auto">
           Activá tu cuenta de afiliado de <strong>Curplat</strong>. Vas a poder promocionar
-          cursos de cualquier academia de la plataforma y ver tus comisiones en un solo panel.
+          publicaciones de cualquier sitio de la plataforma y ver tus comisiones en un solo panel.
         </p>
         <form action={becomeAffiliateAction} className="mt-8">
           <input type="hidden" name="redirect_to" value="/affiliate" />
@@ -498,7 +498,7 @@ function BecomeAffiliate({ displayName }: { displayName: string | null }) {
           </button>
         </form>
         <p className="text-xs text-white/40 mt-4">
-          Aprobación inmediata · Gratis · 1 cuenta para todas las academias
+          Aprobación inmediata · Gratis · 1 cuenta para todas las sitios
         </p>
       </main>
     </div>

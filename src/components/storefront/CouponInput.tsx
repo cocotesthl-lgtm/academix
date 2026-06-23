@@ -11,7 +11,7 @@ import { CalendarPicker } from './CalendarPicker';
  *  - base_fields enabled → name/dni/phone/location (toggleables + required configurable)
  *  - extra_fields → campos custom del owner (text/email/tel/textarea/select/checkbox/date/number)
  * Email + password siempre se piden cuando el comprador no está logueado
- * (son necesarios para crear su cuenta y darle acceso al curso).
+ * (son necesarios para crear su cuenta y darle acceso al publicación).
  *
  * El form sigue siendo POST nativo para que funcione sin JS y para que MP
  * pueda redirigir con 303.
@@ -31,7 +31,7 @@ export function CouponInput({
   calendarSlots,
   paymentMode = 'none',
   depositPercent = 30,
-  ctaText = 'Comprar curso',
+  ctaText = 'Comprar publicación',
   venues = [],
   isReservation = false
 }: {
@@ -157,7 +157,7 @@ export function CouponInput({
         }
       }}
     >
-      {/* Curso gratis: botón directo (no se piden datos extra; se asume user_id) */}
+      {/* Publicación gratis: botón directo (no se piden datos extra; se asume user_id) */}
       {isFree && (
         <button
           type="submit"
@@ -168,7 +168,7 @@ export function CouponInput({
         </button>
       )}
 
-      {/* Curso pago: botón para expandir el form. Cuando payment_mode='choice',
+      {/* Publicación pago: botón para expandir el form. Cuando payment_mode='choice',
           mostramos 2 botones (total + seña) para que el cliente decida desde
           afuera, sin tener que abrir un menú adentro del form. */}
       {!isFree && !expanded && (
@@ -351,14 +351,14 @@ export function CouponInput({
               </div>
               <p className="text-[11px] text-black/55">
                 🔐 Vamos a crear tu cuenta con estos datos. Con ese email y contraseña
-                vas a poder entrar siempre a ver tus cursos. Si ya tenés cuenta acá,
+                vas a poder entrar siempre a ver tus publicaciones. Si ya tenés cuenta acá,
                 usá la misma contraseña y te logueamos directo.
               </p>
             </>
           )}
 
           <p className="text-[11px] text-black/45 leading-snug">
-            Vamos a usar estos datos sólo para inscribirte, enviarte el acceso al curso
+            Vamos a usar estos datos sólo para inscribirte, enviarte el acceso al publicación
             y contactarte si hace falta. No los compartimos con terceros.
           </p>
 

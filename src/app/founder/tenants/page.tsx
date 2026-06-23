@@ -53,7 +53,7 @@ export default async function FounderTenants() {
   return (
     <div className="space-y-6 max-w-6xl">
       <div>
-        <h1 className="text-2xl font-bold">Academias</h1>
+        <h1 className="text-2xl font-bold">Sitios</h1>
         <p className="text-white/60 text-sm mt-1">
           Gestión de owners — suspender, reactivar, cerrar.
         </p>
@@ -61,12 +61,12 @@ export default async function FounderTenants() {
 
       <div className="rounded-xl border border-white/10 overflow-hidden">
         {tenants.length === 0 ? (
-          <div className="p-6 text-sm text-white/50">Ninguna academia todavía.</div>
+          <div className="p-6 text-sm text-white/50">Ninguna sitio todavía.</div>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
               <tr>
-                <th className="text-left px-4 py-2.5">Academia</th>
+                <th className="text-left px-4 py-2.5">Sitio</th>
                 <th className="text-left px-4 py-2.5">Slug</th>
                 <th className="text-left px-4 py-2.5">Owner</th>
                 <th className="text-left px-4 py-2.5">Comisión</th>

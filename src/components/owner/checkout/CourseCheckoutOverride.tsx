@@ -13,9 +13,9 @@ import type { CheckoutConfig } from '@/lib/checkout/types';
 import { CheckoutFieldsEditor } from './CheckoutFieldsEditor';
 
 /**
- * Sección en /owner/courses/[id] para el override por curso.
- * Toggle "usar default de la academia" / "tener config propia".
- * Si tiene config propia → renderiza el editor con las actions versión curso.
+ * Sección en /owner/courses/[id] para el override por publicación.
+ * Toggle "usar default de la sitio" / "tener config propia".
+ * Si tiene config propia → renderiza el editor con las actions versión publicación.
  */
 export function CourseCheckoutOverride({
   courseId,
@@ -40,12 +40,12 @@ export function CourseCheckoutOverride({
       <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="font-medium text-sm">
-            {hasOverride ? '⚙️ Este curso usa una config propia' : '🔗 Este curso usa el default de la academia'}
+            {hasOverride ? '⚙️ Este publicación usa una config propia' : '🔗 Este publicación usa el default de la sitio'}
           </div>
           <p className="text-xs text-white/55 mt-1">
             {hasOverride
-              ? 'Editás los campos solo para este curso. Cambios al default global no afectan acá.'
-              : 'Editás los campos en /checkout y se aplican a todos los cursos por igual.'}
+              ? 'Editás los campos solo para este publicación. Cambios al default global no afectan acá.'
+              : 'Editás los campos en /checkout y se aplican a todos los publicaciones por igual.'}
           </p>
         </div>
         <button
@@ -62,7 +62,7 @@ export function CourseCheckoutOverride({
             ? '…'
             : hasOverride
               ? '← Volver al default'
-              : 'Tener config propia para este curso →'}
+              : 'Tener config propia para este publicación →'}
         </button>
       </div>
 

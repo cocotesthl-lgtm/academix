@@ -63,7 +63,7 @@ export default async function FounderRevenue() {
       </div>
 
       <section>
-        <h2 className="text-lg font-semibold mb-3">Top 5 academias por GMV</h2>
+        <h2 className="text-lg font-semibold mb-3">Top 5 sitios por GMV</h2>
         <div className="rounded-xl border border-white/10 overflow-hidden">
           {top.length === 0 ? (
             <div className="p-6 text-sm text-white/50">Sin ventas todavía.</div>
@@ -72,7 +72,7 @@ export default async function FounderRevenue() {
               <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
                 <tr>
                   <th className="text-left px-4 py-2.5">#</th>
-                  <th className="text-left px-4 py-2.5">Academia</th>
+                  <th className="text-left px-4 py-2.5">Sitio</th>
                   <th className="text-right px-4 py-2.5">GMV total</th>
                 </tr>
               </thead>

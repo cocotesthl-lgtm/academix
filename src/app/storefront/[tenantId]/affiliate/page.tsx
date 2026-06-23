@@ -71,7 +71,7 @@ export default async function AffiliateDashboard({
     canValidate = !!res.data?.can_validate_tickets;
   } catch { /* migration 0022 missing */ }
 
-  // Cursos disponibles + mis links + comisiones (lo que ya teníamos)
+  // Publicaciones disponibles + mis links + comisiones (lo que ya teníamos)
   const [
     { data: courses },
     { data: links },
@@ -152,7 +152,7 @@ export default async function AffiliateDashboard({
       <section className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Stat label="Acumulado (pendiente)" value={`$${(accruedTotal / 100).toLocaleString('es-AR')}`} />
         <Stat label="Cobrado" value={`$${(paidTotal / 100).toLocaleString('es-AR')}`} />
-        <Stat label="Cursos disponibles" value={courseRows.length.toString()} />
+        <Stat label="Publicaciones disponibles" value={courseRows.length.toString()} />
       </section>
 
       {/* Mensajes del owner */}
@@ -304,12 +304,12 @@ export default async function AffiliateDashboard({
       <section>
         <h2 className="text-xl font-bold mb-3">🔗 Tus links de afiliado</h2>
         <p className="text-sm text-black/60 mb-4">
-          Compartí tu link único de cada curso. Cuando alguien compre desde tu link, ganás comisión.
+          Compartí tu link único de cada publicación. Cuando alguien compre desde tu link, ganás comisión.
           Tip: mientras navegás el storefront vas a ver una barra arriba con un selector A/B/C de variantes.
         </p>
         {courseRows.length === 0 ? (
           <div className="rounded-xl border border-black/10 p-10 text-center text-black/50">
-            Esta academia todavía no tiene cursos disponibles para afiliación.
+            Esta sitio todavía no tiene publicaciones disponibles para afiliación.
           </div>
         ) : (
           <div className="space-y-3">
@@ -359,9 +359,9 @@ function AffiliateJoin({ tenantId, tenantName, primary }: { tenantId: string; te
       <div className="text-5xl mb-4">💼</div>
       <h1 className="text-3xl font-bold">Sumate al programa de afiliados</h1>
       <p className="text-black/60 mt-3 max-w-md mx-auto">
-        Te registrás como afiliado de <strong>Curplat</strong> y podés promocionar cursos de{' '}
-        <strong>{tenantName}</strong> y de cualquier otra academia de la plataforma. Te damos
-        link único por curso, material promocional y comisión por cada venta.
+        Te registrás como afiliado de <strong>Curplat</strong> y podés promocionar publicaciones de{' '}
+        <strong>{tenantName}</strong> y de cualquier otra sitio de la plataforma. Te damos
+        link único por publicación, material promocional y comisión por cada venta.
       </p>
       <form action={signupAsAffiliateAction} className="mt-8">
         <input type="hidden" name="tenant_id" value={tenantId} />
@@ -373,7 +373,7 @@ function AffiliateJoin({ tenantId, tenantName, primary }: { tenantId: string; te
         </button>
       </form>
       <p className="text-xs text-black/40 mt-4">
-        Aprobación inmediata · Gratis · 1 cuenta para todas las academias
+        Aprobación inmediata · Gratis · 1 cuenta para todas las sitios
       </p>
     </div>
   );

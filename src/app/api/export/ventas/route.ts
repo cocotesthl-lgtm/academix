@@ -34,7 +34,7 @@ export async function GET() {
     courseMap = new Map(((courses ?? []) as Array<{ id: string; title: string }>).map((c) => [c.id, c.title]));
   }
 
-  const headers = ['Fecha', 'Hora', 'Cliente', 'Email', 'Telefono', 'DNI', 'Curso', 'Monto', 'Moneda', 'Estado', 'Proveedor', 'ID externo'];
+  const headers = ['Fecha', 'Hora', 'Cliente', 'Email', 'Telefono', 'DNI', 'Publicación', 'Monto', 'Moneda', 'Estado', 'Proveedor', 'ID externo'];
   const rows = sales.map((s) => {
     const d = new Date(s.occurred_at);
     return [

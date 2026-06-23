@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
  * - ↑↓ navegan, Enter ejecuta, ESC cierra.
  * - Items: páginas internas + acciones rápidas + abrir storefront público.
  *
- * Decisión de scope: no busca CONTENIDO (clientes, cursos por nombre, etc).
+ * Decisión de scope: no busca CONTENIDO (clientes, publicaciones por nombre, etc).
  * Solo navegación + acciones. Buscar contenido tiene cada página su propio
  * input — mantenemos el palette enfocado en "moverse rápido".
  */
@@ -30,7 +30,7 @@ type CmdItem = {
 const items: CmdItem[] = [
   // Navegación
   { id: 'nav-inicio', label: 'Inicio', group: 'Ir a', icon: '🏠', href: '/dashboard', keywords: 'home dashboard panel resumen' },
-  { id: 'nav-cursos', label: 'Productos', group: 'Ir a', icon: '🛍️', href: '/courses', keywords: 'cursos products productos ventas ecommerce' },
+  { id: 'nav-publicaciones', label: 'Productos', group: 'Ir a', icon: '🛍️', href: '/courses', keywords: 'publicaciones products productos ventas ecommerce' },
   { id: 'nav-cats', label: 'Categorías', group: 'Ir a', icon: '🏷️', href: '/categories', keywords: 'categorias tags' },
   { id: 'nav-cal', label: 'Calendario de eventos', group: 'Ir a', icon: '🗓️', href: '/eventos/calendario', keywords: 'disponibilidad fechas eventos calendar slots' },
   { id: 'nav-validar', label: 'Validar entradas', group: 'Ir a', icon: '🎟️', href: '/eventos/validar', keywords: 'scanner qr tickets entradas validacion molinete' },
@@ -47,7 +47,7 @@ const items: CmdItem[] = [
   { id: 'nav-finance', label: 'Finanzas', group: 'Ir a', icon: '💼', href: '/finance', keywords: 'finanzas comision deuda saldo' },
   { id: 'nav-soporte', label: 'Soporte', group: 'Ir a', icon: '📨', href: '/soporte', keywords: 'soporte tickets ayuda help' },
   // Acciones
-  { id: 'act-course-new', label: 'Crear curso nuevo', group: 'Acciones', icon: '➕', href: '/courses/new', keywords: 'crear nuevo curso producto evento' },
+  { id: 'act-course-new', label: 'Crear publicación nuevo', group: 'Acciones', icon: '➕', href: '/courses/new', keywords: 'crear nuevo publicación producto evento' },
   { id: 'act-ticket-new', label: 'Crear ticket de soporte', group: 'Acciones', icon: '➕', href: '/soporte/new', keywords: 'crear ticket soporte ayuda reportar problema' },
   { id: 'act-event-new', label: 'Programar evento (fecha + capacidad)', group: 'Acciones', icon: '➕', href: '/eventos/calendario', keywords: 'crear evento fecha tickets nuevo programar' }
 ];

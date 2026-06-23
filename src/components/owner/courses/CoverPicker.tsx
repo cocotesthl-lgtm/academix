@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 /**
- * Input controlado del cover_url del curso + galería de URLs sugeridas
+ * Input controlado del cover_url del publicación + galería de URLs sugeridas
  * (Unsplash, libres) para que el owner no tenga que buscar imágenes a mano.
  * 100% URL — sin uploads ni storage.
  */
@@ -15,7 +15,7 @@ const SUGGESTED_COVERS: Array<{ url: string; label: string }> = [
   { url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1600&h=900&q=80&auto=format&fit=crop', label: 'Mac escritorio' },
   { url: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1600&h=900&q=80&auto=format&fit=crop', label: 'Colaboración' },
   { url: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1600&h=900&q=80&auto=format&fit=crop', label: 'Anotando' },
-  { url: 'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=1600&h=900&q=80&auto=format&fit=crop', label: 'Curso online' },
+  { url: 'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?w=1600&h=900&q=80&auto=format&fit=crop', label: 'Publicación online' },
   { url: 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1600&h=900&q=80&auto=format&fit=crop', label: 'Oficina' },
   { url: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1600&h=900&q=80&auto=format&fit=crop', label: 'Fitness' },
   { url: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=1600&h=900&q=80&auto=format&fit=crop', label: 'Cocina' },

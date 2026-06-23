@@ -86,7 +86,7 @@ function SlotPicker({
     return (
       <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
         ⚠️ Por ahora no hay slots disponibles para reservar.
-        {required && <div className="mt-1">El curso requiere reserva — pediles a los compradores que vuelvan más tarde o avisale al instructor.</div>}
+        {required && <div className="mt-1">El publicación requiere reserva — pediles a los compradores que vuelvan más tarde o avisale al instructor.</div>}
       </div>
     );
   }

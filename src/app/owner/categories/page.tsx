@@ -25,7 +25,7 @@ export default async function CategoriesPage() {
     <div className="space-y-6 max-w-3xl">
       <PageHeader
         title="Categorías"
-        description="Agrupá tus cursos para que los clientes filtren rápido en el storefront."
+        description="Agrupá tus publicaciones para que los clientes filtren rápido en el storefront."
       />
 
       <form action={createCategoryAction} className="flex gap-2">

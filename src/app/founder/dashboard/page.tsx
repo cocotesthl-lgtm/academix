@@ -31,7 +31,7 @@ export default async function FounderDashboard() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Stat label="Academias totales" value={tenantCount ?? 0} />
+        <Stat label="Sitios totales" value={tenantCount ?? 0} />
         <Stat label="Activas" value={activeCount ?? 0} />
         <Stat label="Tickets abiertos" value={openTickets ?? 0} />
         <Stat label="Ventas (próximamente)" value="—" />
@@ -39,17 +39,17 @@ export default async function FounderDashboard() {
 
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Últimas academias</h2>
+          <h2 className="text-lg font-semibold">Últimas sitios</h2>
           <Link href="/tenants" className="text-sm text-white/60 hover:text-white">Ver todas →</Link>
         </div>
         <div className="rounded-xl border border-white/10 overflow-hidden">
           {recentTenants.length === 0 ? (
-            <div className="p-6 text-sm text-white/50">Todavía no hay academias creadas.</div>
+            <div className="p-6 text-sm text-white/50">Todavía no hay sitios creadas.</div>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="text-left px-4 py-2.5">Academia</th>
+                  <th className="text-left px-4 py-2.5">Sitio</th>
                   <th className="text-left px-4 py-2.5">Slug</th>
                   <th className="text-left px-4 py-2.5">Estado</th>
                   <th className="text-left px-4 py-2.5">Alta</th>

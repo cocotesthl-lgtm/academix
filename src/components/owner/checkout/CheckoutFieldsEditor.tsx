@@ -35,7 +35,7 @@ type Actions = {
 
 /**
  * Editor reusable de checkout_config. Misma UI para el tenant default y
- * para el override por curso — se diferencian solo por las actions que
+ * para el override por publicación — se diferencian solo por las actions que
  * recibe y por hiddenExtras (que inyecta course_id en cada submit).
  */
 export function CheckoutFieldsEditor({
@@ -60,7 +60,7 @@ export function CheckoutFieldsEditor({
           <span className="text-white/50 text-xs">(siempre se piden)</span>
         </div>
         <p className="text-xs text-white/60 mt-1 leading-snug">
-          Son obligatorios para crear la cuenta del comprador y darle acceso al curso.
+          Son obligatorios para crear la cuenta del comprador y darle acceso al publicación.
           No los podés desactivar.
         </p>
       </div>

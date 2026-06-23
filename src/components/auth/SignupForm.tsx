@@ -24,7 +24,7 @@ export function SignupForm() {
         <h2 className="text-2xl font-bold">Revisá tu email</h2>
         <p className="text-white/70">
           Te mandamos un link de confirmación. Hacé click ahí para activar tu cuenta y
-          empezar a crear tu academia.
+          empezar a crear tu sitio.
         </p>
       </div>
     );

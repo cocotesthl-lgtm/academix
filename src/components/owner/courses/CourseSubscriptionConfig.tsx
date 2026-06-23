@@ -4,11 +4,11 @@ import { useState, useTransition } from 'react';
 import { setCoursePricingModeAction } from '@/lib/courses/subscriptions';
 
 /**
- * Editor del modelo de pricing del curso: pago único vs suscripción
+ * Editor del modelo de pricing del publicación: pago único vs suscripción
  * recurrente vía MP Preapproval.
  *
  * Si elige subscription, decide frequency (monthly|yearly) + trial_days
- * opcional. El precio del curso (price_cents) se interpreta como el monto
+ * opcional. El precio del publicación (price_cents) se interpreta como el monto
  * que se cobra cada ciclo.
  */
 export function CourseSubscriptionConfig({
@@ -142,7 +142,7 @@ export function CourseSubscriptionConfig({
           <div className="rounded p-3 bg-fuchsia-500/5 border border-fuchsia-500/20 text-xs text-fuchsia-200 space-y-1">
             <div>💡 Resumen: <strong>{priceFmt} {freqLabel}</strong>{trial > 0 ? `, primeros ${trial} días gratis` : ''}.</div>
             <div className="text-fuchsia-200/70">
-              El comprador autoriza una vez en MP y se cobra recurrente. El access al curso
+              El comprador autoriza una vez en MP y se cobra recurrente. El access al publicación
               se da al primer cobro confirmado. Si MP no cobra (tarjeta expirada, etc),
               suspendés desde el panel.
             </div>

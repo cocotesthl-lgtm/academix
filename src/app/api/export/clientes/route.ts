@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
  * Descarga CSV de clientes (enrollments) del tenant.
  * Solo el owner puede.
  *
- * Columnas: fecha, nombre, dni, email, telefono, ubicación, curso,
+ * Columnas: fecha, nombre, dni, email, telefono, ubicación, publicación,
  * estado, fecha booking. Hasta 5000 filas (límite operativo).
  */
 export async function GET() {
@@ -29,7 +29,7 @@ export async function GET() {
     buyer_email: string | null; buyer_phone: string | null; booking_date: string | null;
   }>;
 
-  // Cursos para mostrar nombre legible
+  // Publicaciones para mostrar nombre legible
   const courseIds = Array.from(new Set(enrollments.map((e) => e.course_id)));
   let courseMap = new Map<string, string>();
   if (courseIds.length > 0) {
@@ -48,7 +48,7 @@ export async function GET() {
       .map((p) => [p.id, { email: p.email, display_name: p.display_name }]));
   }
 
-  const headers = ['Fecha', 'Nombre', 'DNI', 'Email', 'Telefono', 'Ubicacion', 'Curso', 'Estado', 'Fecha booking'];
+  const headers = ['Fecha', 'Nombre', 'DNI', 'Email', 'Telefono', 'Ubicacion', 'Publicación', 'Estado', 'Fecha booking'];
   const rows = enrollments.map((e) => {
     const p = profileMap.get(e.user_id);
     return [

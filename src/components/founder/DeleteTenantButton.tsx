@@ -8,7 +8,7 @@ export function DeleteTenantButton({ tenantId, slug, name }: { tenantId: string;
 
   function onClick() {
     const typed = window.prompt(
-      `⚠️ Esto borra "${name}" para siempre (cursos, ventas, afiliados, todo).\n\n` +
+      `⚠️ Esto borra "${name}" para siempre (publicaciones, ventas, afiliados, todo).\n\n` +
       `Para confirmar, escribí el slug exacto:  ${slug}`
     );
     if (typed === null) return;

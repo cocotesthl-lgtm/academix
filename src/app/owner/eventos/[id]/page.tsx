@@ -62,7 +62,7 @@ export default async function EventDetailPage({
   if (!eventRaw) notFound();
   const event: EventRow = eventRaw;
 
-  // Curso asociado
+  // Publicación asociado
   let courseTitle = 'Evento';
   if (event.course_id) {
     const { data } = await svc

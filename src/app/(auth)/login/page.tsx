@@ -39,10 +39,10 @@ export default async function LoginPage({
         {!isAffiliate && (
           <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5 text-center">
             <div className="text-2xl mb-1">💼</div>
-            <h2 className="font-bold">¿Querés promocionar cursos y ganar comisión?</h2>
+            <h2 className="font-bold">¿Querés promocionar publicaciones y ganar comisión?</h2>
             <p className="text-sm text-white/65 mt-1 leading-snug">
               Registrate como afiliado de Curplat. Una cuenta para promocionar
-              cursos de todas las academias.
+              publicaciones de todas las sitios.
             </p>
             <Link
               href="/affiliate"

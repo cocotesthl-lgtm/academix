@@ -30,7 +30,7 @@ export default async function InstructorLayout({ children }: { children: React.R
         </div>
         <nav className="flex flex-col gap-1 text-sm">
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/instructor">Dashboard</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/instructor/courses">Mis cursos</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/instructor/courses">Mis publicaciones</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/instructor/schedule">Agenda</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/instructor/availability">Mi disponibilidad</a>
         </nav>

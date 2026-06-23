@@ -48,7 +48,7 @@ export default function MarketingHome() {
             </span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-white/70 max-w-2xl mx-auto">
-            Vendé cursos, eventos con tickets, suscripciones o mentorías. Todo en tu propio dominio,
+            Vendé publicaciones, eventos con tickets, suscripciones o mentorías. Todo en tu propio dominio,
             con tu marca, cobrando directo a tu MercadoPago.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -141,10 +141,10 @@ export default function MarketingHome() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { title: "Academias", body: "Que ya venden cursos y necesitan estructura, marca y crecimiento." },
+              { title: "Sitios", body: "Que ya venden publicaciones y necesitan estructura, marca y crecimiento." },
               { title: "Coaches y mentores", body: "Mentorías 1 a 1, grupales y masterminds — en un solo lugar." },
               { title: "Profesores y instructores", body: "Que quieren su propia plataforma sin pagar Kajabi en dólares." },
-              { title: "Creators y comunidades", body: "Monetizá tu audiencia con cursos, membresías y eventos." },
+              { title: "Creators y comunidades", body: "Monetizá tu audiencia con publicaciones, membresías y eventos." },
             ].map((p) => (
               <div key={p.title} className="rounded-xl border border-white/10 p-5">
                 <h3 className="font-semibold mb-2">{p.title}</h3>
@@ -178,7 +178,7 @@ export default function MarketingHome() {
               },
               {
                 n: "03",
-                title: "Cargás tus cursos desde Google Drive",
+                title: "Cargás tus publicaciones desde Google Drive",
                 body: "Conectás tu Drive y elegís los videos. Nosotros nunca tocamos tus archivos.",
               },
               {

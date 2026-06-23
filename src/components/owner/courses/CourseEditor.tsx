@@ -60,7 +60,7 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
     <div className="space-y-10 max-w-3xl">
       {/* Course metadata */}
       <section>
-        <h2 className="text-lg font-semibold mb-4">Información del curso</h2>
+        <h2 className="text-lg font-semibold mb-4">Información del publicación</h2>
         <form action={updateAction} className="space-y-4">
           <input type="hidden" name="id" value={course.id} />
           <div>
@@ -118,7 +118,7 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" name="is_featured" defaultChecked={course.is_featured} />
-              <span className="text-sm">Curso destacado (aparece arriba en el storefront)</span>
+              <span className="text-sm">Publicación destacado (aparece arriba en el storefront)</span>
             </label>
           </div>
 
@@ -167,11 +167,11 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
         </div>
       </section>
 
-      {/* Landing page del curso (template + overrides) */}
+      {/* Landing page del publicación (template + overrides) */}
       <section>
-        <h2 className="text-lg font-semibold mb-1">Landing page del curso</h2>
+        <h2 className="text-lg font-semibold mb-1">Landing page del publicación</h2>
         <p className="text-sm text-white/55 mb-4">
-          Cada curso tiene su propia landing pública (lo que ven los visitantes en{' '}
+          Cada publicación tiene su propia landing pública (lo que ven los visitantes en{' '}
           <code className="text-xs bg-white/5 px-1.5 py-0.5 rounded">/c/{course.slug}</code>).
           Elegí una plantilla y customizá el contenido.
         </p>

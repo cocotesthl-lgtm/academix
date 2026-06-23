@@ -29,14 +29,14 @@ export default async function SignupPage({
               <div className="text-4xl mt-6 mb-2">💼</div>
               <h1 className="text-3xl font-bold">Crear cuenta de afiliado</h1>
               <p className="mt-2 text-white/60">
-                Promocioná cursos de cualquier academia y ganá comisión.
+                Promocioná publicaciones de cualquier sitio y ganá comisión.
                 Gratis. Sin tarjeta.
               </p>
             </>
           ) : (
             <>
               <div className="text-4xl mt-6 mb-2">🏫</div>
-              <h1 className="text-3xl font-bold">Crear mi academia</h1>
+              <h1 className="text-3xl font-bold">Crear mi sitio</h1>
               <p className="mt-2 text-white/60">
                 Sin tarjeta. Sin mensualidades. Empezás a vender hoy.
               </p>
@@ -81,11 +81,11 @@ function AccountChooser() {
             <div className="text-4xl mb-3">🏫</div>
             <h2 className="text-lg font-bold mb-1">Propietario</h2>
             <p className="text-sm text-white/65 leading-snug">
-              Quiero crear <strong>mi propia academia</strong>: subir mis cursos, vender con
+              Quiero crear <strong>mi propia sitio</strong>: subir mis publicaciones, vender con
               mi marca, cobrar a MercadoPago, gestionar alumnos.
             </p>
             <ul className="text-xs text-white/50 mt-3 space-y-1">
-              <li>✓ Subdominio propio (academia.curplat.com)</li>
+              <li>✓ Subdominio propio (sitio.curplat.com)</li>
               <li>✓ Branding 100% configurable</li>
               <li>✓ Cobrás directo a tu MercadoPago</li>
               <li>✓ Sumás afiliados e instructores que vendan por vos</li>
@@ -103,15 +103,15 @@ function AccountChooser() {
             <div className="text-4xl mb-3">💼</div>
             <h2 className="text-lg font-bold mb-1">Afiliado</h2>
             <p className="text-sm text-white/65 leading-snug">
-              Quiero <strong>revender cursos</strong> de academias existentes, conseguir
+              Quiero <strong>revender publicaciones</strong> de sitios existentes, conseguir
               trabajo como <strong>instructor</strong> y/o ayudar como <strong>administrador</strong>
-              en academias de Curplat.
+              en sitios de Curplat.
             </p>
             <ul className="text-xs text-white/50 mt-3 space-y-1">
-              <li>✓ 1 cuenta para todas las academias</li>
-              <li>✓ Link único por curso · ganás comisión por venta</li>
+              <li>✓ 1 cuenta para todas las sitios</li>
+              <li>✓ Link único por publicación · ganás comisión por venta</li>
               <li>✓ Los owners pueden ascenderte a instructor</li>
-              <li>✓ Panel global con stats cross-academia</li>
+              <li>✓ Panel global con stats cross-sitio</li>
             </ul>
             <div className="mt-4 text-fuchsia-300 text-sm font-semibold opacity-0 group-hover:opacity-100 transition">
               Empezar →

@@ -46,7 +46,7 @@ export function BrandingForm({
   return (
     <form action={formAction} className="space-y-6 max-w-2xl">
       <div>
-        <label className="block text-sm mb-1.5 text-white/70">Nombre de la academia</label>
+        <label className="block text-sm mb-1.5 text-white/70">Nombre de la sitio</label>
         <input
           name="name"
           required
@@ -136,7 +136,7 @@ export function BrandingForm({
             value={logoText}
             onChange={(e) => setLogoText(e.target.value)}
             maxLength={40}
-            placeholder="Ej: Academia Bz"
+            placeholder="Ej: Sitio Bz"
             className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
           />
           <p className="text-xs text-white/40 mt-1">
@@ -211,7 +211,7 @@ export function BrandingForm({
             className="rounded-md px-4 py-2 font-medium text-white"
             style={{ background: primary }}
           >
-            Comprar curso
+            Comprar publicación
           </button>
           <button
             type="button"

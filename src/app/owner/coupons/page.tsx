@@ -45,7 +45,7 @@ export default async function CouponsPage() {
     <div className="space-y-8 max-w-5xl">
       <PageHeader
         title="Cupones de descuento"
-        description="Códigos promocionales con % o monto fijo, límite de usos y expiración. Aplicables a un curso o a todos."
+        description="Códigos promocionales con % o monto fijo, límite de usos y expiración. Aplicables a un publicación o a todos."
       />
 
       {/* Create form */}
@@ -74,9 +74,9 @@ export default async function CouponsPage() {
             <input name="amount" type="number" min="0" step="0.01" required placeholder="20" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40" />
           </div>
           <div>
-            <label className="block text-xs text-white/60 mb-1">Aplica a curso</label>
+            <label className="block text-xs text-white/60 mb-1">Aplica a publicación</label>
             <select name="course_id" defaultValue="" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40">
-              <option value="">Todos los cursos</option>
+              <option value="">Todos los publicaciones</option>
               {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
             </select>
           </div>

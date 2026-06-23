@@ -49,7 +49,7 @@ export default async function BundlePublicPage({ params }: {
   const discount = listPrice > bundle.price_cents
     ? Math.round((1 - bundle.price_cents / listPrice) * 100) : 0;
 
-  // Para el checkout, MercadoPago se usa por curso/producto. Como un bundle
+  // Para el checkout, MercadoPago se usa por publicación/producto. Como un bundle
   // es multi-item, redirigimos al carrito si está activo, sino al primer item.
   const h = await headers();
   const host = h.get('host') ?? '';

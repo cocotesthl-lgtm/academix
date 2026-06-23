@@ -25,7 +25,7 @@ export default async function StorefrontLayout({
   if (!tenant) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-white text-black p-8">
-        Academia no encontrada.
+        Sitio no encontrada.
       </main>
     );
   }
@@ -34,7 +34,7 @@ export default async function StorefrontLayout({
       <main className="min-h-screen flex items-center justify-center bg-white text-black p-8 text-center">
         <div>
           <h1 className="text-2xl font-bold">Temporalmente cerrado</h1>
-          <p className="text-black/60 mt-2">Esta academia no está disponible en este momento.</p>
+          <p className="text-black/60 mt-2">Esta sitio no está disponible en este momento.</p>
         </div>
       </main>
     );
@@ -119,7 +119,7 @@ export default async function StorefrontLayout({
               <a key={l.id} href={l.href} className="hover:text-black">{l.label}</a>
             ))}
             {cfg.nav.show_my_courses !== false && (
-              <a href="/learn" className="hover:text-black">{cfg.nav.my_courses_label || 'Mis cursos'}</a>
+              <a href="/learn" className="hover:text-black">{cfg.nav.my_courses_label || 'Mis publicaciones'}</a>
             )}
             {cfg.nav.show_affiliates !== false && (
               <a href="/affiliate" className="hover:text-black">{cfg.nav.affiliates_label || 'Afiliados'}</a>

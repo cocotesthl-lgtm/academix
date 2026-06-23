@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  * Una row por compra (cada webhook MP aprobado crea una sale).
  *
  * Diferencia con Clientes:
- *  - Clientes = enrollments (un alumno puede tener 1 sola activa por curso).
+ *  - Clientes = enrollments (un alumno puede tener 1 sola activa por publicación).
  *  - Ventas = sales (cada pago, incluso re-compras, refunds, etc).
  */
 
@@ -122,7 +122,7 @@ export default async function OwnerVentasPage({
     <div className="space-y-6 max-w-7xl">
       <PageHeader
         title="Ventas"
-        description="Cada compra confirmada genera una venta. Filtrá por curso, estado o buscá por nombre, email o N° de orden."
+        description="Cada compra confirmada genera una venta. Filtrá por publicación, estado o buscá por nombre, email o N° de orden."
         actions={
           <>
             <HeaderSecondary href="/api/export/ventas">⬇ Exportar CSV</HeaderSecondary>
@@ -145,7 +145,7 @@ export default async function OwnerVentasPage({
             Ingresos por día · últimos 30 días
           </h2>
           {filterCourse && (
-            <span className="text-[10px] text-white/40">(filtrado por curso)</span>
+            <span className="text-[10px] text-white/40">(filtrado por publicación)</span>
           )}
         </div>
         <BarChart
@@ -166,7 +166,7 @@ export default async function OwnerVentasPage({
           />
         </div>
         <div className="min-w-[160px]">
-          <label className="block text-xs text-white/50 mb-1">Curso</label>
+          <label className="block text-xs text-white/50 mb-1">Publicación</label>
           <select name="course" defaultValue={filterCourse}
             className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
             <option value="">Todos</option>
@@ -202,7 +202,7 @@ export default async function OwnerVentasPage({
               <tr>
                 <th className="text-left px-3 py-2.5">Fecha</th>
                 <th className="text-left px-3 py-2.5">Cliente</th>
-                <th className="text-left px-3 py-2.5">Curso</th>
+                <th className="text-left px-3 py-2.5">Publicación</th>
                 <th className="text-right px-3 py-2.5">Monto</th>
                 <th className="text-left px-3 py-2.5">Estado</th>
                 <th className="text-left px-3 py-2.5">Proveedor</th>

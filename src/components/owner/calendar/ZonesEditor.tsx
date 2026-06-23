@@ -57,7 +57,7 @@ function ZonesPreview({ zones, basePriceCents = 1000_00, currency = 'ARS' }: {
         })}
       </div>
       <p className="text-[9px] text-white/35 text-center mt-2">
-        💡 Vista previa con precio base de muestra ($1.000). El precio real sale del curso.
+        💡 Vista previa con precio base de muestra ($1.000). El precio real sale del publicación.
       </p>
     </div>
   );

@@ -269,7 +269,7 @@ export function HeroEditor({
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-3">
           <Field label="Eyebrow (pill arriba del título, ej. '🟢 Beta abierta')" value={v.eyebrow} onChange={(x) => setV({ ...v, eyebrow: x })} />
-          <RichTextField label="Título (vacío = nombre de la academia)" value={v.title} onChange={(x) => setV({ ...v, title: x })} placeholder={fallbackTitle} />
+          <RichTextField label="Título (vacío = nombre de la sitio)" value={v.title} onChange={(x) => setV({ ...v, title: x })} placeholder={fallbackTitle} />
           <RichTextField label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} multiline />
           <div className="grid grid-cols-2 gap-3">
             <Field label="Botón principal" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
@@ -1189,7 +1189,7 @@ export function FeaturedEditor({ initialTitle, primary }: { initialTitle: string
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
         <Field label="Título de la sección" value={title} onChange={setTitle} />
-        <p className="text-xs text-white/40">Los cursos destacados los marcás desde el editor de cada curso.</p>
+        <p className="text-xs text-white/40">Los publicaciones destacados los marcás desde el editor de cada publicación.</p>
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
       </div>
       <PreviewFrame>
@@ -1201,7 +1201,7 @@ export function FeaturedEditor({ initialTitle, primary }: { initialTitle: string
                 <div className="h-14 relative" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }}>
                   <span className="absolute top-1 left-1 bg-white text-[8px] font-semibold px-1 py-0.5 rounded">⭐</span>
                 </div>
-                <div className="p-2 text-[9px]">Curso #{i}</div>
+                <div className="p-2 text-[9px]">Publicación #{i}</div>
               </div>
             ))}
           </div>
@@ -1278,7 +1278,7 @@ export function CatalogEditor({
         </div>
         <div>
           <label className="block text-xs text-white/60 mb-1.5">
-            {paginationMode === 'show_more' ? 'Cursos visibles al inicio' : 'Cursos por página'}
+            {paginationMode === 'show_more' ? 'Publicaciones visibles al inicio' : 'Publicaciones por página'}
           </label>
           <div className="flex items-center gap-2">
             <input
@@ -1288,7 +1288,7 @@ export function CatalogEditor({
               onChange={(e) => setMaxVisible(Math.max(1, parseInt(e.target.value || '3', 10)))}
               className="w-24 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
             />
-            <span className="text-xs text-white/45">cursos</span>
+            <span className="text-xs text-white/45">publicaciones</span>
           </div>
         </div>
         <div className="pt-3 border-t border-white/10 space-y-2">
@@ -1323,7 +1323,7 @@ export function CatalogEditor({
             onChange={(e) => setCtaMode(e.target.value as typeof ctaMode)}
             className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
           >
-            <option value="course_link">🎓 Ir al curso (default)</option>
+            <option value="course_link">🎓 Ir al publicación (default)</option>
             <option value="no_button">ℹ Sin botón (tarjeta informativa)</option>
             <option value="custom_url">🔗 URL custom (todas las tarjetas)</option>
           </select>
@@ -1337,7 +1337,7 @@ export function CatalogEditor({
             />
           )}
           <p className="text-[10px] text-white/40">
-            💡 La cinta destacada (ej. OFERTA, NUEVO) de cada curso se configura desde el editor del curso.
+            💡 La cinta destacada (ej. OFERTA, NUEVO) de cada publicación se configura desde el editor del publicación.
           </p>
         </div>
         <div className="pt-3 border-t border-white/10">
@@ -1380,7 +1380,7 @@ export function CatalogEditor({
                     <span className="absolute top-1 left-1 text-[7px] bg-white/90 text-black px-1 rounded">★</span>
                   </div>
                   <div className="p-1">
-                    <div className="text-[8px] truncate">Curso #{i}</div>
+                    <div className="text-[8px] truncate">Publicación #{i}</div>
                     <div className="text-[9px] font-bold">$ 9.999</div>
                   </div>
                 </div>
@@ -1391,7 +1391,7 @@ export function CatalogEditor({
               {[1, 2, 3].map((i) => (
                 <div key={`c-${i}`} className="rounded border border-black/10 overflow-hidden bg-white">
                   <div className="h-12" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }} />
-                  <div className="p-2 text-[9px]">Curso #{i}</div>
+                  <div className="p-2 text-[9px]">Publicación #{i}</div>
                 </div>
               ))}
             </div>
@@ -2420,7 +2420,7 @@ export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }:
   const [td, setTd] = useState('');
   const [tf, setTf] = useState('');
   const [tc, setTc] = useState('Elegir plan');
-  const [th, setTh] = useState('#cursos');
+  const [th, setTh] = useState('#publicaciones');
   const [hi, setHi] = useState(false);
 
   function startEdit(t: PricingTier) {
@@ -2431,7 +2431,7 @@ export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }:
   }
   function reset() {
     setEditingId(null); setTn(''); setTp(''); setTd(''); setTf('');
-    setTc('Elegir plan'); setTh('#cursos'); setHi(false);
+    setTc('Elegir plan'); setTh('#publicaciones'); setHi(false);
   }
 
   return (
@@ -2999,12 +2999,12 @@ export function NavEditor({
                 const fd = new FormData(); fd.set('flag', 'show_my_courses');
                 await toggleNavFlagAction(fd);
               }))} />
-            Mostrar &quot;{myCoursesLabel || 'Mis cursos'}&quot;
+            Mostrar &quot;{myCoursesLabel || 'Mis publicaciones'}&quot;
           </label>
           {showMyCourses && (
             <input
               defaultValue={myCoursesLabel}
-              placeholder="Mis cursos"
+              placeholder="Mis publicaciones"
               onBlur={(e) => {
                 const v = e.target.value.trim();
                 if (v === (myCoursesLabel ?? '').trim()) return;
@@ -3044,7 +3044,7 @@ export function NavEditor({
           )}
 
           <p className="text-[10px] text-white/35 mt-1">
-            Si tu sitio no vende cursos (ej. e-commerce), podés ocultar ambos.
+            Si tu sitio no vende publicaciones (ej. e-commerce), podés ocultar ambos.
             El label es libre: &quot;Mis compras&quot;, &quot;Mi cuenta&quot;, &quot;Ser embajador&quot;, etc.
           </p>
         </div>
@@ -3053,7 +3053,7 @@ export function NavEditor({
           <label className="text-xs text-white/60 block mb-1">
             {editingId ? '✎ Editando link' : 'Agregar link al nav'}
           </label>
-          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Cursos" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Publicaciones" className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           <HrefField label="Destino" value={href} onChange={setHref} />
           <div className="flex gap-2">
             <button type="button" disabled={addPending || !label || !href}

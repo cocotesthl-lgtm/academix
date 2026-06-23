@@ -17,7 +17,7 @@ export const runtime = 'nodejs';
  *   1. Fetch del payment desde MP usando el access_token del platform
  *      (NO funciona porque cada pago pertenece al owner, no a la plataforma)
  *   2. Mejor: leer external_reference que tiene 'courseId::userId::affId'
- *   3. Lookup del curso → obtener tenant_id → obtener access_token del owner
+ *   3. Lookup del publicación → obtener tenant_id → obtener access_token del owner
  *   4. Re-fetchear el payment con el access_token del owner
  *   5. Procesar
  *

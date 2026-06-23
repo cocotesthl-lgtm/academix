@@ -63,7 +63,7 @@ export default async function CoursePlayer({
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
       <div className="flex items-center gap-3 text-sm text-black/50 mb-6">
-        <Link href="/learn" className="hover:text-black">← Mis cursos</Link>
+        <Link href="/learn" className="hover:text-black">← Mis publicaciones</Link>
         <span>/</span>
         <span className="text-black">{course.title}</span>
       </div>

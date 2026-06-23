@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { setInstructorPermissionAction } from '@/lib/instructors/actions';
 
 /**
- * Toggle de permiso individual por (instructor × curso × field).
+ * Toggle de permiso individual por (instructor × publicación × field).
  * Auto-save al click. Color verde = on, gris = off.
  */
 export function InstructorPermToggle({

@@ -19,7 +19,7 @@ export default async function FounderPlansPage() {
       <div>
         <h1 className="text-2xl font-bold">Planes de suscripción</h1>
         <p className="text-white/55 text-sm mt-1">
-          Configurá precios, features y orden de los planes que ofrecés a las academias.
+          Configurá precios, features y orden de los planes que ofrecés a las sitios.
           Cualquier cambio aplica al instante en la página <code className="text-xs bg-white/5 px-1.5 py-0.5 rounded">/mi-plan</code> del owner.
         </p>
       </div>
@@ -96,7 +96,7 @@ function PlanEditor({ plan, canMoveUp, canMoveDown }: { plan: Plan; canMoveUp: b
           </Field>
           <Field label="Tagline (1 línea corta)">
             <input name="tagline" defaultValue={plan.tagline ?? ''} maxLength={120}
-              placeholder="Para academias en crecimiento"
+              placeholder="Para sitios en crecimiento"
               className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
           </Field>
         </div>
@@ -164,7 +164,7 @@ function PlanEditor({ plan, canMoveUp, canMoveDown }: { plan: Plan; canMoveUp: b
               <input name="f_storage_gb" type="number" min={0} max={9999} defaultValue={plan.features.storage_gb}
                 className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             </Field>
-            <Field label="Cursos destacados">
+            <Field label="Publicaciones destacados">
               <input name="f_featured" type="number" min={0} max={999} defaultValue={plan.features.featured_listings}
                 className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
               <p className="text-[10px] text-white/40 mt-1">999 = ilimitado</p>

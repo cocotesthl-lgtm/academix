@@ -46,13 +46,13 @@ export const dynamic = "force-dynamic";
 const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   hero:         { title: "🏆 Hero", desc: "Primera impresión. Plantilla centrada, dividida o galería." },
   trusted_by:   { title: "🤝 Confían en nosotros", desc: "Logos de clientes/marcas, con filtro grayscale opcional." },
-  about:        { title: "🪪 Sobre nosotros", desc: "Quién sos, qué te diferencia, por qué eligen tu academia." },
+  about:        { title: "🪪 Sobre nosotros", desc: "Quién sos, qué te diferencia, por qué eligen tu sitio." },
   instructor:   { title: "👤 Instructor", desc: "Quién va a enseñar. Foto, biografía, credenciales." },
   stats:        { title: "📊 Estadísticas", desc: "Números fuertes: alumnos formados, años, satisfacción." },
   learn_points: { title: "✅ Qué vas a aprender", desc: "Lista de puntos con check marks. Lo que se llevan." },
   features:     { title: "🎴 Features (3 tarjetas)", desc: "Beneficios o diferenciales con icono + título + texto." },
-  featured:     { title: "⭐ Cursos destacados", desc: "Cursos marcados como destacados desde su editor." },
-  catalog:      { title: "📚 Catálogo completo", desc: "Todos los cursos publicados con filtros por categoría." },
+  featured:     { title: "⭐ Publicaciones destacados", desc: "Publicaciones marcados como destacados desde su editor." },
+  catalog:      { title: "📚 Catálogo completo", desc: "Todos los publicaciones publicados con filtros por categoría." },
   cards:        { title: "🧩 Tarjetas (bloques destacados)", desc: "Tarjetas custom: info, producto, link, banner horizontal/vertical con imagen + texto." },
   testimonials: { title: "💬 Testimonios", desc: "Estilo Google: estrellas, foto, rol, comentario." },
   before_after: { title: "🔄 Antes / Después", desc: "Comparativa visual con imágenes y textos descriptivos." },
@@ -79,8 +79,8 @@ export default async function SiteBuilderPage() {
   const cfg = mergeConfig(tenantRow?.site_config);
   const primary = tenantRow?.brand?.primary_color ?? '#a855f7';
 
-  // Cursos del tenant para enriquecer el dropdown de href
-  // (cada curso aparece como link directo + opción de checkout).
+  // Publicaciones del tenant para enriquecer el dropdown de href
+  // (cada publicación aparece como link directo + opción de checkout).
   const { data: ownerCourses } = await svc
     .from("courses")
     .select("slug, title")
@@ -161,9 +161,9 @@ export default async function SiteBuilderPage() {
           Las otras solo encienden secciones del vertical sin pisar tu contenido. <strong className="text-fuchsia-300">Hotmart</strong> y <strong className="text-fuchsia-300">Funnel</strong> sí cambian el orden de las secciones (son layouts completos).
         </p>
         <p className="text-xs text-white/50 italic mb-3">
-          💡 ¿Buscás plantillas Hotmart o Funnel para vender UN curso específico? Ya no van acá
-          (eran para todo el sitio). Ahora las elegís por curso en{' '}
-          <a href="/courses" className="text-fuchsia-300 hover:underline">/courses</a> → editar curso → sección "Landing page".
+          💡 ¿Buscás plantillas Hotmart o Funnel para vender UN publicación específico? Ya no van acá
+          (eran para todo el sitio). Ahora las elegís por publicación en{' '}
+          <a href="/courses" className="text-fuchsia-300 hover:underline">/courses</a> → editar publicación → sección "Landing page".
         </p>
         <div className="grid md:grid-cols-4 gap-3">
           <form action={applyThemeAction}>

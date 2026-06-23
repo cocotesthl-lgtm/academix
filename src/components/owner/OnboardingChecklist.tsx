@@ -2,10 +2,10 @@ import Link from 'next/link';
 
 /**
  * Checklist de onboarding visible en el dashboard hasta que se completan
- * los 4 pasos críticos para tener una academia funcional:
+ * los 4 pasos críticos para tener una sitio funcional:
  *  1. Personalizar marca (logo o color)
  *  2. Conectar MercadoPago
- *  3. Crear primer curso
+ *  3. Crear primer publicación
  *  4. Publicarlo
  *
  * Se oculta automáticamente cuando los 4 están done (porque ya no aporta).
@@ -32,7 +32,7 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
     <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/[0.08] to-purple-500/[0.04] p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-          <h3 className="font-bold text-lg text-fuchsia-100">Configurá tu academia</h3>
+          <h3 className="font-bold text-lg text-fuchsia-100">Configurá tu sitio</h3>
           <p className="text-xs text-white/60 mt-0.5">
             {done} de {steps.length} pasos completados · te toma 5 minutos
           </p>

@@ -52,7 +52,7 @@ export default async function AffiliateScanPage({
           <div className="text-5xl">🔒</div>
           <h1 className="text-2xl font-bold">Acceso no habilitado</h1>
           <p className="text-white/65">
-            Para validar entradas necesitás que el dueño de la academia te habilite como asistente de molinete.
+            Para validar entradas necesitás que el dueño de la sitio te habilite como asistente de molinete.
           </p>
           <a href="/affiliate" className="inline-block rounded-md bg-white text-black px-4 py-2 text-sm font-semibold">
             ← Volver al panel

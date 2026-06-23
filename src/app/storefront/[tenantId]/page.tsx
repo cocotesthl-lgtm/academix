@@ -218,18 +218,18 @@ export default async function StorefrontHome({
         switch (key) {
           case 'hero': {
             const h = cfg.sections.hero;
-            const heroTitle = h.title || tenant?.name || 'Academia';
+            const heroTitle = h.title || tenant?.name || 'Sitio';
             const btnHidden = !buttonsVisible(h);
             const heroBtnStyle = buttonStyle(h, primary);
             const cta1 = !btnHidden && h.cta_label && (
-              <a href={h.cta_href || '#cursos'}
+              <a href={h.cta_href || '#publicaciones'}
                 className="inline-block rounded-md px-6 py-3 font-semibold shadow-md hover:shadow-lg transition"
                 style={heroBtnStyle}>
                 {h.cta_label}
               </a>
             );
             const cta2 = !btnHidden && h.cta_label_2 && (
-              <a href={h.cta_href_2 || '#cursos'}
+              <a href={h.cta_href_2 || '#publicaciones'}
                 className="inline-block rounded-md px-6 py-3 font-semibold border-2 hover:bg-black/[0.02] transition"
                 style={{ borderColor: h.button_border_color ?? primary, color: h.button_text_color ?? primary }}>
                 {h.cta_label_2}
@@ -325,7 +325,7 @@ export default async function StorefrontHome({
                             <div className="mt-7 flex flex-wrap gap-3">
                               {cta1}
                               {h.cta_label_2 && (
-                                <a href={h.cta_href_2 || '#cursos'}
+                                <a href={h.cta_href_2 || '#publicaciones'}
                                   className="inline-block rounded-md px-6 py-3 font-semibold bg-white/10 backdrop-blur border-2 border-white text-white hover:bg-white hover:text-black transition">
                                   {h.cta_label_2}
                                 </a>
@@ -636,7 +636,7 @@ export default async function StorefrontHome({
 
           case 'catalog':
             return (
-              <section key={key} {...dt} id="cursos" className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id="publicaciones" className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <span id="catalog" aria-hidden="true" />
                 <CatalogFilter
                   title={cfg.sections.catalog.title}
@@ -792,7 +792,7 @@ export default async function StorefrontHome({
                     <CountdownDisplay endsAt={o.ends_at} />
                   )}
                   {o.cta_label && (
-                    <a href={o.cta_href || '#cursos'}
+                    <a href={o.cta_href || '#publicaciones'}
                       className="mt-2 inline-block rounded-md px-6 py-3 font-semibold bg-white text-black hover:opacity-90">
                       {o.cta_label}
                     </a>
@@ -1066,7 +1066,7 @@ export default async function StorefrontHome({
                     <h2 className="text-3xl md:text-5xl font-bold mb-5">{c.title}</h2>
                     {c.body && <p className="text-white/90 text-lg mb-10 leading-relaxed">{c.body}</p>}
                     {c.cta_label && (
-                      <a href={c.cta_href || '#cursos'}
+                      <a href={c.cta_href || '#publicaciones'}
                         className="inline-block rounded-md px-8 py-4 font-bold bg-white shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition text-lg"
                         style={{ color: primary }}>
                         {c.cta_label} →
@@ -1121,7 +1121,7 @@ function CourseCard({
             {c.price_cents === 0 ? 'Gratis' : `$ ${(c.price_cents / 100).toLocaleString('es-AR')} ${c.currency}`}
           </span>
           <span className="text-xs font-medium px-2 py-1 rounded text-white" style={{ background: primary }}>
-            Ver curso →
+            Ver publicación →
           </span>
         </div>
       </div>

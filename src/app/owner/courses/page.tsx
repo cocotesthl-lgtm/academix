@@ -28,7 +28,7 @@ export default async function CoursesIndex() {
 
   const courses = (data ?? []) as CourseRow[];
 
-  // Stats por curso (clientes únicos + revenue total + trend 30d)
+  // Stats por publicación (clientes únicos + revenue total + trend 30d)
   type Stats = { clients: number; revenue: number; trend: number[] };
   const stats = new Map<string, Stats>();
   const courseIds = courses.map((c) => c.id);
@@ -52,7 +52,7 @@ export default async function CoursesIndex() {
     for (const s of ((salesAgg ?? []) as Array<{ course_id: string; amount_gross_cents: number }>)) {
       revByCourse.set(s.course_id, (revByCourse.get(s.course_id) ?? 0) + Number(s.amount_gross_cents));
     }
-    // Trend: 30 buckets de un día cada uno, por curso
+    // Trend: 30 buckets de un día cada uno, por publicación
     const trendByCourse = new Map<string, number[]>();
     for (const c of courses) trendByCourse.set(c.id, Array.from({ length: 30 }, () => 0));
     for (const s of ((salesWithDate ?? []) as Array<{ course_id: string; amount_gross_cents: number; occurred_at: string }>)) {
@@ -75,7 +75,7 @@ export default async function CoursesIndex() {
     <div className="max-w-5xl">
       <PageHeader
         title="Mis productos"
-        description="Vendé lo que quieras: curso online, evento con tickets, mentoría, producto físico o digital. Todo se gestiona acá."
+        description="Vendé lo que quieras: publicación online, evento con tickets, mentoría, producto físico o digital. Todo se gestiona acá."
         actions={<HeaderPrimary href="/courses/new">+ Crear nuevo</HeaderPrimary>}
       />
 
@@ -83,7 +83,7 @@ export default async function CoursesIndex() {
         <EmptyState
           icon="🛍️"
           title="Todavía no creaste ningún producto"
-          description="Un producto puede ser un curso online, un evento con entradas, una mentoría 1-a-1, un producto físico o digital. Creá el primero y empezá a vender."
+          description="Un producto puede ser un publicación online, un evento con entradas, una mentoría 1-a-1, un producto físico o digital. Creá el primero y empezá a vender."
           primary={{ label: '+ Crear primer producto', href: '/courses/new' }}
           secondary={{ label: 'Editar mi sitio', href: '/site' }}
         />

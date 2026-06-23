@@ -236,8 +236,8 @@ export function PlanPricingCards({
                 {plan.features.featured_listings > 0 && (
                   <FeatureRow check>
                     {plan.features.featured_listings >= 999
-                      ? 'Cursos destacados ilimitados'
-                      : `${plan.features.featured_listings} curso${plan.features.featured_listings > 1 ? 's' : ''} destacado${plan.features.featured_listings > 1 ? 's' : ''}`}
+                      ? 'Publicaciones destacados ilimitados'
+                      : `${plan.features.featured_listings} publicación${plan.features.featured_listings > 1 ? 's' : ''} destacado${plan.features.featured_listings > 1 ? 's' : ''}`}
                   </FeatureRow>
                 )}
                 <FeatureRow check>

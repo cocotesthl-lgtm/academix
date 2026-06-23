@@ -11,11 +11,11 @@ export type AcademiaCard = {
 };
 
 export function AcademiaSearch({
-  academias,
+  sitios,
   rootDomain,
   isLocal
 }: {
-  academias: AcademiaCard[];
+  sitios: AcademiaCard[];
   rootDomain: string;
   isLocal: boolean;
 }) {
@@ -23,11 +23,11 @@ export function AcademiaSearch({
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return academias;
-    return academias.filter(
+    if (!term) return sitios;
+    return sitios.filter(
       (a) => a.name.toLowerCase().includes(term) || a.slug.toLowerCase().includes(term)
     );
-  }, [q, academias]);
+  }, [q, sitios]);
 
   function urlFor(slug: string) {
     if (isLocal) return `http://${slug}.localhost:3000`;
@@ -52,7 +52,7 @@ export function AcademiaSearch({
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-10 text-center">
-          <p className="text-white/60">No encontramos academias con ese nombre.</p>
+          <p className="text-white/60">No encontramos sitios con ese nombre.</p>
           <p className="text-white/40 text-sm mt-2">
             ¿Querés sumar la tuya?{' '}
             <a href="/signup" className="underline text-white">Creala gratis</a>.

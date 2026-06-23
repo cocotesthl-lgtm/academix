@@ -17,7 +17,7 @@ export default async function FounderLayout({ children }: { children: React.Reac
         <GlobalSaveListener />
         <nav className="flex flex-col gap-1 text-sm">
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/dashboard">Dashboard</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tenants">Academias</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tenants">Sitios</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/users">Usuarios</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/plans">Planes</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5 text-xs text-white/55 ml-3" href="/plans/promos">→ Códigos promo</a>

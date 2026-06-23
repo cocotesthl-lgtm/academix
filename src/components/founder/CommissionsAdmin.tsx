@@ -20,7 +20,7 @@ export function GlobalRateForm({ currentRate }: { currentRate: number }) {
       <div>
         <h2 className="text-lg font-semibold">Tasa global por defecto</h2>
         <p className="text-sm text-white/60 mt-1">
-          Se aplica a todas las academias que no tengan override propio. Actual:
+          Se aplica a todas las sitios que no tengan override propio. Actual:
           <span className="font-mono text-white ml-1">{(currentRate * 100).toFixed(2)}%</span>
         </p>
       </div>
@@ -74,7 +74,7 @@ export function TenantOverridesTable({ tenants, globalRate }: { tenants: TenantR
       <table className="w-full text-sm">
         <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
           <tr>
-            <th className="text-left px-4 py-2.5">Academia</th>
+            <th className="text-left px-4 py-2.5">Sitio</th>
             <th className="text-left px-4 py-2.5">Tasa efectiva</th>
             <th className="text-left px-4 py-2.5">Override</th>
             <th className="text-right px-4 py-2.5">Motivo + guardar</th>
@@ -82,7 +82,7 @@ export function TenantOverridesTable({ tenants, globalRate }: { tenants: TenantR
         </thead>
         <tbody>
           {tenants.length === 0 && (
-            <tr><td colSpan={4} className="px-4 py-6 text-center text-white/40">Sin academias.</td></tr>
+            <tr><td colSpan={4} className="px-4 py-6 text-center text-white/40">Sin sitios.</td></tr>
           )}
           {tenants.map((t) => (
             <OverrideRow key={t.id} tenant={t} globalRate={globalRate} />

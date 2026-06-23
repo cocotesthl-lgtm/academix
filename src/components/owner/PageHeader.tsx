@@ -5,7 +5,7 @@ import Link from 'next/link';
  * de "div con title + button" que estaba diferente en cada página.
  *
  * - Title obligatorio + description opcional.
- * - actions: slot para botones (ej. "+ Nuevo curso"). Se colocan a la
+ * - actions: slot para botones (ej. "+ Nuevo publicación"). Se colocan a la
  *   derecha en desktop, debajo del título en mobile.
  * - back: link opcional "← X" para páginas de detalle (breadcrumb).
  *

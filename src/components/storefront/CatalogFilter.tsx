@@ -197,7 +197,7 @@ export function CatalogFilter({
 
       {catalog.length === 0 && manualCards.length === 0 ? (
         <div className="rounded-xl border border-black/10 p-12 text-center text-black/50">
-          {selectedCat ? `No hay cursos en "${selectedCat.name}" todavía.` : 'Todavía no hay cursos publicados.'}
+          {selectedCat ? `No hay publicaciones en "${selectedCat.name}" todavía.` : 'Todavía no hay publicaciones publicados.'}
         </div>
       ) : (
         <>
@@ -235,7 +235,7 @@ export function CatalogFilter({
                   onClick={() => { setExpanded(true); setFadeKey((k) => k + 1); }}
                   className="rounded-full border border-black/15 px-6 py-2.5 text-sm font-medium hover:bg-black/[0.03] transition"
                 >
-                  Ver más ({hiddenCount} {hiddenCount === 1 ? 'curso' : 'cursos'} más)
+                  Ver más ({hiddenCount} {hiddenCount === 1 ? 'publicación' : 'publicaciones'} más)
                 </button>
               ) : expanded && fullCatalog.length > maxVisible ? (
                 <button
@@ -404,7 +404,7 @@ function CourseCard({
               </button>
             ) : (
               <span className={`${compact ? 'text-[10px] px-2 py-1 text-center' : 'text-xs px-2 py-1'} font-medium rounded text-white`} style={{ background: primary }}>
-                {ctaMode === 'custom_url' ? 'Ver más →' : 'Ver curso →'}
+                {ctaMode === 'custom_url' ? 'Ver más →' : 'Ver publicación →'}
               </span>
             )
           )}

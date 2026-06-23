@@ -32,7 +32,7 @@ type ModuleWithLessons = {
  *  - Banner full-width con imagen + overlay del título + eyebrow promo
  *  - Sidebar sticky derecha con precio + CTA + garantía + trust badges
  *  - Bullets de "qué vas a aprender"
- *  - Sobre este curso (description / about_body)
+ *  - Sobre este publicación (description / about_body)
  *  - Curriculum (módulos colapsables)
  *  - Productor (instructor)
  *  - Testimonios (si el config tiene)
@@ -163,7 +163,7 @@ export function HotmartLanding({
           {/* Curriculum */}
           {modules.length > 0 && (
             <section>
-              <h2 className="text-2xl font-bold mb-1">Contenido del curso</h2>
+              <h2 className="text-2xl font-bold mb-1">Contenido del publicación</h2>
               <p className="text-sm text-black/50 mb-4">
                 {modules.length} módulos · {totalLessons} lecciones
               </p>
@@ -246,7 +246,7 @@ export function HotmartLanding({
           {bonuses.length > 0 && (
             <section className="rounded-2xl p-6 border-2 border-dashed" style={{ borderColor: `${primary}40`, background: `${primary}05` }}>
               <h2 className="text-2xl font-bold mb-1">🎁 Bonus que te llevás</h2>
-              <p className="text-sm text-black/60 mb-4">Por comprar hoy, además del curso recibís:</p>
+              <p className="text-sm text-black/60 mb-4">Por comprar hoy, además del publicación recibís:</p>
               <div className="space-y-3">
                 {bonuses.map((b, i) => (
                   <div key={i} className="rounded-lg bg-white border border-black/10 p-4 flex gap-4 items-start">
@@ -310,7 +310,7 @@ export function HotmartLanding({
               primary={primary}
               defaultEmail={buyerEmail}
               buyLabel={config.cta_label || 'Continuar al pago'}
-              ctaText={config.cta_label || 'Comprar curso'}
+              ctaText={config.cta_label || 'Comprar publicación'}
               checkoutConfig={checkoutConfig}
               calendarMode={calendarMode}
               calendarLabel={calendarLabel}

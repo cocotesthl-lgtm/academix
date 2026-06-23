@@ -45,14 +45,14 @@ export default async function FounderCommissions() {
       <div>
         <h1 className="text-2xl font-bold">Comisiones</h1>
         <p className="text-white/60 text-sm mt-1">
-          Controlá la tasa global y los overrides por academia.
+          Controlá la tasa global y los overrides por sitio.
         </p>
       </div>
 
       <GlobalRateForm currentRate={globalRate} />
 
       <section>
-        <h2 className="text-lg font-semibold mb-3">Overrides por academia</h2>
+        <h2 className="text-lg font-semibold mb-3">Overrides por sitio</h2>
         <TenantOverridesTable tenants={tenantRows} globalRate={globalRate} />
       </section>
 

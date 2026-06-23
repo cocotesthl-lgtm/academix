@@ -35,7 +35,7 @@ export default async function OwnerInstructorsPage() {
       .select('id, title, slug')
       .eq('tenant_id', tenant.id)
       .order('title', { ascending: true }),
-    // Afiliados de la academia (que YA tienen membership de afiliado acá)
+    // Afiliados de la sitio (que YA tienen membership de afiliado acá)
     // — candidatos directos para ascender a instructor sin pedir email.
     svc.from('memberships')
       .select('user_id, profiles ( id, email, display_name )')
@@ -79,7 +79,7 @@ export default async function OwnerInstructorsPage() {
     <div className="space-y-8 max-w-4xl">
       <PageHeader
         title="Instructores"
-        description="Asigná cursos a cada instructor y decidí qué pueden hacer. Acceden desde /instructor con su misma cuenta."
+        description="Asigná publicaciones a cada instructor y decidí qué pueden hacer. Acceden desde /instructor con su misma cuenta."
       />
 
       {/* ─── Ascender afiliados ─── */}
@@ -87,9 +87,9 @@ export default async function OwnerInstructorsPage() {
         <div className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-4">
           <h2 className="font-semibold text-sm mb-1">💼 → 👨‍🏫 Ascender afiliados a instructor</h2>
           <p className="text-xs text-white/55 mb-3">
-            Estos afiliados ya generan links de tus cursos. Sin fricción: 1 click y son
+            Estos afiliados ya generan links de tus publicaciones. Sin fricción: 1 click y son
             también instructores. Mantienen su rol de afiliado en paralelo. Si trabajan
-            para varias academias, pueden ser instructores de todas a la vez.
+            para varias sitios, pueden ser instructores de todas a la vez.
           </p>
           <div className="space-y-2">
             {affiliateCandidates.map((c) => (
@@ -153,10 +153,10 @@ export default async function OwnerInstructorsPage() {
                 </form>
               </div>
 
-              {/* Lista de cursos del tenant con toggle de asignación + permisos */}
+              {/* Lista de publicaciones del tenant con toggle de asignación + permisos */}
               <div className="space-y-2">
                 {courses.length === 0 ? (
-                  <p className="text-xs text-white/40">Sin cursos creados en la academia todavía.</p>
+                  <p className="text-xs text-white/40">Sin publicaciones creados en la sitio todavía.</p>
                 ) : (
                   courses.map((c) => {
                     const a = assignMap.get(`${i.user_id}|${c.id}`);

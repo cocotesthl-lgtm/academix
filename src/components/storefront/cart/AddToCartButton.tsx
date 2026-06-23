@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { addToCart, type CartItem } from './CartWidget';
 
 /**
- * Botón "Agregar al carrito" para usar en cards de curso/pack/etc.
+ * Botón "Agregar al carrito" para usar en cards de publicación/pack/etc.
  * Solo se monta cuando el tenant tiene cart_enabled=true; sino se renderiza
  * el botón "Comprar ya" tradicional.
  */
