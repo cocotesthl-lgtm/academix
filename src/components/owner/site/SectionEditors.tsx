@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
+import { withSaveStatus } from '@/lib/ui/save-status';
 import { RichTextField } from './RichTextField';
 import { HrefField } from './HrefSelect';
 
@@ -2944,7 +2945,7 @@ export function NavEditor({
       <div className="space-y-3">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={showLogin} disabled={togglePending}
-            onChange={() => startToggle(async () => { await toggleNavLoginAction(); })} />
+            onChange={() => startToggle(() => withSaveStatus(() => toggleNavLoginAction()))} />
           Mostrar botón "Iniciar sesión" en el nav
         </label>
 
@@ -2955,10 +2956,10 @@ export function NavEditor({
 
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={showMyCourses} disabled={togglePending}
-              onChange={() => startToggle(async () => {
+              onChange={() => startToggle(() => withSaveStatus(async () => {
                 const fd = new FormData(); fd.set('flag', 'show_my_courses');
                 await toggleNavFlagAction(fd);
-              })} />
+              }))} />
             Mostrar &quot;{myCoursesLabel || 'Mis cursos'}&quot;
           </label>
           {showMyCourses && (
@@ -2968,11 +2969,11 @@ export function NavEditor({
               onBlur={(e) => {
                 const v = e.target.value.trim();
                 if (v === (myCoursesLabel ?? '').trim()) return;
-                startToggle(async () => {
+                startToggle(() => withSaveStatus(async () => {
                   const fd = new FormData();
                   fd.set('key', 'my_courses_label'); fd.set('value', v);
                   await setNavLabelAction(fd);
-                });
+                }));
               }}
               className="w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-xs"
             />
@@ -2980,10 +2981,10 @@ export function NavEditor({
 
           <label className="flex items-center gap-2 text-sm mt-2">
             <input type="checkbox" checked={showAffiliates} disabled={togglePending}
-              onChange={() => startToggle(async () => {
+              onChange={() => startToggle(() => withSaveStatus(async () => {
                 const fd = new FormData(); fd.set('flag', 'show_affiliates');
                 await toggleNavFlagAction(fd);
-              })} />
+              }))} />
             Mostrar &quot;{affiliatesLabel || 'Afiliados'}&quot;
           </label>
           {showAffiliates && (
@@ -2993,11 +2994,11 @@ export function NavEditor({
               onBlur={(e) => {
                 const v = e.target.value.trim();
                 if (v === (affiliatesLabel ?? '').trim()) return;
-                startToggle(async () => {
+                startToggle(() => withSaveStatus(async () => {
                   const fd = new FormData();
                   fd.set('key', 'affiliates_label'); fd.set('value', v);
                   await setNavLabelAction(fd);
-                });
+                }));
               }}
               className="w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-xs"
             />
