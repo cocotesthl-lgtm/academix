@@ -296,10 +296,11 @@ export async function addInstructorItemAction(formData: FormData): Promise<void>
   const photoUrlRaw = String(formData.get('photo_url') ?? '');
   if (!name) return;
   const photo_url = safeImageUrl(photoUrlRaw);
-  const photoPosRaw = String(formData.get('photo_position') ?? 'center');
+  const photoPosRaw = String(formData.get('photo_position') ?? '50% 50%').trim().slice(0, 30);
   const photoFitRaw = String(formData.get('photo_fit') ?? 'cover');
-  const photo_position = (['top', 'center', 'bottom'].includes(photoPosRaw)
-    ? photoPosRaw : 'center') as 'top' | 'center' | 'bottom';
+  // Aceptamos keywords viejos ('top'/'center'/'bottom') o "X% Y%" nuevo.
+  const photo_position = /^(top|center|bottom|left|right|\d{1,3}%\s+\d{1,3}%)$/i.test(photoPosRaw)
+    ? photoPosRaw : '50% 50%';
   const photo_fit = (['cover', 'contain'].includes(photoFitRaw)
     ? photoFitRaw : 'cover') as 'cover' | 'contain';
 
@@ -668,10 +669,11 @@ export async function updateInstructorItemAction(formData: FormData): Promise<vo
   const credentials = String(formData.get('credentials') ?? '').trim() || undefined;
   const bio = String(formData.get('bio') ?? '').trim() || undefined;
   const photo_url = safeImageUrl(String(formData.get('photo_url') ?? ''));
-  const photoPosRaw = String(formData.get('photo_position') ?? 'center');
+  const photoPosRaw = String(formData.get('photo_position') ?? '50% 50%').trim().slice(0, 30);
   const photoFitRaw = String(formData.get('photo_fit') ?? 'cover');
-  const photo_position = (['top', 'center', 'bottom'].includes(photoPosRaw)
-    ? photoPosRaw : 'center') as 'top' | 'center' | 'bottom';
+  // Aceptamos keywords viejos ('top'/'center'/'bottom') o "X% Y%" nuevo.
+  const photo_position = /^(top|center|bottom|left|right|\d{1,3}%\s+\d{1,3}%)$/i.test(photoPosRaw)
+    ? photoPosRaw : '50% 50%';
   const photo_fit = (['cover', 'contain'].includes(photoFitRaw)
     ? photoFitRaw : 'cover') as 'cover' | 'contain';
   const cfg = await loadConfig(tenant.id);

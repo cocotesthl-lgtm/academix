@@ -471,7 +471,7 @@ export default async function StorefrontHome({
             }];
             const mode = ins.display_mode ?? 'single';
 
-            const renderCard = (p: { id: string; name: string; credentials?: string; bio?: string; photo_url: string | null; photo_position?: 'top' | 'center' | 'bottom'; photo_fit?: 'cover' | 'contain' }, opts?: { compact?: boolean }) => {
+            const renderCard = (p: { id: string; name: string; credentials?: string; bio?: string; photo_url: string | null; photo_position?: string; photo_fit?: 'cover' | 'contain' }, opts?: { compact?: boolean }) => {
               const compact = opts?.compact;
               return (
                 <div className="text-center">

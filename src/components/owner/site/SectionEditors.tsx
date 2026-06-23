@@ -645,7 +645,7 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqu
 
 type AboutValues = {
   title: string; body: string;
-  image_position?: 'top' | 'center' | 'bottom';
+  image_position?: string;
   image_fit?: 'cover' | 'contain';
 };
 
@@ -674,6 +674,7 @@ export function AboutEditor({ initial, imageUrl, primary }: {
             <ImageFitControls
               fit={v.image_fit}
               position={v.image_position}
+              imageUrl={imageUrl}
               onChangeFit={(x) => { const next = { ...v, image_fit: x }; setV(next); fire(next); }}
               onChangePosition={(x) => { const next = { ...v, image_position: x }; setV(next); fire(next); }}
             />
@@ -722,18 +723,18 @@ export function InstructorEditor({ initial, items, primary }: {
   const [credentials, setCredentials] = useState('');
   const [bio, setBio] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
-  const [photoPos, setPhotoPos] = useState<'top' | 'center' | 'bottom'>('center');
+  const [photoPos, setPhotoPos] = useState<string>('50% 50%');
   const [photoFit, setPhotoFit] = useState<'cover' | 'contain'>('cover');
 
   function startEdit(it: InstructorItem) {
     setEditingId(it.id); setName(it.name); setCredentials(it.credentials ?? '');
     setBio(it.bio ?? ''); setPhotoUrl(it.photo_url ?? '');
-    setPhotoPos(it.photo_position ?? 'center');
+    setPhotoPos(it.photo_position ?? '50% 50%');
     setPhotoFit(it.photo_fit ?? 'cover');
   }
   function reset() {
     setEditingId(null); setName(''); setCredentials(''); setBio(''); setPhotoUrl('');
-    setPhotoPos('center'); setPhotoFit('cover');
+    setPhotoPos('50% 50%'); setPhotoFit('cover');
   }
 
   return (
@@ -768,6 +769,7 @@ export function InstructorEditor({ initial, items, primary }: {
             <ImageFitControls
               fit={photoFit}
               position={photoPos}
+              imageUrl={photoUrl}
               onChangeFit={setPhotoFit}
               onChangePosition={setPhotoPos}
               compact
