@@ -34,15 +34,22 @@ async function requireFounder(): Promise<string> {
  * Requiere confirmación: el form debe enviar 'confirm=<slug>' que tiene que
  * coincidir con el slug del tenant, para evitar clicks accidentales.
  */
-export async function settleDebtManuallyAction(formData: FormData): Promise<void> {
-  const founderId = await requireFounder();
+export type SettleResult = { ok: true; cleared_cents: number } | { ok: false; error: string };
+
+export async function settleDebtManuallyAction(formData: FormData): Promise<SettleResult> {
+  let founderId: string;
+  try {
+    founderId = await requireFounder();
+  } catch {
+    return { ok: false, error: 'No tenés permisos de founder.' };
+  }
   const tenantId = String(formData.get('tenant_id') ?? '');
   const confirm = String(formData.get('confirm') ?? '').trim();
   const methodRaw = String(formData.get('method') ?? 'crypto').trim().toLowerCase();
   const reference = String(formData.get('reference') ?? '').trim().slice(0, 200);
   const note = String(formData.get('note') ?? '').trim().slice(0, 500);
 
-  if (!tenantId) return;
+  if (!tenantId) return { ok: false, error: 'tenant_id faltante' };
 
   const svc = getServiceClient();
   const { data: tenant } = await svc
@@ -50,15 +57,14 @@ export async function settleDebtManuallyAction(formData: FormData): Promise<void
     .select('slug, name')
     .eq('id', tenantId)
     .maybeSingle<{ slug: string; name: string }>();
-  if (!tenant) return;
-  if (confirm !== tenant.slug) return; // safety
+  if (!tenant) return { ok: false, error: 'Tenant no encontrado' };
+  if (confirm !== tenant.slug) return { ok: false, error: `El slug no coincide. Escribí exactamente: ${tenant.slug}` };
 
   const balance = await getOwnerBalance(tenantId);
   if (balance <= 0) {
-    // No hay nada que saldar
-    revalidatePath('/tenants');
-    revalidatePath('/finance');
-    return;
+    revalidatePath('/founder/tenants');
+    revalidatePath('/owner/finance');
+    return { ok: true, cleared_cents: 0 };
   }
 
   const method = ['crypto', 'bank_transfer', 'cash', 'other'].includes(methodRaw)
@@ -113,7 +119,9 @@ export async function settleDebtManuallyAction(formData: FormData): Promise<void
     reason: note || `Founder marked debt as settled (${method})`
   } as never);
 
-  revalidatePath('/tenants');
-  revalidatePath('/finance');
-  revalidatePath('/dashboard');
+  revalidatePath('/founder/tenants');
+  revalidatePath('/founder/dashboard');
+  revalidatePath('/owner/finance');
+  revalidatePath('/owner/dashboard');
+  return { ok: true, cleared_cents: balance };
 }

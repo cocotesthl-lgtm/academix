@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { settleDebtManuallyAction } from '@/lib/debt/manual';
 
 export function SettleDebtButton({
@@ -18,6 +19,8 @@ export function SettleDebtButton({
   const [reference, setReference] = useState('');
   const [note, setNote] = useState('');
   const [pending, start] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   if (balanceCents <= 0) {
     return (
@@ -90,6 +93,11 @@ export function SettleDebtButton({
           className="w-full rounded bg-white/5 border border-amber-500/30 px-2 py-1 text-sm font-mono"
         />
       </div>
+      {error && (
+        <div className="rounded border border-rose-500/30 bg-rose-500/10 text-rose-200 text-xs px-2 py-1.5">
+          ⚠️ {error}
+        </div>
+      )}
       <div className="flex gap-2 pt-1">
         <button
           type="button"
@@ -101,10 +109,17 @@ export function SettleDebtButton({
             fd.set('method', method);
             fd.set('reference', reference);
             fd.set('note', note);
+            setError(null);
             start(async () => {
-              await settleDebtManuallyAction(fd);
-              setOpen(false);
-              setConfirm(''); setReference(''); setNote('');
+              try {
+                const r = await settleDebtManuallyAction(fd);
+                if (!r.ok) { setError(r.error); return; }
+                setOpen(false);
+                setConfirm(''); setReference(''); setNote('');
+                router.refresh();
+              } catch (e) {
+                setError(e instanceof Error ? e.message : 'Error inesperado');
+              }
             });
           }}
           className="flex-1 rounded bg-emerald-500 text-emerald-950 px-3 py-1.5 text-xs font-bold disabled:opacity-30"
