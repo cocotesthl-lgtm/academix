@@ -214,13 +214,38 @@ export default async function IntegrationsPage({
       </div>
 
       {/* Google Drive */}
-      <div className="rounded-xl border border-white/10 p-6 opacity-60">
+      <div className="rounded-xl border border-white/10 p-6">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <span>📁</span> Google Drive
-          <span className="text-xs px-2 py-0.5 rounded border border-white/15 text-white/50">manual por ahora</span>
+          <span className="text-xs px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">listo</span>
         </h2>
-        <p className="text-sm text-white/60 mt-1">
-          Por ahora pegás directamente el link de Drive en cada lección. OAuth + file picker en la próxima versión.
+        <p className="text-sm text-white/65 mt-1.5">
+          Subí tus videos/PDFs a tu Drive y pegá el link en cada lección. El sistema arma el embed automático
+          y el alumno los ve en su panel sin poder descargarlos.
+        </p>
+
+        <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-3 text-xs text-amber-100 space-y-2">
+          <div className="font-semibold text-amber-200">⚠️ Importante: cómo compartir el archivo</div>
+          <p className="text-amber-100/80">
+            Para que el embed funcione, el archivo en Drive tiene que ser <strong>público con el link</strong>.
+            Si no, el alumno ve &quot;sin permisos&quot;.
+          </p>
+          <ol className="list-decimal list-inside space-y-0.5 text-amber-100/70">
+            <li>Abrí el archivo en Drive (video, PDF, imagen).</li>
+            <li>Click derecho → <strong>Compartir</strong>.</li>
+            <li>En &quot;Acceso general&quot;, elegí <strong>&quot;Cualquier persona con el enlace&quot;</strong>.</li>
+            <li>Rol: <strong>Lector</strong>.</li>
+            <li>Copiá el link y pegalo en la lección. Listo.</li>
+          </ol>
+          <p className="text-amber-100/70 pt-1">
+            💡 Tip: podés crear una <strong>carpeta entera</strong> con permisos público-con-link y cualquier
+            archivo adentro hereda el permiso.
+          </p>
+        </div>
+
+        <p className="text-[11px] text-white/40 mt-3">
+          ✓ Acepta cualquier formato de link: <code className="bg-black/40 px-1 rounded">drive.google.com/file/d/.../view</code>,
+          <code className="bg-black/40 px-1 rounded ml-1">?id=...</code>, o el ID pelado.
         </p>
         {drive && <p className="text-xs text-white/40 mt-2">OAuth conectado.</p>}
       </div>
