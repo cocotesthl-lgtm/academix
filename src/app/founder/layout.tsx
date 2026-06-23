@@ -1,6 +1,7 @@
 import { requireSuperAdmin } from "@/lib/auth/guards";
 import { SignoutButton } from "@/components/auth/SignoutButton";
 import { SaveStatusBar } from "@/components/owner/SaveStatusBar";
+import { GlobalSaveListener } from "@/components/owner/GlobalSaveListener";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function FounderLayout({ children }: { children: React.Reac
         <div className="mt-3 mb-3 min-h-[2px]">
           <SaveStatusBar />
         </div>
+        <GlobalSaveListener />
         <nav className="flex flex-col gap-1 text-sm">
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/dashboard">Dashboard</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tenants">Academias</a>

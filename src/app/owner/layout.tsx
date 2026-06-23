@@ -6,6 +6,7 @@ import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 import { OwnerShell } from "@/components/owner/OwnerShell";
 import { CommandPaletteTrigger } from "@/components/owner/CommandPalette";
 import { SaveStatusBar } from "@/components/owner/SaveStatusBar";
+import { GlobalSaveListener } from "@/components/owner/GlobalSaveListener";
 import { AnnouncementBanner } from "@/components/owner/plan/AnnouncementBanner";
 import { getActiveAnnouncements, getTenantPlan } from "@/lib/plans/queries";
 
@@ -48,6 +49,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
       <div className="mb-3 min-h-[2px]">
         <SaveStatusBar />
       </div>
+      <GlobalSaveListener />
       <div className="flex-1 overflow-y-auto -mx-1 px-1">
         <OwnerSidebar />
       </div>
