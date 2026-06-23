@@ -74,17 +74,17 @@ export default async function CoursesIndex() {
   return (
     <div className="max-w-5xl">
       <PageHeader
-        title="Mis productos"
-        description="Vendé lo que quieras: publicación online, evento con tickets, mentoría, producto físico o digital. Todo se gestiona acá."
-        actions={<HeaderPrimary href="/courses/new">+ Crear nuevo</HeaderPrimary>}
+        title="Mis ofertas"
+        description="Vendé lo que quieras: publicación online, evento con tickets, mentoría, producto físico o digital, reservas. Todo se gestiona acá."
+        actions={<HeaderPrimary href="/courses/new">+ Crear oferta</HeaderPrimary>}
       />
 
       {courses.length === 0 ? (
         <EmptyState
           icon="🛍️"
-          title="Todavía no creaste ningún producto"
-          description="Un producto puede ser una publicación online, un evento con entradas, una mentoría 1-a-1, un producto físico o digital. Creá el primero y empezá a vender."
-          primary={{ label: '+ Crear primer producto', href: '/courses/new' }}
+          title="Todavía no creaste ninguna oferta"
+          description="Una oferta puede ser una publicación online, un evento con entradas, una mentoría 1-a-1, un producto físico o digital, una reserva. Creá la primera y empezá a vender."
+          primary={{ label: '+ Crear primera oferta', href: '/courses/new' }}
           secondary={{ label: 'Editar mi sitio', href: '/site' }}
         />
       ) : (

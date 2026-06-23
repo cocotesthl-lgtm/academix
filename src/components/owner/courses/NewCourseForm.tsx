@@ -182,7 +182,7 @@ export function NewCourseForm() {
           disabled={pending}
           className="rounded-md bg-white text-black px-6 py-2.5 font-semibold hover:bg-white/90 transition disabled:opacity-50"
         >
-          {pending ? 'Creando…' : 'Crear producto'}
+          {pending ? 'Creando…' : 'Crear oferta'}
         </button>
       </div>
     </form>

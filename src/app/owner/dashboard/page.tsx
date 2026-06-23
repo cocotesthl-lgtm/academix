@@ -182,14 +182,14 @@ export default async function OwnerDashboard() {
     },
     {
       id: 'course',
-      title: 'Creá tu primer producto',
-      description: 'Publicación, evento, mentoría, servicio, producto físico o digital.',
+      title: 'Creá tu primera oferta',
+      description: 'Publicación, evento, mentoría, servicio, producto físico o digital, reserva.',
       href: '/courses/new',
       done: totalCourses > 0
     },
     {
       id: 'publish',
-      title: 'Publicá al menos un producto',
+      title: 'Publicá al menos una oferta',
       description: 'Los borradores no aparecen en tu sitio público.',
       href: '/courses',
       done: totalPublished > 0
@@ -534,7 +534,7 @@ function QuickActions({ isNew, hasMp, storefrontUrl }: {
   const actions = isNew
     ? [
         { label: '✨ Personalizá tu marca', href: '/branding', sub: 'Logo y colores' },
-        { label: '🛍️ Creá tu primer producto', href: '/courses/new', sub: 'Empezá a vender' },
+        { label: '🛍️ Creá tu primera oferta', href: '/courses/new', sub: 'Empezá a vender' },
         { label: hasMp ? '✓ MP conectado' : '💳 Conectá MercadoPago', href: '/integrations', sub: hasMp ? 'Listo para cobrar' : 'Para recibir pagos' },
         { label: '🎨 Editá tu landing', href: '/site', sub: 'Diseñá tu home' }
       ]
