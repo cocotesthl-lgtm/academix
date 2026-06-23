@@ -12,7 +12,8 @@ export type ProductType =
   | 'physical'
   | 'service'
   | 'multi_venue'
-  | 'restaurant';
+  | 'restaurant'
+  | 'topup';
 
 export type ProductTypeSpec = {
   id: ProductType;
@@ -171,6 +172,21 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     lessonLabel: 'platos',
     showContentSection: false,
     ctaText: 'Reservar mesa'
+  },
+  {
+    id: 'topup',
+    emoji: '💰',
+    label: 'Carga de saldo',
+    short: 'El cliente paga y se le acredita saldo disponible en su cuenta.',
+    examples: 'Ej: "Carga $1000", "Pack de horas coworking", "Voucher regalo".',
+    landingTemplate: 'classic',
+    calendarMode: 'none',
+    pricingMode: 'one_time',
+    contentTitle: 'Cómo funciona',
+    moduleLabel: 'items',
+    lessonLabel: 'pasos',
+    showContentSection: false,
+    ctaText: 'Cargar saldo'
   }
 ];
 

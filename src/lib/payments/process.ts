@@ -14,6 +14,7 @@ type CourseLookup = {
   tenant_id: string;
   price_cents: number;
   currency: string;
+  title?: string;
 };
 
 export type ProcessResult =
@@ -257,6 +258,45 @@ export async function processMpPayment(opts: {
     }
   } else {
     saleId = (saleRow as { id: string }).id;
+  }
+
+  // ─── Branch: si el producto es 'topup', acreditar saldo en wallet en
+  //  vez de crear enrollment. Idempotente: skippeamos si ya hay
+  //  wallet_transaction con este sale_id (insertamos best-effort y
+  //  el UNIQUE de sale_id no existe → checkeamos antes).
+  if (payment.status === 'approved' && resolvedCourse && buyerUserId) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: pt } = await (svc.from('courses') as any)
+        .select('product_type, topup_amount_cents, price_cents, currency')
+        .eq('id', resolvedCourse.id).maybeSingle();
+      if (pt?.product_type === 'topup') {
+        // Anti-doble-acreditación: si ya hay tx con este sale_id, skip
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existingTx } = await (svc.from('wallet_transactions') as any)
+          .select('id').eq('sale_id', saleId).maybeSingle();
+        if (!existingTx) {
+          const creditCents = pt.topup_amount_cents && pt.topup_amount_cents > 0
+            ? Number(pt.topup_amount_cents)
+            : Number(pt.price_cents ?? 0);
+          if (creditCents > 0) {
+            const { creditWallet } = await import('@/lib/wallets/credit');
+            await creditWallet({
+              tenantId: opts.tenantId,
+              userId: buyerUserId,
+              amountCents: creditCents,
+              kind: 'topup',
+              courseId: resolvedCourse.id,
+              saleId,
+              note: `Carga: ${resolvedCourse.title}`,
+              currency: pt.currency || 'ARS'
+            });
+          }
+        }
+        // Saltea la creación de enrollment estándar — topups no son cursos.
+        return { ok: true, saleId, reused };
+      }
+    } catch { /* migration 0041 pendiente — caemos al flujo normal */ }
   }
 
   // Auto-enroll on approved payment (idempotente: ignoramos si ya existe)

@@ -200,6 +200,7 @@ function titlePlaceholderFor(t: ProductType): string {
     case 'service':     return 'Logo + branding completo';
     case 'multi_venue': return 'Experiencia de tiro al blanco';
     case 'restaurant':  return 'La Parrilla del Centro';
+    case 'topup':       return 'Carga de saldo $1000';
   }
 }
 
@@ -214,6 +215,7 @@ function descPlaceholderFor(t: ProductType): string {
     case 'service':     return 'El servicio que ofrecés y a quién está dirigido.';
     case 'multi_venue': return 'Qué experiencia van a vivir + en qué sedes está disponible.';
     case 'restaurant':  return 'Tipo de cocina, horarios y ambiente.';
+    case 'topup':       return 'Para qué sirve el saldo y dónde lo pueden usar.';
   }
 }
 
