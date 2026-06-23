@@ -682,16 +682,19 @@ export function AboutEditor({ initial, imageUrl, primary }: {
         </div>
       </div>
       <PreviewFrame>
+        {/* Mismo comportamiento que el render público: w-full + max-h (sin
+            aspect-ratio forzado), object-cover/contain con la posición. Así
+            el preview y la página real se ven idénticos. */}
         <div className="p-5 grid grid-cols-2 gap-4 items-center" style={{ background: 'rgba(0,0,0,0.02)' }}>
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="" className="rounded-lg w-full h-32"
+            <img src={imageUrl} alt="" className="rounded-lg w-full max-h-48"
               style={{
                 objectFit: v.image_fit ?? 'cover',
-                objectPosition: v.image_position ?? 'center'
+                objectPosition: v.image_position ?? '50% 50%'
               }} />
           ) : (
-            <div className="rounded-lg w-full h-32 flex items-center justify-center text-3xl" style={{ background: `${primary}15` }}>👋</div>
+            <div className="rounded-lg w-full max-h-48 aspect-[4/3] flex items-center justify-center text-3xl" style={{ background: `${primary}15` }}>👋</div>
           )}
           <div>
             <h2 className="text-lg font-bold"
