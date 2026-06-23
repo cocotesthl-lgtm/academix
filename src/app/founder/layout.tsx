@@ -26,6 +26,7 @@ export default async function FounderLayout({ children }: { children: React.Reac
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/commissions">Comisiones</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tickets">Soporte</a>
           <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/revenue">Revenue</a>
+          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/wallets">💰 Wallets</a>
         </nav>
         <div className="mt-auto pt-4 border-t border-white/10">
           <SignoutButton />
