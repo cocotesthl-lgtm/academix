@@ -309,7 +309,7 @@ export default async function AffiliateDashboard({
         </p>
         {courseRows.length === 0 ? (
           <div className="rounded-xl border border-black/10 p-10 text-center text-black/50">
-            Esta sitio todavía no tiene publicaciones disponibles para afiliación.
+            Este sitio todavía no tiene publicaciones disponibles para afiliación.
           </div>
         ) : (
           <div className="space-y-3">
@@ -360,7 +360,7 @@ function AffiliateJoin({ tenantId, tenantName, primary }: { tenantId: string; te
       <h1 className="text-3xl font-bold">Sumate al programa de afiliados</h1>
       <p className="text-black/60 mt-3 max-w-md mx-auto">
         Te registrás como afiliado de <strong>Curplat</strong> y podés promocionar publicaciones de{' '}
-        <strong>{tenantName}</strong> y de cualquier otra sitio de la plataforma. Te damos
+        <strong>{tenantName}</strong> y de cualquier otro sitio de la plataforma. Te damos
         link único por publicación, material promocional y comisión por cada venta.
       </p>
       <form action={signupAsAffiliateAction} className="mt-8">
@@ -373,7 +373,7 @@ function AffiliateJoin({ tenantId, tenantName, primary }: { tenantId: string; te
         </button>
       </form>
       <p className="text-xs text-black/40 mt-4">
-        Aprobación inmediata · Gratis · 1 cuenta para todas las sitios
+        Aprobación inmediata · Gratis · 1 cuenta para todos los sitios
       </p>
     </div>
   );

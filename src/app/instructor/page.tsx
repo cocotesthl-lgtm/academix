@@ -36,7 +36,7 @@ export default async function InstructorDashboard() {
 
   const courseIds = assigns.map((a) => a.course_id);
 
-  // Próximas reservas en esos publicaciones
+  // Próximas reservas en esas publicaciones
   let upcoming: BookingRow[] = [];
   if (courseIds.length > 0) {
     try {

@@ -27,7 +27,7 @@ export async function POST(
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  // Validamos que el publicación pertenece al tenant
+  // Validamos que la publicación pertenece al tenant
   const { data: course } = await svc
     .from('courses')
     .select('id, tenant_id')

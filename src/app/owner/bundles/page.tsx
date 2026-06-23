@@ -31,7 +31,7 @@ export default async function BundlesPage() {
       <div>
         <h1 className="text-2xl font-bold">🎁 Bundles</h1>
         <p className="text-white/60 text-sm mt-1">
-          Vendé varios publicaciones o packs VIP juntos a un precio menor.
+          Vendé varias publicaciones o packs VIP juntos a un precio menor.
           Genial para upselling: "lleva los 3 packs por el precio de 2".
         </p>
       </div>

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 /**
- * Input controlado del cover_url del publicación + galería de URLs sugeridas
+ * Input controlado del cover_url de la publicación + galería de URLs sugeridas
  * (Unsplash, libres) para que el owner no tenga que buscar imágenes a mano.
  * 100% URL — sin uploads ni storage.
  */

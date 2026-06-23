@@ -52,7 +52,7 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   learn_points: { title: "✅ Qué vas a aprender", desc: "Lista de puntos con check marks. Lo que se llevan." },
   features:     { title: "🎴 Features (3 tarjetas)", desc: "Beneficios o diferenciales con icono + título + texto." },
   featured:     { title: "⭐ Publicaciones destacados", desc: "Publicaciones marcados como destacados desde su editor." },
-  catalog:      { title: "📚 Catálogo completo", desc: "Todos los publicaciones publicados con filtros por categoría." },
+  catalog:      { title: "📚 Catálogo completo", desc: "Todas las publicaciones publicados con filtros por categoría." },
   cards:        { title: "🧩 Tarjetas (bloques destacados)", desc: "Tarjetas custom: info, producto, link, banner horizontal/vertical con imagen + texto." },
   testimonials: { title: "💬 Testimonios", desc: "Estilo Google: estrellas, foto, rol, comentario." },
   before_after: { title: "🔄 Antes / Después", desc: "Comparativa visual con imágenes y textos descriptivos." },

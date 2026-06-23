@@ -162,7 +162,7 @@ export function StudentRowActions({ enrollment }: { enrollment: StudentData }) {
               title={mode === 'suspend' ? 'Suspender inscripción' : 'Cancelar inscripción'}
               description={
                 mode === 'suspend'
-                  ? `El alumno deja de poder ver "${enrollment.buyer_name ?? 'el publicación'}" temporalmente. Podés reactivar después.`
+                  ? `El alumno deja de poder ver "${enrollment.buyer_name ?? 'la publicación'}" temporalmente. Podés reactivar después.`
                   : `Marca la inscripción como cancelada. El alumno deja de poder acceder. Reactivable si fue un error.`
               }
               confirmLabel={mode === 'suspend' ? 'Suspender' : 'Cancelar inscripción'}
@@ -328,7 +328,7 @@ function ReasonModal({
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           maxLength={500}
-          placeholder="Ej: el alumno pidió pausar el publicación por 2 semanas / falta de pago / pidió reembolso"
+          placeholder="Ej: el alumno pidió pausar la publicación por 2 semanas / falta de pago / pidió reembolso"
           className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40 resize-none"
         />
         <p className="text-[10px] text-white/40 mt-1">Queda registrado en el audit log para tu propia trazabilidad.</p>

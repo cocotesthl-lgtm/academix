@@ -19,7 +19,7 @@ function ars(cents: number) {
  * - Alertas arriba (MP no conectado, próximo evento, deuda alta)
  * - 4 KPIs con comparativa 30d
  * - Próximo evento destacado (si hay)
- * - Acciones rápidas según estado (sin publicaciones → "creá tu primer publicación";
+ * - Acciones rápidas según estado (sin publicaciones → "creá tu primera publicación";
  *   con publicaciones → "crear nuevo evento" + "ver storefront")
  * - Actividad reciente (últimas 5 ventas)
  */
@@ -539,7 +539,7 @@ function QuickActions({ isNew, hasMp, storefrontUrl }: {
         { label: '🎨 Editá tu landing', href: '/site', sub: 'Diseñá tu home' }
       ]
     : [
-        { label: '📚 Crear nuevo publicación', href: '/courses/new', sub: 'Publicación o evento' },
+        { label: '📚 Crear nueva publicación', href: '/courses/new', sub: 'Publicación o evento' },
         { label: '🎟️ Programar evento', href: '/eventos/calendario', sub: 'Fecha + capacidad' },
         { label: '🎨 Editar landing', href: '/site', sub: 'Mi sitio público' },
         { label: '↗ Ver mi storefront', href: storefrontUrl, sub: 'Como lo ve el cliente', external: true }

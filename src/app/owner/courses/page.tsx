@@ -83,7 +83,7 @@ export default async function CoursesIndex() {
         <EmptyState
           icon="🛍️"
           title="Todavía no creaste ningún producto"
-          description="Un producto puede ser un publicación online, un evento con entradas, una mentoría 1-a-1, un producto físico o digital. Creá el primero y empezá a vender."
+          description="Un producto puede ser una publicación online, un evento con entradas, una mentoría 1-a-1, un producto físico o digital. Creá el primero y empezá a vender."
           primary={{ label: '+ Crear primer producto', href: '/courses/new' }}
           secondary={{ label: 'Editar mi sitio', href: '/site' }}
         />

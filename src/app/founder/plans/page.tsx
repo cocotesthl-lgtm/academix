@@ -19,7 +19,7 @@ export default async function FounderPlansPage() {
       <div>
         <h1 className="text-2xl font-bold">Planes de suscripción</h1>
         <p className="text-white/55 text-sm mt-1">
-          Configurá precios, features y orden de los planes que ofrecés a las sitios.
+          Configurá precios, features y orden de los planes que ofrecés a los sitios.
           Cualquier cambio aplica al instante en la página <code className="text-xs bg-white/5 px-1.5 py-0.5 rounded">/mi-plan</code> del owner.
         </p>
       </div>

@@ -5,7 +5,7 @@ import { setCourseCalendarAction, setCourseCalendarSourceAction } from '@/lib/ca
 import type { CalendarMode } from '@/lib/calendar/types';
 
 /**
- * Editor del modo de calendario para un publicación. 3 opciones:
+ * Editor del modo de calendario para una publicación. 3 opciones:
  *  - none: no se pide nada en el checkout (default).
  *  - start_date: el comprador elige una fecha de inicio (sin checks de disponibilidad).
  *  - mentorship_slot: el comprador elige un slot puntual de la disponibilidad

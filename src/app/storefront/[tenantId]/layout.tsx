@@ -34,7 +34,7 @@ export default async function StorefrontLayout({
       <main className="min-h-screen flex items-center justify-center bg-white text-black p-8 text-center">
         <div>
           <h1 className="text-2xl font-bold">Temporalmente cerrado</h1>
-          <p className="text-black/60 mt-2">Esta sitio no está disponible en este momento.</p>
+          <p className="text-black/60 mt-2">Este sitio no está disponible en este momento.</p>
         </div>
       </main>
     );

@@ -42,7 +42,7 @@ export default async function LoginPage({
             <h2 className="font-bold">¿Querés promocionar publicaciones y ganar comisión?</h2>
             <p className="text-sm text-white/65 mt-1 leading-snug">
               Registrate como afiliado de Curplat. Una cuenta para promocionar
-              publicaciones de todas las sitios.
+              publicaciones de todos los sitios.
             </p>
             <Link
               href="/affiliate"

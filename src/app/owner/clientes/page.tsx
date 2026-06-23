@@ -8,7 +8,7 @@ import { tenantOrigin } from "@/lib/env";
 export const dynamic = "force-dynamic";
 
 /**
- * Panel de Clientes — gente que compró publicaciones/eventos en la sitio.
+ * Panel de Clientes — gente que compró publicaciones/eventos en el sitio.
  * Antes se llamaba "Alumnos" pero terminológicamente "cliente" es más
  * consistente con todo el flujo de venta (compra → cliente → enrollment).
  *
@@ -232,7 +232,7 @@ export default async function OwnerClientesPage({
         <EmptyState
           icon="👥"
           title="Todavía no tenés clientes"
-          description="Cuando alguien compre un publicación, una mentoría o un ticket, va a aparecer acá con sus datos completos."
+          description="Cuando alguien compre una publicación, una mentoría o un ticket, va a aparecer acá con sus datos completos."
           primary={{ label: '↗ Ver mi sitio público', href: storefrontUrl }}
           secondary={{ label: 'Editar publicaciones', href: '/courses' }}
         />

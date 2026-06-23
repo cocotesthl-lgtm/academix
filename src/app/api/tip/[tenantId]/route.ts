@@ -71,7 +71,7 @@ export async function POST(
   const host = h.get('host') ?? `${tenant.slug}.localhost:3000`;
   const origin = `${proto}://${host}`;
 
-  // Slug del publicación para volver a la página correcta
+  // Slug de la publicación para volver a la página correcta
   let backUrl = `${origin}/`;
   if (body.course_id) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

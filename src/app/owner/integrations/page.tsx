@@ -75,7 +75,7 @@ export default async function IntegrationsPage({
         <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm">
           <div className="font-semibold text-emerald-200 mb-1">✓ MercadoPago conectado correctamente</div>
           <p className="text-emerald-100/90 leading-relaxed">
-            Ya podés vender. Cuando un alumno compre un publicación, el dinero entra directo a tu MP y
+            Ya podés vender. Cuando un alumno compre una publicación, el dinero entra directo a tu MP y
             quedan inscriptos automáticamente.
           </p>
         </div>

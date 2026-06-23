@@ -129,7 +129,7 @@ export async function POST(
   };
 
   // Campos extra custom (definidos por el owner en /owner/checkout o en el
-  // override del publicación). Llegan al form como `extra_${key}`. Los juntamos
+  // override de la publicación). Llegan al form como `extra_${key}`. Los juntamos
   // todos en un solo jsonb que se guarda en sales.buyer_extra y
   // enrollments.buyer_extra, así el owner los puede consultar después.
   const buyerExtra: Record<string, string | boolean> = {};
@@ -331,7 +331,7 @@ export async function POST(
 
   // ── Addons del form (checkboxes con price_delta_cents tildados) ──
   // RE-validamos server-side leyendo la config del checkout efectiva (override
-  // del publicación si existe, sino default del tenant) para evitar tampering.
+  // de la publicación si existe, sino default del tenant) para evitar tampering.
   let checkoutCfg: CheckoutConfig = mergeCheckoutConfig(null);
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -411,7 +411,7 @@ export async function POST(
   // Si MP falla / no vuelve, el booking queda 'pending' (limpiable luego).
   let createdBookingId: string | null = null;
   if (bookingSlotStart) {
-    // Computar slot_end + asignar instructor (si el publicación tiene asignados).
+    // Computar slot_end + asignar instructor (si la publicación tiene asignados).
     // Si dos instructores tienen el mismo slot, asignamos al PRIMERO que
     // tenga la rule + el slot todavía libre (anti double-booking por DB).
     const slotDate = new Date(bookingSlotStart);
@@ -541,7 +541,7 @@ export async function POST(
   }
 
   // ─── Suscripción recurrente (MP Preapproval) ───
-  // Si el publicación es pricing_mode='subscription', creamos un preapproval
+  // Si la publicación es pricing_mode='subscription', creamos un preapproval
   // en vez de una preference. MP cobra recurrente y notifica via
   // /api/webhooks/mercadopago-preapproval/[tenantId].
   if (course.pricing_mode === 'subscription' && course.subscription_frequency) {

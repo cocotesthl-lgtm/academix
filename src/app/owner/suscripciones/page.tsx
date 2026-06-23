@@ -119,7 +119,7 @@ export default async function OwnerSubscriptionsPage({
         <EmptyState
           icon="🔁"
           title="Todavía no tenés clientes con suscripción"
-          description="Para activar pagos recurrentes, andá a un publicación → Modelo de cobro → 'Suscripción mensual / anual'. Cuando alguien compre, va a aparecer acá."
+          description="Para activar pagos recurrentes, andá a una publicación → Modelo de cobro → 'Suscripción mensual / anual'. Cuando alguien compre, va a aparecer acá."
           primary={{ label: 'Ver publicaciones', href: '/courses' }}
         />
       ) : (

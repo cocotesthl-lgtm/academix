@@ -4,11 +4,11 @@ import { useState, useTransition } from 'react';
 import { setCoursePricingModeAction } from '@/lib/courses/subscriptions';
 
 /**
- * Editor del modelo de pricing del publicación: pago único vs suscripción
+ * Editor del modelo de pricing de la publicación: pago único vs suscripción
  * recurrente vía MP Preapproval.
  *
  * Si elige subscription, decide frequency (monthly|yearly) + trial_days
- * opcional. El precio del publicación (price_cents) se interpreta como el monto
+ * opcional. El precio de la publicación (price_cents) se interpreta como el monto
  * que se cobra cada ciclo.
  */
 export function CourseSubscriptionConfig({

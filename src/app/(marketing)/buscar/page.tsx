@@ -70,7 +70,7 @@ export default async function BuscarAcademiasPage() {
               Encontrá tu sitio
             </h1>
             <p className="mt-3 text-white/60">
-              ¿Sos alumno? Buscá la sitio donde te inscribiste y entrá desde ahí.
+              ¿Sos alumno? Buscá el sitio donde te inscribiste y entrá desde ahí.
             </p>
           </div>
 

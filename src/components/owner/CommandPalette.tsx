@@ -47,7 +47,7 @@ const items: CmdItem[] = [
   { id: 'nav-finance', label: 'Finanzas', group: 'Ir a', icon: '💼', href: '/finance', keywords: 'finanzas comision deuda saldo' },
   { id: 'nav-soporte', label: 'Soporte', group: 'Ir a', icon: '📨', href: '/soporte', keywords: 'soporte tickets ayuda help' },
   // Acciones
-  { id: 'act-course-new', label: 'Crear publicación nuevo', group: 'Acciones', icon: '➕', href: '/courses/new', keywords: 'crear nuevo publicación producto evento' },
+  { id: 'act-course-new', label: 'Crear publicación nueva', group: 'Acciones', icon: '➕', href: '/courses/new', keywords: 'crear nueva publicación producto evento' },
   { id: 'act-ticket-new', label: 'Crear ticket de soporte', group: 'Acciones', icon: '➕', href: '/soporte/new', keywords: 'crear ticket soporte ayuda reportar problema' },
   { id: 'act-event-new', label: 'Programar evento (fecha + capacidad)', group: 'Acciones', icon: '➕', href: '/eventos/calendario', keywords: 'crear evento fecha tickets nuevo programar' }
 ];

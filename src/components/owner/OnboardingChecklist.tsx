@@ -2,10 +2,10 @@ import Link from 'next/link';
 
 /**
  * Checklist de onboarding visible en el dashboard hasta que se completan
- * los 4 pasos críticos para tener una sitio funcional:
+ * los 4 pasos críticos para tener un sitio funcional:
  *  1. Personalizar marca (logo o color)
  *  2. Conectar MercadoPago
- *  3. Crear primer publicación
+ *  3. Crear primera publicación
  *  4. Publicarlo
  *
  * Se oculta automáticamente cuando los 4 están done (porque ya no aporta).

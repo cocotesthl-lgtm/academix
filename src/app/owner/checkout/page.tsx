@@ -55,7 +55,7 @@ export default async function CheckoutDefaultPage() {
     <div className="space-y-6 max-w-3xl">
       <PageHeader
         title="Checkout"
-        description="Qué datos pedís al comprador antes del pago. Aplica a todos los publicaciones por default — cada publicación puede sobreescribir."
+        description="Qué datos pedís al comprador antes del pago. Aplica a todas las publicaciones por default — cada publicación puede sobreescribir."
       />
 
       {/* Modo carrito toggle */}
@@ -68,7 +68,7 @@ export default async function CheckoutDefaultPage() {
             </h2>
             <p className="text-sm text-white/65 mt-1">
               Cuando está activo: aparece un carrito flotante 🛒 en tu sitio público.
-              Los visitantes pueden agregar varios publicaciones / packs / tickets y pagar todo junto en un solo checkout.
+              Los visitantes pueden agregar varias publicaciones / packs / tickets y pagar todo junto en un solo checkout.
               Cuando está desactivado: cada producto se paga individualmente (default).
             </p>
           </div>

@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 /**
  * GET /api/aff/my-code?slug=<course-slug>&tenant=<tenant-slug>
  *
- * Devuelve el code de affiliate link del user logueado para ese publicación.
+ * Devuelve el code de affiliate link del user logueado para esa publicación.
  * Lo crea si no existe (idempotente). Usado por AffiliateBar mientras el
  * afiliado navega las landings.
  *

@@ -35,7 +35,7 @@ export default async function OwnerInstructorsPage() {
       .select('id, title, slug')
       .eq('tenant_id', tenant.id)
       .order('title', { ascending: true }),
-    // Afiliados de la sitio (que YA tienen membership de afiliado acá)
+    // Afiliados de el sitio (que YA tienen membership de afiliado acá)
     // — candidatos directos para ascender a instructor sin pedir email.
     svc.from('memberships')
       .select('user_id, profiles ( id, email, display_name )')
@@ -89,7 +89,7 @@ export default async function OwnerInstructorsPage() {
           <p className="text-xs text-white/55 mb-3">
             Estos afiliados ya generan links de tus publicaciones. Sin fricción: 1 click y son
             también instructores. Mantienen su rol de afiliado en paralelo. Si trabajan
-            para varias sitios, pueden ser instructores de todas a la vez.
+            para varios sitios, pueden ser instructores de todas a la vez.
           </p>
           <div className="space-y-2">
             {affiliateCandidates.map((c) => (
@@ -156,7 +156,7 @@ export default async function OwnerInstructorsPage() {
               {/* Lista de publicaciones del tenant con toggle de asignación + permisos */}
               <div className="space-y-2">
                 {courses.length === 0 ? (
-                  <p className="text-xs text-white/40">Sin publicaciones creados en la sitio todavía.</p>
+                  <p className="text-xs text-white/40">Sin publicaciones creados en el sitio todavía.</p>
                 ) : (
                   courses.map((c) => {
                     const a = assignMap.get(`${i.user_id}|${c.id}`);

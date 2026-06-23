@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
  * MercadoPago y vuelve a /learn sin estar logueado, lo redirigimos acá.
  * A diferencia del login global de Curplat, este:
  * - Usa el nombre + colores del owner (vía storefront layout)
- * - No muestra "Crear sitio" — esto es la sitio ya
+ * - No muestra "Crear sitio" — esto es el sitio ya
  * - El CTA secundario es "Olvidaste tu contraseña" (TODO post-MVP)
  */
 export default async function StorefrontLoginPage({
@@ -27,7 +27,7 @@ export default async function StorefrontLoginPage({
         <div className="text-center">
           <h1 className="text-2xl font-bold">Acceder a tu cuenta</h1>
           <p className="text-sm text-black/60 mt-2">
-            Iniciá sesión con el email y contraseña que usaste al comprar el publicación.
+            Iniciá sesión con el email y contraseña que usaste al comprar la publicación.
           </p>
         </div>
         <div
@@ -39,7 +39,7 @@ export default async function StorefrontLoginPage({
           </Suspense>
         </div>
         <p className="text-center text-xs text-black/50">
-          ¿Compraste un publicación? Usá el mismo email y contraseña que pusiste en el checkout.
+          ¿Compraste una publicación? Usá el mismo email y contraseña que pusiste en el checkout.
         </p>
       </div>
     </main>

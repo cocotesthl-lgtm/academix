@@ -3,7 +3,7 @@
 import type { LandingConfig, LandingTemplate } from '@/lib/courses/landing';
 
 /**
- * Preview liviano del landing del publicación. Se actualiza en vivo mientras
+ * Preview liviano del landing de la publicación. Se actualiza en vivo mientras
  * el owner edita los campos. NO es el render real (eso vive en
  * /storefront/[tenantId]/c/[slug]) — es una versión escalada que muestra
  * el layout general para que el owner vea cómo va a quedar antes de guardar.
@@ -114,12 +114,12 @@ function HotmartPreview({
           <div>
             <div className="font-bold text-[10px] mb-1">Sobre este producto</div>
             <div className="text-black/60 text-[9px] leading-tight">
-              {(config.about_body ?? '').slice(0, 100) || 'Descripción del publicación…'}
+              {(config.about_body ?? '').slice(0, 100) || 'Descripción de la publicación…'}
             </div>
           </div>
 
           <div>
-            <div className="font-bold text-[10px] mb-1">Contenido del publicación</div>
+            <div className="font-bold text-[10px] mb-1">Contenido de la publicación</div>
             <div className="rounded border border-black/10 px-1.5 py-1 text-[8px] text-black/60">
               Módulo 1 · 4 lecciones
             </div>
@@ -258,9 +258,9 @@ function ClassicPreview({
     <div className="p-3 text-[10px] grid grid-cols-3 gap-2">
       <div className="col-span-2 space-y-1.5">
         <div className="text-sm font-bold leading-tight line-clamp-2">{courseTitle}</div>
-        <div className="text-black/60 text-[9px] leading-tight">Descripción del publicación aparece acá…</div>
+        <div className="text-black/60 text-[9px] leading-tight">Descripción de la publicación aparece acá…</div>
         <div className="mt-2">
-          <div className="font-semibold text-[10px] mb-1">Contenido del publicación</div>
+          <div className="font-semibold text-[10px] mb-1">Contenido de la publicación</div>
           <div className="rounded border border-black/10 px-1.5 py-1 text-[8px] text-black/60">Módulo 1 · 4 lecciones</div>
           <div className="rounded border border-black/10 px-1.5 py-1 mt-1 text-[8px] text-black/60">Módulo 2 · 6 lecciones</div>
         </div>

@@ -108,7 +108,7 @@ function AccountChooser() {
               en sitios de Curplat.
             </p>
             <ul className="text-xs text-white/50 mt-3 space-y-1">
-              <li>✓ 1 cuenta para todas las sitios</li>
+              <li>✓ 1 cuenta para todos los sitios</li>
               <li>✓ Link único por publicación · ganás comisión por venta</li>
               <li>✓ Los owners pueden ascenderte a instructor</li>
               <li>✓ Panel global con stats cross-sitio</li>

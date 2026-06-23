@@ -14,7 +14,7 @@ import { LandingPreview } from '@/components/owner/courses/LandingPreview';
 import { TemplateMockup } from '@/components/owner/courses/TemplateMockup';
 
 /**
- * Editor de la landing del publicación con TODAS las secciones editables
+ * Editor de la landing de la publicación con TODAS las secciones editables
  * (hero, learn_points, about, instructor, trust, testimonios, FAQ,
  * bonuses, offer). Cada sección colapsable para no abrumar.
  * Preview en vivo a la derecha que se actualiza en tiempo real.
@@ -331,7 +331,7 @@ export function LandingEditor({
 
         {tplForView === 'classic' && (
           <p className="text-sm text-white/55 rounded border border-white/10 bg-white/[0.02] p-4">
-            La plantilla <strong>Clásica</strong> usa la info básica del publicación (título, descripción,
+            La plantilla <strong>Clásica</strong> usa la info básica de la publicación (título, descripción,
             portada, precio). No tiene campos extra. Si querés más control visual, elegí <strong>Hotmart</strong>.
           </p>
         )}
@@ -396,7 +396,7 @@ export function LandingEditor({
             {/* Compartimos los mismos editores que hotmart/funnel para hero, testimonios, FAQ, garantía */}
             <Section title="🎯 Hero (texto arriba del video)">
               <FieldText label="Eyebrow" value={cfgForView.eyebrow ?? ''} onChange={(v) => field('eyebrow', v)} />
-              <FieldText label="Headline custom (vacío = título del publicación)" value={cfgForView.headline ?? ''} onChange={(v) => field('headline', v)} placeholder={courseTitle} />
+              <FieldText label="Headline custom (vacío = título de la publicación)" value={cfgForView.headline ?? ''} onChange={(v) => field('headline', v)} placeholder={courseTitle} />
               <FieldTextarea label="Subtítulo" value={cfgForView.subtitle ?? ''} onChange={(v) => field('subtitle', v)} rows={2} />
               <FieldText label="Texto del CTA final" value={cfgForView.cta_label ?? ''} onChange={(v) => field('cta_label', v)} placeholder="Reservar mi lugar" />
               <FieldText label="Caption bajo el CTA" value={cfgForView.cta_caption ?? ''} onChange={(v) => field('cta_caption', v)} placeholder="Acceso inmediato · 7 días garantía" />
@@ -424,7 +424,7 @@ export function LandingEditor({
           <div className="space-y-3">
             <Section title="🎯 Hero / banner" defaultOpen>
               <FieldText label="Eyebrow (pill arriba del título)" value={cfgForView.eyebrow ?? ''} onChange={(v) => field('eyebrow', v)} placeholder="Ej: 🔥 50% OFF · termina hoy" />
-              <FieldText label="Headline custom (vacío = título del publicación)" value={cfgForView.headline ?? ''} onChange={(v) => field('headline', v)} placeholder={courseTitle} />
+              <FieldText label="Headline custom (vacío = título de la publicación)" value={cfgForView.headline ?? ''} onChange={(v) => field('headline', v)} placeholder={courseTitle} />
               <FieldTextarea label="Subtítulo (texto bajo el título)" value={cfgForView.subtitle ?? ''} onChange={(v) => field('subtitle', v)} rows={2} />
               <FieldUrl label="URL del banner principal" value={cfgForView.hero_image_url ?? ''} onChange={(v) => field('hero_image_url', v)} hint="Recomendado: 2400×1200px panorámico" />
               <div className="grid grid-cols-2 gap-3">
@@ -441,7 +441,7 @@ export function LandingEditor({
               />
             </Section>
 
-            <Section title="📖 Sobre el publicación (descripción extendida)">
+            <Section title="📖 Sobre la publicación (descripción extendida)">
               <FieldTextarea label="Cuerpo del 'sobre este producto'" value={cfgForView.about_body ?? ''} onChange={(v) => field('about_body', v)} rows={6} />
             </Section>
 
@@ -467,7 +467,7 @@ export function LandingEditor({
               />
             </Section>
 
-            <Section title="⭐ Testimonios del publicación">
+            <Section title="⭐ Testimonios de la publicación">
               <TestimonialsEditor
                 items={cfgForView.testimonials ?? []}
                 onChange={(arr) => field('testimonials', arr)}

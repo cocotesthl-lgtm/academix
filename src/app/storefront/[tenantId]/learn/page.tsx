@@ -46,7 +46,7 @@ export default async function StudentLearn({
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
       <h1 className="text-3xl font-bold mb-2">Mis publicaciones</h1>
-      <p className="text-black/60 mb-8">Hola {user.email}. Acá ves todo lo que comprás en esta sitio.</p>
+      <p className="text-black/60 mb-8">Hola {user.email}. Acá ves todo lo que comprás en este sitio.</p>
 
       {rows.length === 0 ? (
         <div className="rounded-xl border border-black/10 p-12 text-center">

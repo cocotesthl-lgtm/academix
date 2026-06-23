@@ -225,7 +225,7 @@ export function FunnelLanding({
         <section className="px-6 py-16">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-2">Mirá lo que dicen los que ya lo hicieron</h2>
-            <p className="text-center text-black/60 mb-10">+2.400 personas ya tomaron este publicación</p>
+            <p className="text-center text-black/60 mb-10">+2.400 personas ya tomaron esta publicación</p>
             <div className="grid md:grid-cols-3 gap-5">
               {testimonials.map((t, i) => (
                 <div key={i} className="rounded-2xl border-2 border-black/10 p-5 bg-white hover:shadow-lg transition">
@@ -296,7 +296,7 @@ export function FunnelLanding({
               ))}
             </div>
             <p className="text-center text-sm text-black/60 mt-6">
-              Todo esto incluido en el precio del publicación, sin costo extra.
+              Todo esto incluido en el precio de la publicación, sin costo extra.
             </p>
           </div>
         </section>
@@ -317,7 +317,7 @@ export function FunnelLanding({
       {modules.length > 0 && (
         <section className="px-6 py-12 bg-black/[0.02]">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">¿Qué hay adentro del publicación?</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">¿Qué hay adentro de la publicación?</h2>
             <div className="space-y-2">
               {modules.map((m) => (
                 <details key={m.id} className="rounded-lg border border-black/10 overflow-hidden bg-white">

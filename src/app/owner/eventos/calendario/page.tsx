@@ -273,7 +273,7 @@ export default async function AvailabilityPage() {
 
           {/* ─── Config de evento (capacity + asientos) ─── */}
           <div className="rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-3 space-y-3">
-            <p className="text-xs text-fuchsia-200 font-semibold">🎫 Si el publicación es evento con tickets, completá esto:</p>
+            <p className="text-xs text-fuchsia-200 font-semibold">🎫 Si la publicación es evento con tickets, completá esto:</p>
             <div className="grid sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Capacidad total</label>
@@ -391,7 +391,7 @@ export default async function AvailabilityPage() {
         <h2 className="text-lg font-semibold mb-1">⏸️ Pausas / cancelaciones</h2>
         <p className="text-xs text-white/55 mb-3">
           Cualquier slot que caiga en este rango queda fuera del calendario.
-          Usalo para vacaciones, feriados, emergencias o cancelar un publicación puntual.
+          Usalo para vacaciones, feriados, emergencias o cancelar una publicación puntual.
         </p>
         <form action={addOwnerOverrideAction} className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -434,7 +434,7 @@ export default async function AvailabilityPage() {
                     {new Date(o.end_at).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </div>
                   <div className="text-xs text-white/55">
-                    {courseMap.get(o.course_id ?? '')?.title ?? 'Toda la sitio'}
+                    {courseMap.get(o.course_id ?? '')?.title ?? 'Toda el sitio'}
                     {o.reason && ` · ${o.reason}`}
                   </div>
                 </div>

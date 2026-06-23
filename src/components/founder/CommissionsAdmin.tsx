@@ -20,7 +20,7 @@ export function GlobalRateForm({ currentRate }: { currentRate: number }) {
       <div>
         <h2 className="text-lg font-semibold">Tasa global por defecto</h2>
         <p className="text-sm text-white/60 mt-1">
-          Se aplica a todas las sitios que no tengan override propio. Actual:
+          Se aplica a todos los sitios que no tengan override propio. Actual:
           <span className="font-mono text-white ml-1">{(currentRate * 100).toFixed(2)}%</span>
         </p>
       </div>

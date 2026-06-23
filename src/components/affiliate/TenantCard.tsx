@@ -10,7 +10,7 @@ import { blockTenantAction } from '@/lib/users/blocks';
  * Al bloquear:
  *  1. Desactiva memberships del user en ese tenant
  *  2. Limpia asignaciones de publicaciones como instructor
- *  3. La sitio ya no puede re-sumarlo (filtro silencioso en addInstructorAction)
+ *  3. El sitio ya no puede re-sumarlo (filtro silencioso en addInstructorAction)
  *  4. Acción reversible desde la sección "Bloqueadas"
  */
 export function TenantCard({
@@ -30,8 +30,8 @@ export function TenantCard({
   function block() {
     if (!confirm(
       `¿Bloquear "${tenant.name}"?\n\n` +
-      'La sitio no va a poder volver a sumarte como instructor ni vas ' +
-      'a aparecerle en ninguna lista. Tu rol de afiliado en esa sitio ' +
+      'El sitio no va a poder volver a sumarte como instructor ni vas ' +
+      'a aparecerle en ninguna lista. Tu rol de afiliado en ese sitio ' +
       'también se desactiva.\n\n' +
       'Podés desbloquear cuando quieras desde la sección "Bloqueadas".'
     )) return;
@@ -72,7 +72,7 @@ export function TenantCard({
               🚫 Bloquear sitio
             </button>
             <p className="text-[10px] text-white/40 px-3 py-1.5 leading-snug">
-              Te saca de la sitio. No pueden volver a sumarte.
+              Te saca de el sitio. No pueden volver a sumarte.
               Reversible.
             </p>
           </div>

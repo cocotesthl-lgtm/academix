@@ -5,7 +5,7 @@ export default function DemoPage() {
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Banner demo */}
       <div className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-blue-600 text-center text-sm py-2.5 px-4">
-        🎬 Estás viendo una demo. Así se ve una sitio real en Curplat.{" "}
+        🎬 Estás viendo una demo. Así se ve un sitio real en Curplat.{" "}
         <Link href="/signup" className="underline font-semibold hover:no-underline">
           Crear la tuya gratis →
         </Link>
@@ -13,7 +13,7 @@ export default function DemoPage() {
 
       {/* Storefront mock (estilo sitio real) */}
       <div className="bg-white text-black">
-        {/* Header de la sitio */}
+        {/* Header de el sitio */}
         <header className="border-b border-black/10 px-6 py-4">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">

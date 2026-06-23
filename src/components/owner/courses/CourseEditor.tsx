@@ -60,7 +60,7 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
     <div className="space-y-10 max-w-3xl">
       {/* Course metadata */}
       <section>
-        <h2 className="text-lg font-semibold mb-4">Información del publicación</h2>
+        <h2 className="text-lg font-semibold mb-4">Información de la publicación</h2>
         <form action={updateAction} className="space-y-4">
           <input type="hidden" name="id" value={course.id} />
           <div>
@@ -167,9 +167,9 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
         </div>
       </section>
 
-      {/* Landing page del publicación (template + overrides) */}
+      {/* Landing page de la publicación (template + overrides) */}
       <section>
-        <h2 className="text-lg font-semibold mb-1">Landing page del publicación</h2>
+        <h2 className="text-lg font-semibold mb-1">Landing page de la publicación</h2>
         <p className="text-sm text-white/55 mb-4">
           Cada publicación tiene su propia landing pública (lo que ven los visitantes en{' '}
           <code className="text-xs bg-white/5 px-1.5 py-0.5 rounded">/c/{course.slug}</code>).

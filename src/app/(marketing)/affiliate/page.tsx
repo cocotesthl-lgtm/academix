@@ -127,7 +127,7 @@ export default async function AffiliateGlobalPage({
 
   const tenantById = new Map<string, TenantRow>(myTenants.map((t) => [t.id, t]));
 
-  // ¿También es instructor en alguna sitio? → mostramos link al portal
+  // ¿También es instructor en algún sitio? → mostramos link al portal
   const { data: instructorMems } = await svc
     .from('memberships')
     .select('tenant_id, tenants ( id, slug, name )')
@@ -170,8 +170,8 @@ export default async function AffiliateGlobalPage({
           </div>
           <h1 className="text-3xl md:text-4xl font-bold">Tu panel global de afiliado</h1>
           <p className="text-white/60 mt-2 max-w-2xl">
-            Una sola cuenta para promocionar publicaciones de todas las sitios de la plataforma.
-            Acá ves tus comisiones, las sitios donde estás activo y las que podés sumar.
+            Una sola cuenta para promocionar publicaciones de todos los sitios de la plataforma.
+            Acá ves tus comisiones, los sitios donde estás activo y las que podés sumar.
           </p>
         </div>
 
@@ -212,8 +212,8 @@ export default async function AffiliateGlobalPage({
           <h2 className="text-xl font-bold mb-3">🏫 Tus sitios</h2>
           {myTenants.length === 0 ? (
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-white/60">
-              <p>Todavía no generaste links en ninguna sitio.</p>
-              <p className="text-sm mt-2">Explorá las sitios abajo y entrá a su sección de afiliados para empezar.</p>
+              <p>Todavía no generaste links en ningún sitio.</p>
+              <p className="text-sm mt-2">Explorá los sitios abajo y entrá a su sección de afiliados para empezar.</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -374,7 +374,7 @@ export default async function AffiliateGlobalPage({
             </div>
             <div className="text-center mt-4">
               <Link href="/buscar" className="text-sm text-fuchsia-300 hover:text-fuchsia-200">
-                Ver todas las sitios →
+                Ver todos los sitios →
               </Link>
             </div>
           </section>
@@ -443,7 +443,7 @@ function NotLoggedIn() {
         <div className="text-5xl mb-4">💼</div>
         <h1 className="text-3xl md:text-4xl font-bold">Volvete afiliado de Curplat</h1>
         <p className="text-white/65 mt-4 max-w-md mx-auto">
-          Una sola cuenta para promocionar publicaciones de <strong>todas</strong> las sitios
+          Una sola cuenta para promocionar publicaciones de <strong>todas</strong> los sitios
           de la plataforma. Generás link único por publicación, te damos material promocional,
           ganás comisión por cada venta.
         </p>
@@ -462,10 +462,10 @@ function NotLoggedIn() {
           </Link>
         </div>
         <ul className="text-sm text-white/55 mt-10 space-y-2 max-w-sm mx-auto text-left">
-          <li>✅ 1 cuenta para todas las sitios</li>
+          <li>✅ 1 cuenta para todos los sitios</li>
           <li>✅ Aprobación inmediata, gratis</li>
           <li>✅ Link único por publicación + material promocional</li>
-          <li>✅ Panel global con comisiones de todas las sitios</li>
+          <li>✅ Panel global con comisiones de todos los sitios</li>
         </ul>
       </main>
     </div>
@@ -498,7 +498,7 @@ function BecomeAffiliate({ displayName }: { displayName: string | null }) {
           </button>
         </form>
         <p className="text-xs text-white/40 mt-4">
-          Aprobación inmediata · Gratis · 1 cuenta para todas las sitios
+          Aprobación inmediata · Gratis · 1 cuenta para todos los sitios
         </p>
       </main>
     </div>

@@ -269,7 +269,7 @@ export function HeroEditor({
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-3">
           <Field label="Eyebrow (pill arriba del título, ej. '🟢 Beta abierta')" value={v.eyebrow} onChange={(x) => setV({ ...v, eyebrow: x })} />
-          <RichTextField label="Título (vacío = nombre de la sitio)" value={v.title} onChange={(x) => setV({ ...v, title: x })} placeholder={fallbackTitle} />
+          <RichTextField label="Título (vacío = nombre de el sitio)" value={v.title} onChange={(x) => setV({ ...v, title: x })} placeholder={fallbackTitle} />
           <RichTextField label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} multiline />
           <div className="grid grid-cols-2 gap-3">
             <Field label="Botón principal" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} />
@@ -1337,7 +1337,7 @@ export function CatalogEditor({
             />
           )}
           <p className="text-[10px] text-white/40">
-            💡 La cinta destacada (ej. OFERTA, NUEVO) de cada publicación se configura desde el editor del publicación.
+            💡 La cinta destacada (ej. OFERTA, NUEVO) de cada publicación se configura desde el editor de la publicación.
           </p>
         </div>
         <div className="pt-3 border-t border-white/10">

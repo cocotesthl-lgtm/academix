@@ -46,7 +46,7 @@ export function BrandingForm({
   return (
     <form action={formAction} className="space-y-6 max-w-2xl">
       <div>
-        <label className="block text-sm mb-1.5 text-white/70">Nombre de la sitio</label>
+        <label className="block text-sm mb-1.5 text-white/70">Nombre de el sitio</label>
         <input
           name="name"
           required

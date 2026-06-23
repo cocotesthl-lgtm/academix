@@ -33,7 +33,7 @@ export default async function InstructorCourseDetail({
     .maybeSingle<{ id: string; slug: string; title: string; calendar_mode: string | null; calendar_horizon_days: number | null }>();
   if (!course) notFound();
 
-  // Bookings de este publicación (próximos + recientes)
+  // Bookings de esta publicación (próximos + recientes)
   let upcoming: Array<{
     id: string; slot_start: string; slot_end: string; status: string;
     buyer_name: string | null; buyer_email: string | null;

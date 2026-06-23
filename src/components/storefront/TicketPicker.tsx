@@ -5,7 +5,7 @@ import type { EventDate, SeatZone } from '@/lib/calendar/types';
 
 /**
  * Selector de tickets para publicaciones con calendar_mode='event_tickets'.
- * Reemplaza el CouponInput cuando el modo del publicación es evento.
+ * Reemplaza el CouponInput cuando el modo de la publicación es evento.
  *
  * Flow:
  *  1. Comprador elige una fecha (evento) de la lista.
