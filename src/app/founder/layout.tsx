@@ -2,6 +2,7 @@ import { requireSuperAdmin } from "@/lib/auth/guards";
 import { SignoutButton } from "@/components/auth/SignoutButton";
 import { SaveStatusBar } from "@/components/owner/SaveStatusBar";
 import { GlobalSaveListener } from "@/components/owner/GlobalSaveListener";
+import { FounderNav } from "@/components/founder/FounderNav";
 
 export const dynamic = "force-dynamic";
 
@@ -15,19 +16,7 @@ export default async function FounderLayout({ children }: { children: React.Reac
           <SaveStatusBar />
         </div>
         <GlobalSaveListener />
-        <nav className="flex flex-col gap-1 text-sm">
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/dashboard">Dashboard</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tenants">Sitios</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/users">Usuarios</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/plans">Planes</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5 text-xs text-white/55 ml-3" href="/plans/promos">→ Códigos promo</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5 text-xs text-white/55 ml-3" href="/plans/banner">→ Banner</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5 text-xs text-white/55 ml-3" href="/plans/regalar">→ Regalar plan</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/commissions">Comisiones</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/tickets">Soporte</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/revenue">Revenue</a>
-          <a className="rounded px-2 py-1.5 hover:bg-white/5" href="/wallets">💰 Wallets</a>
-        </nav>
+        <FounderNav />
         <div className="mt-auto pt-4 border-t border-white/10">
           <SignoutButton />
         </div>

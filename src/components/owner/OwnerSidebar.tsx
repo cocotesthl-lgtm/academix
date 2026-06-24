@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState, useMemo, useTransition, useEffect } from 'react';
 
 /**
  * Sidebar agrupada del owner panel.
@@ -106,6 +105,29 @@ function groupContainsActive(group: NavGroup, pathname: string): boolean {
 
 export function OwnerSidebar() {
   const pathname = usePathname() ?? '';
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  // Highlight optimista — el item se marca activo APENAS se clickea,
+  // sin esperar que la page nueva termine de cargar.
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  // Cuando el pathname finalmente cambia al destino, limpiamos el optimista.
+  useEffect(() => {
+    if (pendingHref && pathMatches(pendingHref, pathname)) {
+      setPendingHref(null);
+    }
+  }, [pathname, pendingHref]);
+
+  function navigate(href: string) {
+    if (href === pathname) return;
+    setPendingHref(href);
+    startTransition(() => router.push(href));
+  }
+
+  // Un item está "activo" si la ruta actual matchea O si está pending hacia él.
+  function isActive(href: string): boolean {
+    return pathMatches(href, pathname) || pendingHref === href;
+  }
 
   // Inicial: expandido si contiene la ruta actual
   const initialOpen = useMemo(() => {
@@ -120,6 +142,21 @@ export function OwnerSidebar() {
 
   const [open, setOpen] = useState<Record<string, boolean>>(initialOpen);
 
+  // Si el usuario navega a un item dentro de un grupo cerrado, abrirlo
+  // automáticamente para que el highlight sea visible.
+  useEffect(() => {
+    if (!pendingHref) return;
+    setOpen((prev) => {
+      const next = { ...prev };
+      for (const entry of NAV) {
+        if (entry.kind === 'group' && entry.group.items.some((i) => i.href === pendingHref)) {
+          next[entry.group.label] = true;
+        }
+      }
+      return next;
+    });
+  }, [pendingHref]);
+
   function toggle(label: string) {
     setOpen((prev) => ({ ...prev, [label]: !prev[label] }));
   }
@@ -128,11 +165,16 @@ export function OwnerSidebar() {
     <nav className="flex flex-col gap-0.5 text-sm">
       {NAV.map((entry) => {
         if (entry.kind === 'item') {
-          const active = pathMatches(entry.item.href, pathname);
+          const active = isActive(entry.item.href);
           return (
-            <Link
+            <a
               key={entry.item.href}
               href={entry.item.href}
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                e.preventDefault();
+                navigate(entry.item.href);
+              }}
               className={`flex items-center gap-2 rounded-md px-2.5 py-2 transition ${
                 active
                   ? 'bg-white/10 text-white font-medium'
@@ -141,11 +183,12 @@ export function OwnerSidebar() {
             >
               <span className="w-4 text-center">{entry.icon}</span>
               <span>{entry.item.label}</span>
-            </Link>
+            </a>
           );
         }
         const isOpen = open[entry.group.label] ?? false;
-        const hasActive = groupContainsActive(entry.group, pathname);
+        const hasActive = groupContainsActive(entry.group, pathname)
+          || entry.group.items.some((i) => i.href === pendingHref);
         return (
           <div key={entry.group.label} className="mt-1">
             <button
@@ -164,19 +207,28 @@ export function OwnerSidebar() {
             {isOpen && (
               <div className="ml-6 mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-white/10 pl-2">
                 {entry.group.items.map((item) => {
-                  const active = pathMatches(item.href, pathname);
+                  const active = isActive(item.href);
+                  const isPending = pendingHref === item.href;
                   return (
-                    <Link
+                    <a
                       key={item.href}
                       href={item.href}
-                      className={`rounded-md px-2.5 py-1.5 transition text-[13px] ${
+                      onClick={(e) => {
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                        e.preventDefault();
+                        navigate(item.href);
+                      }}
+                      className={`flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 transition text-[13px] ${
                         active
                           ? 'bg-white/10 text-white font-medium'
                           : 'text-white/70 hover:bg-white/5 hover:text-white'
                       }`}
                     >
-                      {item.label}
-                    </Link>
+                      <span>{item.label}</span>
+                      {isPending && (
+                        <span className="inline-block w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      )}
+                    </a>
                   );
                 })}
               </div>
