@@ -53,6 +53,7 @@ export async function createCourseAction(
   const priceRaw = String(formData.get('price') ?? '0').replace(/[^0-9.]/g, '');
   const currency = String(formData.get('currency') ?? 'ARS').toUpperCase();
   const productTypeRaw = String(formData.get('product_type') ?? 'course').trim() as ProductType;
+  const coverUrlInput = safeImageUrl(String(formData.get('cover_url') ?? ''));
   const spec = getProductTypeSpec(productTypeRaw);
 
   if (!title) return { ok: false, error: 'El título es obligatorio.' };
@@ -91,7 +92,8 @@ export async function createCourseAction(
     currency,
     status: 'draft',
     affiliate_enabled: true,
-    created_by: userId
+    created_by: userId,
+    ...(coverUrlInput ? { cover_url: coverUrlInput } : {})
   };
 
   // Defaults inteligentes según tipo de producto (migration 0036 + 0035 + 0012)

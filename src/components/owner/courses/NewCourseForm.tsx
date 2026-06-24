@@ -4,22 +4,27 @@ import { useActionState, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createCourseAction, type Result } from '@/lib/courses/actions';
 import { PRODUCT_TYPES, type ProductType } from '@/lib/courses/product-types';
+import { getTemplatesForType, type OfferTemplate } from '@/lib/courses/templates/offer-templates';
 import { ProductTypeMockup } from './ProductTypeMockup';
 
 /**
  * Wizard 2-pasos para crear un producto.
  * Paso 1 (visual): elegir qué se vende. Esto setea defaults inteligentes
  * (landing template, calendar mode, content labels, pricing mode).
+ * Paso 1.5 (opcional): elegir una plantilla pre-armada o empezar en blanco.
  * Paso 2: título + precio + descripción opcional. Placeholders adaptados.
  */
 export function NewCourseForm() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [type, setType] = useState<ProductType>('course');
+  const [template, setTemplate] = useState<OfferTemplate | null>(null);
   const [state, action, pending] = useActionState<Result<{ id: string }> | null, FormData>(
     createCourseAction,
     null
   );
+
+  const templatesForType = getTemplatesForType(type);
 
   useEffect(() => {
     if (state?.ok && state.data?.id) {
@@ -48,7 +53,7 @@ export function NewCourseForm() {
               <button
                 key={p.id}
                 type="button"
-                onClick={() => setType(p.id)}
+                onClick={() => { setType(p.id); setTemplate(null); }}
                 className={`text-left rounded-xl border p-4 transition flex flex-col gap-3 ${
                   selected
                     ? 'border-white bg-white/10 ring-1 ring-white/30'
@@ -80,6 +85,68 @@ export function NewCourseForm() {
           })}
         </div>
 
+        {/* ─── Plantilla pre-armada para ese tipo ─── */}
+        {templatesForType.length > 0 && (
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <div className="text-sm font-semibold text-white/90 flex items-center gap-2">
+                  <span>🎁</span> Empezá con una plantilla
+                </div>
+                <p className="text-xs text-white/50 mt-0.5">
+                  Te pre-llenamos título, descripción y precio con un ejemplo realista. Editás todo después.
+                </p>
+              </div>
+              {template && (
+                <button type="button" onClick={() => setTemplate(null)}
+                  className="text-xs text-white/55 hover:text-white underline">
+                  Empezar en blanco
+                </button>
+              )}
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {templatesForType.map((tpl) => {
+                const active = template?.id === tpl.id;
+                return (
+                  <button key={tpl.id} type="button" onClick={() => setTemplate(tpl)}
+                    className={`text-left rounded-lg border overflow-hidden transition ${
+                      active
+                        ? 'border-white bg-white/10 ring-1 ring-white/30'
+                        : 'border-white/10 bg-white/[0.02] hover:border-white/25'
+                    }`}>
+                    {tpl.coverUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={tpl.coverUrl} alt="" className="w-full h-24 object-cover" />
+                    )}
+                    <div className="p-3">
+                      <div className="text-xs font-semibold text-white flex items-center gap-1.5">
+                        {tpl.name}
+                        {active && <span className="text-[9px] uppercase bg-white text-black px-1 py-0.5 rounded">elegida</span>}
+                      </div>
+                      <p className="text-[11px] text-white/55 mt-1 leading-snug">{tpl.shortDesc}</p>
+                      <p className="text-[10px] text-white/40 mt-1.5 font-mono">
+                        {tpl.priceArs > 0 ? `ARS ${tpl.priceArs.toLocaleString('es-AR')}` : 'Gratis'}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+              {/* Tarjeta "en blanco" */}
+              <button type="button" onClick={() => setTemplate(null)}
+                className={`text-left rounded-lg border-2 border-dashed p-4 transition flex flex-col items-center justify-center text-center min-h-[140px] ${
+                  template === null
+                    ? 'border-white/40 bg-white/5'
+                    : 'border-white/10 hover:border-white/25 bg-white/[0.01]'
+                }`}>
+                <div className="text-2xl mb-1">✨</div>
+                <div className="text-xs font-semibold text-white/85">Empezar en blanco</div>
+                <p className="text-[10px] text-white/45 mt-1">Form vacío, lo armás vos.</p>
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end pt-2">
           <button
             type="button"
@@ -94,15 +161,21 @@ export function NewCourseForm() {
   }
 
   return (
-    <form action={action} className="space-y-5 max-w-xl">
+    <form action={action} className="space-y-5 max-w-xl" key={template?.id ?? 'blank'}>
       <input type="hidden" name="product_type" value={type} />
+      {template?.coverUrl && <input type="hidden" name="cover_url" value={template.coverUrl} />}
 
       <div>
         <div className="text-xs uppercase tracking-wider text-white/40 mb-1">Paso 2 de 2</div>
         <h2 className="text-xl font-semibold">Datos básicos</h2>
-        <p className="text-sm text-white/55 mt-1 flex items-center gap-1.5">
+        <p className="text-sm text-white/55 mt-1 flex items-center gap-1.5 flex-wrap">
           <span>{spec.emoji}</span>
           <span>{spec.label}</span>
+          {template && (
+            <span className="text-[10px] uppercase tracking-wide bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">
+              plantilla: {template.name}
+            </span>
+          )}
           <button type="button" onClick={() => setStep(1)} className="text-white/45 hover:text-white text-xs underline ml-2">
             cambiar
           </button>
@@ -116,6 +189,7 @@ export function NewCourseForm() {
           required
           maxLength={140}
           placeholder={titlePlaceholderFor(type)}
+          defaultValue={template?.title ?? ''}
           className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 focus:outline-none focus:border-white/40"
         />
       </div>
@@ -127,6 +201,7 @@ export function NewCourseForm() {
           rows={3}
           maxLength={500}
           placeholder={descPlaceholderFor(type)}
+          defaultValue={template?.description ?? ''}
           className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 focus:outline-none focus:border-white/40"
         />
       </div>
@@ -139,7 +214,7 @@ export function NewCourseForm() {
             type="number"
             min="0"
             step="1"
-            defaultValue="0"
+            defaultValue={String(template?.priceArs ?? 0)}
             className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 focus:outline-none focus:border-white/40"
           />
         </div>
