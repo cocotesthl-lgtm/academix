@@ -47,6 +47,23 @@ export async function processMpPayment(opts: {
   const buyerEmail = payment.payer?.email ?? null;
   const courseIdFromMeta = (payment.metadata?.course_id as string | undefined) ?? null;
 
+  // ─── Branch: si external_reference es "invoice:<id>", marcar factura como pagada.
+  if (payment.external_reference && String(payment.external_reference).startsWith('invoice:')) {
+    const invId = String(payment.external_reference).slice(8);
+    const isPaid = payment.status === 'approved';
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('customer_invoices') as any).update({
+        status: isPaid ? 'paid' : 'pending',
+        paid_at: isPaid ? new Date().toISOString() : null,
+        payment_method: 'mercadopago',
+        payment_ref: String(payment.id),
+        paid_amount_cents: isPaid ? Math.round(payment.transaction_amount * 100) : null
+      }).eq('id', invId).eq('tenant_id', opts.tenantId);
+    } catch { /* migration 0043 pendiente */ }
+    return { ok: true, saleId: null, reused: false };
+  }
+
   // ─── Branch: si external_reference es "res:<id>", procesar como seña de reserva.
   if (payment.external_reference && String(payment.external_reference).startsWith('res:')) {
     const resId = String(payment.external_reference).slice(4);

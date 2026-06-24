@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getTenantById } from '@/lib/tenant/resolve';
 import { getServiceClient } from '@/lib/supabase/service';
@@ -154,6 +155,15 @@ export default async function MiCuentaPage({ params }: { params: Promise<{ tenan
                           }`}>
                             {isPaid ? '✓ Pagada' : isCancelled ? '⚫ Anulada' : '🟡 Pendiente'}
                           </span>
+                          {isPending && inv.amount_cents > 0 && (
+                            <div className="mt-1.5">
+                              <Link href={`/mi-cuenta/pagar/${inv.id}`}
+                                className="inline-block text-[11px] px-3 py-1.5 rounded font-semibold text-white"
+                                style={{ background: primary }}>
+                                💳 Pagar
+                              </Link>
+                            </div>
+                          )}
                         </div>
                       </li>
                     );
@@ -162,15 +172,6 @@ export default async function MiCuentaPage({ params }: { params: Promise<{ tenan
               )}
             </div>
 
-            {dueAmount > 0 && (
-              <div className="px-6 pb-6">
-                <div className="rounded-md bg-black/[0.04] p-3 text-xs text-black/65">
-                  Para pagar facturas pendientes, contactá a {tenant.name}.
-                  <br />
-                  <span className="text-black/45">Pronto vas a poder pagarlas con MercadoPago desde acá.</span>
-                </div>
-              </div>
-            )}
           </section>
         );
       })}
