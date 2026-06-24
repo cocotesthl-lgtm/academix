@@ -21,6 +21,49 @@ html, body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* ───────────────────────────────────────────────────────────────────
+   Top progress bar (Linear/YouTube-style) — feedback inmediato en click
+   El componente TopProgressBar monta el DOM, esta clase hace la magia.
+   ─────────────────────────────────────────────────────────────────── */
+@keyframes cp-progress {
+  0%   { width: 0%;    opacity: 1; }
+  30%  { width: 55%;   opacity: 1; }
+  60%  { width: 80%;   opacity: 1; }
+  100% { width: 95%;   opacity: 1; }
+}
+.cp-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #34d399 0%, #10b981 50%, #059669 100%);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+  animation: cp-progress 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ───────────────────────────────────────────────────────────────────
+   Click feedback global — todos los botones, links e inputs clickeables
+   reaccionan visualmente al instante (sin esperar la respuesta del server).
+   Sentido: que la app NO se sienta "muerta" entre el click y la respuesta.
+   ─────────────────────────────────────────────────────────────────── */
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active,
+a:not([aria-disabled="true"]):active,
+input[type="submit"]:not(:disabled):active,
+input[type="button"]:not(:disabled):active,
+label:has(> input[type="checkbox"]):active,
+label:has(> input[type="radio"]):active {
+  transform: scale(0.98);
+  transition: transform 60ms ease-out;
+}
+/* Cursor de "trabajando" cuando hay nav/submit en curso */
+body:has(.cp-progress-bar) {
+  cursor: progress;
+}
+body:has(.cp-progress-bar) button,
+body:has(.cp-progress-bar) a {
+  cursor: progress;
+}
+
 /* Storefront marquee animations (trusted-by, instructor carousel) */
 @keyframes marquee {
   from { transform: translateX(0); }
