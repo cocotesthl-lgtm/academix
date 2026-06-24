@@ -6,7 +6,7 @@ import { createPreference, createPreapproval } from '@/lib/payments/mercadopago'
 import { verifyAffiliateCookie, cookieName } from '@/lib/affiliates/cookie';
 import { validateCoupon } from '@/lib/coupons/actions';
 import { env } from '@/lib/env';
-import { mergeCheckoutConfig, parseOption, type CheckoutConfig } from '@/lib/checkout/types';
+import { mergeCheckoutConfig, parseOption, deltaToCents, type CheckoutConfig } from '@/lib/checkout/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -350,10 +350,13 @@ export async function POST(
   let addonsCents = 0;
   try {
     const checkedAddons: string[] = [];
+    const basePrice = course.price_cents; // base para los %
     for (const f of checkoutCfg.extra_fields) {
       const formVal = String(form?.get(`extra_${f.key}`) ?? '');
       if (f.type === 'checkbox') {
-        const delta = f.price_delta_cents ?? 0;
+        const pct = f.price_delta_pct ?? 0;
+        const fixed = f.price_delta_cents ?? 0;
+        const delta = pct !== 0 ? Math.round(basePrice * pct) : fixed;
         if (delta === 0) continue;
         if (formVal === 'on' || formVal === 'true' || formVal === '1') {
           addonsCents += delta;
@@ -361,19 +364,21 @@ export async function POST(
         }
       } else if (f.type === 'radio') {
         if (!formVal) continue;
-        const { label, deltaCents } = parseOption(formVal);
-        if (deltaCents !== 0) {
-          addonsCents += deltaCents;
-          checkedAddons.push(`${f.label}: ${label} (${deltaCents > 0 ? '+' : ''}${deltaCents / 100})`);
+        const parsed = parseOption(formVal);
+        const delta = deltaToCents(parsed, basePrice);
+        if (delta !== 0) {
+          addonsCents += delta;
+          checkedAddons.push(`${f.label}: ${parsed.label} (${delta > 0 ? '+' : ''}${delta / 100})`);
         }
       } else if (f.type === 'multi') {
         if (!formVal) continue;
         const parts = formVal.split(',').map((s) => s.trim()).filter(Boolean);
         for (const opt of parts) {
-          const { label, deltaCents } = parseOption(opt);
-          if (deltaCents !== 0) {
-            addonsCents += deltaCents;
-            checkedAddons.push(`${f.label}: ${label} (${deltaCents > 0 ? '+' : ''}${deltaCents / 100})`);
+          const parsed = parseOption(opt);
+          const delta = deltaToCents(parsed, basePrice);
+          if (delta !== 0) {
+            addonsCents += delta;
+            checkedAddons.push(`${f.label}: ${parsed.label} (${delta > 0 ? '+' : ''}${delta / 100})`);
           }
         }
       }

@@ -164,8 +164,16 @@ export async function updateTenantExtraFieldAction(formData: FormData): Promise<
   }
   const priceDeltaRaw = formData.get('price_delta');
   if (priceDeltaRaw !== null) {
-    const cents = Math.round(parseFloat(String(priceDeltaRaw).replace(/[^0-9.-]/g, '') || '0') * 100);
-    field.price_delta_cents = Number.isNaN(cents) ? 0 : cents;
+    const mode = String(formData.get('price_delta_mode') ?? 'ars');
+    const num = parseFloat(String(priceDeltaRaw).replace(/[^0-9.-]/g, '') || '0');
+    if (mode === 'pct') {
+      field.price_delta_pct = Number.isNaN(num) ? 0 : num / 100;
+      field.price_delta_cents = 0;
+    } else {
+      const cents = Math.round(num * 100);
+      field.price_delta_cents = Number.isNaN(cents) ? 0 : cents;
+      field.price_delta_pct = 0;
+    }
   }
   await saveTenantConfig(tenant.id, cfg);
   revalidatePath('/checkout');
@@ -299,8 +307,16 @@ export async function updateCourseExtraFieldAction(formData: FormData): Promise<
     }
     const priceDeltaRaw = formData.get('price_delta');
     if (priceDeltaRaw !== null) {
-      const cents = Math.round(parseFloat(String(priceDeltaRaw).replace(/[^0-9.-]/g, '') || '0') * 100);
-      field.price_delta_cents = Number.isNaN(cents) ? 0 : cents;
+      const mode = String(formData.get('price_delta_mode') ?? 'ars');
+      const num = parseFloat(String(priceDeltaRaw).replace(/[^0-9.-]/g, '') || '0');
+      if (mode === 'pct') {
+        field.price_delta_pct = Number.isNaN(num) ? 0 : num / 100;
+        field.price_delta_cents = 0;
+      } else {
+        const cents = Math.round(num * 100);
+        field.price_delta_cents = Number.isNaN(cents) ? 0 : cents;
+        field.price_delta_pct = 0;
+      }
     }
   });
 }

@@ -254,7 +254,14 @@ function ExtraFieldRow({
   const [required, setRequired] = useState(field.required);
   const [type, setType] = useState<CheckoutFieldType>(field.type);
   const [defaultChecked, setDefaultChecked] = useState(field.default_checked ?? false);
-  const [priceDelta, setPriceDelta] = useState(((field.price_delta_cents ?? 0) / 100).toString());
+  // Si el field ya tenía un % seteado, arrancamos en modo 'pct'; sino 'ars' (legacy).
+  const initialMode: 'ars' | 'pct' = (field.price_delta_pct ?? 0) !== 0 ? 'pct' : 'ars';
+  const [deltaMode, setDeltaMode] = useState<'ars' | 'pct'>(initialMode);
+  const [priceDelta, setPriceDelta] = useState(
+    initialMode === 'pct'
+      ? ((field.price_delta_pct ?? 0) * 100).toString()
+      : ((field.price_delta_cents ?? 0) / 100).toString()
+  );
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
 
@@ -275,6 +282,7 @@ function ExtraFieldRow({
     if (type === 'checkbox') {
       fd.set('default_checked', defaultChecked ? 'true' : 'false');
       fd.set('price_delta', priceDelta || '0');
+      fd.set('price_delta_mode', deltaMode);  // 'ars' | 'pct'
     }
     start(async () => {
       await actions.updateExtra(fd);
@@ -346,8 +354,9 @@ function ExtraFieldRow({
               />
               {(type === 'radio' || type === 'multi') && (
                 <p className="text-[10px] text-white/45 leading-relaxed">
-                  💡 Para sumar/restar al precio total, agregale <code className="bg-black/40 px-1 rounded text-white/70">|+5000</code> o <code className="bg-black/40 px-1 rounded text-white/70">|-1500</code> al final de cada opción.
-                  Ej: <code className="bg-black/40 px-1 rounded text-white/70">Sede VIP|+5000</code>.
+                  💡 Para sumar/restar al precio total, agregale al final de cada opción:
+                  <br />• Monto fijo: <code className="bg-black/40 px-1 rounded text-white/70">|+5000</code> o <code className="bg-black/40 px-1 rounded text-white/70">|-1500</code> (en ARS)
+                  <br />• Porcentaje: <code className="bg-black/40 px-1 rounded text-white/70">|+10%</code> o <code className="bg-black/40 px-1 rounded text-white/70">|-15%</code> (sobre el precio base)
                 </p>
               )}
             </div>
@@ -358,14 +367,30 @@ function ExtraFieldRow({
                 <input type="checkbox" checked={defaultChecked} onChange={(e) => setDefaultChecked(e.target.checked)} />
                 Pre-tildado por default
               </label>
-              <label className="block text-xs text-white/55">
-                Suma al precio (ARS) si está tildado
-                <input
-                  type="number" step="1" value={priceDelta} onChange={(e) => setPriceDelta(e.target.value)}
-                  placeholder="0 = no modifica"
-                  className="block mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm font-mono text-white"
-                />
-              </label>
+              <div className="block text-xs text-white/55 col-span-2 sm:col-span-1">
+                Modifica el precio si está tildado
+                <div className="flex gap-1 mt-1">
+                  <input
+                    type="number" step="any" value={priceDelta} onChange={(e) => setPriceDelta(e.target.value)}
+                    placeholder="0 = no modifica"
+                    className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm font-mono text-white"
+                  />
+                  <select
+                    value={deltaMode}
+                    onChange={(e) => setDeltaMode(e.target.value as 'ars' | 'pct')}
+                    className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs text-white"
+                    title="Unidad"
+                  >
+                    <option value="ars" className="bg-[#0a0a0a]">ARS</option>
+                    <option value="pct" className="bg-[#0a0a0a]">%</option>
+                  </select>
+                </div>
+                <p className="text-[10px] text-white/40 mt-1">
+                  {deltaMode === 'pct'
+                    ? 'Porcentaje sobre el precio base de la publicación. Ej: 10 = +10%, -5 = -5%.'
+                    : 'Monto fijo en ARS. Ej: 5000 = +$5000, -2000 = -$2000.'}
+                </p>
+              </div>
             </div>
           )}
           <label className="flex items-center gap-2 text-sm">

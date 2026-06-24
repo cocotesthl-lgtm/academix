@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { CheckoutConfig, CheckoutField } from '@/lib/checkout/types';
-import { DEFAULT_CHECKOUT_CONFIG, parseOption } from '@/lib/checkout/types';
+import { DEFAULT_CHECKOUT_CONFIG, parseOption, deltaToCents } from '@/lib/checkout/types';
 import type { BookingSlot, CalendarMode } from '@/lib/calendar/types';
 import { CalendarPicker } from './CalendarPicker';
 
@@ -84,18 +84,21 @@ export function CouponInput({
   //  - multi: cada opción seleccionada (idem)
   const addonsCents = cfg.extra_fields.reduce((sum, f) => {
     if (f.type === 'checkbox') {
-      return extras[f.id] === true ? sum + (f.price_delta_cents ?? 0) : sum;
+      if (extras[f.id] !== true) return sum;
+      const pct = f.price_delta_pct ?? 0;
+      const fixed = f.price_delta_cents ?? 0;
+      return sum + (pct !== 0 ? Math.round(priceCents * pct) : fixed);
     }
     if (f.type === 'radio') {
       const v = (extras[f.id] as string) ?? '';
       if (!v) return sum;
-      return sum + parseOption(v).deltaCents;
+      return sum + deltaToCents(parseOption(v), priceCents);
     }
     if (f.type === 'multi') {
       const csv = (extras[f.id] as string) ?? '';
       if (!csv) return sum;
       return csv.split(',').map((s) => s.trim()).filter(Boolean)
-        .reduce((s2, opt) => s2 + parseOption(opt).deltaCents, sum);
+        .reduce((s2, opt) => s2 + deltaToCents(parseOption(opt), priceCents), sum);
     }
     return sum;
   }, 0);
@@ -489,7 +492,13 @@ function ExtraInput({
   }
 
   if (field.type === 'checkbox') {
-    const delta = field.price_delta_cents ?? 0;
+    const pct = field.price_delta_pct ?? 0;
+    const fixed = field.price_delta_cents ?? 0;
+    const isPct = pct !== 0;
+    const delta = isPct ? 0 : fixed;            // sólo para el texto fijo
+    const hasDelta = isPct || delta !== 0;
+    const sign = isPct ? (pct > 0 ? '+' : '') : (delta > 0 ? '+' : '');
+    const positive = isPct ? pct > 0 : delta > 0;
     return (
       <label className={`flex items-start gap-3 rounded-md border p-3 text-sm cursor-pointer transition ${
         value === true ? 'border-black bg-black/[0.04]' : 'border-black/15 hover:border-black/40'
@@ -506,9 +515,11 @@ function ExtraInput({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <span className="font-medium">{field.label}{reqStar}</span>
-            {delta !== 0 && (
-              <span className={`text-xs font-bold whitespace-nowrap ${delta > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                {delta > 0 ? '+' : ''}${(delta / 100).toLocaleString('es-AR')}
+            {hasDelta && (
+              <span className={`text-xs font-bold whitespace-nowrap ${positive ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {isPct
+                  ? `${sign}${(pct * 100).toLocaleString('es-AR')}%`
+                  : `${sign}$${(delta / 100).toLocaleString('es-AR')}`}
               </span>
             )}
           </div>
@@ -587,9 +598,11 @@ function ExtraInput({
                     className="w-4 h-4 accent-black"
                   />
                   <span className="font-medium flex-1">{parsed.label}</span>
-                  {parsed.deltaCents !== 0 && (
-                    <span className={`text-xs font-bold whitespace-nowrap ${parsed.deltaCents > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                      {parsed.deltaCents > 0 ? '+' : ''}${(parsed.deltaCents / 100).toLocaleString('es-AR')}
+                  {(parsed.deltaCents !== 0 || parsed.deltaPct !== 0) && (
+                    <span className={`text-xs font-bold whitespace-nowrap ${(parsed.deltaPct || parsed.deltaCents) > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                      {parsed.deltaPct !== 0
+                        ? `${parsed.deltaPct > 0 ? '+' : ''}${(parsed.deltaPct * 100).toLocaleString('es-AR')}%`
+                        : `${parsed.deltaCents > 0 ? '+' : ''}$${(parsed.deltaCents / 100).toLocaleString('es-AR')}`}
                     </span>
                   )}
                 </label>
@@ -633,9 +646,11 @@ function ExtraInput({
                     className="w-4 h-4 accent-black"
                   />
                   <span className="font-medium flex-1">{parsed.label}</span>
-                  {parsed.deltaCents !== 0 && (
-                    <span className={`text-xs font-bold whitespace-nowrap ${parsed.deltaCents > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                      {parsed.deltaCents > 0 ? '+' : ''}${(parsed.deltaCents / 100).toLocaleString('es-AR')}
+                  {(parsed.deltaCents !== 0 || parsed.deltaPct !== 0) && (
+                    <span className={`text-xs font-bold whitespace-nowrap ${(parsed.deltaPct || parsed.deltaCents) > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                      {parsed.deltaPct !== 0
+                        ? `${parsed.deltaPct > 0 ? '+' : ''}${(parsed.deltaPct * 100).toLocaleString('es-AR')}%`
+                        : `${parsed.deltaCents > 0 ? '+' : ''}$${(parsed.deltaCents / 100).toLocaleString('es-AR')}`}
                     </span>
                   )}
                 </label>

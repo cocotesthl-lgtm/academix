@@ -25,29 +25,48 @@ export type CheckoutField = {
   type: CheckoutFieldType;
   required: boolean;
   placeholder?: string;
-  /** para 'select' | 'radio' | 'multi'. Cada string puede llevar un sufijo
-   *  `|+5000` o `|-2000` para sumar/restar pesos al total cuando se elige.
-   *  Ej: "Sede Premium|+5000" o "Pack básico|-3000".
+  /** para 'select' | 'radio' | 'multi'. Cada string puede llevar un sufijo:
+   *  - monto fijo en pesos: `|+5000`, `|-2000` (ej "Sede Premium|+5000")
+   *  - porcentaje del precio base: `|+10%`, `|-5%` (ej "Cupón|-15%")
    *  Parsear con `parseOption()`. */
   options?: string[];
   helper?: string;         // texto descriptivo debajo del input
   position: number;
   default_checked?: boolean;     // sólo 'checkbox' — viene pre-tildado
-  price_delta_cents?: number;    // sólo 'checkbox' — suma este monto al total si está tildado
+  /** sólo 'checkbox'. Monto fijo en CENTAVOS sumado al total si está tildado.
+   *  Mutuamente excluyente con price_delta_pct (si ambos están seteados, gana pct). */
+  price_delta_cents?: number;
+  /** sólo 'checkbox'. Porcentaje (decimal: 0.1 = 10%) aplicado al precio
+   *  BASE de la publicación si está tildado. Positivo suma, negativo resta. */
+  price_delta_pct?: number;
 };
 
-/** Parsea una opción con sufijo `|+5000` o `|-1000` (pesos) y devuelve
- *  label limpio + delta en CENTAVOS. Sin sufijo → delta=0. */
-export function parseOption(raw: string): { label: string; deltaCents: number } {
+/** Parsea una opción con sufijo `|+5000`, `|-1000`, `|+10%`, `|-5%`.
+ *  Devuelve label limpio + delta en CENTAVOS y delta en PORCENTAJE (decimal).
+ *  Si no hay sufijo, ambos son 0. */
+export function parseOption(raw: string): { label: string; deltaCents: number; deltaPct: number } {
   const i = raw.lastIndexOf('|');
-  if (i < 0) return { label: raw.trim(), deltaCents: 0 };
+  if (i < 0) return { label: raw.trim(), deltaCents: 0, deltaPct: 0 };
   const label = raw.slice(0, i).trim();
   const rest = raw.slice(i + 1).trim().replace(/\s/g, '');
-  // Acepta "+5000", "-1000", "5000", "+5.000", "-1.500"
   const sign = rest.startsWith('-') ? -1 : 1;
-  const num = parseFloat(rest.replace(/[+,-]/g, '').replace(/\./g, ''));
-  if (Number.isNaN(num)) return { label: raw.trim(), deltaCents: 0 };
-  return { label, deltaCents: sign * Math.round(num * 100) };
+  const isPct = rest.endsWith('%');
+  const clean = rest.replace(/[+,-]/g, '').replace(/%/g, '').replace(/\./g, '');
+  const num = parseFloat(clean);
+  if (Number.isNaN(num)) return { label: raw.trim(), deltaCents: 0, deltaPct: 0 };
+  if (isPct) {
+    return { label, deltaCents: 0, deltaPct: sign * (num / 100) };
+  }
+  return { label, deltaCents: sign * Math.round(num * 100), deltaPct: 0 };
+}
+
+/** Resuelve el delta total en CENTAVOS dado un parsed y el precio base
+ *  contra el cual aplica el %. Usar el precio base de la publicación. */
+export function deltaToCents(
+  parsed: { deltaCents: number; deltaPct: number },
+  basePriceCents: number
+): number {
+  return parsed.deltaCents + Math.round(basePriceCents * parsed.deltaPct);
 }
 
 export type BaseFieldKey = 'name' | 'dni' | 'phone' | 'location';

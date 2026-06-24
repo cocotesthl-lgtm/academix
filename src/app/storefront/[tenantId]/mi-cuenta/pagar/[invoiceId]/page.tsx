@@ -135,13 +135,7 @@ function ServerExtraInput({ field }: { field: CheckoutField }) {
       <label className="flex items-start gap-2 rounded-md border border-black/15 p-3 text-sm cursor-pointer">
         <input name={name} type="checkbox" value="on" required={req} defaultChecked={field.default_checked ?? false}
           className="mt-0.5 w-4 h-4 accent-black" />
-        <span className="flex-1">{field.label}{star}
-          {(field.price_delta_cents ?? 0) !== 0 && (
-            <span className={`ml-2 text-xs font-bold ${(field.price_delta_cents ?? 0) > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-              {(field.price_delta_cents ?? 0) > 0 ? '+' : ''}${((field.price_delta_cents ?? 0) / 100).toLocaleString('es-AR')}
-            </span>
-          )}
-        </span>
+        <span className="flex-1">{field.label}{star}{renderDelta(field.price_delta_pct, field.price_delta_cents)}</span>
       </label>
     );
   }
@@ -177,11 +171,7 @@ function ServerExtraInput({ field }: { field: CheckoutField }) {
               <label key={o} className="flex items-center gap-2 rounded-md border-2 border-black/15 px-3 py-2 text-sm cursor-pointer hover:border-black/40">
                 <input name={name} type="radio" value={o} required={req} className="w-4 h-4 accent-black" />
                 <span className="flex-1">{parsed.label}</span>
-                {parsed.deltaCents !== 0 && (
-                  <span className={`text-xs font-bold ${parsed.deltaCents > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                    {parsed.deltaCents > 0 ? '+' : ''}${(parsed.deltaCents / 100).toLocaleString('es-AR')}
-                  </span>
-                )}
+                {renderDelta(parsed.deltaPct, parsed.deltaCents)}
               </label>
             );
           })}
@@ -203,5 +193,19 @@ function ServerExtraInput({ field }: { field: CheckoutField }) {
       <input name={name} type={htmlType} required={req} placeholder={field.placeholder} maxLength={200}
         className="mt-1 w-full rounded border border-black/15 px-3 py-2 text-sm" />
     </label>
+  );
+}
+
+function renderDelta(pct: number | undefined, fixedCents: number | undefined) {
+  const p = pct ?? 0;
+  const f = fixedCents ?? 0;
+  if (p === 0 && f === 0) return null;
+  const positive = p !== 0 ? p > 0 : f > 0;
+  return (
+    <span className={`ml-2 text-xs font-bold ${positive ? 'text-emerald-700' : 'text-rose-700'}`}>
+      {p !== 0
+        ? `${p > 0 ? '+' : ''}${(p * 100).toLocaleString('es-AR')}%`
+        : `${f > 0 ? '+' : ''}$${(f / 100).toLocaleString('es-AR')}`}
+    </span>
   );
 }
