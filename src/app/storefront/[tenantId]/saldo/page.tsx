@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getTenantById } from '@/lib/tenant/resolve';
 import { getServiceClient } from '@/lib/supabase/service';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { WalletActions } from '@/components/storefront/WalletActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,15 @@ export default async function SaldoPage({ params }: { params: Promise<{ tenantId
   let currency = 'ARS';
   let txs: TxRow[] = [];
   let walletExists = false;
+  let transfersEnabled = false;
+  let withdrawalsEnabled = false;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: t } = await (svc.from('tenants') as any)
+      .select('wallet_transfers_enabled, wallet_withdrawals_enabled').eq('id', tenantId).maybeSingle();
+    transfersEnabled = !!t?.wallet_transfers_enabled;
+    withdrawalsEnabled = !!t?.wallet_withdrawals_enabled;
+  } catch { /* migration 0042 pendiente */ }
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: w } = await (svc.from('wallets') as any)
@@ -58,6 +68,15 @@ export default async function SaldoPage({ params }: { params: Promise<{ tenantId
           <p className="text-xs mt-3 opacity-70">No tenés saldo todavía. Cargá comprando un producto de tipo &quot;Carga de saldo&quot;.</p>
         )}
       </div>
+
+      <WalletActions
+        tenantId={tenantId}
+        balanceCents={balance}
+        currency={currency}
+        transfersEnabled={transfersEnabled}
+        withdrawalsEnabled={withdrawalsEnabled}
+        primary={primary}
+      />
 
       <div className="rounded-2xl border border-black/10 overflow-hidden">
         <h2 className="bg-black/[0.03] px-4 py-3 text-sm font-semibold">Historial de movimientos</h2>

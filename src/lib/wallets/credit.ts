@@ -12,7 +12,7 @@ export async function creditWallet(opts: {
   tenantId: string;
   userId: string;
   amountCents: number;     // positivo = acredita, negativo = debita
-  kind: 'topup' | 'spend' | 'refund' | 'admin_adjust';
+  kind: 'topup' | 'spend' | 'refund' | 'admin_adjust' | 'transfer_out' | 'transfer_in' | 'withdrawal';
   courseId?: string | null;
   saleId?: string | null;
   note?: string | null;
