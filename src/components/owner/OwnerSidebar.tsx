@@ -28,6 +28,7 @@ const NAV: NavEntry[] = [
       items: [
         { label: 'Ofertas', href: '/courses' },
         { label: '💰 Saldos', href: '/wallets' },
+        { label: '📋 Cuentas / Planes', href: '/cuentas' },
         { label: 'Contenido VIP', href: '/vip' },
         { label: 'Bundles', href: '/bundles' },
         { label: 'Categorías', href: '/categories' }
