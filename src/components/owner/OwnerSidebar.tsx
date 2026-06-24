@@ -71,6 +71,7 @@ const NAV: NavEntry[] = [
       label: 'Mi sitio', icon: '🎨',
       items: [
         { label: 'Editor de páginas', href: '/site' },
+        { label: 'Templates', href: '/templates' },
         { label: 'Identidad', href: '/branding' },
         { label: 'Checkout', href: '/checkout' },
         { label: 'Cupones', href: '/coupons' }
