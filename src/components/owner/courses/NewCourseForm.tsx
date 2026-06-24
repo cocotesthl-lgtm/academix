@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createCourseAction, type Result } from '@/lib/courses/actions';
 import { PRODUCT_TYPES, type ProductType } from '@/lib/courses/product-types';
+import { ProductTypeMockup } from './ProductTypeMockup';
 
 /**
  * Wizard 2-pasos para crear un producto.
@@ -48,16 +49,21 @@ export function NewCourseForm() {
                 key={p.id}
                 type="button"
                 onClick={() => setType(p.id)}
-                className={`text-left rounded-xl border p-4 transition ${
+                className={`text-left rounded-xl border p-4 transition flex flex-col gap-3 ${
                   selected
-                    ? 'border-white bg-white/10'
+                    ? 'border-white bg-white/10 ring-1 ring-white/30'
                     : 'border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.05]'
                 }`}
               >
+                {/* Mockup visual de cómo se ve la oferta cuando el comprador la abre */}
+                <div className="-mx-1 -mt-1">
+                  <ProductTypeMockup type={p.id} />
+                </div>
+
                 <div className="flex items-start gap-3">
                   <div className="text-2xl leading-none mt-0.5">{p.emoji}</div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-sm flex items-center gap-2">
+                    <div className="font-semibold text-sm flex items-center gap-2 flex-wrap">
                       {p.label}
                       {selected && (
                         <span className="text-[10px] uppercase tracking-wide bg-white text-black px-1.5 py-0.5 rounded">
