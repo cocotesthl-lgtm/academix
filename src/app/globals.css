@@ -50,8 +50,10 @@ html, body {
    (sidebar grafito + contenido claro).
    ─────────────────────────────────────────────────────────────────── */
 
-/* Texto: white/X → black/X (mismo nivel de opacidad) */
-[data-cp-content="light"] .text-white            { color: #1a1a1a !important; }
+/* Texto muteado: white/X (con opacidad) → black/X. OJO: NO tocamos
+   text-white sólido — ese se usa en botones/banners con fondo de color
+   donde el blanco es intencional (sino se vuelve negro-sobre-color = ilegible).
+   Tampoco hover:text-white por la misma razón. */
 [data-cp-content="light"] .text-white\/90        { color: rgba(0,0,0,0.88) !important; }
 [data-cp-content="light"] .text-white\/85        { color: rgba(0,0,0,0.82) !important; }
 [data-cp-content="light"] .text-white\/80        { color: rgba(0,0,0,0.78) !important; }
@@ -70,8 +72,9 @@ html, body {
 [data-cp-content="light"] .text-white\/15        { color: rgba(0,0,0,0.28) !important; }
 [data-cp-content="light"] .text-white\/10        { color: rgba(0,0,0,0.22) !important; }
 
-/* hover:text-white → hover:negro */
-[data-cp-content="light"] .hover\:text-white:hover { color: #000 !important; }
+/* NO override de hover:text-white — se usa en botones con bg de color
+   (ej. hover de un menú item sobre fondo dark/colored) y romperíamos el
+   contraste. Si algún hover queda raro en light, lo arreglamos individual. */
 
 /* placeholder:text-white/X */
 [data-cp-content="light"] .placeholder\:text-white\/30::placeholder { color: rgba(0,0,0,0.38) !important; }
@@ -130,6 +133,50 @@ html, body {
 [data-cp-content="light"] .hover\:bg-white\/90:hover {
   background-color: #333 !important;
 }
+
+/* Texto muteado de colores (Alerts/banners). En dark theme se usa la
+   variante clara (-200/-300) para que contraste sobre el bg-color/10.
+   En light theme esa variante queda casi blanca → invisible. Las pasamos
+   a la variante oscura (-700/-800) que contrasta sobre el mismo bg-color/10
+   pero en fondo claro. */
+[data-cp-content="light"] .text-amber-100   { color: #78350f !important; }
+[data-cp-content="light"] .text-amber-200   { color: #92400e !important; }
+[data-cp-content="light"] .text-amber-300   { color: #b45309 !important; }
+[data-cp-content="light"] .text-emerald-100 { color: #064e3b !important; }
+[data-cp-content="light"] .text-emerald-200 { color: #065f46 !important; }
+[data-cp-content="light"] .text-emerald-300 { color: #047857 !important; }
+[data-cp-content="light"] .text-fuchsia-100 { color: #701a75 !important; }
+[data-cp-content="light"] .text-fuchsia-200 { color: #86198f !important; }
+[data-cp-content="light"] .text-fuchsia-300 { color: #a21caf !important; }
+[data-cp-content="light"] .text-rose-100    { color: #881337 !important; }
+[data-cp-content="light"] .text-rose-200    { color: #9f1239 !important; }
+[data-cp-content="light"] .text-rose-300    { color: #be123c !important; }
+[data-cp-content="light"] .text-red-100     { color: #7f1d1d !important; }
+[data-cp-content="light"] .text-red-200     { color: #991b1b !important; }
+[data-cp-content="light"] .text-red-300     { color: #b91c1c !important; }
+[data-cp-content="light"] .text-blue-100    { color: #1e3a8a !important; }
+[data-cp-content="light"] .text-blue-200    { color: #1e40af !important; }
+[data-cp-content="light"] .text-blue-300    { color: #1d4ed8 !important; }
+[data-cp-content="light"] .text-sky-200     { color: #075985 !important; }
+[data-cp-content="light"] .text-sky-300     { color: #0369a1 !important; }
+[data-cp-content="light"] .text-cyan-200    { color: #155e75 !important; }
+[data-cp-content="light"] .text-cyan-300    { color: #0e7490 !important; }
+[data-cp-content="light"] .text-violet-200  { color: #5b21b6 !important; }
+[data-cp-content="light"] .text-violet-300  { color: #6d28d9 !important; }
+[data-cp-content="light"] .text-purple-200  { color: #6b21a8 !important; }
+[data-cp-content="light"] .text-purple-300  { color: #7e22ce !important; }
+[data-cp-content="light"] .text-lime-200    { color: #3f6212 !important; }
+[data-cp-content="light"] .text-lime-300    { color: #4d7c0f !important; }
+[data-cp-content="light"] .text-yellow-200  { color: #854d0e !important; }
+[data-cp-content="light"] .text-yellow-300  { color: #a16207 !important; }
+[data-cp-content="light"] .text-orange-200  { color: #9a3412 !important; }
+[data-cp-content="light"] .text-orange-300  { color: #c2410c !important; }
+[data-cp-content="light"] .text-pink-200    { color: #9d174d !important; }
+[data-cp-content="light"] .text-pink-300    { color: #be185d !important; }
+[data-cp-content="light"] .text-teal-200    { color: #115e59 !important; }
+[data-cp-content="light"] .text-teal-300    { color: #0f766e !important; }
+[data-cp-content="light"] .text-indigo-200  { color: #3730a3 !important; }
+[data-cp-content="light"] .text-indigo-300  { color: #4338ca !important; }
 
 /* ───────────────────────────────────────────────────────────────────
    Click feedback global — todos los botones, links e inputs clickeables
