@@ -63,7 +63,7 @@ export default async function BrandingPage() {
           initialHeader={data?.email_header_image_url ?? ''}
           initialBanner={data?.email_banner_image_url ?? ''}
           initialFooter={data?.email_footer_message ?? ''}
-          brandColor={brand.primary_color ?? '#a855f7'}
+          brandColor={brand.primary_color ?? '#f97316'}
           brandName={tenant.name}
           logoUrl={brand.logo_url ?? undefined}
         />

@@ -130,7 +130,7 @@ export default async function FounderPromoCodesPage() {
                       {c.applies_to === 'both' ? 'Mensual + Anual'
                         : c.applies_to === 'monthly' ? 'Solo mensual' : 'Solo anual'}
                       {c.plan_ids.length > 0 && (
-                        <div className="text-[10px] text-fuchsia-300 mt-0.5">
+                        <div className="text-[10px] text-amber-400 mt-0.5">
                           {c.plan_ids.length} plan{c.plan_ids.length > 1 ? 'es' : ''}
                         </div>
                       )}

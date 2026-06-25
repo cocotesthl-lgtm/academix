@@ -39,7 +39,7 @@ export default async function InstructorLayout({ children }: { children: React.R
             <p className="text-[10px] uppercase tracking-wider text-white/40 mb-2 px-2">También sos</p>
             <a
               href={`${apexUrl}/affiliate`}
-              className="rounded px-2 py-1.5 hover:bg-white/5 text-sm flex items-center gap-2 text-fuchsia-200"
+              className="rounded px-2 py-1.5 hover:bg-white/5 text-sm flex items-center gap-2 text-amber-300"
             >
               💼 Panel de afiliado →
             </a>

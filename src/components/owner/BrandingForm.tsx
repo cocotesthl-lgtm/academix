@@ -27,7 +27,7 @@ export function BrandingForm({
     updateBrandingAction,
     null
   );
-  const [primary, setPrimary] = useState(initialBrand.primary_color ?? '#a855f7');
+  const [primary, setPrimary] = useState(initialBrand.primary_color ?? '#f97316');
   const [accent, setAccent] = useState(initialBrand.accent_color ?? '#22d3ee');
   const [layout, setLayout] = useState<'square' | 'horizontal'>(
     initialBrand.logo_layout === 'horizontal' ? 'horizontal' : 'square'

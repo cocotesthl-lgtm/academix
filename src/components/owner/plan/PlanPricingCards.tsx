@@ -175,12 +175,12 @@ export function PlanPricingCards({
               key={plan.id}
               className={`rounded-2xl border-2 p-6 flex flex-col relative ${
                 isFeatured
-                  ? 'border-fuchsia-500 bg-gradient-to-b from-fuchsia-500/10 to-transparent'
+                  ? 'border-orange-500 bg-gradient-to-b from-orange-500/10 to-transparent'
                   : 'border-white/15 bg-white/[0.02]'
               }`}
             >
               {isFeatured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-fuchsia-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full px-3 py-1">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-full px-3 py-1">
                   ★ Más elegido
                 </div>
               )}
@@ -205,12 +205,12 @@ export function PlanPricingCards({
                 {period === 'annual' ? (
                   <p className="text-xs text-white/40 mt-1">
                     Facturado {format(annualDisplay, plan.currency)} por año
-                    {applies && <span className="text-fuchsia-300/80 ml-1.5">(código {appliedPromo!.code})</span>}
+                    {applies && <span className="text-amber-400/80 ml-1.5">(código {appliedPromo!.code})</span>}
                   </p>
                 ) : (
                   <p className="text-xs text-white/40 mt-1">
                     Facturado mes a mes
-                    {applies && <span className="text-fuchsia-300/80 ml-1.5">(código {appliedPromo!.code})</span>}
+                    {applies && <span className="text-amber-400/80 ml-1.5">(código {appliedPromo!.code})</span>}
                   </p>
                 )}
               </div>
@@ -254,7 +254,7 @@ export function PlanPricingCards({
                   ✓ Plan actual
                 </div>
               ) : isCurrent && onTrial ? (
-                <div className="rounded-md border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200 text-center py-2 text-xs font-semibold">
+                <div className="rounded-md border border-orange-500/40 bg-orange-500/10 text-amber-300 text-center py-2 text-xs font-semibold">
                   En trial · MP cobrará al terminar
                 </div>
               ) : (
@@ -267,7 +267,7 @@ export function PlanPricingCards({
                         disabled={pending}
                         className={`w-full rounded-md py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
                           isFeatured
-                            ? 'bg-fuchsia-500 text-white hover:bg-fuchsia-400'
+                            ? 'bg-orange-500 text-white hover:bg-orange-400'
                             : 'bg-white text-black hover:bg-white/90'
                         }`}
                       >
@@ -284,7 +284,7 @@ export function PlanPricingCards({
                       disabled={pending}
                       className={`w-full rounded-md py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
                         isFeatured
-                          ? 'bg-fuchsia-500 text-white hover:bg-fuchsia-400'
+                          ? 'bg-orange-500 text-white hover:bg-orange-400'
                           : 'bg-white text-black hover:bg-white/90'
                       }`}
                     >

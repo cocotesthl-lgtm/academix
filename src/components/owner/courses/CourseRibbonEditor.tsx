@@ -10,7 +10,7 @@ import { showToast } from '@/components/owner/ToastBus';
  */
 
 const TONE_OPTIONS = [
-  { value: 'featured', label: '★ Destacado', preview: 'bg-fuchsia-500 text-white' },
+  { value: 'featured', label: '★ Destacado', preview: 'bg-orange-500 text-white' },
   { value: 'sale',     label: '💸 Oferta',    preview: 'bg-rose-500 text-white' },
   { value: 'urgent',   label: '⏰ Urgente',   preview: 'bg-amber-500 text-amber-950' },
   { value: 'new',      label: '✨ Nuevo',     preview: 'bg-emerald-500 text-white' },
@@ -39,7 +39,7 @@ export function CourseRibbonEditor({
     });
   }
 
-  const currentToneCls = TONE_OPTIONS.find((t) => t.value === tone)?.preview ?? 'bg-fuchsia-500 text-white';
+  const currentToneCls = TONE_OPTIONS.find((t) => t.value === tone)?.preview ?? 'bg-orange-500 text-white';
 
   return (
     <section className="max-w-3xl pt-8 border-t border-white/10">

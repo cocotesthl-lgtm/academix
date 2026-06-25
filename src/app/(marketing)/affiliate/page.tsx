@@ -165,7 +165,7 @@ export default async function AffiliateGlobalPage({
 
       <main className="max-w-5xl mx-auto px-6 py-10 space-y-10">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-1 text-xs text-fuchsia-200 mb-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs text-amber-300 mb-3">
             💼 Afiliado de Curplat
           </div>
           <h1 className="text-3xl md:text-4xl font-bold">Tu panel global de afiliado</h1>
@@ -219,7 +219,7 @@ export default async function AffiliateGlobalPage({
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {myTenants.map((t) => {
                 const accrued = accruedByTenant.get(t.id) ?? 0;
-                const color = t.brand?.primary_color ?? '#a855f7';
+                const color = t.brand?.primary_color ?? '#f97316';
                 const origin = tenantOrigin(t.slug);
                 return (
                   <TenantCard key={t.id} tenant={t} href={`${origin}/affiliate`} accent={color}>
@@ -344,7 +344,7 @@ export default async function AffiliateGlobalPage({
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {exploreTenants.map((t) => {
-                const color = t.brand?.primary_color ?? '#a855f7';
+                const color = t.brand?.primary_color ?? '#f97316';
                 const origin = tenantOrigin(t.slug);
                 return (
                   <a
@@ -373,7 +373,7 @@ export default async function AffiliateGlobalPage({
               })}
             </div>
             <div className="text-center mt-4">
-              <Link href="/buscar" className="text-sm text-fuchsia-300 hover:text-fuchsia-200">
+              <Link href="/buscar" className="text-sm text-amber-400 hover:text-amber-300">
                 Ver todos los sitios →
               </Link>
             </div>
@@ -450,7 +450,7 @@ function NotLoggedIn() {
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href="/signup?next=/affiliate"
-            className="rounded-lg bg-fuchsia-500 text-white px-6 py-3 font-semibold hover:bg-fuchsia-400"
+            className="rounded-lg bg-orange-500 text-white px-6 py-3 font-semibold hover:bg-orange-400"
           >
             Crear cuenta gratis →
           </Link>
@@ -492,7 +492,7 @@ function BecomeAffiliate({ displayName }: { displayName: string | null }) {
         <form action={becomeAffiliateAction} className="mt-8">
           <input type="hidden" name="redirect_to" value="/affiliate" />
           <button
-            className="rounded-lg bg-fuchsia-500 text-white px-6 py-3 font-semibold hover:bg-fuchsia-400"
+            className="rounded-lg bg-orange-500 text-white px-6 py-3 font-semibold hover:bg-orange-400"
           >
             ✅ Activar mi cuenta de afiliado
           </button>

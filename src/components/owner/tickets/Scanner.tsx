@@ -129,7 +129,7 @@ export function TicketScanner() {
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submit(code); } }}
             placeholder="Escaneá con la pistola o tipeá el N° de orden…"
             disabled={pending}
-            className="flex-1 min-w-[200px] rounded-lg bg-black/40 border border-white/20 px-4 py-3 text-base font-mono tracking-wider focus:border-fuchsia-400 outline-none disabled:opacity-50"
+            className="flex-1 min-w-[200px] rounded-lg bg-black/40 border border-white/20 px-4 py-3 text-base font-mono tracking-wider focus:border-orange-400 outline-none disabled:opacity-50"
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="characters"
@@ -138,14 +138,14 @@ export function TicketScanner() {
             type="button"
             onClick={() => submit(code)}
             disabled={pending || !code.trim()}
-            className="rounded-lg bg-fuchsia-500 text-white px-5 py-3 font-semibold hover:bg-fuchsia-400 disabled:opacity-50"
+            className="rounded-lg bg-orange-500 text-white px-5 py-3 font-semibold hover:bg-orange-400 disabled:opacity-50"
           >
             Validar
           </button>
           <button
             type="button"
             onClick={() => setCameraOn((v) => !v)}
-            className={`rounded-lg px-4 py-3 font-medium border ${cameraOn ? 'bg-fuchsia-500/20 border-fuchsia-400 text-fuchsia-100' : 'border-white/20 text-white/70 hover:bg-white/5'}`}
+            className={`rounded-lg px-4 py-3 font-medium border ${cameraOn ? 'bg-orange-500/20 border-orange-400 text-amber-100' : 'border-white/20 text-white/70 hover:bg-white/5'}`}
           >
             📷 {cameraOn ? 'Cerrar cámara' : 'Cámara'}
           </button>
@@ -156,7 +156,7 @@ export function TicketScanner() {
       </div>
 
       {cameraOn && (
-        <div className="rounded-xl border border-fuchsia-500/30 bg-black p-3">
+        <div className="rounded-xl border border-orange-500/30 bg-black p-3">
           <div id="qr-camera-region" ref={cameraDivRef} className="w-full max-w-md mx-auto" />
           <p className="text-center text-xs text-white/50 mt-2">Apuntá al QR del ticket</p>
         </div>

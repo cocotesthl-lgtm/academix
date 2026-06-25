@@ -84,7 +84,7 @@ export default async function OwnerInstructorsPage() {
 
       {/* ─── Ascender afiliados ─── */}
       {affiliateCandidates.length > 0 && (
-        <div className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-4">
+        <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
           <h2 className="font-semibold text-sm mb-1">💼 → 👨‍🏫 Ascender afiliados a instructor</h2>
           <p className="text-xs text-white/55 mb-3">
             Estos afiliados ya generan links de tus publicaciones. Sin fricción: 1 click y son
@@ -100,7 +100,7 @@ export default async function OwnerInstructorsPage() {
                 </div>
                 <form action={addInstructorAction}>
                   <input type="hidden" name="user_id" value={c.user_id} />
-                  <button className="text-xs px-3 py-1.5 rounded border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/20 whitespace-nowrap">
+                  <button className="text-xs px-3 py-1.5 rounded border border-orange-500/40 bg-orange-500/10 text-amber-300 hover:bg-orange-500/20 whitespace-nowrap">
                     ⬆ Ascender a instructor
                   </button>
                 </form>

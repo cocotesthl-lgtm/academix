@@ -85,7 +85,7 @@ export async function upsertAnnouncementAction(formData: FormData): Promise<void
   const ctaLabel = String(formData.get('cta_label') ?? '').trim().slice(0, 40) || null;
   const ctaHref = String(formData.get('cta_href') ?? '').trim().slice(0, 200) || null;
   const promoCode = String(formData.get('promo_code') ?? '').trim().toUpperCase().slice(0, 30) || null;
-  const bgColor = String(formData.get('bg_color') ?? '#a855f7').trim();
+  const bgColor = String(formData.get('bg_color') ?? '#f97316').trim();
   const textColor = String(formData.get('text_color') ?? '#ffffff').trim();
   const planIds = formData.getAll('plan_ids').map((p) => String(p)).filter(Boolean);
   const expiresAt = String(formData.get('expires_at') ?? '').trim() || null;

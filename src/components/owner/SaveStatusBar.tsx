@@ -48,7 +48,7 @@ export function SaveStatusBar() {
   if (status.kind === 'idle') return null;
 
   const config = {
-    saving: { bg: 'bg-fuchsia-500/10', border: 'border-fuchsia-500/30', text: 'text-fuchsia-200', icon: '⟳', label: 'Guardando…' },
+    saving: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-amber-300', icon: '⟳', label: 'Guardando…' },
     saved:  { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-200', icon: '✓', label: 'Guardado' },
     error:  { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-200', icon: '⚠', label: 'Error al guardar' }
   }[status.kind];

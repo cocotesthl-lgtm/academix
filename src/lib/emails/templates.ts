@@ -33,7 +33,7 @@ export function vipNewContentEmail(opts: Brand & {
       infoRow('Tipo', typeLabel) +
       (opts.itemTitle ? infoRow('Nuevo item', opts.itemTitle) : '')
     )}
-    ${ctaButton({ href: opts.accessUrl, label: '🔓 Ver el contenido', color: opts.brandColor || '#a855f7' })}
+    ${ctaButton({ href: opts.accessUrl, label: '🔓 Ver el contenido', color: opts.brandColor || '#f97316' })}
     <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
       ¡Esperamos que lo disfrutes!
     </p>
@@ -67,7 +67,7 @@ export function purchaseConfirmedEmail(opts: Brand & {
       infoRow('Monto', opts.amountFormatted) +
       (opts.buyerEmail ? infoRow('Email', opts.buyerEmail) : '')
     )}
-    ${ctaButton({ href: opts.accessUrl, label: 'Acceder al curso', color: opts.brandColor || '#a855f7' })}
+    ${ctaButton({ href: opts.accessUrl, label: 'Acceder al curso', color: opts.brandColor || '#f97316' })}
     <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
       Si tenés dudas con el acceso, respondé a este email y te ayudamos.
     </p>
@@ -146,7 +146,7 @@ export function eventTicketConfirmedEmail(opts: Brand & {
       infoRow('Total pagado', opts.amountFormatted)
     )}
     ${qrBlock}
-    ${ctaButton({ href: opts.accessUrl, label: 'Ver mis tickets', color: opts.brandColor || '#a855f7' })}
+    ${ctaButton({ href: opts.accessUrl, label: 'Ver mis tickets', color: opts.brandColor || '#f97316' })}
     <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
       Guardá este email — el día del evento te lo pueden pedir para validar entrada.
     </p>
@@ -180,7 +180,7 @@ export function bookingConfirmedEmail(opts: Brand & {
       infoRow('Fecha y hora', opts.bookingDate) +
       (opts.instructorName ? infoRow('Instructor', opts.instructorName) : '')
     )}
-    ${ctaButton({ href: opts.accessUrl, label: 'Ver mi reserva', color: opts.brandColor || '#a855f7' })}
+    ${ctaButton({ href: opts.accessUrl, label: 'Ver mi reserva', color: opts.brandColor || '#f97316' })}
   `;
   return {
     subject: `🗓️ Reserva confirmada · ${opts.courseTitle}`,
@@ -213,7 +213,7 @@ export function bookingRescheduledEmail(opts: Brand & {
       infoRow('Nueva fecha', opts.newDate) +
       (opts.reason ? infoRow('Motivo', opts.reason) : '')
     )}
-    ${ctaButton({ href: opts.accessUrl, label: 'Ver nueva reserva', color: opts.brandColor || '#a855f7' })}
+    ${ctaButton({ href: opts.accessUrl, label: 'Ver nueva reserva', color: opts.brandColor || '#f97316' })}
     <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
       Si la nueva fecha no te queda, respondé a este email para coordinar.
     </p>
@@ -240,7 +240,7 @@ export function instructorWelcomeEmail(opts: Brand & {
       Te asignaron como instructor en <strong>${esc(opts.brandName || 'la academia')}</strong>.
       Ya podés cargar tu disponibilidad, ver las reservas y gestionar tus alumnos desde el portal.
     </p>
-    ${ctaButton({ href: opts.portalUrl, label: 'Ir al portal de instructor', color: opts.brandColor || '#a855f7' })}
+    ${ctaButton({ href: opts.portalUrl, label: 'Ir al portal de instructor', color: opts.brandColor || '#f97316' })}
     <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
       Para acceder usá el email donde recibiste esta invitación.
     </p>

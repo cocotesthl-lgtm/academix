@@ -116,7 +116,7 @@ export default async function CouponsPage() {
                 <tr key={c.id} className="border-t border-white/5">
                   <td className="px-4 py-3 font-mono">
                     {c.code}
-                    {c.source === 'wheel' && <span className="ml-2 text-xs text-purple-300">🎰</span>}
+                    {c.source === 'wheel' && <span className="ml-2 text-xs text-amber-300">🎰</span>}
                   </td>
                   <td className="px-4 py-3">
                     {c.type === 'percent'

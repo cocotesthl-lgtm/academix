@@ -134,7 +134,7 @@ export default async function CuentaDetallePage({ params }: { params: Promise<{ 
       </details>
 
       {/* ── Nueva factura ── */}
-      <form action={createInvoiceAction} className="rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/5 p-5 space-y-3">
+      <form action={createInvoiceAction} className="rounded-xl border border-orange-500/30 bg-orange-500/5 p-5 space-y-3">
         <h2 className="font-semibold text-sm">+ Emitir factura / ajuste</h2>
         <input type="hidden" name="plan_id" value={plan.id} />
         <div className="grid sm:grid-cols-4 gap-3">
@@ -148,7 +148,7 @@ export default async function CuentaDetallePage({ params }: { params: Promise<{ 
         <div className="flex items-center gap-3">
           <input name="number" maxLength={40} placeholder="Nro. comprobante (opcional)"
             className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          <button type="submit" className="rounded bg-fuchsia-500 text-white text-sm font-semibold px-4 py-1.5 hover:bg-fuchsia-400 whitespace-nowrap">
+          <button type="submit" className="rounded bg-orange-500 text-white text-sm font-semibold px-4 py-1.5 hover:bg-orange-400 whitespace-nowrap">
             Emitir
           </button>
         </div>

@@ -124,7 +124,7 @@ export function KanbanBoard({
     return (
       <span
         className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold ${isMe ? 'ring-2 ring-emerald-400' : ''}`}
-        style={{ background: '#a855f7', color: 'white' }}
+        style={{ background: '#f97316', color: 'white' }}
         title={m.display_name || m.email || ''}
       >
         {initial}
@@ -156,7 +156,7 @@ export function KanbanBoard({
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span
                         className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ background: stage.color ?? '#a855f7' }}
+                        style={{ background: stage.color ?? '#f97316' }}
                       />
                       <h3 className="font-semibold text-sm truncate">
                         {stage.name}
@@ -260,7 +260,7 @@ export function KanbanBoard({
 
 function StageEditForm({ stage, onDone }: { stage: Stage; onDone: () => void }) {
   const [name, setName] = useState(stage.name);
-  const [color, setColor] = useState(stage.color ?? '#a855f7');
+  const [color, setColor] = useState(stage.color ?? '#f97316');
   const [pending, start] = useTransition();
   return (
     <form
@@ -378,7 +378,7 @@ function AddStageColumn({ pipelineId }: { pipelineId: string }) {
         className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm" />
       <div className="flex items-center gap-2">
         <label className="text-[10px] text-white/55">Color:</label>
-        <input name="color" type="color" defaultValue="#a855f7"
+        <input name="color" type="color" defaultValue="#f97316"
           className="w-7 h-7 rounded bg-transparent cursor-pointer" />
       </div>
       <div className="flex gap-1.5">

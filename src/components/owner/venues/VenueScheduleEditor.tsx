@@ -93,7 +93,7 @@ export function VenueScheduleEditor({
                 ))}
               </div>
               <button type="button" onClick={() => addRange(day)}
-                className="text-xs text-fuchsia-300 hover:underline pt-2">+ rango</button>
+                className="text-xs text-amber-400 hover:underline pt-2">+ rango</button>
             </div>
           );
         })}

@@ -10,7 +10,7 @@ export function Sparkline({
   values,
   width = 120,
   height = 32,
-  color = '#a855f7',
+  color = '#f97316',
   className = ''
 }: {
   values: number[];

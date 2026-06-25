@@ -4,7 +4,7 @@ export default function DemoPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Banner demo */}
-      <div className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-blue-600 text-center text-sm py-2.5 px-4">
+      <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-blue-600 text-center text-sm py-2.5 px-4">
         🎬 Estás viendo una demo. Así se ve un sitio real en Curplat.{" "}
         <Link href="/signup" className="underline font-semibold hover:no-underline">
           Crear la tuya gratis →
@@ -75,7 +75,7 @@ export default function DemoPage() {
                   desc: "De principiante a auto-layout y componentes avanzados. 12 horas.",
                   price: "$19.900",
                   badge: null,
-                  gradient: "from-purple-400 to-blue-500",
+                  gradient: "from-amber-400 to-blue-500",
                 },
                 {
                   title: "Portfolio que consigue trabajo",

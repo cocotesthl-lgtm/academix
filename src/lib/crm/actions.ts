@@ -16,7 +16,7 @@ import { getServiceClient } from '@/lib/supabase/service';
  */
 
 const DEFAULT_STAGES = [
-  { name: 'Nuevo',       color: '#a855f7', position: 0, is_won: false, is_lost: false },
+  { name: 'Nuevo',       color: '#f97316', position: 0, is_won: false, is_lost: false },
   { name: 'Contactado',  color: '#3b82f6', position: 1, is_won: false, is_lost: false },
   { name: 'Cotizado',    color: '#eab308', position: 2, is_won: false, is_lost: false },
   { name: 'Ganado',      color: '#10b981', position: 3, is_won: true,  is_lost: false },
@@ -116,7 +116,7 @@ export async function addStageAction(formData: FormData): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('crm_stages') as any).insert({
     id: randomUUID(), pipeline_id: pipelineId, name,
-    color: String(formData.get('color') ?? '#a855f7'),
+    color: String(formData.get('color') ?? '#f97316'),
     position: nextPos
   });
   revalidatePath('/owner/crm');
@@ -144,7 +144,7 @@ export async function updateStageAction(formData: FormData): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('crm_stages') as any).update({
     name,
-    color: String(formData.get('color') ?? '#a855f7')
+    color: String(formData.get('color') ?? '#f97316')
   }).eq('id', id);
   revalidatePath('/owner/crm');
 }

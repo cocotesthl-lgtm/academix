@@ -503,7 +503,7 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqu
               step={1}
               value={speed}
               onChange={(e) => setSpeed(parseInt(e.target.value, 10))}
-              className="w-full accent-fuchsia-500"
+              className="w-full accent-orange-500"
             />
             <div className="flex items-center justify-between text-[10px] text-white/40">
               <span>⚡ Rápido (5s)</span>
@@ -525,7 +525,7 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqu
             <input
               type="range" min={24} max={160} step={2}
               value={logoH} onChange={(e) => setLogoH(parseInt(e.target.value, 10))}
-              className="w-full accent-fuchsia-500"
+              className="w-full accent-orange-500"
             />
             <div className="flex items-center justify-between text-[10px] text-white/40">
               <span>🐜 Chico (24px)</span>
@@ -540,7 +540,7 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqu
             <input
               type="range" min={8} max={160} step={2}
               value={gap} onChange={(e) => setGap(parseInt(e.target.value, 10))}
-              className="w-full accent-fuchsia-500"
+              className="w-full accent-orange-500"
             />
             <div className="flex items-center justify-between text-[10px] text-white/40">
               <span>🤝 Pegados (8px)</span>
@@ -588,7 +588,7 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqu
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((l) => (
-              <li key={l.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === l.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+              <li key={l.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === l.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                 <div className="flex items-center gap-2">
                   {l.logo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -802,7 +802,7 @@ export function InstructorEditor({ initial, items, primary }: {
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((i) => (
-              <li key={i.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === i.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+              <li key={i.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === i.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                 <div className="flex gap-2 flex-1 min-w-0">
                   {i.photo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -951,7 +951,7 @@ export function StatsEditor({ initialTitle, items, primary }: {
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((s) => (
-              <li key={s.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === s.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+              <li key={s.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === s.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                 <div><span className="font-bold">{s.number}</span> <span className="text-white/60">{s.label}</span></div>
                 <div className="flex gap-1">
                   <button type="button" onClick={() => startEdit(s)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
@@ -1041,7 +1041,7 @@ export function LearnPointsEditor({ initialTitle, initialSubtitle, items, primar
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((p) => (
-              <li key={p.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === p.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+              <li key={p.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === p.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                 <span>✓ {p.text}</span>
                 <div className="flex gap-1">
                   <button type="button" onClick={() => startEdit(p)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
@@ -1136,7 +1136,7 @@ export function FeaturesEditor({ initialTitle, items, primary }: {
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((f) => (
-              <li key={f.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === f.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+              <li key={f.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === f.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                 <div>
                   <div className="font-medium">{f.icon} {f.title}</div>
                   <div className="text-xs text-white/60 mt-0.5">{f.body}</div>
@@ -1454,7 +1454,7 @@ function ClassicPreviewCard({ card, primary }: { card: ManualCard; primary: stri
 /* ─── Sub-editor: tarjetas manuales del catálogo ─── */
 
 const RIBBON_TONES_UI: { value: ManualCard['ribbon_tone']; label: string; cls: string }[] = [
-  { value: 'featured', label: '★ Destacado', cls: 'bg-fuchsia-500 text-white' },
+  { value: 'featured', label: '★ Destacado', cls: 'bg-orange-500 text-white' },
   { value: 'sale',     label: '💸 Oferta',    cls: 'bg-rose-500 text-white' },
   { value: 'urgent',   label: '⏰ Urgente',   cls: 'bg-amber-500 text-amber-950' },
   { value: 'new',      label: '✨ Nuevo',     cls: 'bg-emerald-500 text-white' },
@@ -2034,7 +2034,7 @@ export function TestimonialsEditor({ initialTitle, items, primary }: {
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((t) => (
-              <li key={t.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === t.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+              <li key={t.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === t.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                 <div className="flex gap-2 flex-1 min-w-0">
                   {t.photo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -2163,7 +2163,7 @@ export function FaqEditor({ initialTitle, items }: { initialTitle: string; items
         {items.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {items.map((f) => (
-              <li key={f.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === f.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+              <li key={f.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === f.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">{f.q}</div>
                   <div className="text-white/60 text-xs mt-0.5 whitespace-pre-line line-clamp-2">{f.a}</div>
@@ -2482,7 +2482,7 @@ export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }:
         {tiers.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {tiers.map((t) => (
-              <li key={t.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === t.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+              <li key={t.id} className={`rounded border p-2 flex items-start justify-between gap-3 text-sm ${editingId === t.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                 <div>
                   <div className="font-medium">
                     {t.name} <span className="text-white/40">— {t.price}</span>
@@ -2685,7 +2685,7 @@ export function GalleryEditor({ initialTitle, initialSubtitle, items, columns }:
             <p className="text-xs text-white/60 mb-2">{items.length} imagen(es)</p>
             <ul className="grid grid-cols-3 gap-2">
               {items.map((it) => (
-                <li key={it.id} className={`relative group rounded overflow-hidden ${editingId === it.id ? 'ring-2 ring-fuchsia-500' : ''}`}>
+                <li key={it.id} className={`relative group rounded overflow-hidden ${editingId === it.id ? 'ring-2 ring-orange-500' : ''}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={it.image_url} alt={it.caption ?? ''} className="w-full h-20 object-cover rounded" />
                   <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition">
@@ -2785,7 +2785,7 @@ export function MapEditor({ initial }: { initial: MapValues }) {
             </label>
             <input type="range" min={1} max={20} step={1}
               value={v.zoom} onChange={(e) => setV({ ...v, zoom: parseInt(e.target.value, 10) })}
-              className="w-full mt-1 accent-fuchsia-500" />
+              className="w-full mt-1 accent-orange-500" />
             <div className="flex justify-between text-[10px] text-white/40">
               <span>🌍 Mundo</span><span>🏠 Detalle</span>
             </div>
@@ -2796,7 +2796,7 @@ export function MapEditor({ initial }: { initial: MapValues }) {
             </label>
             <input type="range" min={200} max={800} step={10}
               value={v.height_px} onChange={(e) => setV({ ...v, height_px: parseInt(e.target.value, 10) })}
-              className="w-full mt-1 accent-fuchsia-500" />
+              className="w-full mt-1 accent-orange-500" />
             <div className="flex justify-between text-[10px] text-white/40">
               <span>Bajo</span><span>Alto</span>
             </div>
@@ -3077,7 +3077,7 @@ export function NavEditor({
         {links.length > 0 && (
           <ul className="space-y-2 pt-3 mt-3 border-t border-white/5">
             {links.map((l) => (
-              <li key={l.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === l.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+              <li key={l.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingId === l.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                 <div><span className="font-medium">{l.label}</span> <span className="text-white/40 text-xs">{l.href}</span></div>
                 <div className="flex gap-1">
                   <button type="button" onClick={() => startEdit(l)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
@@ -3184,7 +3184,7 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
           {links.length > 0 && (
             <ul className="space-y-1.5 mt-2">
               {links.map((l) => (
-                <li key={l.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingLinkId === l.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+                <li key={l.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingLinkId === l.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                   <div><span className="font-medium">{l.label}</span> <span className="text-white/40 text-xs">{l.href}</span></div>
                   <div className="flex gap-1">
                     <button type="button" onClick={() => startEditLink(l)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>
@@ -3232,7 +3232,7 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
           {socials.length > 0 && (
             <ul className="space-y-1.5 mt-2">
               {socials.map((s) => (
-                <li key={s.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingSocialId === s.id ? 'border-fuchsia-500/50 bg-fuchsia-500/5' : 'border-white/10'}`}>
+                <li key={s.id} className={`rounded border p-2 flex items-center justify-between gap-3 text-sm ${editingSocialId === s.id ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10'}`}>
                   <div><span className="font-medium">{SOCIAL_LABEL[s.network]}</span> <span className="text-white/40 text-xs">{s.href}</span></div>
                   <div className="flex gap-1">
                     <button type="button" onClick={() => startEditSocial(s)} className="text-xs text-white/60 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/5" title="Editar">✎</button>

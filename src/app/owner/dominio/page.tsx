@@ -103,7 +103,7 @@ export default async function DomainPage({
           Dominios incluidos: <strong className="text-white">{planDomainsMax === 0 ? 'ninguno' : `${planDomainsMax}`}</strong>
         </span>
         {planDomainsMax === 0 && (
-          <Link href="/mi-plan" className="text-fuchsia-300 hover:text-fuchsia-200 font-medium">
+          <Link href="/mi-plan" className="text-amber-400 hover:text-amber-300 font-medium">
             Upgradear plan →
           </Link>
         )}
@@ -167,17 +167,17 @@ export default async function DomainPage({
                   <div className="bg-black/40 rounded p-2">
                     <div className="text-white/45 mb-1">Para dominio raíz (ej. tuempresa.com):</div>
                     <div className="text-white">
-                      Tipo: <span className="text-fuchsia-300">A</span> ·
-                      Host: <span className="text-fuchsia-300">@</span> ·
-                      Valor: <span className="text-fuchsia-300">{status?.vercel_apex_a_record ?? '76.76.21.21'}</span>
+                      Tipo: <span className="text-amber-400">A</span> ·
+                      Host: <span className="text-amber-400">@</span> ·
+                      Valor: <span className="text-amber-400">{status?.vercel_apex_a_record ?? '76.76.21.21'}</span>
                     </div>
                   </div>
                   <div className="bg-black/40 rounded p-2">
                     <div className="text-white/45 mb-1">Para subdominio www (recomendado):</div>
                     <div className="text-white">
-                      Tipo: <span className="text-fuchsia-300">CNAME</span> ·
-                      Host: <span className="text-fuchsia-300">www</span> ·
-                      Valor: <span className="text-fuchsia-300">{status?.vercel_cname_target ?? 'cname.vercel-dns.com'}</span>
+                      Tipo: <span className="text-amber-400">CNAME</span> ·
+                      Host: <span className="text-amber-400">www</span> ·
+                      Valor: <span className="text-amber-400">{status?.vercel_cname_target ?? 'cname.vercel-dns.com'}</span>
                     </div>
                   </div>
                 </div>
@@ -239,13 +239,13 @@ export default async function DomainPage({
             </p>
             <Link
               href="/mi-plan"
-              className="inline-block rounded-md bg-fuchsia-500 text-white px-5 py-2.5 text-sm font-semibold hover:bg-fuchsia-400"
+              className="inline-block rounded-md bg-orange-500 text-white px-5 py-2.5 text-sm font-semibold hover:bg-orange-400"
             >
               Ver planes →
             </Link>
           </section>
         ) : (
-          <section className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5 space-y-4">
+          <section className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-amber-500/5 p-5 space-y-4">
             <div>
               <h2 className="font-bold text-lg">Conectar mi dominio propio</h2>
               <p className="text-sm text-white/65 mt-1">
@@ -267,7 +267,7 @@ export default async function DomainPage({
                 placeholder="tuempresa.com"
                 className="flex-1 min-w-[200px] rounded bg-black/40 border border-white/20 px-3 py-2 text-sm font-mono"
               />
-              <button className="rounded-md bg-fuchsia-500 text-white px-5 py-2 text-sm font-semibold hover:bg-fuchsia-400">
+              <button className="rounded-md bg-orange-500 text-white px-5 py-2 text-sm font-semibold hover:bg-orange-400">
                 Conectar
               </button>
             </form>

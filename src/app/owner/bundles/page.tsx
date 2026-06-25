@@ -82,7 +82,7 @@ export default async function BundlesPage() {
               : 0;
             return (
               <div key={b.id} className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
-                <div className="aspect-video bg-gradient-to-br from-fuchsia-500/20 to-purple-500/20 relative">
+                <div className="aspect-video bg-gradient-to-br from-orange-500/20 to-amber-500/20 relative">
                   {b.cover_url && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={b.cover_url} alt="" className="absolute inset-0 w-full h-full object-cover" />

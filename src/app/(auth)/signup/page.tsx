@@ -90,7 +90,7 @@ function AccountChooser() {
               <li>✓ Cobrás directo a tu MercadoPago</li>
               <li>✓ Sumás afiliados e instructores que vendan por vos</li>
             </ul>
-            <div className="mt-4 text-fuchsia-300 text-sm font-semibold opacity-0 group-hover:opacity-100 transition">
+            <div className="mt-4 text-amber-400 text-sm font-semibold opacity-0 group-hover:opacity-100 transition">
               Empezar →
             </div>
           </Link>
@@ -98,7 +98,7 @@ function AccountChooser() {
           {/* Afiliado */}
           <Link
             href="/signup?next=/affiliate"
-            className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-6 hover:border-fuchsia-500/60 transition group"
+            className="rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-amber-500/5 p-6 hover:border-orange-500/60 transition group"
           >
             <div className="text-4xl mb-3">💼</div>
             <h2 className="text-lg font-bold mb-1">Afiliado</h2>
@@ -113,7 +113,7 @@ function AccountChooser() {
               <li>✓ Los owners pueden ascenderte a instructor</li>
               <li>✓ Panel global con stats cross-sitio</li>
             </ul>
-            <div className="mt-4 text-fuchsia-300 text-sm font-semibold opacity-0 group-hover:opacity-100 transition">
+            <div className="mt-4 text-amber-400 text-sm font-semibold opacity-0 group-hover:opacity-100 transition">
               Empezar →
             </div>
           </Link>

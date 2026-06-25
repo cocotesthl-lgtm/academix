@@ -134,7 +134,7 @@ export default async function FounderTenants() {
                       <ReprocessPaymentButton tenantId={t.id} />
                       <form action={impersonateTenantAction}>
                         <input type="hidden" name="slug" value={t.slug} />
-                        <button className="text-xs rounded border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300 px-2 py-1 hover:bg-fuchsia-500/20">
+                        <button className="text-xs rounded border border-orange-500/30 bg-orange-500/10 text-amber-400 px-2 py-1 hover:bg-orange-500/20">
                           Abrir como owner →
                         </button>
                       </form>

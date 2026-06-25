@@ -55,7 +55,7 @@ export function CourseCheckoutOverride({
           className={`text-xs px-3 py-1.5 rounded border whitespace-nowrap ${
             hasOverride
               ? 'border-white/15 hover:bg-white/5'
-              : 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/20'
+              : 'border-orange-500/40 bg-orange-500/10 text-amber-300 hover:bg-orange-500/20'
           } disabled:opacity-40`}
         >
           {pending

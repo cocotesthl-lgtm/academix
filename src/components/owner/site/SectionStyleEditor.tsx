@@ -98,14 +98,14 @@ export function SectionStyleEditor({
         onClick={() => setOpen((o) => !o)}
         className={`text-xs px-2.5 py-1 rounded border whitespace-nowrap flex items-center gap-1.5 ${
           activeCount > 0
-            ? 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200'
+            ? 'border-orange-500/40 bg-orange-500/10 text-amber-300'
             : 'border-white/15 text-white/60 hover:bg-white/5'
         }`}
         title="Personalizar estilos de esta sección"
       >
         🎨 Estilos
         {activeCount > 0 && (
-          <span className="bg-fuchsia-500 text-white rounded-full text-[9px] px-1.5 py-0.5 leading-none font-bold">
+          <span className="bg-orange-500 text-white rounded-full text-[9px] px-1.5 py-0.5 leading-none font-bold">
             {activeCount}
           </span>
         )}

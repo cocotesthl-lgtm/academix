@@ -158,9 +158,9 @@ export default async function FormEditPage({ params, searchParams }: {
               if (isEditing) {
                 // Form inline de edición
                 return (
-                  <li key={f.id} className="rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/5 p-3 space-y-2">
+                  <li key={f.id} className="rounded-lg border border-orange-500/40 bg-orange-500/5 p-3 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-fuchsia-200">✎ Editando: {f.label}</span>
+                      <span className="font-semibold text-amber-300">✎ Editando: {f.label}</span>
                       <Link href={`/forms/${form.id}`} className="text-white/55 hover:text-white">✕ Cancelar</Link>
                     </div>
                     <form action={updateFieldAction} className="grid grid-cols-2 gap-2">
@@ -238,7 +238,7 @@ export default async function FormEditPage({ params, searchParams }: {
                     {visibleOptions.length > 0 && (
                       <div className="text-[10px] text-white/40 mt-0.5">
                         Opciones: {visibleOptions.map((o) => o.label).join(', ')}
-                        {hasOther && <span className="text-fuchsia-300"> + Otro</span>}
+                        {hasOther && <span className="text-amber-400"> + Otro</span>}
                       </div>
                     )}
                   </div>

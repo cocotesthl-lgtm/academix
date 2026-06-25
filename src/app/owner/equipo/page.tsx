@@ -126,7 +126,7 @@ export default async function TeamPage() {
 function roleColor(role: string): string {
   switch (role) {
     case 'owner': return '#f59e0b';
-    case 'admin': return '#a855f7';
+    case 'admin': return '#f97316';
     case 'staff': return '#3b82f6';
     default: return '#888888';
   }

@@ -73,7 +73,7 @@ export function CourseSubscriptionConfig({
           disabled={pending}
           className={`text-left rounded-lg border p-4 transition ${
             mode === 'subscription'
-              ? 'border-fuchsia-500/50 bg-fuchsia-500/10'
+              ? 'border-orange-500/50 bg-orange-500/10'
               : 'border-white/15 hover:bg-white/[0.03]'
           }`}
         >
@@ -139,9 +139,9 @@ export function CourseSubscriptionConfig({
             </p>
           </div>
 
-          <div className="rounded p-3 bg-fuchsia-500/5 border border-fuchsia-500/20 text-xs text-fuchsia-200 space-y-1">
+          <div className="rounded p-3 bg-orange-500/5 border border-orange-500/20 text-xs text-amber-300 space-y-1">
             <div>💡 Resumen: <strong>{priceFmt} {freqLabel}</strong>{trial > 0 ? `, primeros ${trial} días gratis` : ''}.</div>
-            <div className="text-fuchsia-200/70">
+            <div className="text-amber-300/70">
               El comprador autoriza una vez en MP y se cobra recurrente. El access al publicación
               se da al primer cobro confirmado. Si MP no cobra (tarjeta expirada, etc),
               suspendés desde el panel.

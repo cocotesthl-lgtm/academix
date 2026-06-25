@@ -262,7 +262,7 @@ export default async function OwnerAffiliates() {
                   <button className={`text-xs px-3 py-1 rounded border whitespace-nowrap ${
                     a.can_validate_tickets
                       ? 'border-white/15 hover:bg-white/5'
-                      : 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/20'
+                      : 'border-orange-500/40 bg-orange-500/10 text-amber-300 hover:bg-orange-500/20'
                   }`}>
                     {a.can_validate_tickets ? 'Quitar permiso' : '+ Habilitar validator'}
                   </button>

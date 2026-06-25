@@ -398,7 +398,7 @@ export default async function OwnerClientesPage({
                           {tgs.map((g, gi) => (
                             <div key={gi} className="flex flex-wrap gap-x-3 gap-y-1 items-baseline">
                               <span className="text-white/40">🎫 Tickets:</span>
-                              <strong className="text-fuchsia-300">
+                              <strong className="text-amber-400">
                                 {g.count} × {g.buyer_name ?? g.buyer_email ?? 'sin nombre'}
                               </strong>
                               <span className="text-white/45">
@@ -422,7 +422,7 @@ export default async function OwnerClientesPage({
       </div>
 
       {filteredOrphans.length > 0 && (
-        <div className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 overflow-hidden">
+        <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 overflow-hidden">
           <div className="px-4 py-3 border-b border-white/10">
             <h3 className="text-sm font-semibold">Compras de tickets sin cuenta linkeada</h3>
             <p className="text-xs text-white/55 mt-0.5">

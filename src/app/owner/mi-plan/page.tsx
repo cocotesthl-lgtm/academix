@@ -52,8 +52,8 @@ export default async function MiPlanPage({
       )}
 
       {current.plan && current.subscription_status === 'trial' && current.trial_ends_at && (
-        <div className="rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 p-4 text-sm">
-          <strong className="text-fuchsia-200">🎁 Estás en período de prueba.</strong>
+        <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4 text-sm">
+          <strong className="text-amber-300">🎁 Estás en período de prueba.</strong>
           <p className="text-white/75 mt-1">
             Tu trial termina el {new Date(current.trial_ends_at).toLocaleDateString('es-AR', {
               day: 'numeric', month: 'long', year: 'numeric'

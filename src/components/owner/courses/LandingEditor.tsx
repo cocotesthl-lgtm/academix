@@ -194,7 +194,7 @@ export function LandingEditor({
         {/* Selector de template (de la variante activa) */}
         <div>
           <h3 className="text-sm font-bold text-white/80 mb-2">
-            Plantilla {activeVariant !== 'A' && <span className="text-fuchsia-300">— editando variante {activeVariant}</span>}
+            Plantilla {activeVariant !== 'A' && <span className="text-amber-400">— editando variante {activeVariant}</span>}
           </h3>
           <div className="grid md:grid-cols-2 gap-3">
             {(Object.entries(TEMPLATE_LABELS) as Array<[LandingTemplate, typeof TEMPLATE_LABELS[LandingTemplate]]>).map(([k, meta]) => {
@@ -206,12 +206,12 @@ export function LandingEditor({
                   onClick={() => chooseTemplate(k)}
                   className={`text-left rounded-lg border p-3 transition relative ${
                     isSelected
-                      ? 'border-fuchsia-400 bg-fuchsia-500/10 ring-1 ring-fuchsia-400/40'
+                      ? 'border-orange-400 bg-orange-500/10 ring-1 ring-orange-400/40'
                       : 'border-white/15 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/25'
                   }`}
                 >
                   {isSelected && (
-                    <span className="absolute top-2 right-2 text-[9px] uppercase tracking-wide bg-fuchsia-400 text-black font-bold px-1.5 py-0.5 rounded">
+                    <span className="absolute top-2 right-2 text-[9px] uppercase tracking-wide bg-orange-400 text-black font-bold px-1.5 py-0.5 rounded">
                       Activa
                     </span>
                   )}
@@ -325,7 +325,7 @@ export function LandingEditor({
           <div className="grid grid-cols-3 gap-2">
             <ColorPicker label="Fondo" value={cfgForView.bg_color ?? ''} onChange={(v) => field('bg_color', v)} defaultColor="#ffffff" />
             <ColorPicker label="Texto" value={cfgForView.text_color ?? ''} onChange={(v) => field('text_color', v)} defaultColor="#0a0a0a" />
-            <ColorPicker label="Acento (CTAs)" value={cfgForView.accent_color ?? ''} onChange={(v) => field('accent_color', v)} defaultColor="#a855f7" />
+            <ColorPicker label="Acento (CTAs)" value={cfgForView.accent_color ?? ''} onChange={(v) => field('accent_color', v)} defaultColor="#f97316" />
           </div>
         </Section>
 
@@ -540,7 +540,7 @@ function VariantTab({
   return (
     <div className={`relative rounded-md flex items-center transition ${
       active
-        ? 'bg-fuchsia-500/15 border border-fuchsia-400/50'
+        ? 'bg-orange-500/15 border border-orange-400/50'
         : empty
           ? 'bg-white/[0.02] border border-dashed border-white/15 hover:bg-white/[0.05]'
           : 'bg-white/[0.04] border border-white/15 hover:bg-white/[0.08]'
@@ -647,7 +647,7 @@ function ListEditor({ items, onChange, placeholder }: { items: string[]; onChang
             className="text-xs text-red-300/70 hover:text-red-300 px-2">✕</button>
         </div>
       ))}
-      <button type="button" onClick={() => onChange([...items, ''])} className="text-xs text-fuchsia-300 hover:underline">
+      <button type="button" onClick={() => onChange([...items, ''])} className="text-xs text-amber-400 hover:underline">
         + Agregar
       </button>
     </div>

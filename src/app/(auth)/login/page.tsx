@@ -37,7 +37,7 @@ export default async function LoginPage({
 
         {/* CTA afiliados — sólo cuando NO venís ya del flow de afiliado */}
         {!isAffiliate && (
-          <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5 text-center">
+          <div className="rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-amber-500/5 p-5 text-center">
             <div className="text-2xl mb-1">💼</div>
             <h2 className="font-bold">¿Querés promocionar publicaciones y ganar comisión?</h2>
             <p className="text-sm text-white/65 mt-1 leading-snug">
@@ -46,7 +46,7 @@ export default async function LoginPage({
             </p>
             <Link
               href="/affiliate"
-              className="inline-block mt-3 rounded-md bg-fuchsia-500 text-white px-5 py-2 text-sm font-semibold hover:bg-fuchsia-400"
+              className="inline-block mt-3 rounded-md bg-orange-500 text-white px-5 py-2 text-sm font-semibold hover:bg-orange-400"
             >
               Quiero ser afiliado →
             </Link>

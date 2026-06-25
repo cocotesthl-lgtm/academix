@@ -108,7 +108,7 @@ export default async function InstructorCourseDetail({
 
       <div className="flex items-center gap-2 text-[10px] flex-wrap">
         {assign.can_view_students && <span className="px-2 py-1 rounded bg-white/5 border border-white/15">Ver alumnos</span>}
-        {assign.can_edit_calendar && <span className="px-2 py-1 rounded bg-fuchsia-500/10 border border-fuchsia-500/30 text-fuchsia-200">Editar calendario</span>}
+        {assign.can_edit_calendar && <span className="px-2 py-1 rounded bg-orange-500/10 border border-orange-500/30 text-amber-300">Editar calendario</span>}
         {assign.can_reschedule && <span className="px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-200">Reagendar</span>}
         {!assign.can_view_students && !assign.can_edit_calendar && !assign.can_reschedule && (
           <span className="text-white/40">Solo lectura — el owner no te dio permisos extra.</span>
@@ -223,7 +223,7 @@ export default async function InstructorCourseDetail({
       {assign.can_edit_calendar && (
         <p className="text-xs text-white/45">
           💡 Tenés permiso para editar el calendario. Por ahora se hace desde{' '}
-          <Link href="/owner/availability" className="text-fuchsia-300 hover:underline">la página de Disponibilidad del owner</Link>
+          <Link href="/owner/availability" className="text-amber-400 hover:underline">la página de Disponibilidad del owner</Link>
           {' '}(misma cuenta tenant-wide). Vista propia próximamente.
         </p>
       )}

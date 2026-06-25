@@ -30,7 +30,7 @@ export type LayoutOpts = {
 };
 
 export function renderLayout(opts: LayoutOpts & { content: string }): string {
-  const brand = opts.brandColor || '#a855f7';
+  const brand = opts.brandColor || '#f97316';
   const brandName = esc(opts.brandName) || 'Curplat';
   const preheader = esc(opts.preheader) || '';
   const logo = opts.logoUrl

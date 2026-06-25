@@ -9,7 +9,7 @@
 export function BarChart({
   data,
   height = 120,
-  color = '#a855f7',
+  color = '#f97316',
   formatValue = (v: number) => v.toLocaleString('es-AR'),
   emptyText = 'Sin datos en este período'
 }: {

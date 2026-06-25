@@ -135,7 +135,7 @@ export default async function MessagesPage({ searchParams }: {
                       key={m.id}
                       className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
                         m.sender_kind === 'owner'
-                          ? 'bg-fuchsia-500/20 ml-auto'
+                          ? 'bg-orange-500/20 ml-auto'
                           : 'bg-white/5 mr-auto'
                       }`}
                     >

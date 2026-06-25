@@ -29,23 +29,23 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
   if (done === steps.length) return null;
 
   return (
-    <div className="rounded-2xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/[0.08] to-purple-500/[0.04] p-5">
+    <div className="rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/[0.08] to-amber-500/[0.04] p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-          <h3 className="font-bold text-lg text-fuchsia-100">Configurá tu sitio</h3>
+          <h3 className="font-bold text-lg text-amber-100">Configurá tu sitio</h3>
           <p className="text-xs text-white/60 mt-0.5">
             {done} de {steps.length} pasos completados · te toma 5 minutos
           </p>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-fuchsia-200">{pct}%</div>
+          <div className="text-2xl font-bold text-amber-300">{pct}%</div>
         </div>
       </div>
 
       {/* Barra de progreso */}
       <div className="h-2 rounded-full bg-white/10 overflow-hidden mb-5">
         <div
-          className="h-full bg-gradient-to-r from-fuchsia-500 to-purple-400 transition-all duration-500"
+          className="h-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -64,7 +64,7 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
             >
               <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 grid place-items-center ${
                 s.done
-                  ? 'border-fuchsia-400 bg-fuchsia-400'
+                  ? 'border-orange-400 bg-orange-400'
                   : 'border-white/30 bg-transparent'
               }`}>
                 {s.done && (
@@ -78,7 +78,7 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
                 <div className="text-xs text-white/55 mt-0.5">{s.description}</div>
               </div>
               {!s.done && (
-                <span className="text-fuchsia-300 text-sm whitespace-nowrap">→</span>
+                <span className="text-amber-400 text-sm whitespace-nowrap">→</span>
               )}
             </Link>
           </li>

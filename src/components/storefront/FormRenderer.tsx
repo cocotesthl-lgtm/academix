@@ -28,7 +28,7 @@ export type FormDef = {
  * Se usa en /storefront/[tenantId]/f/[slug] (página dedicada) y embebido
  * en el hero cuando el owner elige media_type='form'.
  */
-export function FormRenderer({ form, primary = '#a855f7', compact = false }: {
+export function FormRenderer({ form, primary = '#f97316', compact = false }: {
   form: FormDef;
   primary?: string;
   compact?: boolean;

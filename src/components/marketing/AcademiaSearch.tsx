@@ -61,7 +61,7 @@ export function AcademiaSearch({
       ) : (
         <ul className="grid md:grid-cols-2 gap-4">
           {filtered.map((a) => {
-            const primary = a.primary_color ?? '#a855f7';
+            const primary = a.primary_color ?? '#f97316';
             const initial = a.name.slice(0, 1).toUpperCase();
             return (
               <li key={a.id}>

@@ -20,7 +20,7 @@ const TONE_CLS: Record<PillTone, string> = {
   warning: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
   danger:  'border-rose-500/30 bg-rose-500/10 text-rose-300',
   info:    'border-sky-500/30 bg-sky-500/10 text-sky-300',
-  accent:  'border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300',
+  accent:  'border-orange-500/30 bg-orange-500/10 text-amber-400',
   neutral: 'border-white/15 bg-white/[0.03] text-white/55'
 };
 

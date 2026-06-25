@@ -164,7 +164,7 @@ export default async function OwnerDashboard() {
   // Onboarding: detectar qué pasos faltan
   const { data: tenantBrand } = await svc
     .from('tenants').select('brand').eq('id', tenant.id).maybeSingle<{ brand: { logo_url?: string; primary_color?: string } | null }>();
-  const hasBranding = !!(tenantBrand?.brand?.logo_url || (tenantBrand?.brand?.primary_color && tenantBrand.brand.primary_color !== '#a855f7'));
+  const hasBranding = !!(tenantBrand?.brand?.logo_url || (tenantBrand?.brand?.primary_color && tenantBrand.brand.primary_color !== '#f97316'));
   const onboardingSteps: OnboardingStep[] = [
     {
       id: 'brand',
@@ -232,7 +232,7 @@ export default async function OwnerDashboard() {
           value={`$ ${ars(gmv30)}`}
           sub={`${sales30.length} transacciones`}
           delta={gmvDelta}
-          chart={<Sparkline values={salesByDay} color="#a855f7" width={140} height={36} className="mt-2" />}
+          chart={<Sparkline values={salesByDay} color="#f97316" width={140} height={36} className="mt-2" />}
         />
         <Kpi
           label="Clientes activos"
@@ -257,8 +257,8 @@ export default async function OwnerDashboard() {
       <div className="grid lg:grid-cols-2 gap-4">
         {/* ─── Próximos eventos (hasta 3) ─── */}
         {upcomingEvents.length > 0 && (
-          <div className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5">
-            <div className="text-[10px] uppercase tracking-wider text-fuchsia-300 font-semibold mb-3">🎟️ Próximos eventos</div>
+          <div className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-amber-500/5 p-5">
+            <div className="text-[10px] uppercase tracking-wider text-amber-400 font-semibold mb-3">🎟️ Próximos eventos</div>
             <ul className="space-y-3">
               {upcomingEvents.map((ev) => {
                 const dateLabel = new Date(ev.date + 'T12:00:00').toLocaleDateString('es-AR', {
@@ -270,16 +270,16 @@ export default async function OwnerDashboard() {
                   <li key={ev.id}>
                     <Link href={`/eventos/${ev.id}`} className="block group">
                       <div className="flex items-baseline justify-between gap-2">
-                        <h3 className="text-sm font-bold truncate group-hover:text-fuchsia-200">{ev.courseTitle}</h3>
+                        <h3 className="text-sm font-bold truncate group-hover:text-amber-300">{ev.courseTitle}</h3>
                         <span className="text-xs text-white/55 capitalize whitespace-nowrap">{dateLabel} · {timeLabel}</span>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <div className="text-xs text-fuchsia-200 font-medium">
+                        <div className="text-xs text-amber-300 font-medium">
                           {ev.ticketsSold}{ev.capacity > 0 ? `/${ev.capacity}` : ''} entradas
                         </div>
                         {ev.capacity > 0 && (
                           <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-fuchsia-500" style={{ width: `${pct}%` }} />
+                            <div className="h-full bg-orange-500" style={{ width: `${pct}%` }} />
                           </div>
                         )}
                       </div>
@@ -290,7 +290,7 @@ export default async function OwnerDashboard() {
             </ul>
             <div className="flex gap-2 mt-4">
               <Link href="/eventos/validar"
-                className="rounded-md bg-fuchsia-500 text-white px-3 py-1.5 text-xs font-semibold hover:bg-fuchsia-400">
+                className="rounded-md bg-orange-500 text-white px-3 py-1.5 text-xs font-semibold hover:bg-orange-400">
                 Validar entradas
               </Link>
               <Link href="/eventos/asistencia"
@@ -320,7 +320,7 @@ export default async function OwnerDashboard() {
                 return (
                   <li key={c.id} className="px-4 py-3 relative overflow-hidden">
                     <div
-                      className="absolute inset-y-0 left-0 bg-fuchsia-500/[0.07]"
+                      className="absolute inset-y-0 left-0 bg-orange-500/[0.07]"
                       style={{ width: `${pct}%` }}
                       aria-hidden="true"
                     />
@@ -455,12 +455,12 @@ async function VipMetrics({ tenantId }: { tenantId: string }) {
   if (migrationMissing || packs.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5">
+    <div className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-amber-500/5 p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold flex items-center gap-2">
           <span className="text-base">🔒</span> Métricas de Contenido VIP
         </h2>
-        <Link href="/vip" className="text-xs text-fuchsia-300 hover:text-fuchsia-200">Gestionar packs →</Link>
+        <Link href="/vip" className="text-xs text-amber-400 hover:text-amber-300">Gestionar packs →</Link>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCell label="Packs activos" value={String(packs.length)} />
@@ -512,7 +512,7 @@ function Alert({ tone, title, desc, cta }: {
   const m = {
     amber: { bg: 'border-amber-500/30 bg-amber-500/10', text: 'text-amber-200', btn: 'bg-amber-200 text-amber-900 hover:bg-amber-100' },
     emerald: { bg: 'border-emerald-500/30 bg-emerald-500/10', text: 'text-emerald-200', btn: 'bg-emerald-200 text-emerald-900 hover:bg-emerald-100' },
-    fuchsia: { bg: 'border-fuchsia-500/30 bg-fuchsia-500/10', text: 'text-fuchsia-200', btn: 'bg-fuchsia-500 text-white hover:bg-fuchsia-400' }
+    fuchsia: { bg: 'border-orange-500/30 bg-orange-500/10', text: 'text-amber-300', btn: 'bg-orange-500 text-white hover:bg-orange-400' }
   }[tone];
   return (
     <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 ${m.bg}`}>

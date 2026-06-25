@@ -135,7 +135,7 @@ export default async function EventDetailPage({
       </div>
 
       {event.allow_ticket_reentry && (
-        <div className="rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/10 px-4 py-2.5 text-sm text-fuchsia-200">
+        <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-2.5 text-sm text-amber-300">
           🔄 Re-entry habilitado — los tickets se pueden escanear más de una vez.
         </div>
       )}
@@ -216,7 +216,7 @@ export default async function EventDetailPage({
                       {t.validated_at
                         ? <span title={absoluteTime(t.validated_at)}>{relativeTime(t.validated_at)}</span>
                         : '—'}
-                      {t.validation_count > 1 && <div className="text-fuchsia-300 text-[10px]">×{t.validation_count} entradas</div>}
+                      {t.validation_count > 1 && <div className="text-amber-400 text-[10px]">×{t.validation_count} entradas</div>}
                     </td>
                     <td className="px-3 py-2.5 text-right">
                       <div className="flex gap-1 justify-end flex-wrap">

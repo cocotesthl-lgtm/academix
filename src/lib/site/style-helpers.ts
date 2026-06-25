@@ -60,7 +60,7 @@ export function sectionBgStyle(
  * Aplica un text-effect a un elemento (típicamente h1/h2).
  * Devuelve el `textShadow` correspondiente.
  */
-export function textEffectStyle(effect: string | null | undefined, color = '#a855f7'): CSSProperties {
+export function textEffectStyle(effect: string | null | undefined, color = '#f97316'): CSSProperties {
   switch (effect) {
     case 'shadow':
       return { textShadow: '0 2px 8px rgba(0,0,0,0.4)' };

@@ -72,7 +72,7 @@ export function CourseCalendarConfig({
             disabled={pending}
             className={`text-left rounded-lg border p-4 transition ${
               mode === opt.v
-                ? 'border-fuchsia-500/50 bg-fuchsia-500/10'
+                ? 'border-orange-500/50 bg-orange-500/10'
                 : 'border-white/15 hover:bg-white/[0.03]'
             }`}
           >
@@ -129,7 +129,7 @@ export function CourseCalendarConfig({
                     onClick={() => saveSource('owner')}
                     disabled={pending}
                     className={`text-left rounded border p-3 text-xs ${
-                      source === 'owner' ? 'border-fuchsia-500/50 bg-fuchsia-500/10' : 'border-white/15 hover:bg-white/5'
+                      source === 'owner' ? 'border-orange-500/50 bg-orange-500/10' : 'border-white/15 hover:bg-white/5'
                     }`}
                   >
                     <div className="font-semibold">🏫 Calendario del owner</div>

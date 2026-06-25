@@ -180,7 +180,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       category: 'Educación',
       emoji: '🎓',
       shortDesc: 'El default de Curplat. Cursos online, catálogo, testimonios. Para creators y formadores.',
-      suggestedPrimary: '#a855f7',
+      suggestedPrimary: '#f97316',
       config: c
     };
   })(),

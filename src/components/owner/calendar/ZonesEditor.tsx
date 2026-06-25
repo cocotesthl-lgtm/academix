@@ -19,7 +19,7 @@ function ZonesPreview({ zones, basePriceCents = 1000_00, currency = 'ARS' }: {
       <div className="space-y-3">
         {zones.map((z) => {
           const zonePrice = Math.round(basePriceCents * z.price_multiplier);
-          const color = z.color || '#a855f7';
+          const color = z.color || '#f97316';
           return (
             <div key={z.id} className="rounded p-2" style={{ background: `${color}1A` }}>
               <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
@@ -72,7 +72,7 @@ function ZonesPreview({ zones, basePriceCents = 1000_00, currency = 'ARS' }: {
  * Capacidad total se calcula como suma de filas × cols de cada zona —
  * la action ignora el campo "capacity" cuando seat_mode='zones'.
  */
-const DEFAULT_COLORS = ['#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+const DEFAULT_COLORS = ['#f97316', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
 
 export function ZonesEditor() {
   const [zones, setZones] = useState<SeatZone[]>([]);
@@ -116,7 +116,7 @@ export function ZonesEditor() {
           type="button"
           onClick={addZone}
           disabled={zones.length >= 20}
-          className="text-xs px-3 py-1 rounded border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200 hover:bg-fuchsia-500/20 disabled:opacity-40"
+          className="text-xs px-3 py-1 rounded border border-orange-500/40 bg-orange-500/10 text-amber-300 hover:bg-orange-500/20 disabled:opacity-40"
         >
           + Zona
         </button>
@@ -182,7 +182,7 @@ export function ZonesEditor() {
                   <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Color</label>
                   <input
                     type="color"
-                    value={z.color ?? '#a855f7'}
+                    value={z.color ?? '#f97316'}
                     onChange={(e) => updateZone(idx, { color: e.target.value })}
                     className="w-full h-[34px] rounded bg-transparent border border-white/15 cursor-pointer"
                   />

@@ -84,7 +84,7 @@ export function ImageFitControls({
             const t = e.touches[0]; if (!t) return;
             setDragging(true); pickFromEvent(t.clientX, t.clientY);
           }}
-          className={`relative w-full aspect-square rounded overflow-hidden border-2 ${dragging ? 'border-fuchsia-400' : 'border-white/15'} bg-black/30 cursor-crosshair select-none`}
+          className={`relative w-full aspect-square rounded overflow-hidden border-2 ${dragging ? 'border-orange-400' : 'border-white/15'} bg-black/30 cursor-crosshair select-none`}
           style={{ maxWidth: compact ? 180 : 220 }}
         >
           {imageUrl ? (
@@ -99,7 +99,7 @@ export function ImageFitControls({
           {/* Punto focal */}
           {imageUrl && (
             <div
-              className="absolute w-5 h-5 rounded-full bg-fuchsia-400 border-2 border-white shadow-lg pointer-events-none -translate-x-1/2 -translate-y-1/2"
+              className="absolute w-5 h-5 rounded-full bg-orange-400 border-2 border-white shadow-lg pointer-events-none -translate-x-1/2 -translate-y-1/2"
               style={{ left: `${x}%`, top: `${y}%` }}
             />
           )}

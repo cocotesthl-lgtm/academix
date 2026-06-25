@@ -84,7 +84,7 @@ export default async function FounderUsersPage() {
                     <td className="px-4 py-3 text-white/60">{p.email ?? '—'}</td>
                     <td className="px-4 py-3">
                       {p.is_super_admin
-                        ? <span className="text-xs px-2 py-0.5 rounded border border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300">super_admin</span>
+                        ? <span className="text-xs px-2 py-0.5 rounded border border-orange-500/30 bg-orange-500/10 text-amber-400">super_admin</span>
                         : ownerCount > 0
                           ? <span className="text-xs px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">owner</span>
                           : enrollCount > 0

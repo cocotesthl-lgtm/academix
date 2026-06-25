@@ -25,7 +25,7 @@ export function VenueLinker({ courseId, allVenues, linkedIds }: {
   if (allVenues.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-white/15 p-4 text-sm text-white/55">
-        Todavía no cargaste sedes. <a href="/owner/venues" className="text-fuchsia-300 underline">Cargar sedes →</a>
+        Todavía no cargaste sedes. <a href="/owner/venues" className="text-amber-400 underline">Cargar sedes →</a>
       </div>
     );
   }
@@ -61,7 +61,7 @@ export function VenueLinker({ courseId, allVenues, linkedIds }: {
           </button>
         );
       })}
-      <a href="/owner/venues" className="text-xs text-fuchsia-300 hover:underline inline-block mt-1">
+      <a href="/owner/venues" className="text-xs text-amber-400 hover:underline inline-block mt-1">
         + Gestionar sedes
       </a>
     </div>

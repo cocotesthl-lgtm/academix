@@ -10,7 +10,7 @@ export function TemplateMockup({ template, primary }: {
   template: LandingTemplate;
   primary?: string;
 }) {
-  const accent = primary ?? '#a855f7';
+  const accent = primary ?? '#f97316';
 
   if (template === 'classic') {
     // 2 columnas: contenido + sidebar precio

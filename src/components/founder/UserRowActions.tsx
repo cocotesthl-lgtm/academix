@@ -122,7 +122,7 @@ export function UserRowActions({
             className={`text-xs rounded border px-2 py-1 ${
               isSuperAdmin
                 ? 'border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20'
-                : 'border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300 hover:bg-fuchsia-500/20'
+                : 'border-orange-500/30 bg-orange-500/10 text-amber-400 hover:bg-orange-500/20'
             }`}
           >
             {isSuperAdmin ? 'Quitar admin' : 'Hacer admin'}

@@ -59,7 +59,7 @@ export default async function CheckoutDefaultPage() {
       />
 
       {/* Modo carrito toggle */}
-      <div className="rounded-xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 p-5">
+      <div className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-amber-500/5 p-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold flex items-center gap-2">

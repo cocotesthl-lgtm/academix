@@ -9,7 +9,7 @@ import type { ProductType } from '@/lib/courses/product-types';
  * Estilizado dark-mode-friendly (rectángulos con opacity y un accent color
  * para detalles). Reusable en el wizard de creación.
  */
-export function ProductTypeMockup({ type, primary = '#a855f7' }: {
+export function ProductTypeMockup({ type, primary = '#f97316' }: {
   type: ProductType; primary?: string;
 }) {
   const common = 'w-full h-auto rounded border border-white/10 bg-white/[0.04]';

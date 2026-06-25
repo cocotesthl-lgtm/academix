@@ -128,7 +128,7 @@ export default async function GiftPlansPage({
                 </div>
 
                 {t.subscription_notes && (
-                  <div className="text-[11px] text-fuchsia-200/80 bg-fuchsia-500/5 border border-fuchsia-500/20 rounded px-2 py-1 mb-3">
+                  <div className="text-[11px] text-amber-300/80 bg-orange-500/5 border border-orange-500/20 rounded px-2 py-1 mb-3">
                     📝 {t.subscription_notes}
                   </div>
                 )}
@@ -165,7 +165,7 @@ export default async function GiftPlansPage({
                       placeholder="Regalo lanzamiento, embajador, etc"
                       className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm" />
                   </div>
-                  <button className="rounded bg-fuchsia-500 text-white px-4 py-1.5 text-sm font-semibold hover:bg-fuchsia-400">
+                  <button className="rounded bg-orange-500 text-white px-4 py-1.5 text-sm font-semibold hover:bg-orange-400">
                     🎁 Regalar
                   </button>
                   {hasActivePlan && (

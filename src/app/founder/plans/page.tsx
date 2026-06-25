@@ -51,7 +51,7 @@ function PlanEditor({ plan, canMoveUp, canMoveDown }: { plan: Plan; canMoveUp: b
           <div className="flex items-center gap-2 flex-wrap">
             <strong className="text-base">{plan.name}</strong>
             {plan.is_featured && (
-              <span className="text-[10px] uppercase tracking-wider rounded border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-200 px-2 py-0.5">
+              <span className="text-[10px] uppercase tracking-wider rounded border border-orange-500/40 bg-orange-500/10 text-amber-300 px-2 py-0.5">
                 ★ Destacado
               </span>
             )}
@@ -124,7 +124,7 @@ function PlanEditor({ plan, canMoveUp, canMoveDown }: { plan: Plan; canMoveUp: b
         </div>
 
         {/* Trial */}
-        <div className="rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-3">
+        <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3">
           <Field label="Días de trial gratis (0 = sin trial · captura tarjeta y auto-cobra al final)">
             <input name="trial_days" type="number" min={0} max={90}
               defaultValue={plan.trial_days ?? 0}

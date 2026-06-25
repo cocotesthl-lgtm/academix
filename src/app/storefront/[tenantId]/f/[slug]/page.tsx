@@ -33,7 +33,7 @@ export default async function PublicFormPage({ params }: {
     fields: (fields ?? []) as FormFieldDef[]
   };
 
-  const primary = (tenant.brand as { primary_color?: string } | null)?.primary_color ?? '#a855f7';
+  const primary = (tenant.brand as { primary_color?: string } | null)?.primary_color ?? '#f97316';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-6">

@@ -65,7 +65,7 @@ export default async function FounderBannerPage() {
 
         <div className="grid sm:grid-cols-3 gap-3">
           <Field label="Color de fondo">
-            <input name="bg_color" type="color" defaultValue="#a855f7"
+            <input name="bg_color" type="color" defaultValue="#f97316"
               className="w-full h-10 rounded bg-white/5 border border-white/15 cursor-pointer" />
           </Field>
           <Field label="Color del texto">
@@ -138,7 +138,7 @@ export default async function FounderBannerPage() {
                     </span>
                     {b.promo_code && <span className="font-mono text-white/55">→ {b.promo_code}</span>}
                     {b.expires_at && <span className="text-white/45">Vence: {new Date(b.expires_at).toLocaleString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>}
-                    {b.plan_ids.length > 0 && <span className="text-fuchsia-300">{b.plan_ids.length} plan{b.plan_ids.length > 1 ? 'es' : ''}</span>}
+                    {b.plan_ids.length > 0 && <span className="text-amber-400">{b.plan_ids.length} plan{b.plan_ids.length > 1 ? 'es' : ''}</span>}
                     <form action={deleteAnnouncementAction} className="ml-auto">
                       <input type="hidden" name="id" value={b.id} />
                       <button className="text-[10px] px-2 py-0.5 rounded border border-red-500/30 text-red-300 hover:bg-red-500/10">

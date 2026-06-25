@@ -272,8 +272,8 @@ export default async function AvailabilityPage() {
             className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
 
           {/* ─── Config de evento (capacity + asientos) ─── */}
-          <div className="rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/5 p-3 space-y-3">
-            <p className="text-xs text-fuchsia-200 font-semibold">🎫 Si la publicación es evento con tickets, completá esto:</p>
+          <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3 space-y-3">
+            <p className="text-xs text-amber-300 font-semibold">🎫 Si la publicación es evento con tickets, completá esto:</p>
             <div className="grid sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[10px] uppercase tracking-wider text-white/40 mb-1">Capacidad total</label>
@@ -305,7 +305,7 @@ export default async function AvailabilityPage() {
 
             {/* Editor de zonas — solo aplica si elegís "zones" */}
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-fuchsia-200/70 mb-2">
+              <p className="text-[11px] uppercase tracking-wider text-amber-300/70 mb-2">
                 Para modo Zonas — definí cada zona:
               </p>
               <ZonesEditor />
@@ -347,7 +347,7 @@ export default async function AvailabilityPage() {
                         {dateLabel} · {minToHHMM(d.start_min)}–{minToHHMM(d.end_min)}
                       </a>
                       {d.allow_ticket_reentry && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-orange-500/40 bg-orange-500/10 text-amber-400">
                           re-entry
                         </span>
                       )}

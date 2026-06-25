@@ -77,7 +77,7 @@ export default async function SiteBuilderPage() {
     .eq("id", tenant.id)
     .single<{ site_config: unknown; brand: { primary_color?: string } | null }>();
   const cfg = mergeConfig(tenantRow?.site_config);
-  const primary = tenantRow?.brand?.primary_color ?? '#a855f7';
+  const primary = tenantRow?.brand?.primary_color ?? '#f97316';
 
   // Publicaciones del tenant para enriquecer el dropdown de href
   // (cada publicación aparece como link directo + opción de checkout).
@@ -154,21 +154,21 @@ export default async function SiteBuilderPage() {
       </div>
 
       {/* Pre-built themes */}
-      <div className="rounded-xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/5 to-purple-500/5 p-5">
+      <div className="rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-amber-500/5 p-5">
         <h2 className="text-lg font-bold mb-1">✨ Plantillas pre-armadas</h2>
         <p className="text-sm text-white/60 mb-4">
           La opción <strong className="text-white">Sitio completo</strong> reescribe todo con contenido de muestra (para arrancar con un sitio bonito y editar después).
-          Las otras solo encienden secciones del vertical sin pisar tu contenido. <strong className="text-fuchsia-300">Hotmart</strong> y <strong className="text-fuchsia-300">Funnel</strong> sí cambian el orden de las secciones (son layouts completos).
+          Las otras solo encienden secciones del vertical sin pisar tu contenido. <strong className="text-amber-400">Hotmart</strong> y <strong className="text-amber-400">Funnel</strong> sí cambian el orden de las secciones (son layouts completos).
         </p>
         <p className="text-xs text-white/50 italic mb-3">
           💡 ¿Buscás plantillas Hotmart o Funnel para vender UN publicación específico? Ya no van acá
           (eran para todo el sitio). Ahora las elegís por publicación en{' '}
-          <a href="/courses" className="text-fuchsia-300 hover:underline">/courses</a> → editar publicación → sección "Landing page".
+          <a href="/courses" className="text-amber-400 hover:underline">/courses</a> → editar publicación → sección "Landing page".
         </p>
         <div className="grid md:grid-cols-4 gap-3">
           <form action={applyThemeAction}>
             <input type="hidden" name="theme" value="sample" />
-            <button className="w-full text-left rounded-lg border border-fuchsia-500/30 bg-fuchsia-500/10 p-4 hover:bg-fuchsia-500/20">
+            <button className="w-full text-left rounded-lg border border-orange-500/30 bg-orange-500/10 p-4 hover:bg-orange-500/20">
               <div className="text-2xl mb-1">✨</div>
               <div className="font-semibold text-sm">Sitio completo</div>
               <div className="text-xs text-white/60 mt-1">15 secciones con contenido de muestra (pisa todo)</div>

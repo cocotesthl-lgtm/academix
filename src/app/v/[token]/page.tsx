@@ -65,7 +65,7 @@ export default async function PublicTicketPage({
     width: 320, margin: 1, errorCorrectionLevel: 'M', color: { dark: '#0f0a1e', light: '#ffffff' }
   });
 
-  const primary = tenant.brand?.primary_color || '#a855f7';
+  const primary = tenant.brand?.primary_color || '#f97316';
   const isUsed = !!ticket.validated_at;
   const isPending = ticket.status === 'pending';
   const isCancelled = ticket.status === 'cancelled' || ticket.status === 'refunded';
