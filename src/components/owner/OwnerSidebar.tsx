@@ -120,10 +120,9 @@ export function OwnerSidebar() {
   function navigate(href: string) {
     if (href === pathname) return;
     setPendingHref(href);
-    // OJO: NO envolver en startTransition. Envolver router.push en transition
-    // hace que Next mantenga la página vieja visible y no dispare loading.tsx.
-    // Sin transition: el sidebar re-renderea inmediato + loading.tsx aparece
-    // en el área de contenido como en Wix.
+    // Disparamos overlay manual (no dependemos de Next loading.tsx que no
+    // siempre dispara visiblemente). El PendingNavOverlay lo escucha.
+    window.dispatchEvent(new CustomEvent('cp:nav-start'));
     router.push(href);
   }
 

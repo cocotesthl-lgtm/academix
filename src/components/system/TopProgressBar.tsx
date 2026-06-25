@@ -57,6 +57,8 @@ export function TopProgressBar() {
         if (url.pathname === pathname && url.search === window.location.search) return;
       } catch { /* href relativo no-URL — seguimos */ }
       start();
+      // Disparamos también el overlay del área central
+      window.dispatchEvent(new CustomEvent('cp:nav-start'));
     }
     document.addEventListener('click', onClick, true);
     return () => document.removeEventListener('click', onClick, true);

@@ -39,8 +39,8 @@ export function FounderNav() {
     e.preventDefault();
     if (href === pathname) return;
     setPending(href);
-    // Sin startTransition: así Next.js dispara loading.tsx en el área de
-    // contenido en vez de mantener la página vieja visible.
+    // Disparamos overlay manual (no dependemos de Next loading.tsx).
+    window.dispatchEvent(new CustomEvent('cp:nav-start'));
     router.push(href);
   }
 

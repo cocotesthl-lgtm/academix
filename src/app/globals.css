@@ -39,6 +39,9 @@ html, body {
   animation: cp-progress 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   border-radius: 0 2px 2px 0;
 }
+@keyframes cp-spin {
+  to { transform: rotate(360deg); }
+}
 
 /* ───────────────────────────────────────────────────────────────────
    Click feedback global — todos los botones, links e inputs clickeables
