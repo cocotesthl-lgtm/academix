@@ -42,11 +42,11 @@ export function OwnerShell({
   }, [open]);
 
   return (
-    <div data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white">
+    <div data-ui-theme="dark" className="min-h-screen bg-[#1c1d1f] text-white">
       <CommandPalette storefrontUrl={storefrontUrl} />
       <ToastBus />
       {/* Mobile topbar — visible solo <lg */}
-      <header className="lg:hidden sticky top-0 z-30 flex items-center gap-2 px-3 py-2 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/10">
+      <header className="lg:hidden sticky top-0 z-30 flex items-center gap-2 px-3 py-2 bg-[#1c1d1f]/95 backdrop-blur border-b border-white/10">
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -74,10 +74,10 @@ export function OwnerShell({
           />
         )}
 
-        {/* Sidebar — desktop static / mobile drawer */}
+        {/* Sidebar grafito — desktop static / mobile drawer */}
         <aside
           className={`
-            w-64 border-r border-white/10 p-4 flex flex-col bg-[#0a0a0a]
+            w-64 border-r border-white/10 p-4 flex flex-col bg-[#1c1d1f]
             lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
             fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-out
             ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -86,8 +86,12 @@ export function OwnerShell({
           {sidebar}
         </aside>
 
-        {/* Main */}
-        <main className="flex-1 min-w-0">
+        {/* Main — área de contenido en light theme (estilo Wix) */}
+        <main
+          data-cp-content="light"
+          data-ui-theme="light"
+          className="flex-1 min-w-0 bg-[#f5f5f7] text-[#1a1a1a] min-h-screen"
+        >
           <div className="p-4 sm:p-6 lg:p-8">{children}</div>
         </main>
       </div>
