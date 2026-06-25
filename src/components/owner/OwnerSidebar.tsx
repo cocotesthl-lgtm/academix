@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useMemo, useTransition, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 /**
  * Sidebar agrupada del owner panel.
@@ -106,7 +106,6 @@ function groupContainsActive(group: NavGroup, pathname: string): boolean {
 export function OwnerSidebar() {
   const pathname = usePathname() ?? '';
   const router = useRouter();
-  const [, startTransition] = useTransition();
   // Highlight optimista — el item se marca activo APENAS se clickea,
   // sin esperar que la page nueva termine de cargar.
   const [pendingHref, setPendingHref] = useState<string | null>(null);
@@ -121,7 +120,11 @@ export function OwnerSidebar() {
   function navigate(href: string) {
     if (href === pathname) return;
     setPendingHref(href);
-    startTransition(() => router.push(href));
+    // OJO: NO envolver en startTransition. Envolver router.push en transition
+    // hace que Next mantenga la página vieja visible y no dispare loading.tsx.
+    // Sin transition: el sidebar re-renderea inmediato + loading.tsx aparece
+    // en el área de contenido como en Wix.
+    router.push(href);
   }
 
   // Un item está "activo" si la ruta actual matchea O si está pending hacia él.

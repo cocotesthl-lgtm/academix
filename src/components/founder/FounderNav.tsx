@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState } from 'react';
 
 type Item = { label: string; href: string; sub?: boolean };
 
@@ -28,7 +28,6 @@ function matches(href: string, pathname: string): boolean {
 export function FounderNav() {
   const pathname = usePathname() ?? '';
   const router = useRouter();
-  const [, start] = useTransition();
   const [pending, setPending] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,7 +39,9 @@ export function FounderNav() {
     e.preventDefault();
     if (href === pathname) return;
     setPending(href);
-    start(() => router.push(href));
+    // Sin startTransition: así Next.js dispara loading.tsx en el área de
+    // contenido en vez de mantener la página vieja visible.
+    router.push(href);
   }
 
   return (
