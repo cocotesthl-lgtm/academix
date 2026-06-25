@@ -63,7 +63,7 @@ export function PendingNavOverlay() {
         style={{
           width: 56, height: 56, borderRadius: '50%',
           border: '4px solid rgba(255,255,255,0.18)',
-          borderTopColor: '#34d399',
+          borderTopColor: 'var(--cp-brand-primary)',
           animation: 'cp-spin 700ms linear infinite'
         }}
       />

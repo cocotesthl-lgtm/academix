@@ -60,7 +60,7 @@ async function loadTenantBrand(tenantId: string): Promise<TenantBrand | null> {
     name: data.name,
     slug: data.slug,
     logoUrl: data.brand?.logo_url,
-    primaryColor: data.brand?.primary_color || '#a855f7',
+    primaryColor: data.brand?.primary_color || '#f97316',
     emailHeaderImageUrl: data.email_header_image_url || undefined,
     emailBannerImageUrl: data.email_banner_image_url || undefined,
     emailFooterMessage: data.email_footer_message || undefined

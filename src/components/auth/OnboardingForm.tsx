@@ -66,7 +66,7 @@ export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
             id="primary_color"
             name="primary_color"
             type="color"
-            defaultValue="#a855f7"
+            defaultValue="#f97316"
             className="w-14 h-11 rounded-md bg-transparent border border-white/15 cursor-pointer"
           />
           <span className="text-sm text-white/50">Lo podés cambiar después en branding.</span>

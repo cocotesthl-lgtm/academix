@@ -6,6 +6,17 @@
 :root {
   --background: #ffffff;
   --foreground: #0a0a0a;
+
+  /* ───────── Curplat brand palette ─────────
+     Negro + blanco + gradiente naranja→ámbar (estilo "fuego").
+     Single source of truth — todos los lugares "platform" leen de acá. */
+  --cp-brand-black: #0a0a0a;
+  --cp-brand-white: #ffffff;
+  --cp-brand-primary: #f97316;        /* naranja base (Tailwind orange-500) */
+  --cp-brand-primary-soft: #fb923c;   /* tono más claro (orange-400) */
+  --cp-brand-secondary: #fbbf24;      /* ámbar gradiente endpoint */
+  --cp-brand-gradient: linear-gradient(135deg, #f97316 0%, #fbbf24 100%);
+  --cp-brand-gradient-soft: linear-gradient(135deg, rgba(249,115,22,0.12) 0%, rgba(251,191,36,0.12) 100%);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,8 +45,8 @@ html, body {
 .cp-progress-bar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #34d399 0%, #10b981 50%, #059669 100%);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+  background: linear-gradient(90deg, var(--cp-brand-primary) 0%, var(--cp-brand-secondary) 100%);
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.55);
   animation: cp-progress 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   border-radius: 0 2px 2px 0;
 }
