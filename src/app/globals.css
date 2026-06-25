@@ -43,6 +43,13 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+/* En mobile las sidebars del owner/founder pasan a drawer oculto. La
+   variable inline que ellos setean debería ignorarse para que el overlay
+   se centre contra la ventana completa. */
+@media (max-width: 1023px) {
+  [data-ui-theme="dark"] { --cp-sidebar-w: 0px !important; }
+}
+
 /* ───────────────────────────────────────────────────────────────────
    LIGHT THEME OVERRIDE para el área de contenido del owner panel.
    Wrapper con data-cp-content="light" → todas las clases white/X que

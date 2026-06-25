@@ -9,7 +9,11 @@ export const dynamic = "force-dynamic";
 export default async function FounderLayout({ children }: { children: React.ReactNode }) {
   await requireSuperAdmin();
   return (
-    <div data-ui-theme="dark" className="min-h-screen flex bg-[#0a0a0a] text-white">
+    <div
+      data-ui-theme="dark"
+      className="min-h-screen flex bg-[#0a0a0a] text-white"
+      style={{ ['--cp-sidebar-w' as string]: '15rem' }}
+    >
       <aside className="w-60 border-r border-white/10 p-4 flex flex-col">
         <h2 className="font-bold text-lg">Founder</h2>
         <div className="mt-3 mb-3 min-h-[2px]">

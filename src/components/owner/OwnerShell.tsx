@@ -42,7 +42,11 @@ export function OwnerShell({
   }, [open]);
 
   return (
-    <div data-ui-theme="dark" className="min-h-screen bg-[#1c1d1f] text-white">
+    <div
+      data-ui-theme="dark"
+      className="min-h-screen bg-[#1c1d1f] text-white"
+      style={{ ['--cp-sidebar-w' as string]: '16rem' }}
+    >
       <CommandPalette storefrontUrl={storefrontUrl} />
       <ToastBus />
       {/* Mobile topbar — visible solo <lg */}

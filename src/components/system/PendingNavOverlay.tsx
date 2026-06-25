@@ -49,9 +49,11 @@ export function PendingNavOverlay() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        // Solo cubrimos el área a la derecha de la sidebar.
-        // Las sidebars en este proyecto miden ~16rem (w-60/w-64).
-        paddingLeft: 'var(--cp-sidebar-w, 16rem)',
+        // Padding por sidebar — solo se aplica si el panel actual la setea
+        // (OwnerShell + founder layout lo hacen). En sites sin sidebar
+        // (marketing apex, storefronts) la variable queda 0 y el spinner
+        // se centra contra la ventana completa.
+        paddingLeft: 'var(--cp-sidebar-w, 0px)',
         background: 'rgba(10, 10, 10, 0.35)',
         backdropFilter: 'blur(2px)',
         transition: 'opacity 120ms ease-out'
