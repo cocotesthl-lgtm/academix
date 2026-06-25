@@ -118,10 +118,10 @@ export default async function StorefrontLayout({
             {cfg.nav.links.map((l) => (
               <a key={l.id} href={l.href} className="hover:text-black">{l.label}</a>
             ))}
-            {cfg.nav.show_my_courses !== false && (
+            {cfg.nav.show_my_courses === true && (
               <a href="/learn" className="hover:text-black">{cfg.nav.my_courses_label || 'Mis publicaciones'}</a>
             )}
-            {cfg.nav.show_affiliates !== false && (
+            {cfg.nav.show_affiliates === true && (
               <a href="/affiliate" className="hover:text-black">{cfg.nav.affiliates_label || 'Afiliados'}</a>
             )}
           </nav>

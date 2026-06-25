@@ -205,8 +205,8 @@ export type SiteConfig = {
   nav: {
     links: NavLink[];
     show_login: boolean;
-    show_my_courses?: boolean;        // default true (backwards compat)
-    show_affiliates?: boolean;        // default true
+    show_my_courses?: boolean;        // default false — owner lo prende en /owner/site
+    show_affiliates?: boolean;        // default false — owner lo prende en /owner/site
     my_courses_label?: string;        // ej. "Mis cursos" o "Mi cuenta" o "Mis compras"
     affiliates_label?: string;        // ej. "Afiliados" o "Ser embajador"
   };
