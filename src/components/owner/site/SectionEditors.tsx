@@ -481,7 +481,7 @@ export function TrustedByEditor({ initialTitle, items, grayscale, marquee, marqu
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <RichTextField label="Título de la sección" value={title} onChange={setTitle} />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={gs} onChange={(e) => setGs(e.target.checked)} />
           Aplicar filtro grayscale a los logos
@@ -743,7 +743,7 @@ export function InstructorEditor({ initial, items, primary }: {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <RichTextField label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
         <div>
           <label className="block text-xs text-white/60 mb-2">Modo de visualización</label>
           <div className="grid grid-cols-3 gap-2 text-xs">
@@ -918,7 +918,7 @@ export function StatsEditor({ initialTitle, items, primary }: {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <RichTextField label="Título de la sección" value={title} onChange={setTitle} />
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
@@ -1011,7 +1011,7 @@ export function LearnPointsEditor({ initialTitle, initialSubtitle, items, primar
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
         <Field label="Título" value={title} onChange={setTitle} />
-        <Field label="Subtítulo (opcional)" value={subtitle} onChange={setSubtitle} />
+        <RichTextField label="Subtítulo (opcional)" value={subtitle} onChange={setSubtitle} />
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, subtitle })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
@@ -1102,7 +1102,7 @@ export function FeaturesEditor({ initialTitle, items, primary }: {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <RichTextField label="Título de la sección" value={title} onChange={setTitle} />
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
@@ -1188,7 +1188,7 @@ export function FeaturedEditor({ initialTitle, primary }: { initialTitle: string
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <RichTextField label="Título de la sección" value={title} onChange={setTitle} />
         <p className="text-xs text-white/40">Los publicaciones destacados los marcás desde el editor de cada publicación.</p>
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
       </div>
@@ -1246,7 +1246,7 @@ export function CatalogEditor({
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <RichTextField label="Título de la sección" value={title} onChange={setTitle} />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={showFilters} onChange={(e) => setShowFilters(e.target.checked)} />
           Mostrar filtros por categoría
@@ -1544,8 +1544,8 @@ export function CardsEditor({
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={title} onChange={setTitle} />
-        <Field label="Subtítulo (opcional)" value={subtitle} onChange={setSubtitle} />
+        <RichTextField label="Título de la sección" value={title} onChange={setTitle} />
+        <RichTextField label="Subtítulo (opcional)" value={subtitle} onChange={setSubtitle} />
         <div>
           <label className="block text-xs text-white/60 mb-1">Columnas en grid</label>
           <div className="grid grid-cols-3 gap-2 text-xs">
@@ -1981,7 +1981,7 @@ export function TestimonialsEditor({ initialTitle, items, primary }: {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <RichTextField label="Título de la sección" value={title} onChange={setTitle} />
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
@@ -2125,7 +2125,7 @@ export function FaqEditor({ initialTitle, items }: { initialTitle: string; items
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <RichTextField label="Título de la sección" value={title} onChange={setTitle} />
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title })} />
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
@@ -2342,7 +2342,7 @@ export function BeforeAfterEditor({ initial, beforeUrl, afterUrl, primary }: {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <RichTextField label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
         <div className="grid grid-cols-2 gap-2">
           <Field label="Label izquierda" value={v.before_label} onChange={(x) => setV({ ...v, before_label: x })} />
           <Field label="Label derecha" value={v.after_label} onChange={(x) => setV({ ...v, after_label: x })} />
@@ -2437,7 +2437,7 @@ export function PricingEditor({ initialTitle, initialSubtitle, tiers, primary }:
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={title} onChange={setTitle} />
+        <RichTextField label="Título de la sección" value={title} onChange={setTitle} />
         <Field label="Subtítulo" value={subtitle} onChange={setSubtitle} />
         <SaveBar pending={pending} saved={saved} onSave={() => fire({ title, subtitle })} />
 
@@ -2566,7 +2566,7 @@ export function VideoEditor({ initial, primary }: { initial: VideoValues; primar
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
         <Field label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
-        <Field label="Subtítulo (opcional)" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+        <RichTextField label="Subtítulo (opcional)" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
         <div>
           <label className="block text-xs text-white/60 mb-1">Plataforma</label>
           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -2635,7 +2635,7 @@ export function GalleryEditor({ initialTitle, initialSubtitle, items, columns }:
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
         <Field label="Título" value={title} onChange={setTitle} />
-        <Field label="Subtítulo (opcional)" value={subtitle} onChange={setSubtitle} />
+        <RichTextField label="Subtítulo (opcional)" value={subtitle} onChange={setSubtitle} />
         <div>
           <label className="block text-xs text-white/60 mb-1">Columnas</label>
           <div className="grid grid-cols-3 gap-2 text-xs">
@@ -2758,7 +2758,7 @@ export function MapEditor({ initial }: { initial: MapValues }) {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
-        <Field label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <RichTextField label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
         <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
 
         <div>
@@ -2904,7 +2904,7 @@ export function CustomEditor({ initial, imageUrl, primary }: {
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
         <Field label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
-        <Field label="Subtítulo (opcional)" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+        <RichTextField label="Subtítulo (opcional)" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
         <Textarea label="Texto principal (HTML básico permitido)" value={v.body} onChange={(x) => setV({ ...v, body: x })} rows={6} />
         <div>
           <label className="block text-xs text-white/60 mb-2">Posición de la imagen</label>
