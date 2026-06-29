@@ -166,7 +166,7 @@ html, body {
 [data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-neutral-800,
 [data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-neutral-900,
 [data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-neutral-950 {
-  color: rgba(255,255,255,0.85) !important;
+  color: #fff !important;
 }
 [data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav)[class*="bg-\[\#0"] *,
 [data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav)[class*="bg-\[\#1"] *,
