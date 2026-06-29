@@ -137,9 +137,15 @@ html, body {
    Las previews del storefront dentro del owner editor son mini-replicas
    del sitio público (siempre dark theme). El override del light cascadea
    y rompe los colores. Acá apagamos el override DENTRO de previews. ───── */
+/* Root del preview: forzar color blanco para que la HERENCIA llegue
+   bien a children sin clase explícita. Sino heredan el #1a1a1a del main
+   y los stats/about/etc del mini-storefront quedan dark-on-dark. */
+[data-pf], [data-preview], .cp-preview { color: #fff !important; }
 [data-pf] .text-white,
 [data-preview] .text-white,
 .cp-preview .text-white { color: #fff !important; }
+/* text-black/text-[#XXX] sí se respeta: secciones light dentro del preview
+   los necesitan. NO los pisamos. */
 [data-pf] .text-white\/90, [data-preview] .text-white\/90, .cp-preview .text-white\/90 { color: rgba(255,255,255,0.90) !important; }
 [data-pf] .text-white\/80, [data-preview] .text-white\/80, .cp-preview .text-white\/80 { color: rgba(255,255,255,0.80) !important; }
 [data-pf] .text-white\/70, [data-preview] .text-white\/70, .cp-preview .text-white\/70 { color: rgba(255,255,255,0.70) !important; }
