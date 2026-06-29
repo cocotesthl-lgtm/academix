@@ -229,9 +229,12 @@ html, body {
 [data-cp-content="light"] .divide-white\/10 > * + *:not([data-pf] *) { border-color: rgba(0,0,0,0.08) !important; }
 
 /* Botones primarios bg-white text-black → invertir a negro sobre claro
-   (porque sino se confunde con el fondo blanco del main) */
-[data-cp-content="light"] button.bg-white.text-black:not([data-pf] *),
-[data-cp-content="light"] .bg-white.text-black:not([data-pf] *) {
+   (porque sino se confunde con el fondo blanco del main).
+   OJO: NO matchear la PreviewFrame, que usa esas mismas clases pero
+   debe seguir light. :not([data-pf]) excluye el elemento mismo;
+   :not([data-pf] *) excluye sus descendientes. */
+[data-cp-content="light"] button.bg-white.text-black:not([data-pf]):not([data-pf] *),
+[data-cp-content="light"] .bg-white.text-black:not([data-pf]):not([data-pf] *) {
   background-color: #111 !important;
   color: #fff !important;
 }
