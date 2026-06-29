@@ -90,46 +90,70 @@ html, body {
 [data-cp-content="light"] .text-white\/15        { color: rgba(0,0,0,0.28) !important; }
 [data-cp-content="light"] .text-white\/10        { color: rgba(0,0,0,0.22) !important; }
 
-/* NO override de hover:text-white — se usa en botones con bg de color
-   (ej. hover de un menú item sobre fondo dark/colored) y romperíamos el
-   contraste. Si algún hover queda raro en light, lo arreglamos individual. */
+/* Texto blanco sólido (botones primarios sobre bg de color, banners,
+   contadores). En light theme sin contexto dark, también lo invertimos. */
+[data-cp-content="light"] .text-white            { color: #1a1a1a !important; }
+[data-cp-content="light"] .hover\:text-white:hover { color: #000 !important; }
 
-/* RESTAURAR texto blanco/muteado cuando el contenedor TIENE bg dark
-   (headers de tablas, banners negros, hero cards). Si no, mi override
-   convierte el text-white/55 en dark-text-on-dark-bg = invisible. */
-/* Selector amplio: cualquier hex que empiece con #0, #1 o #2 es siempre
-   un dark (los light usan #f, #e, #ffffff, etc). También cubrimos los
-   alias Tailwind 800/900/950 de todas las paletas neutras. */
-[data-cp-content="light"]
-  :is(
-    .bg-black,
-    .bg-neutral-800, .bg-neutral-900, .bg-neutral-950,
-    .bg-zinc-800, .bg-zinc-900, .bg-zinc-950,
-    .bg-gray-800, .bg-gray-900, .bg-gray-950,
-    .bg-slate-800, .bg-slate-900, .bg-slate-950,
-    .bg-stone-800, .bg-stone-900, .bg-stone-950,
-    [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]
-  )
-  :is(
-    .text-white,
-    .text-white\/90, .text-white\/85, .text-white\/80, .text-white\/75,
-    .text-white\/70, .text-white\/65, .text-white\/60, .text-white\/55,
-    .text-white\/50, .text-white\/45, .text-white\/40, .text-white\/35,
-    .text-white\/30, .text-white\/25, .text-white\/20, .text-white\/15, .text-white\/10
-  ) {
-    color: #fff !important;
-  }
-/* Restauración con opacidad real por clase. Ganan sobre la regla anterior
-   por especificidad similar + orden. */
-[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/90 { color: rgba(255,255,255,0.90) !important; }
-[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/80 { color: rgba(255,255,255,0.80) !important; }
-[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/70 { color: rgba(255,255,255,0.70) !important; }
-[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/60 { color: rgba(255,255,255,0.60) !important; }
-[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/55 { color: rgba(255,255,255,0.55) !important; }
-[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/50 { color: rgba(255,255,255,0.50) !important; }
-[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/45 { color: rgba(255,255,255,0.45) !important; }
-[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/40 { color: rgba(255,255,255,0.40) !important; }
-[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/30 { color: rgba(255,255,255,0.30) !important; }
+/* ───── RESTAURAR blanco cuando el contenedor (o el elemento mismo)
+   tiene fondo dark. Cubre headers de tablas como <thead bg-[#0f0f0f]
+   text-white/50> donde la clase está en EL MISMO elemento que el bg. ───── */
+/* Macro: alias del selector de contenedor dark.
+   Tailwind no expande @apply para attribute selectors así que usamos
+   un selector compuesto con :is(). */
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) :is(.text-white, .text-white\/90, .text-white\/85, .text-white\/80, .text-white\/75, .text-white\/70, .text-white\/65, .text-white\/60, .text-white\/55, .text-white\/50, .text-white\/45, .text-white\/40, .text-white\/35, .text-white\/30, .text-white\/25, .text-white\/20, .text-white\/15, .text-white\/10),
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]):is(.text-white, .text-white\/90, .text-white\/85, .text-white\/80, .text-white\/75, .text-white\/70, .text-white\/65, .text-white\/60, .text-white\/55, .text-white\/50, .text-white\/45, .text-white\/40, .text-white\/35, .text-white\/30, .text-white\/25, .text-white\/20, .text-white\/15, .text-white\/10) {
+  color: #fff !important;
+}
+/* Restauración con opacidad correcta por clase (descendiente + same-element) */
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/90,
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]).text-white\/90 { color: rgba(255,255,255,0.90) !important; }
+
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/80,
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]).text-white\/80 { color: rgba(255,255,255,0.80) !important; }
+
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/70,
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]).text-white\/70 { color: rgba(255,255,255,0.70) !important; }
+
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/60,
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]).text-white\/60 { color: rgba(255,255,255,0.60) !important; }
+
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/55,
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]).text-white\/55 { color: rgba(255,255,255,0.55) !important; }
+
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/50,
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]).text-white\/50 { color: rgba(255,255,255,0.50) !important; }
+
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/45,
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]).text-white\/45 { color: rgba(255,255,255,0.45) !important; }
+
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/40,
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]).text-white\/40 { color: rgba(255,255,255,0.40) !important; }
+
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]) .text-white\/30,
+[data-cp-content="light"] :is(.bg-black, .bg-neutral-800, .bg-neutral-900, .bg-neutral-950, .bg-zinc-800, .bg-zinc-900, .bg-zinc-950, .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-slate-800, .bg-slate-900, .bg-slate-950, .bg-stone-800, .bg-stone-900, .bg-stone-950, [class*="bg-\[\#0"], [class*="bg-\[\#1"], [class*="bg-\[\#2"]).text-white\/30 { color: rgba(255,255,255,0.30) !important; }
+
+/* ───── PREVIEWS DEL EDITOR (data-pf / data-sec-editor / data-preview)
+   Las previews del storefront dentro del owner editor son mini-replicas
+   del sitio público (siempre dark theme). El override del light cascadea
+   y rompe los colores. Acá apagamos el override DENTRO de previews. ───── */
+[data-pf] .text-white,
+[data-preview] .text-white,
+.cp-preview .text-white { color: #fff !important; }
+[data-pf] .text-white\/90, [data-preview] .text-white\/90, .cp-preview .text-white\/90 { color: rgba(255,255,255,0.90) !important; }
+[data-pf] .text-white\/80, [data-preview] .text-white\/80, .cp-preview .text-white\/80 { color: rgba(255,255,255,0.80) !important; }
+[data-pf] .text-white\/70, [data-preview] .text-white\/70, .cp-preview .text-white\/70 { color: rgba(255,255,255,0.70) !important; }
+[data-pf] .text-white\/60, [data-preview] .text-white\/60, .cp-preview .text-white\/60 { color: rgba(255,255,255,0.60) !important; }
+[data-pf] .text-white\/55, [data-preview] .text-white\/55, .cp-preview .text-white\/55 { color: rgba(255,255,255,0.55) !important; }
+[data-pf] .text-white\/50, [data-preview] .text-white\/50, .cp-preview .text-white\/50 { color: rgba(255,255,255,0.50) !important; }
+[data-pf] .text-white\/45, [data-preview] .text-white\/45, .cp-preview .text-white\/45 { color: rgba(255,255,255,0.45) !important; }
+[data-pf] .text-white\/40, [data-preview] .text-white\/40, .cp-preview .text-white\/40 { color: rgba(255,255,255,0.40) !important; }
+[data-pf] .text-white\/30, [data-preview] .text-white\/30, .cp-preview .text-white\/30 { color: rgba(255,255,255,0.30) !important; }
+[data-pf] .bg-white\/5, [data-preview] .bg-white\/5, .cp-preview .bg-white\/5 { background-color: rgba(255,255,255,0.05) !important; }
+[data-pf] .bg-white\/10, [data-preview] .bg-white\/10, .cp-preview .bg-white\/10 { background-color: rgba(255,255,255,0.10) !important; }
+[data-pf] .border-white\/10, [data-preview] .border-white\/10, .cp-preview .border-white\/10 { border-color: rgba(255,255,255,0.10) !important; }
+[data-pf] .border-white\/15, [data-preview] .border-white\/15, .cp-preview .border-white\/15 { border-color: rgba(255,255,255,0.15) !important; }
+[data-pf] .border-white\/20, [data-preview] .border-white\/20, .cp-preview .border-white\/20 { border-color: rgba(255,255,255,0.20) !important; }
 
 /* placeholder:text-white/X */
 [data-cp-content="light"] .placeholder\:text-white\/30::placeholder { color: rgba(0,0,0,0.38) !important; }
