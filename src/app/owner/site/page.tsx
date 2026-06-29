@@ -571,13 +571,9 @@ function Section({
             initial={bgColor}
             action={setSectionBgColorAction}
           />
-          <ColorAutoSave
-            label="Texto"
-            fieldName="text_color"
-            sectionKey={sectionKey}
-            initial={textColor}
-            action={setSectionTextColorAction}
-          />
+          {/* Texto color picker sacado del header — vive en el panel Estilos
+              cuando el owner lo necesita. El texto se ve bien por default
+              gracias al auto-flip basado en el bg. */}
           <SectionStyleEditor sectionKey={sectionKey} initial={styles} />
           <form action={toggleSectionAction}>
             <input type="hidden" name="section" value={sectionKey} />
