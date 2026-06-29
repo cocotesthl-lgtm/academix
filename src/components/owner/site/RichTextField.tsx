@@ -138,13 +138,16 @@ export function RichTextField({
         )}
       </div>
       <style>{`
-        /* El editor IGNORA visualmente los tamaños/espaciados custom (sino
-           tipografías gigantes destruirían el layout del builder). Pero los
-           atributos siguen en el HTML — la storefront los aplica en vivo. */
+        /* El editor IGNORA visualmente los tamaños/espaciados/colores custom
+           (sino tipografías gigantes o texto blanco en bg blanco harían
+           ilegible el builder). Los atributos siguen en el HTML —
+           la storefront los aplica en vivo. */
         .rt-editor * {
           font-size: inherit !important;
           letter-spacing: inherit !important;
+          color: inherit !important;
         }
+        .rt-editor { color: #1a1a1a; }
         .rt-editor p { margin: 0; }
         .rt-editor p + p { margin-top: 0.5em; }
       `}</style>
