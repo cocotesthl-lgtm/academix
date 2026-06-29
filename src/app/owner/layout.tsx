@@ -53,16 +53,25 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
       <div className="flex-1 overflow-y-auto -mx-1 px-1">
         <OwnerSidebar />
       </div>
-      <div className="mt-auto pt-4 border-t border-white/10">
+      <div className="mt-auto pt-4 border-t border-white/10 space-y-2">
+        {/* CTA destacado: ver el sitio público — abre en pestaña nueva. */}
         <a
           href={storefrontUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="block text-xs text-white/40 hover:text-white truncate"
-          title="Ver mi storefront"
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-white/20 bg-white/[0.06] hover:bg-white/[0.12] hover:border-white/40 text-white text-sm font-medium py-2.5 transition"
+          title="Ver mi sitio público"
         >
-          ↗ {tenant.slug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          Ver mi sitio
         </a>
+        <p className="text-[10px] text-white/35 text-center truncate" title={`${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}`}>
+          {tenant.slug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}
+        </p>
       </div>
     </>
   );

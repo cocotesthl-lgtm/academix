@@ -4,6 +4,35 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
 
 /**
+ * Iconos line-style (estilo Lucide/Feather, no coloridos).
+ * No usamos emojis para no romper la paleta gráfica.
+ */
+type IconName = 'home' | 'shopping-bag' | 'ticket' | 'users' | 'palette' | 'settings';
+
+function Icon({ name, className = 'w-4 h-4' }: { name: IconName; className?: string }) {
+  const props = {
+    className,
+    width: 16, height: 16, viewBox: '0 0 24 24',
+    fill: 'none', stroke: 'currentColor',
+    strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const
+  };
+  switch (name) {
+    case 'home':
+      return <svg {...props}><path d="M3 12L12 3l9 9"/><path d="M5 10v10h14V10"/></svg>;
+    case 'shopping-bag':
+      return <svg {...props}><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>;
+    case 'ticket':
+      return <svg {...props}><path d="M3 7h18v4a2 2 0 0 0 0 4v2H3v-2a2 2 0 0 0 0-4V7z"/><path d="M13 7v10" strokeDasharray="2 2"/></svg>;
+    case 'users':
+      return <svg {...props}><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1"/><circle cx="17" cy="9" r="2.5"/><path d="M16 15h2a3 3 0 0 1 3 3v1"/></svg>;
+    case 'palette':
+      return <svg {...props}><path d="M12 3a9 9 0 1 0 9 9c0-2-2-2-2-4s2-2 2-4a5 5 0 0 0-5-5"/><circle cx="7.5" cy="11.5" r="1.2"/><circle cx="11.5" cy="7.5" r="1.2"/><circle cx="16.5" cy="11.5" r="1.2"/></svg>;
+    case 'settings':
+      return <svg {...props}><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.4.8a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.4a7 7 0 0 0-2 1.2L5.1 5.8l-2 3.5 2 1.5A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.5 2 3.5 2.4-.8a7 7 0 0 0 2 1.2L10 21h4l.5-2.4a7 7 0 0 0 2-1.2l2.4.8 2-3.5-2-1.5a7 7 0 0 0 .1-1.2z"/></svg>;
+  }
+}
+
+/**
  * Sidebar agrupada del owner panel.
  *
  * - 6 secciones colapsables (Inicio + 5 grupos).
@@ -15,19 +44,19 @@ import { useState, useMemo, useEffect } from 'react';
  */
 
 type NavItem = { label: string; href: string; badge?: string };
-type NavGroup = { label: string; icon: string; items: NavItem[] };
-type NavEntry = { kind: 'item'; item: NavItem; icon: string } | { kind: 'group'; group: NavGroup };
+type NavGroup = { label: string; icon: IconName; items: NavItem[] };
+type NavEntry = { kind: 'item'; item: NavItem; icon: IconName } | { kind: 'group'; group: NavGroup };
 
 const NAV: NavEntry[] = [
-  { kind: 'item', icon: '🏠', item: { label: 'Inicio', href: '/dashboard' } },
+  { kind: 'item', icon: 'home', item: { label: 'Inicio', href: '/dashboard' } },
   {
     kind: 'group',
     group: {
-      label: 'Mis ventas', icon: '🛍️',
+      label: 'Mis ventas', icon: 'shopping-bag',
       items: [
         { label: 'Ofertas', href: '/courses' },
-        { label: '💰 Saldos', href: '/wallets' },
-        { label: '📋 Cuentas / Planes', href: '/cuentas' },
+        { label: 'Saldos', href: '/wallets' },
+        { label: 'Cuentas / Planes', href: '/cuentas' },
         { label: 'Contenido VIP', href: '/vip' },
         { label: 'Bundles', href: '/bundles' },
         { label: 'Categorías', href: '/categories' }
@@ -37,7 +66,7 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'Eventos', icon: '🎟️',
+      label: 'Eventos', icon: 'ticket',
       items: [
         { label: 'Calendario', href: '/eventos/calendario' },
         { label: 'Validar entradas', href: '/eventos/validar' },
@@ -50,7 +79,7 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'Personas', icon: '👥',
+      label: 'Personas', icon: 'users',
       items: [
         { label: 'Clientes', href: '/clientes' },
         { label: 'CRM (leads)', href: '/crm' },
@@ -67,7 +96,7 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'Mi sitio', icon: '🎨',
+      label: 'Mi sitio', icon: 'palette',
       items: [
         { label: 'Editor de páginas', href: '/site' },
         { label: 'Templates', href: '/templates' },
@@ -80,7 +109,7 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'Configuración', icon: '⚙️',
+      label: 'Configuración', icon: 'settings',
       items: [
         { label: 'Mi plan', href: '/mi-plan' },
         { label: 'Mi dominio', href: '/dominio' },
@@ -183,7 +212,7 @@ export function OwnerSidebar() {
                   : 'text-white/80 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <span className="w-4 text-center">{entry.icon}</span>
+              <Icon name={entry.icon} className="w-4 h-4 text-white/60 shrink-0" />
               <span>{entry.item.label}</span>
             </a>
           );
@@ -200,7 +229,7 @@ export function OwnerSidebar() {
                 hasActive ? 'text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <span className="w-4 text-center">{entry.group.icon}</span>
+              <Icon name={entry.group.icon} className="w-4 h-4 text-white/60 shrink-0" />
               <span className="flex-1 font-medium">{entry.group.label}</span>
               <span className={`text-white/30 text-xs transition-transform ${isOpen ? 'rotate-90' : ''}`}>
                 ›
