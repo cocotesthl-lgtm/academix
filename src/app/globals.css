@@ -54,6 +54,24 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+/* ───── Sidebar colapsado (desktop): ocultar todo lo marcado con
+   .cp-collapse-hide. Sólo los icons quedan visibles. ───── */
+@media (min-width: 1024px) {
+  [data-sidebar-collapsed="true"] .cp-collapse-hide { display: none !important; }
+  /* Ítems del nav: centrar el icon cuando no hay label */
+  [data-sidebar-collapsed="true"] aside nav a,
+  [data-sidebar-collapsed="true"] aside nav button {
+    justify-content: center !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  /* Los items hijos de grupos: ocultos cuando colapsado (la columna estrecha
+     no tiene espacio para mostrar el árbol completo) */
+  [data-sidebar-collapsed="true"] aside nav > div > div:nth-child(2) { display: none !important; }
+  /* Headers no relevantes en collapsed */
+  [data-sidebar-collapsed="true"] aside h2 { display: none !important; }
+}
+
 /* En mobile las sidebars del owner/founder pasan a drawer oculto. La
    variable inline que ellos setean debería ignorarse para que el overlay
    se centre contra la ventana completa. */

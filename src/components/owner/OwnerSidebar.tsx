@@ -213,7 +213,7 @@ export function OwnerSidebar() {
               }`}
             >
               <Icon name={entry.icon} className="w-4 h-4 text-white/60 shrink-0" />
-              <span>{entry.item.label}</span>
+              <span className="cp-collapse-hide">{entry.item.label}</span>
             </a>
           );
         }
@@ -230,8 +230,8 @@ export function OwnerSidebar() {
               }`}
             >
               <Icon name={entry.group.icon} className="w-4 h-4 text-white/60 shrink-0" />
-              <span className="flex-1 font-medium">{entry.group.label}</span>
-              <span className={`text-white/30 text-xs transition-transform ${isOpen ? 'rotate-90' : ''}`}>
+              <span className="flex-1 font-medium cp-collapse-hide">{entry.group.label}</span>
+              <span className={`text-white/30 text-xs transition-transform cp-collapse-hide ${isOpen ? 'rotate-90' : ''}`}>
                 ›
               </span>
             </button>

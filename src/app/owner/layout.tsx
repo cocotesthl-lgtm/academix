@@ -34,19 +34,19 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
 
   const sidebar = (
     <>
-      <div className="mb-3">
+      <div className="mb-3 cp-collapse-hide">
         <h2 className="font-bold text-lg truncate">{tenant.name}</h2>
         <div className="flex items-center gap-1.5 mt-0.5">
           <p className="text-xs text-white/40 truncate flex-1" title={email}>{email}</p>
           <SignoutButton icon redirectTo={tenantLoginUrl} />
         </div>
       </div>
-      <div className="mb-3">
+      <div className="mb-3 cp-collapse-hide">
         <CommandPaletteTrigger />
       </div>
       {/* Barra de estado de guardado — entre Buscar y el menú. Sólo
           aparece cuando hay actividad (saving / saved / error). */}
-      <div className="mb-3 min-h-[2px]">
+      <div className="mb-3 min-h-[2px] cp-collapse-hide">
         <SaveStatusBar />
       </div>
       <GlobalSaveListener />
@@ -54,7 +54,8 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
         <OwnerSidebar />
       </div>
       <div className="mt-auto pt-4 border-t border-white/10 space-y-2">
-        {/* CTA destacado: ver el sitio público — abre en pestaña nueva. */}
+        {/* CTA destacado: ver el sitio público — abre en pestaña nueva.
+            Cuando collapsed: solo el ícono. */}
         <a
           href={storefrontUrl}
           target="_blank"
@@ -67,9 +68,9 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
             <polyline points="15 3 21 3 21 9"/>
             <line x1="10" y1="14" x2="21" y2="3"/>
           </svg>
-          Ver mi sitio
+          <span className="cp-collapse-hide">Ver mi sitio</span>
         </a>
-        <p className="text-[10px] text-white/35 text-center truncate" title={`${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}`}>
+        <p className="text-[10px] text-white/35 text-center truncate cp-collapse-hide" title={`${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}`}>
           {tenant.slug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}
         </p>
       </div>

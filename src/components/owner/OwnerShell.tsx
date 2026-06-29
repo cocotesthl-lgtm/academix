@@ -28,10 +28,28 @@ export function OwnerShell({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  // Sidebar colapsado en desktop. Persiste en localStorage.
+  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
 
   // Cerrar drawer al cambiar de ruta
   useEffect(() => { setOpen(false); }, [pathname]);
+
+  // Cargar preferencia de colapsado (desktop)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('cp-sidebar-collapsed');
+      if (saved === '1') setCollapsed(true);
+    } catch { /* SSR / privacy mode */ }
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('cp-sidebar-collapsed', next ? '1' : '0'); } catch {/* */}
+      return next;
+    });
+  }
 
   // Body lock cuando drawer abierto en mobile
   useEffect(() => {
@@ -44,8 +62,9 @@ export function OwnerShell({
   return (
     <div
       data-ui-theme="dark"
+      data-sidebar-collapsed={collapsed ? 'true' : 'false'}
       className="min-h-screen bg-[#1c1d1f] text-white"
-      style={{ ['--cp-sidebar-w' as string]: '16rem' }}
+      style={{ ['--cp-sidebar-w' as string]: collapsed ? '4rem' : '16rem' }}
     >
       <CommandPalette storefrontUrl={storefrontUrl} />
       <ToastBus />
@@ -81,13 +100,29 @@ export function OwnerShell({
         {/* Sidebar grafito — desktop static / mobile drawer */}
         <aside
           className={`
-            w-64 border-r border-white/10 p-4 flex flex-col bg-[#1c1d1f]
+            ${collapsed ? 'lg:w-16 lg:p-2' : 'lg:w-64 lg:p-4'} w-64 p-4
+            border-r border-white/10 flex flex-col bg-[#1c1d1f]
             lg:sticky lg:top-0 lg:h-screen lg:translate-x-0
-            fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-out
+            fixed inset-y-0 left-0 z-50
+            transition-[transform,width,padding] duration-200 ease-out
             ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            relative
           `}
         >
           {sidebar}
+          {/* Toggle colapsar/expandir — sólo desktop, sobresale al borde */}
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+            title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+            className="hidden lg:flex absolute -right-3 top-20 z-10 w-6 h-6 items-center justify-center rounded-full border border-white/15 bg-[#1c1d1f] text-white/60 hover:text-white hover:border-white/40 hover:bg-[#252628] transition shadow-md"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              style={{ transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }}>
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
         </aside>
 
         {/* Main — área de contenido en light theme (estilo Wix) */}
