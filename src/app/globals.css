@@ -155,6 +155,29 @@ html, body {
 [data-pf] .border-white\/15, [data-preview] .border-white\/15, .cp-preview .border-white\/15 { border-color: rgba(255,255,255,0.15) !important; }
 [data-pf] .border-white\/20, [data-preview] .border-white\/20, .cp-preview .border-white\/20 { border-color: rgba(255,255,255,0.20) !important; }
 
+/* ───── FALLBACK AGRESIVO: cualquier <thead>/<tr>/<th>/<td>/div con
+   bg dark dentro del light theme, fuerza color blanco a sí mismo y a
+   TODOS sus hijos (cubre el caso de <thead bg-dark text-white/50>
+   donde las celdas <th> heredan el color). ───── */
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav)[class*="bg-\[\#0"],
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav)[class*="bg-\[\#1"],
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav)[class*="bg-\[\#2"],
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-black,
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-neutral-800,
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-neutral-900,
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-neutral-950 {
+  color: rgba(255,255,255,0.85) !important;
+}
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav)[class*="bg-\[\#0"] *,
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav)[class*="bg-\[\#1"] *,
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav)[class*="bg-\[\#2"] *,
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-black *,
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-neutral-800 *,
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-neutral-900 *,
+[data-cp-content="light"] :is(thead, tr, th, td, div, section, header, footer, aside, nav).bg-neutral-950 * {
+  color: inherit;
+}
+
 /* placeholder:text-white/X */
 [data-cp-content="light"] .placeholder\:text-white\/30::placeholder { color: rgba(0,0,0,0.38) !important; }
 [data-cp-content="light"] .placeholder\:text-white\/35::placeholder { color: rgba(0,0,0,0.40) !important; }
