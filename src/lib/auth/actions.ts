@@ -51,31 +51,39 @@ async function postAuthRedirect(userId: string): Promise<string> {
   if (profile?.is_super_admin) {
     return subdomainUrl('admin', '/dashboard');
   }
-  const { data: ownership } = await svc
+
+  // Workspaces: contamos memberships activas (cualquier rol). Si tiene 2+,
+  // mandamos al selector (Wix-style). Con 1, directo a su único workspace.
+  const { data: memberships } = await svc
     .from('memberships')
-    .select('tenant_id')
+    .select('tenant_id, role')
     .eq('user_id', userId)
-    .eq('role', 'owner')
-    .eq('status', 'active')
-    .limit(1)
-    .maybeSingle();
-  if (ownership) {
-    return subdomainUrl('app', '/dashboard');
+    .eq('status', 'active');
+  const all = (memberships ?? []) as Array<{ tenant_id: string; role: 'owner' | 'instructor' | 'student' }>;
+
+  // Dedup por tenant — owner gana sobre instructor sobre student
+  const priority = { owner: 3, instructor: 2, student: 1 } as const;
+  const byTenant = new Map<string, typeof all[number]>();
+  for (const m of all) {
+    const ex = byTenant.get(m.tenant_id);
+    if (!ex || priority[m.role] > priority[ex.role]) byTenant.set(m.tenant_id, m);
   }
-  // Instructor → portal de instructor (también en subdominio app.<root>)
-  const { data: instr } = await svc
-    .from('memberships')
-    .select('tenant_id')
-    .eq('user_id', userId)
-    .eq('role', 'instructor')
-    .eq('status', 'active')
-    .limit(1)
-    .maybeSingle();
-  if (instr) {
-    return subdomainUrl('app', '/instructor');
+  const workspaces = Array.from(byTenant.values());
+
+  // 2+ workspaces → selector
+  if (workspaces.length >= 2) {
+    return subdomainUrl('app', '/workspaces');
   }
-  // Si el user tiene enrollments es un alumno → mandarlo a /learn (relativo,
-  // así se queda en el storefront donde se está logueando)
+
+  // 1 workspace → directo a su panel según rol
+  if (workspaces.length === 1) {
+    const m = workspaces[0];
+    if (m.role === 'owner') return subdomainUrl('app', '/dashboard');
+    if (m.role === 'instructor') return subdomainUrl('app', '/instructor');
+    if (m.role === 'student') return '/learn';
+  }
+
+  // 0 memberships pero tiene enrollments → alumno suelto en este tenant
   const { data: enroll } = await svc
     .from('enrollments')
     .select('id')
@@ -86,7 +94,8 @@ async function postAuthRedirect(userId: string): Promise<string> {
   if (enroll) {
     return '/learn';
   }
-  // User sin ningún rol → asumimos que quiere crear academia
+
+  // Sin nada → onboarding para crear su primer sitio
   return '/onboarding';
 }
 

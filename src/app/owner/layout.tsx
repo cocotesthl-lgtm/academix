@@ -35,7 +35,18 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   const sidebar = (
     <>
       <div className="mb-3 cp-collapse-hide">
-        <h2 className="font-bold text-lg truncate">{tenant.name}</h2>
+        <div className="flex items-center gap-1.5">
+          <h2 className="font-bold text-lg truncate flex-1">{tenant.name}</h2>
+          {/* Cambiar workspace (visible si tiene 2+ memberships, simplemente
+              lleva a /workspaces que se encarga de listar y elegir) */}
+          <a
+            href="/workspaces"
+            title="Cambiar de sitio"
+            className="text-white/45 hover:text-white text-xs rounded px-1.5 py-0.5 border border-white/10 hover:border-white/30"
+          >
+            ⇄
+          </a>
+        </div>
         <div className="flex items-center gap-1.5 mt-0.5">
           <p className="text-xs text-white/40 truncate flex-1" title={email}>{email}</p>
           <SignoutButton icon redirectTo={tenantLoginUrl} />
