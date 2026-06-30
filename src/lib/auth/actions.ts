@@ -195,13 +195,15 @@ export async function signoutAction(redirectTo?: string): Promise<void> {
  */
 export async function googleOAuthAction(formData: FormData): Promise<void> {
   const next = String(formData.get('next') ?? '').trim() || '/onboarding';
-  // OJO: siempre usamos platformApiOrigin (app.curplat.com) para el callback,
-  // NUNCA el origin del subdominio actual. Razón: Supabase requiere que el
-  // redirect URL esté whitelisted en su dashboard, y mantener allowlist de
-  // todos los tenant domains (incluso custom) es inviable. El platform
-  // origin es único y estable.
+  // Usamos el host del request actual (lo pasa el form como hidden 'origin').
+  // Esto soporta dominios temporales mientras no esté curplat.com listo.
+  // El owner debe whitelistar el dominio en Supabase → Auth → URL Config.
+  const origin = String(formData.get('origin') ?? '').trim();
+  if (!origin) {
+    redirect('/login?error=missing_origin');
+  }
   const supabase = await createSupabaseServerClient();
-  const callback = `${env.platformApiOrigin}/api/auth/callback?next=${encodeURIComponent(next)}`;
+  const callback = `${origin}/api/auth/callback?next=${encodeURIComponent(next)}`;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: callback }
