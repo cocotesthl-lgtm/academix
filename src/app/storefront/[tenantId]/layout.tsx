@@ -3,9 +3,23 @@ import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mergeConfig } from "@/lib/site/types";
+import { env } from "@/lib/env";
 import { AffiliateBar } from "@/components/storefront/AffiliateBar";
 import { StorefrontUserMenu } from "@/components/storefront/StorefrontUserMenu";
 import { CartWidget } from "@/components/storefront/cart/CartWidget";
+
+/**
+ * Construye URL completa al panel de un tenant (subdomain switch).
+ * Ej.: tenantUrl('estudio', '/owner') → https://estudio.bzseguridad.store/owner
+ */
+function tenantUrl(slug: string, path = ''): string {
+  const appUrl = new URL(env.appUrl);
+  const isLocal = appUrl.hostname === "localhost" || appUrl.hostname.endsWith(".localhost");
+  const host = isLocal
+    ? `${slug}.localhost${appUrl.port ? ":" + appUrl.port : ""}`
+    : `${slug}.${env.rootDomain}`;
+  return `${appUrl.protocol}//${host}${path}`;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +82,8 @@ export default async function StorefrontLayout({
   // Datos extra para el user menu (solo si está logueado): tiene enrollments
   // en este tenant? cuántos workspaces tiene?
   let hasEnrollments = false;
-  let panelHref = '/workspaces'; // default safe — el selector route hacia donde corresponda
+  // Default: si no logra resolver nada, mejor mandarlo al onboarding que a /workspaces (que ya no usamos como selector — el WorkspaceSwitcher del sidebar reemplaza eso).
+  let panelHref = '/onboarding';
   if (user) {
     const { data: profile } = await svc
       .from('profiles').select('is_affiliate').eq('id', user.id)
@@ -84,25 +99,52 @@ export default async function StorefrontLayout({
       hasEnrollments = !!enr;
     } catch { /* ignore */ }
 
-    // ¿Owner / instructor de algún workspace? Si sí, el panel va directo
-    // (sino el selector decide). El selector siempre es safe fallback.
+    // Resolver el destino del botón "Panel" sin pasar por /workspaces (el
+    // selector ahora vive dentro del sidebar como dropdown, no como página).
+    // Prioridad:
+    //   1. Owner/instructor del TENANT ACTUAL → /owner relativo (mismo sub).
+    //   2. Owner/instructor de OTRO tenant   → tenantUrl(suSlug, '/owner').
+    //   3. Solo enrollments en este tenant   → /learn relativo.
+    //   4. Solo enrollments en otro tenant   → tenantUrl(eseSlug, '/learn').
+    //   5. Nada → /onboarding (default).
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: ms } = await (svc.from('memberships') as any)
-        .select('tenant_id, role')
+        .select('tenant_id, role, tenants:tenant_id(slug)')
         .eq('user_id', user.id).eq('status', 'active')
         .in('role', ['owner', 'instructor', 'student']);
-      const all = (ms ?? []) as Array<{ tenant_id: string; role: string }>;
-      const byTenant = new Map<string, string>();
+      const all = (ms ?? []) as Array<{ tenant_id: string; role: string; tenants?: { slug?: string } | null }>;
+
       const prio: Record<string, number> = { owner: 3, instructor: 2, student: 1 };
+      // Mejor role por tenant
+      const byTenant = new Map<string, { role: string; slug: string }>();
       for (const m of all) {
+        const slug = m.tenants?.slug ?? '';
         const ex = byTenant.get(m.tenant_id);
-        if (!ex || (prio[m.role] ?? 0) > (prio[ex] ?? 0)) byTenant.set(m.tenant_id, m.role);
+        if (!ex || (prio[m.role] ?? 0) > (prio[ex.role] ?? 0)) byTenant.set(m.tenant_id, { role: m.role, slug });
       }
-      // 0 workspaces y tiene enrollments acá → /learn directo
-      if (byTenant.size === 0 && hasEnrollments) panelHref = '/learn';
-      // 1 workspace → routing del selector lo manda al panel correcto igual
-      // 2+ workspaces → siempre /workspaces para que elija
+
+      const here = byTenant.get(tenantId);
+      if (here && (here.role === 'owner' || here.role === 'instructor')) {
+        panelHref = '/owner';
+      } else {
+        // Buscar primer owner/instructor de otro tenant
+        const otherWs = [...byTenant.entries()]
+          .filter(([, v]) => v.role === 'owner' || v.role === 'instructor')
+          .map(([, v]) => v)
+          .find((v) => v.slug);
+        if (otherWs) {
+          panelHref = tenantUrl(otherWs.slug, '/owner');
+        } else if (here && here.role === 'student') {
+          panelHref = '/learn';
+        } else if (hasEnrollments) {
+          panelHref = '/learn';
+        } else {
+          // Solo es student/enrolled en otro tenant
+          const otherStudent = [...byTenant.values()].find((v) => v.role === 'student' && v.slug);
+          if (otherStudent) panelHref = tenantUrl(otherStudent.slug, '/learn');
+        }
+      }
     } catch { /* ignore */ }
   }
   // Cart mode + UI config (defensivo si migrations 0034/0044 pendientes)
