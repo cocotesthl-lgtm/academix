@@ -9,15 +9,16 @@ import { StorefrontUserMenu } from "@/components/storefront/StorefrontUserMenu";
 import { CartWidget } from "@/components/storefront/cart/CartWidget";
 
 /**
- * Construye URL completa al panel de un tenant (subdomain switch).
- * Ej.: tenantUrl('estudio', '/owner') → https://estudio.bzseguridad.store/owner
+ * URL completa al subdomain 'app' (panel global donde vive el
+ * WorkspaceSwitcher). Ej.: subdomainUrl('/dashboard') →
+ * https://app.bzseguridad.store/dashboard
  */
-function tenantUrl(slug: string, path = ''): string {
+function appSubdomainUrl(path: string): string {
   const appUrl = new URL(env.appUrl);
   const isLocal = appUrl.hostname === "localhost" || appUrl.hostname.endsWith(".localhost");
   const host = isLocal
-    ? `${slug}.localhost${appUrl.port ? ":" + appUrl.port : ""}`
-    : `${slug}.${env.rootDomain}`;
+    ? `app.localhost${appUrl.port ? ":" + appUrl.port : ""}`
+    : `app.${env.rootDomain}`;
   return `${appUrl.protocol}//${host}${path}`;
 }
 
@@ -101,49 +102,22 @@ export default async function StorefrontLayout({
 
     // Resolver el destino del botón "Panel" sin pasar por /workspaces (el
     // selector ahora vive dentro del sidebar como dropdown, no como página).
-    // Prioridad:
-    //   1. Owner/instructor del TENANT ACTUAL → /owner relativo (mismo sub).
-    //   2. Owner/instructor de OTRO tenant   → tenantUrl(suSlug, '/owner').
-    //   3. Solo enrollments en este tenant   → /learn relativo.
-    //   4. Solo enrollments en otro tenant   → tenantUrl(eseSlug, '/learn').
-    //   5. Nada → /onboarding (default).
+    // El panel global está en app.bzseguridad.store/dashboard (o /instructor)
+    // y desde ahí el WorkspaceSwitcher cambia entre tenants.
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: ms } = await (svc.from('memberships') as any)
-        .select('tenant_id, role, tenants:tenant_id(slug)')
+        .select('role')
         .eq('user_id', user.id).eq('status', 'active')
-        .in('role', ['owner', 'instructor', 'student']);
-      const all = (ms ?? []) as Array<{ tenant_id: string; role: string; tenants?: { slug?: string } | null }>;
-
-      const prio: Record<string, number> = { owner: 3, instructor: 2, student: 1 };
-      // Mejor role por tenant
-      const byTenant = new Map<string, { role: string; slug: string }>();
-      for (const m of all) {
-        const slug = m.tenants?.slug ?? '';
-        const ex = byTenant.get(m.tenant_id);
-        if (!ex || (prio[m.role] ?? 0) > (prio[ex.role] ?? 0)) byTenant.set(m.tenant_id, { role: m.role, slug });
-      }
-
-      const here = byTenant.get(tenantId);
-      if (here && (here.role === 'owner' || here.role === 'instructor')) {
-        panelHref = '/owner';
-      } else {
-        // Buscar primer owner/instructor de otro tenant
-        const otherWs = [...byTenant.entries()]
-          .filter(([, v]) => v.role === 'owner' || v.role === 'instructor')
-          .map(([, v]) => v)
-          .find((v) => v.slug);
-        if (otherWs) {
-          panelHref = tenantUrl(otherWs.slug, '/owner');
-        } else if (here && here.role === 'student') {
-          panelHref = '/learn';
-        } else if (hasEnrollments) {
-          panelHref = '/learn';
-        } else {
-          // Solo es student/enrolled en otro tenant
-          const otherStudent = [...byTenant.values()].find((v) => v.role === 'student' && v.slug);
-          if (otherStudent) panelHref = tenantUrl(otherStudent.slug, '/learn');
-        }
+        .in('role', ['owner', 'instructor']);
+      const roles = ((ms ?? []) as Array<{ role: string }>).map((m) => m.role);
+      if (roles.includes('owner')) {
+        panelHref = appSubdomainUrl('/dashboard');
+      } else if (roles.includes('instructor')) {
+        panelHref = appSubdomainUrl('/instructor');
+      } else if (hasEnrollments) {
+        // Sin role de owner/instructor: si tiene cursos comprados acá → /learn
+        panelHref = '/learn';
       }
     } catch { /* ignore */ }
   }
