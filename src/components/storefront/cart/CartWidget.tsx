@@ -114,25 +114,32 @@ export function CartWidget({ tenantId, primary }: { tenantId: string; primary: s
   }
 
   return (
-    <>
+    <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-6 right-6 z-40 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-2xl hover:scale-105 transition"
-        style={{ background: primary, color: 'white' }}
+        className="relative rounded-full p-2 hover:bg-black/5 transition"
         aria-label="Carrito"
+        title={count === 0 ? 'Carrito vacío' : `${count} ${count === 1 ? 'producto' : 'productos'} en el carrito`}
       >
-        🛒
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black/70">
+          <circle cx="9" cy="21" r="1"/>
+          <circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
         {count > 0 && (
-          <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center border-2 border-white">
+          <span
+            className="absolute -top-0.5 -right-0.5 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center border-2 border-white"
+            style={{ background: primary }}
+          >
             {count}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="fixed bottom-24 right-6 z-40 w-96 max-w-[calc(100vw-3rem)] bg-white text-black rounded-2xl shadow-2xl border border-black/10 overflow-hidden flex flex-col"
-          style={{ maxHeight: 'min(640px, calc(100vh - 7rem))' }}>
+        <div className="absolute right-0 top-full mt-2 z-50 w-96 max-w-[calc(100vw-2rem)] bg-white text-black rounded-2xl shadow-2xl border border-black/10 overflow-hidden flex flex-col"
+          style={{ maxHeight: 'min(640px, calc(100vh - 8rem))' }}>
           <div className="px-4 py-3 border-b border-black/10 flex items-center justify-between"
             style={{ background: primary, color: 'white' }}>
             <div>
@@ -212,6 +219,6 @@ export function CartWidget({ tenantId, primary }: { tenantId: string; primary: s
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }

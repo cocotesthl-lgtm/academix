@@ -1083,9 +1083,8 @@ export default async function StorefrontHome({
         }
       })}
 
-      {cartEnabled && tenant && (
-        <CartWidget tenantId={tenant.id} primary={primary} />
-      )}
+      {/* CartWidget movido al header del storefront (layout.tsx) — al lado
+          del avatar del user. Se renderiza siempre que cart_enabled=true. */}
     </div>
   );
 }

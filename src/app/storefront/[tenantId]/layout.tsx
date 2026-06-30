@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mergeConfig } from "@/lib/site/types";
 import { AffiliateBar } from "@/components/storefront/AffiliateBar";
 import { StorefrontUserMenu } from "@/components/storefront/StorefrontUserMenu";
+import { CartWidget } from "@/components/storefront/cart/CartWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -104,6 +105,15 @@ export default async function StorefrontLayout({
       // 2+ workspaces → siempre /workspaces para que elija
     } catch { /* ignore */ }
   }
+  // Cart mode habilitado para este tenant (defensivo si migration 0034 pendiente)
+  let cartEnabled = false;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: tcart } = await (svc.from('tenants') as any)
+      .select('cart_enabled').eq('id', tenantId).maybeSingle();
+    cartEnabled = (tcart as { cart_enabled?: boolean })?.cart_enabled ?? false;
+  } catch { /* migration pendiente */ }
+
   // Cookie de "barra de afiliado oculta" (defensivo: cookies() puede fallar
   // en algunos contextos de edge / preview, no queremos voltear la página
   // entera por eso).
@@ -160,17 +170,20 @@ export default async function StorefrontLayout({
               <a href="/affiliate" className="hover:text-black">{cfg.nav.affiliates_label || 'Afiliados'}</a>
             )}
           </nav>
-          {cfg.nav.show_login && (
-            <StorefrontUserMenu
-              loggedIn={!!user}
-              email={user?.email ?? ''}
-              primary={primary}
-              loginHref="/login"
-              panelHref={panelHref}
-              hasEnrollments={hasEnrollments}
-              signoutRedirect="/"
-            />
-          )}
+          <div className="flex items-center gap-1.5">
+            {cartEnabled && <CartWidget tenantId={tenantId} primary={primary} />}
+            {cfg.nav.show_login && (
+              <StorefrontUserMenu
+                loggedIn={!!user}
+                email={user?.email ?? ''}
+                primary={primary}
+                loginHref="/login"
+                panelHref={panelHref}
+                hasEnrollments={hasEnrollments}
+                signoutRedirect="/"
+              />
+            )}
+          </div>
         </div>
       </header>
 
