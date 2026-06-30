@@ -1,14 +1,24 @@
 import { requireOwner, getCurrentUser } from "@/lib/auth/guards";
-import { SignoutButton } from "@/components/auth/SignoutButton";
 import { stopImpersonatingAction } from "@/lib/founder/actions";
-import { tenantOrigin } from "@/lib/env";
+import { tenantOrigin, env } from "@/lib/env";
+import { getServiceClient } from "@/lib/supabase/service";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 import { OwnerShell } from "@/components/owner/OwnerShell";
+import { WorkspaceSwitcher } from "@/components/owner/WorkspaceSwitcher";
 import { CommandPaletteTrigger } from "@/components/owner/CommandPalette";
 import { SaveStatusBar } from "@/components/owner/SaveStatusBar";
 import { GlobalSaveListener } from "@/components/owner/GlobalSaveListener";
 import { AnnouncementBanner } from "@/components/owner/plan/AnnouncementBanner";
 import { getActiveAnnouncements, getTenantPlan } from "@/lib/plans/queries";
+
+function subdomainUrl(sub: 'app' | 'admin', path: string): string {
+  const appUrl = new URL(env.appUrl);
+  const isLocal = appUrl.hostname === "localhost" || appUrl.hostname.endsWith(".localhost");
+  const host = isLocal
+    ? `${sub}.localhost${appUrl.port ? ":" + appUrl.port : ""}`
+    : `${sub}.${env.rootDomain}`;
+  return `${appUrl.protocol}//${host}${path}`;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +31,53 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   // postAuthRedirect, así que vuelven a su panel sin perderse.
   const tenantLoginUrl = `${tenantOrigin(tenant.slug)}/login`;
   const storefrontUrl = `https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}`;
+
+  // Workspaces del user (memberships activas en todos los tenants).
+  // Lo cargamos siempre para alimentar el WorkspaceSwitcher.
+  const svc = getServiceClient();
+  type WS = {
+    tenant_id: string; tenant_name: string; tenant_slug: string;
+    role: 'owner' | 'instructor' | 'student';
+    brand_primary: string | null; logo_url: string | null;
+    href: string;
+  };
+  let workspaces: WS[] = [];
+  if (user?.id) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (svc.from('memberships') as any)
+        .select('tenant_id, role, tenants ( name, slug, brand )')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+      const raw = ((data ?? []) as Array<{
+        tenant_id: string; role: WS['role'];
+        tenants: { name: string; slug: string; brand: { primary_color?: string; logo_url?: string } | null } | null;
+      }>).filter((m) => m.tenants);
+      // Dedup por tenant — gana el rol más alto
+      const priority = { owner: 3, instructor: 2, student: 1 } as const;
+      const byTenant = new Map<string, WS>();
+      for (const m of raw) {
+        const ws: WS = {
+          tenant_id: m.tenant_id,
+          tenant_name: m.tenants!.name,
+          tenant_slug: m.tenants!.slug,
+          role: m.role,
+          brand_primary: m.tenants!.brand?.primary_color ?? null,
+          logo_url: m.tenants!.brand?.logo_url ?? null,
+          href: m.role === 'student'
+            ? `https://${m.tenants!.slug}.${env.rootDomain}/learn`
+            : m.role === 'instructor'
+              ? subdomainUrl('app', '/instructor')
+              : subdomainUrl('app', '/dashboard')
+        };
+        const existing = byTenant.get(m.tenant_id);
+        if (!existing || priority[m.role] > priority[existing.role]) byTenant.set(m.tenant_id, ws);
+      }
+      workspaces = Array.from(byTenant.values()).sort((a, b) =>
+        priority[b.role] - priority[a.role] || a.tenant_name.localeCompare(b.tenant_name)
+      );
+    } catch { /* ignore */ }
+  }
 
   // Banner promo: el más reciente activo que matchee el plan del tenant
   const [announcements, tenantPlan] = await Promise.all([
@@ -35,22 +92,16 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   const sidebar = (
     <>
       <div className="mb-3 cp-collapse-hide">
-        <div className="flex items-center gap-1.5">
-          <h2 className="font-bold text-lg truncate flex-1">{tenant.name}</h2>
-          {/* Cambiar workspace (visible si tiene 2+ memberships, simplemente
-              lleva a /workspaces que se encarga de listar y elegir) */}
-          <a
-            href="/workspaces"
-            title="Cambiar de sitio"
-            className="text-white/45 hover:text-white text-xs rounded px-1.5 py-0.5 border border-white/10 hover:border-white/30"
-          >
-            ⇄
-          </a>
-        </div>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <p className="text-xs text-white/40 truncate flex-1" title={email}>{email}</p>
-          <SignoutButton icon redirectTo={tenantLoginUrl} />
-        </div>
+        <WorkspaceSwitcher
+          currentName={tenant.name}
+          currentLogo={tenant.brand?.logo_url ?? null}
+          currentBrand={tenant.brand?.primary_color ?? '#f97316'}
+          email={email}
+          workspaces={workspaces}
+          currentTenantId={tenant.id}
+          onboardingUrl={subdomainUrl('app', '/onboarding')}
+          signoutUrl={tenantLoginUrl}
+        />
       </div>
       <div className="mb-3 cp-collapse-hide">
         <CommandPaletteTrigger />
