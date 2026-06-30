@@ -33,6 +33,14 @@ function subdomainUrl(sub: 'admin' | 'app', path: string): string {
  * Para students el redirect es relativo (/learn) en vez de absoluto al
  * subdominio, así se queda en el storefront donde se logueó.
  */
+/**
+ * Versión exportable de postAuthRedirect (usada por /api/auth/callback
+ * después del intercambio de code OAuth).
+ */
+export async function resolvePostAuthRedirect(userId: string): Promise<string> {
+  return postAuthRedirect(userId);
+}
+
 async function postAuthRedirect(userId: string): Promise<string> {
   const svc = getServiceClient();
   const { data: profile } = await svc
