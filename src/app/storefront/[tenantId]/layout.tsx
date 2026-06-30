@@ -105,14 +105,21 @@ export default async function StorefrontLayout({
       // 2+ workspaces → siempre /workspaces para que elija
     } catch { /* ignore */ }
   }
-  // Cart mode habilitado para este tenant (defensivo si migration 0034 pendiente)
+  // Cart mode + UI config (defensivo si migrations 0034/0044 pendientes)
   let cartEnabled = false;
+  let cartPosition: 'header' | 'floating' | 'both' = 'header';
+  let cartDisplay: 'dropdown' | 'page' = 'dropdown';
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: tcart } = await (svc.from('tenants') as any)
-      .select('cart_enabled').eq('id', tenantId).maybeSingle();
-    cartEnabled = (tcart as { cart_enabled?: boolean })?.cart_enabled ?? false;
+      .select('cart_enabled, cart_position, cart_display').eq('id', tenantId).maybeSingle();
+    const row = tcart as { cart_enabled?: boolean; cart_position?: string; cart_display?: string } | null;
+    cartEnabled = row?.cart_enabled ?? false;
+    if (row?.cart_position === 'floating' || row?.cart_position === 'both') cartPosition = row.cart_position;
+    if (row?.cart_display === 'page') cartDisplay = 'page';
   } catch { /* migration pendiente */ }
+  const showHeaderCart = cartEnabled && (cartPosition === 'header' || cartPosition === 'both');
+  const showFloatingCart = cartEnabled && (cartPosition === 'floating' || cartPosition === 'both');
 
   // Cookie de "barra de afiliado oculta" (defensivo: cookies() puede fallar
   // en algunos contextos de edge / preview, no queremos voltear la página
@@ -171,7 +178,9 @@ export default async function StorefrontLayout({
             )}
           </nav>
           <div className="flex items-center gap-1.5">
-            {cartEnabled && <CartWidget tenantId={tenantId} primary={primary} />}
+            {showHeaderCart && (
+              <CartWidget tenantId={tenantId} primary={primary} variant="header" display={cartDisplay} />
+            )}
             {cfg.nav.show_login && (
               <StorefrontUserMenu
                 loggedIn={!!user}
@@ -188,6 +197,11 @@ export default async function StorefrontLayout({
       </header>
 
       <main>{children}</main>
+
+      {/* Botón flotante del carrito (si la posición elegida lo incluye) */}
+      {showFloatingCart && (
+        <CartWidget tenantId={tenantId} primary={primary} variant="floating" display={cartDisplay} />
+      )}
 
       <footer data-storefront-footer className="storefront-footer border-t border-black/10 mt-16 py-10">
         <div className="max-w-5xl mx-auto px-6 text-center space-y-4">

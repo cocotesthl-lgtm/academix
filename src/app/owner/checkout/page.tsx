@@ -8,6 +8,7 @@ import {
   deleteTenantExtraFieldAction,
   moveTenantExtraFieldAction,
   setCartEnabledAction,
+  setCartUiAction,
   applyTenantCheckoutPresetAction
 } from "@/lib/checkout/actions";
 import { CHECKOUT_PRESETS } from "@/lib/checkout/presets";
@@ -22,13 +23,23 @@ export default async function CheckoutDefaultPage() {
   let storedCfg: unknown = null;
   let migrationMissing = false;
   let cartEnabled = false;
+  let cartPosition: 'header' | 'floating' | 'both' = 'header';
+  let cartDisplay: 'dropdown' | 'page' = 'dropdown';
   try {
     const { data, error } = await svc
-      .from('tenants').select('checkout_config, cart_enabled').eq('id', tenant.id).single();
+      .from('tenants').select('checkout_config, cart_enabled, cart_position, cart_display').eq('id', tenant.id).single();
     if (error) migrationMissing = true;
     else {
-      storedCfg = (data as { checkout_config: unknown; cart_enabled?: boolean })?.checkout_config;
-      cartEnabled = (data as { cart_enabled?: boolean })?.cart_enabled ?? false;
+      const row = data as {
+        checkout_config: unknown;
+        cart_enabled?: boolean;
+        cart_position?: string;
+        cart_display?: string;
+      };
+      storedCfg = row.checkout_config;
+      cartEnabled = row.cart_enabled ?? false;
+      if (row.cart_position === 'floating' || row.cart_position === 'both') cartPosition = row.cart_position;
+      if (row.cart_display === 'page') cartDisplay = 'page';
     }
   } catch {
     migrationMissing = true;
@@ -86,6 +97,41 @@ export default async function CheckoutDefaultPage() {
             </button>
           </form>
         </div>
+
+        {/* Configuración UI del carrito (sólo cuando está activo) */}
+        {cartEnabled && (
+          <form action={setCartUiAction} className="mt-5 pt-5 border-t border-white/10 grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-white/55 font-semibold mb-2">
+                Posición del botón
+              </label>
+              <select name="cart_position" defaultValue={cartPosition}
+                className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
+                <option value="header" className="bg-[#0a0a0a]">En el header (al lado del avatar)</option>
+                <option value="floating" className="bg-[#0a0a0a]">Flotante (abajo a la derecha)</option>
+                <option value="both" className="bg-[#0a0a0a]">Ambos (header + flotante)</option>
+              </select>
+              <p className="text-[11px] text-white/45 mt-1">Header = sobrio. Flotante = más visible.</p>
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-white/55 font-semibold mb-2">
+                Modo del carrito
+              </label>
+              <select name="cart_display" defaultValue={cartDisplay}
+                className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
+                <option value="dropdown" className="bg-[#0a0a0a]">Ventana flotante (dropdown rápido)</option>
+                <option value="page" className="bg-[#0a0a0a]">Página dedicada (estilo MercadoLibre)</option>
+              </select>
+              <p className="text-[11px] text-white/45 mt-1">Dropdown = fluido. Página = más espacio.</p>
+            </div>
+            <div className="sm:col-span-2">
+              <button type="submit"
+                className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90">
+                Guardar
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* ───── Presets de checkout: 1-click setups ───── */}

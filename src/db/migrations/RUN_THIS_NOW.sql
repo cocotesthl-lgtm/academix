@@ -1125,4 +1125,18 @@ alter table public.courses add column if not exists module_label text;
 alter table public.courses add column if not exists lesson_label text;
 alter table public.courses add column if not exists show_content_section boolean not null default true;
 
+-- ── 0044 Cart UI config (posición + modo dropdown vs página) ──
+alter table public.tenants add column if not exists cart_position text not null default 'header';
+alter table public.tenants add column if not exists cart_display text not null default 'dropdown';
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'tenants_cart_position_check') then
+    alter table public.tenants add constraint tenants_cart_position_check
+      check (cart_position in ('header', 'floating', 'both'));
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'tenants_cart_display_check') then
+    alter table public.tenants add constraint tenants_cart_display_check
+      check (cart_display in ('dropdown', 'page'));
+  end if;
+end $$;
+
 -- ✓ Listo. Recargá la app.

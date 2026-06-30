@@ -63,7 +63,19 @@ export function clearCart(tenantId: string) {
   writeCart(tenantId, []);
 }
 
-export function CartWidget({ tenantId, primary }: { tenantId: string; primary: string }) {
+export function CartWidget({
+  tenantId,
+  primary,
+  variant = 'header',
+  display = 'dropdown'
+}: {
+  tenantId: string;
+  primary: string;
+  /** Dónde se renderiza este botón: inline en el header, o flotante abajo-derecha. */
+  variant?: 'header' | 'floating';
+  /** Qué hace el click: abrir dropdown inline o navegar a /carrito. */
+  display?: 'dropdown' | 'page';
+}) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -113,32 +125,60 @@ export function CartWidget({ tenantId, primary }: { tenantId: string; primary: s
     }
   }
 
+  // Si el modo es 'page', el botón navega a /carrito en vez de abrir dropdown.
+  function handleClick(e: React.MouseEvent) {
+    if (display === 'page') {
+      // Dejar que el <a> haga su trabajo (no preventDefault)
+      return;
+    }
+    e.preventDefault();
+    setOpen((o) => !o);
+  }
+
+  const isFloating = variant === 'floating';
+  const ButtonTag = (display === 'page' ? 'a' : 'button') as 'a' | 'button';
+  const buttonProps = display === 'page'
+    ? { href: '/carrito' as const }
+    : { type: 'button' as const };
+
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="relative rounded-full p-2 hover:bg-black/5 transition"
+    <div className={isFloating ? 'fixed bottom-6 right-6 z-40' : 'relative'}>
+      {/* @ts-expect-error — union de elemento dinámico (a | button) */}
+      <ButtonTag
+        {...buttonProps}
+        onClick={handleClick}
+        className={
+          isFloating
+            ? 'flex items-center justify-center w-14 h-14 rounded-full shadow-2xl hover:scale-105 transition'
+            : 'relative inline-flex items-center justify-center rounded-full p-2 hover:bg-black/5 transition'
+        }
+        style={isFloating ? { background: primary, color: 'white' } : undefined}
         aria-label="Carrito"
         title={count === 0 ? 'Carrito vacío' : `${count} ${count === 1 ? 'producto' : 'productos'} en el carrito`}
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black/70">
+        <svg width={isFloating ? 26 : 22} height={isFloating ? 26 : 22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isFloating ? '' : 'text-black/70'}>
           <circle cx="9" cy="21" r="1"/>
           <circle cx="20" cy="21" r="1"/>
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
         </svg>
         {count > 0 && (
           <span
-            className="absolute -top-0.5 -right-0.5 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center border-2 border-white"
-            style={{ background: primary }}
+            className={`absolute text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center border-2 border-white ${
+              isFloating ? '-top-1 -right-1' : '-top-0.5 -right-0.5'
+            }`}
+            style={{ background: isFloating ? '#ef4444' : primary }}
           >
             {count}
           </span>
         )}
-      </button>
+      </ButtonTag>
 
-      {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-96 max-w-[calc(100vw-2rem)] bg-white text-black rounded-2xl shadow-2xl border border-black/10 overflow-hidden flex flex-col"
+      {/* Dropdown SOLO si display='dropdown' (en modo page no aparece) */}
+      {display === 'dropdown' && open && (
+        <div
+          className={`absolute z-50 w-96 max-w-[calc(100vw-2rem)] bg-white text-black rounded-2xl shadow-2xl border border-black/10 overflow-hidden flex flex-col ${
+            isFloating ? 'bottom-full right-0 mb-2' : 'right-0 top-full mt-2'
+          }`}
           style={{ maxHeight: 'min(640px, calc(100vh - 8rem))' }}>
           <div className="px-4 py-3 border-b border-black/10 flex items-center justify-between"
             style={{ background: primary, color: 'white' }}>

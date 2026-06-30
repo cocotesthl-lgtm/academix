@@ -94,6 +94,30 @@ export async function setCartEnabledAction(formData: FormData): Promise<void> {
   revalidatePath('/owner/checkout');
 }
 
+/** Setea cómo se muestra el botón y el carrito:
+ *  - position: 'header' | 'floating' | 'both'
+ *  - display:  'dropdown' | 'page'
+ */
+export async function setCartUiAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const position = String(formData.get('cart_position') ?? 'header');
+  const display = String(formData.get('cart_display') ?? 'dropdown');
+  const validPos = ['header', 'floating', 'both'].includes(position) ? position : 'header';
+  const validDisp = ['dropdown', 'page'].includes(display) ? display : 'dropdown';
+  const svc = getServiceClient();
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('tenants') as any)
+      .update({
+        cart_position: validPos,
+        cart_display: validDisp,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', tenant.id);
+  } catch { /* migration 0044 pendiente */ }
+  revalidatePath('/owner/checkout');
+}
+
 export async function setTenantBaseFieldAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const key = String(formData.get('field') ?? '') as BaseFieldKey;
