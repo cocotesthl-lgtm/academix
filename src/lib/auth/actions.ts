@@ -75,7 +75,7 @@ async function postAuthRedirect(userId: string): Promise<string> {
   // 2+ workspaces → selector. Usamos path RELATIVO así funciona en cualquier
   // dominio (app.<root> si está configurado, sino el host actual). Sino
   // dependeríamos de que app.<root> resuelva DNS — frágil hasta tener
-  // curplat.com listo.
+  // app.<rootDomain> listo en DNS.
   if (workspaces.length >= 2) {
     return '/workspaces';
   }
@@ -218,7 +218,7 @@ export async function signoutAction(redirectTo?: string): Promise<void> {
 export async function googleOAuthAction(formData: FormData): Promise<void> {
   const next = String(formData.get('next') ?? '').trim() || '/onboarding';
   // Usamos el host del request actual (lo pasa el form como hidden 'origin').
-  // Esto soporta dominios temporales mientras no esté curplat.com listo.
+  // Esto soporta dominios temporales / staging sin hardcodear el root.
   // El owner debe whitelistar el dominio en Supabase → Auth → URL Config.
   const origin = String(formData.get('origin') ?? '').trim();
   if (!origin) {

@@ -36,7 +36,7 @@ function computeCookieDomain(): string | undefined {
  */
 function computePlatformApiOrigin(): string {
   const appUrlRaw = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com';
+  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store';
   try {
     const u = new URL(appUrlRaw);
     if (u.hostname === 'localhost' || u.hostname.endsWith('.localhost')) {
@@ -52,7 +52,7 @@ function computePlatformApiOrigin(): string {
 
 export const env = {
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
-  rootDomain: process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com',
+  rootDomain: process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store',
   cookieDomain: computeCookieDomain(),
   /**
    * Origin de la API/dashboard de la plataforma (app.<root>).
@@ -88,7 +88,7 @@ export const env = {
  * Centraliza la lógica que estaba duplicada en 5+ archivos.
  */
 export function tenantOrigin(slug: string): string {
-  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com';
+  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store';
   try {
     const u = new URL(env.appUrl);
     const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');

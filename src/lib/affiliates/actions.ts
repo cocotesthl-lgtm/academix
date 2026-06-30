@@ -76,7 +76,7 @@ export async function createAffiliateLinkAction(formData: FormData): Promise<Aff
   }
 
   // Build URL (uses root domain in prod, .localhost in dev)
-  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com';
+  const root = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store';
   const isLocal = !process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL.includes('localhost');
   const host = isLocal ? `${tenantSlug}.localhost:3000` : `${tenantSlug}.${root}`;
   const proto = isLocal ? 'http' : 'https';

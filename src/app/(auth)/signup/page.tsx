@@ -85,7 +85,7 @@ function AccountChooser() {
               mi marca, cobrar a MercadoPago, gestionar alumnos.
             </p>
             <ul className="text-xs text-white/50 mt-3 space-y-1">
-              <li>✓ Subdominio propio (sitio.curplat.com)</li>
+              <li>✓ Subdominio propio (sitio.bzseguridad.store)</li>
               <li>✓ Branding 100% configurable</li>
               <li>✓ Cobrás directo a tu MercadoPago</li>
               <li>✓ Sumás afiliados e instructores que vendan por vos</li>

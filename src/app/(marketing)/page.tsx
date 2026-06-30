@@ -89,7 +89,7 @@ export default function MarketingHome() {
               {
                 icon: "🌐",
                 title: "Tu subdominio propio",
-                body: "tunombre.curplat.com con tu logo, tus colores y tu identidad. Tus alumnos te ven a vos, no a nosotros.",
+                body: "tunombre.bzseguridad.store con tu logo, tus colores y tu identidad. Tus alumnos te ven a vos, no a nosotros.",
               },
               {
                 icon: "💳",
@@ -169,7 +169,7 @@ export default function MarketingHome() {
               {
                 n: "01",
                 title: "Creás tu cuenta y elegís tu subdominio",
-                body: "miacademia.curplat.com — único, gratis, tuyo. Subís tu logo y elegís tus colores.",
+                body: "miacademia.bzseguridad.store — único, gratis, tuyo. Subís tu logo y elegís tus colores.",
               },
               {
                 n: "02",

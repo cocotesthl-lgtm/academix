@@ -7,7 +7,7 @@ export const config = {
   matcher: ['/((?!_next/|favicon.ico|.*\\..*).*)']
 };
 
-const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com';
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store';
 const AUTH_PATHS = ['/login', '/signup', '/onboarding', '/logout', '/auth'];
 
 function isAuthPath(pathname: string): boolean {

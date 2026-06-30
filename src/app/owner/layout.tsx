@@ -30,7 +30,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   // El login del storefront ya auto-redirige al owner a /dashboard via
   // postAuthRedirect, así que vuelven a su panel sin perderse.
   const tenantLoginUrl = `${tenantOrigin(tenant.slug)}/login`;
-  const storefrontUrl = `https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}`;
+  const storefrontUrl = `https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store'}`;
 
   // Brand del tenant actual (para el avatar del switcher)
   const svc = getServiceClient();
@@ -143,8 +143,8 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
           </svg>
           <span className="cp-collapse-hide">Ver mi sitio</span>
         </a>
-        <p className="text-[10px] text-white/35 text-center truncate cp-collapse-hide" title={`${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}`}>
-          {tenant.slug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}
+        <p className="text-[10px] text-white/35 text-center truncate cp-collapse-hide" title={`${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store'}`}>
+          {tenant.slug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store'}
         </p>
       </div>
     </>

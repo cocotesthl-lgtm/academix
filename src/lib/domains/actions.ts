@@ -23,7 +23,7 @@ function sanitizeDomain(raw: string): string | null {
   if (!/^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(v)) return null;
   if (v.length > 253) return null;
   // Bloqueamos el rootDomain de la plataforma + sus subdominios
-  const root = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com').toLowerCase();
+  const root = (process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store').toLowerCase();
   if (v === root || v.endsWith('.' + root)) return null;
   return v;
 }

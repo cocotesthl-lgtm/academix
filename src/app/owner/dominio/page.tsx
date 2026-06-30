@@ -63,7 +63,7 @@ export default async function DomainPage({
   }
 
   const vercelConfigured = !!process.env.VERCEL_API_TOKEN && !!process.env.VERCEL_PROJECT_ID;
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com';
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store';
 
   return (
     <div className="max-w-3xl space-y-8">
