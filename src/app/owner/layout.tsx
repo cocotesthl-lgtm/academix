@@ -32,9 +32,16 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   const tenantLoginUrl = `${tenantOrigin(tenant.slug)}/login`;
   const storefrontUrl = `https://${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'curplat.com'}`;
 
+  // Brand del tenant actual (para el avatar del switcher)
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: tenantBrandRow } = await (svc.from('tenants') as any)
+    .select('brand').eq('id', tenant.id).maybeSingle();
+  const currentBrand: { primary_color?: string; logo_url?: string } | null =
+    tenantBrandRow?.brand ?? null;
+
   // Workspaces del user (memberships activas en todos los tenants).
   // Lo cargamos siempre para alimentar el WorkspaceSwitcher.
-  const svc = getServiceClient();
   type WS = {
     tenant_id: string; tenant_name: string; tenant_slug: string;
     role: 'owner' | 'instructor' | 'student';
@@ -94,8 +101,8 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
       <div className="mb-3 cp-collapse-hide">
         <WorkspaceSwitcher
           currentName={tenant.name}
-          currentLogo={tenant.brand?.logo_url ?? null}
-          currentBrand={tenant.brand?.primary_color ?? '#f97316'}
+          currentLogo={currentBrand?.logo_url ?? null}
+          currentBrand={currentBrand?.primary_color ?? '#f97316'}
           email={email}
           workspaces={workspaces}
           currentTenantId={tenant.id}
