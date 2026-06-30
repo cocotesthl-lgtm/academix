@@ -4,6 +4,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mergeConfig } from "@/lib/site/types";
 import { AffiliateBar } from "@/components/storefront/AffiliateBar";
+import { StorefrontUserMenu } from "@/components/storefront/StorefrontUserMenu";
 
 export const dynamic = "force-dynamic";
 
@@ -63,11 +64,45 @@ export default async function StorefrontLayout({
   const supabaseAuth = await createSupabaseServerClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
   let isAffiliate = false;
+  // Datos extra para el user menu (solo si está logueado): tiene enrollments
+  // en este tenant? cuántos workspaces tiene?
+  let hasEnrollments = false;
+  let panelHref = '/workspaces'; // default safe — el selector route hacia donde corresponda
   if (user) {
     const { data: profile } = await svc
       .from('profiles').select('is_affiliate').eq('id', user.id)
       .maybeSingle<{ is_affiliate: boolean }>();
     isAffiliate = !!profile?.is_affiliate;
+
+    // ¿Tiene enrollments activos en este tenant? Si sí, mostramos "Mis publicaciones"
+    try {
+      const { data: enr } = await svc
+        .from('enrollments').select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id).eq('tenant_id', tenantId).eq('status', 'active')
+        .limit(1);
+      hasEnrollments = !!enr;
+    } catch { /* ignore */ }
+
+    // ¿Owner / instructor de algún workspace? Si sí, el panel va directo
+    // (sino el selector decide). El selector siempre es safe fallback.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: ms } = await (svc.from('memberships') as any)
+        .select('tenant_id, role')
+        .eq('user_id', user.id).eq('status', 'active')
+        .in('role', ['owner', 'instructor', 'student']);
+      const all = (ms ?? []) as Array<{ tenant_id: string; role: string }>;
+      const byTenant = new Map<string, string>();
+      const prio: Record<string, number> = { owner: 3, instructor: 2, student: 1 };
+      for (const m of all) {
+        const ex = byTenant.get(m.tenant_id);
+        if (!ex || (prio[m.role] ?? 0) > (prio[ex] ?? 0)) byTenant.set(m.tenant_id, m.role);
+      }
+      // 0 workspaces y tiene enrollments acá → /learn directo
+      if (byTenant.size === 0 && hasEnrollments) panelHref = '/learn';
+      // 1 workspace → routing del selector lo manda al panel correcto igual
+      // 2+ workspaces → siempre /workspaces para que elija
+    } catch { /* ignore */ }
   }
   // Cookie de "barra de afiliado oculta" (defensivo: cookies() puede fallar
   // en algunos contextos de edge / preview, no queremos voltear la página
@@ -126,9 +161,15 @@ export default async function StorefrontLayout({
             )}
           </nav>
           {cfg.nav.show_login && (
-            <a href="/login" className="rounded-md text-sm font-medium px-4 py-2 text-white whitespace-nowrap" style={{ background: primary }}>
-              Iniciar sesión
-            </a>
+            <StorefrontUserMenu
+              loggedIn={!!user}
+              email={user?.email ?? ''}
+              primary={primary}
+              loginHref="/login"
+              panelHref={panelHref}
+              hasEnrollments={hasEnrollments}
+              signoutRedirect="/"
+            />
           )}
         </div>
       </header>
