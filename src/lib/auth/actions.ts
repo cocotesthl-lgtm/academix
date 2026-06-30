@@ -70,9 +70,12 @@ async function postAuthRedirect(userId: string): Promise<string> {
   }
   const workspaces = Array.from(byTenant.values());
 
-  // 2+ workspaces → selector
+  // 2+ workspaces → selector. Usamos path RELATIVO así funciona en cualquier
+  // dominio (app.<root> si está configurado, sino el host actual). Sino
+  // dependeríamos de que app.<root> resuelva DNS — frágil hasta tener
+  // curplat.com listo.
   if (workspaces.length >= 2) {
-    return subdomainUrl('app', '/workspaces');
+    return '/workspaces';
   }
 
   // 1 workspace → directo a su panel según rol
