@@ -4,6 +4,7 @@ import { useActionState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signupAction, type ActionResult } from '@/lib/auth/actions';
+import { GoogleAuthButton } from './GoogleAuthButton';
 
 export function SignupForm() {
   const searchParams = useSearchParams();
@@ -31,6 +32,13 @@ export function SignupForm() {
   }
 
   return (
+    <div className="space-y-4">
+      <GoogleAuthButton theme="dark" next={next || undefined} label="Registrarme con Google" />
+      <div className="flex items-center gap-3 text-xs uppercase tracking-wider">
+        <div className="flex-1 h-px bg-white/10" />
+        <span className="text-white/40">o con email</span>
+        <div className="flex-1 h-px bg-white/10" />
+      </div>
     <form action={formAction} className="space-y-4">
       {next && <input type="hidden" name="next" value={next} />}
       <div>
@@ -96,5 +104,6 @@ export function SignupForm() {
         </Link>
       </p>
     </form>
+    </div>
   );
 }

@@ -4,6 +4,7 @@ import { useActionState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { loginAction, type ActionResult } from '@/lib/auth/actions';
+import { GoogleAuthButton } from './GoogleAuthButton';
 
 /**
  * LoginForm reutilizable. Por defecto se renderiza con tema oscuro (para
@@ -56,6 +57,14 @@ export function LoginForm({
     : 'w-full rounded-md bg-white text-black py-2.5 font-semibold hover:bg-white/90 transition disabled:opacity-50';
 
   return (
+    <div className="space-y-4">
+      {/* Login con Google (OAuth via Supabase) */}
+      <GoogleAuthButton theme={theme} next={next ?? undefined} />
+      <div className="flex items-center gap-3 text-xs uppercase tracking-wider">
+        <div className={`flex-1 h-px ${isLight ? 'bg-black/10' : 'bg-white/10'}`} />
+        <span className={isLight ? 'text-black/40' : 'text-white/40'}>o con email</span>
+        <div className={`flex-1 h-px ${isLight ? 'bg-black/10' : 'bg-white/10'}`} />
+      </div>
     <form action={formAction} className="space-y-4">
       <div>
         <label className={labelCls} htmlFor="email">
@@ -112,5 +121,6 @@ export function LoginForm({
         </p>
       )}
     </form>
+    </div>
   );
 }
