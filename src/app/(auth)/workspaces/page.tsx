@@ -105,7 +105,7 @@ export default async function WorkspacesPage() {
       <div className="max-w-2xl mx-auto px-6 py-12 space-y-6">
         <div className="flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold">Curplat</Link>
-          <form action={signoutAction}>
+          <form action={async () => { 'use server'; await signoutAction(); }}>
             <button className="text-xs text-white/55 hover:text-white">Cerrar sesión</button>
           </form>
         </div>
