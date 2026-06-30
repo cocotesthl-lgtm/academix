@@ -41,18 +41,8 @@ export function SignupForm() {
       </div>
     <form action={formAction} className="space-y-4">
       {next && <input type="hidden" name="next" value={next} />}
-      <div>
-        <label className="block text-sm mb-1.5 text-white/70" htmlFor="display_name">
-          Tu nombre
-        </label>
-        <input
-          id="display_name"
-          name="display_name"
-          type="text"
-          placeholder="María Pérez"
-          className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/40"
-        />
-      </div>
+      {/* Nombre eliminado para reducir fricción. El name del user se deriva
+          del email o del nombre del sitio en el onboarding. */}
       <div>
         <label className="block text-sm mb-1.5 text-white/70" htmlFor="email">
           Email

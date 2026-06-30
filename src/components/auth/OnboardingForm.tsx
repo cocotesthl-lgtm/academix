@@ -3,9 +3,24 @@
 import { useActionState, useEffect, useState } from 'react';
 import { createTenantAction, type OnboardingResult } from '@/lib/tenant/actions';
 
+/** Slugifica el nombre de un sitio para usarlo como subdominio:
+ *  pasa a lowercase, saca acentos, reemplaza espacios por guiones,
+ *  remueve cualquier char no permitido. */
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 32);
+}
+
 export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
   const [state, formAction, pending] = useActionState<OnboardingResult | null, FormData>(createTenantAction, null);
-  const [slug, setSlug] = useState('');
+  const [name, setName] = useState('');
+  const slug = slugify(name);
 
   useEffect(() => {
     if (state?.ok && state.redirectTo) {
@@ -24,35 +39,18 @@ export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
           name="name"
           required
           maxLength={80}
-          placeholder="Sitio de Diseño UX"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Mi Academia de Diseño"
           className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/40"
         />
-      </div>
-
-      <div>
-        <label className="block text-sm mb-1.5 text-white/70" htmlFor="slug">
-          Subdominio
-        </label>
-        <div className="flex rounded-md overflow-hidden border border-white/15 focus-within:border-white/40">
-          <input
-            id="slug"
-            name="slug"
-            required
-            minLength={3}
-            maxLength={32}
-            pattern="^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-            placeholder="miacademia"
-            className="flex-1 bg-white/5 px-3 py-2.5 text-white placeholder:text-white/30 focus:outline-none"
-          />
-          <span className="bg-white/[0.02] text-white/50 px-3 py-2.5 text-sm border-l border-white/15">
-            .{rootDomain}
-          </span>
-        </div>
-        {slug && (
+        {/* El subdominio se auto-deriva del nombre. El owner siempre puede
+            cambiarlo después desde el panel. */}
+        <input type="hidden" name="slug" value={slug} />
+        {slug && slug.length >= 3 && (
           <p className="text-xs text-white/50 mt-1.5">
             Tu sitio va a estar en <span className="text-white">{slug}.{rootDomain}</span>
+            <span className="text-white/35"> (podés cambiar el dominio después)</span>
           </p>
         )}
       </div>
