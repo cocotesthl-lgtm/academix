@@ -185,3 +185,32 @@ export async function signoutAction(redirectTo?: string): Promise<void> {
   const target = sanitizePostSignoutRedirect(redirectTo) ?? '/';
   redirect(target);
 }
+
+/**
+ * Inicia el flujo OAuth con Google. Server-side: pedimos a Supabase la URL
+ * de Google (con state firmado) y redirigimos al usuario allá. Cuando
+ * Google vuelve, Supabase intercepta en /auth/v1/callback y devuelve al
+ * `redirectTo` que pasamos — nuestro /api/auth/callback intercambia el code
+ * por session y redirige al destino final.
+ */
+export async function googleOAuthAction(formData: FormData): Promise<void> {
+  const next = String(formData.get('next') ?? '').trim() || '/onboarding';
+  const origin = String(formData.get('origin') ?? '').trim();
+  if (!origin) {
+    redirect('/login?error=missing_origin');
+  }
+  const supabase = await createSupabaseServerClient();
+  const callback = `${origin}/api/auth/callback?next=${encodeURIComponent(next)}`;
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: callback }
+  });
+  if (error || !data?.url) {
+    const msg = error?.message?.toLowerCase().includes('provider is not enabled')
+      ? 'Google auth no está configurado todavía.'
+      : (error?.message ?? 'Error al iniciar Google OAuth');
+    redirect(`/login?error=${encodeURIComponent(msg)}`);
+  }
+  // data.url es la URL de Google (accounts.google.com/...). Redirect.
+  redirect(data.url);
+}
