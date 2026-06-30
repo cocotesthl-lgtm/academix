@@ -55,7 +55,11 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
       const { data } = await (svc.from('memberships') as any)
         .select('tenant_id, role, tenants ( name, slug, brand )')
         .eq('user_id', user.id)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        // Workspaces = sólo roles que dan acceso a un panel.
+        // 'affiliate' NO es workspace — es relación comercial y aparece
+        // automáticamente al visitar /affiliate de cualquier tenant.
+        .in('role', ['owner', 'instructor', 'student']);
       const raw = ((data ?? []) as Array<{
         tenant_id: string; role: WS['role'];
         tenants: { name: string; slug: string; brand: { primary_color?: string; logo_url?: string } | null } | null;

@@ -66,7 +66,10 @@ export default async function WorkspacesPage() {
     const { data } = await (svc.from('memberships') as any)
       .select('tenant_id, role, tenants ( name, slug, brand )')
       .eq('user_id', user.id)
-      .eq('status', 'active');
+      .eq('status', 'active')
+      // Excluimos 'affiliate' — esa membership se autocrea al visitar
+      // /affiliate de cualquier tenant y no es un workspace.
+      .in('role', ['owner', 'instructor', 'student']);
     workspaces = ((data ?? []) as Array<{
       tenant_id: string; role: Workspace['role'];
       tenants: { name: string; slug: string; brand: { primary_color?: string; logo_url?: string } | null } | null;

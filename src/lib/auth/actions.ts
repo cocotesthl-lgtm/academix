@@ -52,13 +52,15 @@ async function postAuthRedirect(userId: string): Promise<string> {
     return subdomainUrl('admin', '/dashboard');
   }
 
-  // Workspaces: contamos memberships activas (cualquier rol). Si tiene 2+,
-  // mandamos al selector (Wix-style). Con 1, directo a su único workspace.
+  // Workspaces: solo roles que dan acceso a un PANEL (owner/instructor/student).
+  // 'affiliate' NO cuenta — esa membership se autocrea al visitar /affiliate
+  // de cualquier tenant y no debe inflar la lista de workspaces del user.
   const { data: memberships } = await svc
     .from('memberships')
     .select('tenant_id, role')
     .eq('user_id', userId)
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .in('role', ['owner', 'instructor', 'student']);
   const all = (memberships ?? []) as Array<{ tenant_id: string; role: 'owner' | 'instructor' | 'student' }>;
 
   // Dedup por tenant — owner gana sobre instructor sobre student
