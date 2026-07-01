@@ -532,7 +532,8 @@ export default async function StorefrontHome({
                 <FadeIn>
                   <div className="text-center mb-12">
                     <div className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: primary }}>{ins.eyebrow_text ?? 'Quién enseña'}</div>
-                    <h2 className="text-2xl md:text-3xl font-bold">{ins.title}</h2>
+                    <h2 className="text-2xl md:text-3xl font-bold"
+                      dangerouslySetInnerHTML={richHtml(ins.title)} />
                   </div>
                 </FadeIn>
 
@@ -577,7 +578,8 @@ export default async function StorefrontHome({
               <section key={key} {...dt} id={key} className="px-6 py-16" style={{ background: bg ?? `linear-gradient(180deg, ${primary}08 0%, transparent 100%)` }}>
                 <div className="max-w-5xl mx-auto">
                   <FadeIn>
-                    <h2 className="text-xl md:text-2xl font-bold text-center mb-10">{st.title}</h2>
+                    <h2 className="text-xl md:text-2xl font-bold text-center mb-10"
+                      dangerouslySetInnerHTML={richHtml(st.title)} />
                   </FadeIn>
                   <div className={`grid gap-4 grid-cols-2 md:grid-cols-${cols}`}>
                     {st.items.map((s, idx) => (
@@ -603,7 +605,8 @@ export default async function StorefrontHome({
                   <FadeIn>
                     <div className="text-center mb-10">
                       <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{lp.eyebrow_text ?? 'Aprendizaje'}</div>
-                      <h2 className="text-3xl md:text-4xl font-bold">{lp.title}</h2>
+                      <h2 className="text-3xl md:text-4xl font-bold"
+                        dangerouslySetInnerHTML={richHtml(lp.title)} />
                       {lp.subtitle && <p className="text-black/60 mt-3 text-lg">{lp.subtitle}</p>}
                     </div>
                   </FadeIn>
@@ -631,7 +634,8 @@ export default async function StorefrontHome({
                   <FadeIn>
                     <div className="text-center mb-12">
                       <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{ft.eyebrow_text ?? 'Beneficios'}</div>
-                      <h2 className="text-3xl md:text-4xl font-bold">{ft.title}</h2>
+                      <h2 className="text-3xl md:text-4xl font-bold"
+                        dangerouslySetInnerHTML={richHtml(ft.title)} />
                     </div>
                   </FadeIn>
                   <div className={`grid gap-6 ${ft.items.length === 1 ? 'grid-cols-1' : ft.items.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
@@ -655,7 +659,8 @@ export default async function StorefrontHome({
             return (
               <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-6xl mx-auto">
-                  <h2 className="text-2xl md:text-3xl font-bold mb-6">{cfg.sections.featured.title}</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold mb-6"
+                    dangerouslySetInnerHTML={richHtml(cfg.sections.featured.title)} />
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {featured.map((c) => (
                       <CourseCard key={c.id} c={c} primary={primary} />
@@ -696,7 +701,8 @@ export default async function StorefrontHome({
               <section key={key} {...dt} id="bloques" className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <span id="cards" aria-hidden="true" />
                 <div className="max-w-6xl mx-auto">
-                  {cs.title && <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">{cs.title}</h2>}
+                  {cs.title && <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center"
+                    dangerouslySetInnerHTML={richHtml(cs.title)} />}
                   {cs.subtitle && <p className="text-center text-black/60 mb-8 max-w-2xl mx-auto">{cs.subtitle}</p>}
                   <div className={`grid gap-6 ${colsCls}`}>
                     {cs.items.map((card) => <StoreCardItem key={card.id} card={card} primary={primary} />)}
@@ -716,7 +722,8 @@ export default async function StorefrontHome({
                   <FadeIn>
                     <div className="text-center mb-12">
                       <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{ts.eyebrow_text ?? 'Testimonios'}</div>
-                      <h2 className="text-3xl md:text-4xl font-bold">{ts.title}</h2>
+                      <h2 className="text-3xl md:text-4xl font-bold"
+                        dangerouslySetInnerHTML={richHtml(ts.title)} />
                     </div>
                   </FadeIn>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -753,7 +760,8 @@ export default async function StorefrontHome({
             return (
               <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-5xl mx-auto">
-                  <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">{ba.title}</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-center mb-10"
+                    dangerouslySetInnerHTML={richHtml(ba.title)} />
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <div className="text-center font-semibold py-2 rounded-t-lg text-white" style={{ background: `${primary}aa` }}>{ba.before_label}</div>
@@ -790,7 +798,8 @@ export default async function StorefrontHome({
                   <FadeIn>
                     <div className="text-center mb-10">
                       <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{fq.eyebrow_text ?? 'FAQ'}</div>
-                      <h2 className="text-3xl md:text-4xl font-bold">{fq.title}</h2>
+                      <h2 className="text-3xl md:text-4xl font-bold"
+                        dangerouslySetInnerHTML={richHtml(fq.title)} />
                     </div>
                   </FadeIn>
                   <div className="space-y-3">
@@ -817,7 +826,8 @@ export default async function StorefrontHome({
               <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-3xl mx-auto rounded-2xl text-center text-white p-10"
                   style={{ background: `linear-gradient(135deg, ${primary}, ${primary}cc)` }}>
-                  <h2 className="text-2xl md:text-3xl font-bold">{o.title}</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold"
+                    dangerouslySetInnerHTML={richHtml(o.title)} />
                   {o.subtitle && <p className="mt-2 opacity-90">{o.subtitle}</p>}
                   {o.ends_at && (
                     <CountdownDisplay endsAt={o.ends_at} />
@@ -839,7 +849,8 @@ export default async function StorefrontHome({
             return (
               <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-5xl mx-auto">
-                  <h2 className="text-2xl md:text-3xl font-bold text-center">{pr.title}</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-center"
+                    dangerouslySetInnerHTML={richHtml(pr.title)} />
                   {pr.subtitle && <p className="text-center text-black/60 mt-2">{pr.subtitle}</p>}
                   <div className={`mt-10 grid gap-6 ${pr.tiers.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' : pr.tiers.length === 2 ? 'md:grid-cols-2 max-w-3xl mx-auto' : 'md:grid-cols-3'}`}>
                     {pr.tiers.map((t) => (
@@ -888,7 +899,8 @@ export default async function StorefrontHome({
             return (
               <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-4xl mx-auto">
-                  <h2 className="text-2xl md:text-3xl font-bold text-center">{vd.title}</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-center"
+                    dangerouslySetInnerHTML={richHtml(vd.title)} />
                   {vd.subtitle && <p className="text-center text-black/60 mt-2">{vd.subtitle}</p>}
                   <div className="mt-8 aspect-video rounded-2xl overflow-hidden border border-black/10 bg-black shadow-xl">
                     <iframe
@@ -911,7 +923,8 @@ export default async function StorefrontHome({
             return (
               <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-6xl mx-auto">
-                  <h2 className="text-2xl md:text-3xl font-bold text-center">{g.title}</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-center"
+                    dangerouslySetInnerHTML={richHtml(g.title)} />
                   {g.subtitle && <p className="text-center text-black/60 mt-2">{g.subtitle}</p>}
                   <div className={`mt-8 grid grid-cols-2 ${colsClass} gap-3`}>
                     {g.items.map((it) => (
@@ -932,7 +945,8 @@ export default async function StorefrontHome({
             return (
               <section key={key} {...dt} id={key} className="px-6 py-16" style={{ background: bg ?? `${primary}10` }}>
                 <div className="max-w-2xl mx-auto text-center">
-                  <h2 className="text-2xl md:text-3xl font-bold">{n.title}</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold"
+                    dangerouslySetInnerHTML={richHtml(n.title)} />
                   {n.subtitle && <p className="text-black/60 mt-2">{n.subtitle}</p>}
                   <form className="mt-6 flex gap-2 max-w-md mx-auto" action="#" method="POST">
                     <input type="email" required placeholder="tu@email.com"
@@ -971,7 +985,8 @@ export default async function StorefrontHome({
                     )}
                     <FadeIn delay={200}>
                       <div className={(pos === 'left' || pos === 'right') ? 'md:w-1/2' : 'max-w-2xl mx-auto'}>
-                        <h2 className="text-3xl md:text-4xl font-bold">{cb.title}</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold"
+                          dangerouslySetInnerHTML={richHtml(cb.title)} />
                         {cb.subtitle && <p className="mt-2 text-lg text-black/60">{cb.subtitle}</p>}
                         {cb.body && (
                           <div className="mt-5 text-black/70 whitespace-pre-line leading-relaxed"
@@ -1002,7 +1017,8 @@ export default async function StorefrontHome({
                   <div className="max-w-2xl mx-auto">
                     <div className="text-center mb-10">
                       <div className="text-sm font-semibold uppercase tracking-widest mb-2" style={{ color: primary }}>{ct.eyebrow_text ?? 'Contacto'}</div>
-                      <h2 className="text-3xl md:text-4xl font-bold">{ct.title}</h2>
+                      <h2 className="text-3xl md:text-4xl font-bold"
+                        dangerouslySetInnerHTML={richHtml(ct.title)} />
                       {ct.subtitle && <p className="mt-3 text-black/60">{ct.subtitle}</p>}
                     </div>
                     <form action={formAction} method="POST" encType="text/plain" className="bg-white rounded-2xl p-8 shadow-sm border border-black/5 space-y-4">
@@ -1055,7 +1071,8 @@ export default async function StorefrontHome({
                   {(m.title || m.subtitle) && (
                     <FadeIn>
                       <div className="text-center mb-8">
-                        {m.title && <h2 className="text-3xl md:text-4xl font-bold mb-2">{m.title}</h2>}
+                        {m.title && <h2 className="text-3xl md:text-4xl font-bold mb-2"
+                          dangerouslySetInnerHTML={richHtml(m.title)} />}
                         {m.subtitle && <p className="text-black/60">{m.subtitle}</p>}
                       </div>
                     </FadeIn>
@@ -1094,7 +1111,8 @@ export default async function StorefrontHome({
                 style={{ background: bg ?? `linear-gradient(135deg, ${primary}, ${primary}dd)` }}>
                 <FadeIn>
                   <div className="max-w-2xl mx-auto text-white">
-                    <h2 className="text-3xl md:text-5xl font-bold mb-5">{c.title}</h2>
+                    <h2 className="text-3xl md:text-5xl font-bold mb-5"
+                      dangerouslySetInnerHTML={richHtml(c.title)} />
                     {c.body && <p className="text-white/90 text-lg mb-10 leading-relaxed">{c.body}</p>}
                     {c.cta_label && (
                       <a href={c.cta_href || '#publicaciones'}
@@ -1121,7 +1139,8 @@ export default async function StorefrontHome({
                 <div className="max-w-5xl mx-auto">
                   <FadeIn>
                     <div className="text-center mb-10">
-                      <h2 className="text-3xl md:text-4xl font-bold mb-3">{c.title}</h2>
+                      <h2 className="text-3xl md:text-4xl font-bold mb-3"
+                        dangerouslySetInnerHTML={richHtml(c.title)} />
                       {c.subtitle && <p className="text-white/70 max-w-2xl mx-auto">{c.subtitle}</p>}
                     </div>
                   </FadeIn>
