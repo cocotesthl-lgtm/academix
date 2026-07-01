@@ -1,6 +1,8 @@
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { inviteTeamMemberAction, removeTeamMemberAction } from "@/lib/team/actions";
+import { normalizePermissions } from "@/lib/permissions/types";
+import { MemberPermissionsEditor } from "@/components/owner/team/MemberPermissionsEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +11,7 @@ type MembershipRow = {
   role: string;
   status: string;
   created_at: string;
+  permissions: unknown;
   profiles: { id: string; email: string | null; display_name: string | null } | null;
 };
 
@@ -18,7 +21,7 @@ export default async function TeamPage() {
 
   const { data: memRaw } = await svc
     .from('memberships')
-    .select('user_id, role, status, created_at, profiles ( id, email, display_name )')
+    .select('user_id, role, status, created_at, permissions, profiles ( id, email, display_name )')
     .eq('tenant_id', tenant.id)
     .in('role', ['owner', 'admin', 'staff'])
     .eq('status', 'active')
@@ -81,38 +84,48 @@ export default async function TeamPage() {
               const displayName = m.profiles?.display_name || email;
               const isOwner = m.role === 'owner';
               const isAlsoOwner = ownerEmails.has(email);
+              const perms = normalizePermissions(m.permissions);
               return (
-                <li key={`${m.user_id}-${m.role}`} className="py-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                      style={{ background: roleColor(m.role) }}
-                    >
-                      {(displayName ?? '?').slice(0, 1).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{displayName}</div>
-                      <div className="text-[11px] text-white/45 truncate">{email}</div>
-                    </div>
-                    <span
-                      className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded"
-                      style={{ background: `${roleColor(m.role)}33`, color: roleColor(m.role) }}
-                    >
-                      {m.role}
-                    </span>
-                  </div>
-                  {!isOwner && !isAlsoOwner && (
-                    <form action={removeTeamMemberAction}>
-                      <input type="hidden" name="user_id" value={m.user_id} />
-                      <input type="hidden" name="role" value={m.role} />
-                      <button
-                        type="submit"
-                        className="text-xs px-2 py-1 rounded border border-rose-500/30 text-rose-300 hover:bg-rose-500/10"
+                <li key={`${m.user_id}-${m.role}`} className="py-3 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                        style={{ background: roleColor(m.role) }}
                       >
-                        Quitar
-                      </button>
-                    </form>
-                  )}
+                        {(displayName ?? '?').slice(0, 1).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{displayName}</div>
+                        <div className="text-[11px] text-white/45 truncate">{email}</div>
+                      </div>
+                      <span
+                        className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded"
+                        style={{ background: `${roleColor(m.role)}33`, color: roleColor(m.role) }}
+                      >
+                        {m.role}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <MemberPermissionsEditor
+                        userId={m.user_id}
+                        initial={perms}
+                        disabled={isOwner || isAlsoOwner}
+                      />
+                      {!isOwner && !isAlsoOwner && (
+                        <form action={removeTeamMemberAction}>
+                          <input type="hidden" name="user_id" value={m.user_id} />
+                          <input type="hidden" name="role" value={m.role} />
+                          <button
+                            type="submit"
+                            className="text-xs px-2 py-1 rounded border border-rose-500/30 text-rose-300 hover:bg-rose-500/10"
+                          >
+                            Quitar
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  </div>
                 </li>
               );
             })}
