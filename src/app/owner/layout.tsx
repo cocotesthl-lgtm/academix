@@ -3,6 +3,7 @@ import { stopImpersonatingAction } from "@/lib/founder/actions";
 import { tenantOrigin, env } from "@/lib/env";
 import { getServiceClient } from "@/lib/supabase/service";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
+import { getTenantModules } from "@/lib/modules/queries";
 import { OwnerShell } from "@/components/owner/OwnerShell";
 import { WorkspaceSwitcher } from "@/components/owner/WorkspaceSwitcher";
 import { SignoutButton } from "@/components/auth/SignoutButton";
@@ -27,6 +28,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   const { tenant, impersonating } = await requireOwner();
   const user = await getCurrentUser();
   const email = user?.email ?? '';
+  const modules = await getTenantModules(tenant.id);
   // Post-logout redirect → storefront del tenant (sensación white-label).
   // El login del storefront ya auto-redirige al owner a /dashboard via
   // postAuthRedirect, así que vuelven a su panel sin perderse.
@@ -124,7 +126,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
       </div>
       <GlobalSaveListener />
       <div className="flex-1 overflow-y-auto -mx-1 px-1">
-        <OwnerSidebar />
+        <OwnerSidebar modules={modules} />
       </div>
       <div className="mt-auto pt-4 border-t border-white/10 space-y-2">
         {/* CTA destacado: ver el sitio público — abre en pestaña nueva.

@@ -1125,6 +1125,13 @@ alter table public.courses add column if not exists module_label text;
 alter table public.courses add column if not exists lesson_label text;
 alter table public.courses add column if not exists show_content_section boolean not null default true;
 
+-- ── 0045 Módulos activables por workspace ──
+alter table public.tenants add column if not exists modules jsonb not null default
+  '{"catalog":true,"calendar":true,"crm":true,"team":true,"sales":true,"site":true}'::jsonb;
+update public.tenants set modules =
+  '{"catalog":true,"calendar":true,"crm":true,"team":true,"sales":true,"site":true}'::jsonb
+  where modules is null or modules = '{}'::jsonb;
+
 -- ── 0044 Cart UI config (posición + modo dropdown vs página) ──
 alter table public.tenants add column if not exists cart_position text not null default 'header';
 alter table public.tenants add column if not exists cart_display text not null default 'dropdown';

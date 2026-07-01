@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
+import { ALL_MODULES_ON, type ModuleKey, type Modules } from '@/lib/modules/types';
 
 /**
  * Iconos line-style (estilo Lucide/Feather, no coloridos).
@@ -48,7 +49,7 @@ function Icon({ name, className = 'w-4 h-4' }: { name: IconName; className?: str
  */
 
 type NavItem = { label: string; href: string; badge?: string };
-type NavGroup = { label: string; icon: IconName; items: NavItem[] };
+type NavGroup = { label: string; icon: IconName; items: NavItem[]; moduleKey?: ModuleKey };
 type NavEntry = { kind: 'item'; item: NavItem; icon: IconName } | { kind: 'group'; group: NavGroup };
 
 // F1 (evolución nav): mismos ítems que antes, mejor agrupados.
@@ -61,7 +62,7 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'Catálogo', icon: 'shopping-bag',
+      label: 'Catálogo', icon: 'shopping-bag', moduleKey: 'catalog',
       items: [
         { label: 'Publicaciones', href: '/courses' },      // era "Ofertas"
         { label: 'Contenido VIP', href: '/vip' },
@@ -77,7 +78,7 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'Agenda', icon: 'calendar',
+      label: 'Agenda', icon: 'calendar', moduleKey: 'calendar',
       items: [
         { label: 'Calendario', href: '/eventos/calendario' },
         { label: 'Reservas', href: '/reservas' },
@@ -93,7 +94,7 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'CRM & Marketing', icon: 'megaphone',
+      label: 'CRM & Marketing', icon: 'megaphone', moduleKey: 'crm',
       items: [
         { label: 'Leads', href: '/crm' },                  // era "CRM (leads)"
         { label: 'Clientes', href: '/clientes' },
@@ -108,7 +109,7 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'Personas', icon: 'users',
+      label: 'Personas', icon: 'users', moduleKey: 'team',
       items: [
         { label: 'Equipo', href: '/equipo' },
         { label: 'Instructores', href: '/instructors' }
@@ -120,7 +121,7 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'Ventas', icon: 'dollar',
+      label: 'Ventas', icon: 'dollar', moduleKey: 'sales',
       items: [
         { label: 'Ventas', href: '/ventas' },
         { label: 'Suscripciones', href: '/suscripciones' },
@@ -134,7 +135,7 @@ const NAV: NavEntry[] = [
   {
     kind: 'group',
     group: {
-      label: 'Mi sitio', icon: 'palette',
+      label: 'Mi sitio', icon: 'palette', moduleKey: 'site',
       items: [
         { label: 'Editor de páginas', href: '/site' },
         { label: 'Templates', href: '/templates' },
@@ -151,6 +152,7 @@ const NAV: NavEntry[] = [
       label: 'Configuración', icon: 'settings',
       items: [
         { label: 'Mi plan', href: '/mi-plan' },
+        { label: 'Módulos', href: '/modulos' },              // F2: qué módulos usa este workspace
         { label: 'Cuentas / Planes', href: '/cuentas' },    // movido desde "Mis ventas"
         { label: 'Integraciones', href: '/integrations' },
         { label: 'Soporte', href: '/soporte' }
@@ -170,9 +172,20 @@ function groupContainsActive(group: NavGroup, pathname: string): boolean {
   return group.items.some((i) => pathMatches(i.href, pathname));
 }
 
-export function OwnerSidebar() {
+export function OwnerSidebar({ modules = ALL_MODULES_ON }: { modules?: Modules }) {
   const pathname = usePathname() ?? '';
   const router = useRouter();
+
+  // Filtrar grupos según los módulos activos del workspace. Grupos sin
+  // moduleKey (ej.: "Configuración") siempre visibles.
+  const visibleNav = useMemo(() => {
+    return NAV.filter((entry) => {
+      if (entry.kind === 'item') return true;
+      const key = entry.group.moduleKey;
+      if (!key) return true;
+      return modules[key] !== false;
+    });
+  }, [modules]);
   // Highlight optimista — el item se marca activo APENAS se clickea,
   // sin esperar que la page nueva termine de cargar.
   const [pendingHref, setPendingHref] = useState<string | null>(null);
@@ -201,13 +214,13 @@ export function OwnerSidebar() {
   // Inicial: expandido si contiene la ruta actual
   const initialOpen = useMemo(() => {
     const map: Record<string, boolean> = {};
-    NAV.forEach((entry) => {
+    visibleNav.forEach((entry) => {
       if (entry.kind === 'group') {
         map[entry.group.label] = groupContainsActive(entry.group, pathname);
       }
     });
     return map;
-  }, [pathname]);
+  }, [pathname, visibleNav]);
 
   const [open, setOpen] = useState<Record<string, boolean>>(initialOpen);
 
@@ -217,14 +230,14 @@ export function OwnerSidebar() {
     if (!pendingHref) return;
     setOpen((prev) => {
       const next = { ...prev };
-      for (const entry of NAV) {
+      for (const entry of visibleNav) {
         if (entry.kind === 'group' && entry.group.items.some((i) => i.href === pendingHref)) {
           next[entry.group.label] = true;
         }
       }
       return next;
     });
-  }, [pendingHref]);
+  }, [pendingHref, visibleNav]);
 
   function toggle(label: string) {
     setOpen((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -232,7 +245,7 @@ export function OwnerSidebar() {
 
   return (
     <nav className="flex flex-col gap-0.5 text-sm">
-      {NAV.map((entry) => {
+      {visibleNav.map((entry) => {
         if (entry.kind === 'item') {
           const active = isActive(entry.item.href);
           return (
