@@ -6,6 +6,7 @@ import { tenantOrigin } from "@/lib/env";
 import { OnboardingChecklist, type OnboardingStep } from "@/components/owner/OnboardingChecklist";
 import { Sparkline } from "@/components/owner/Sparkline";
 import { relativeTime, absoluteTime } from "@/lib/time";
+import { getTenantModules } from "@/lib/modules/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,9 @@ export default async function OwnerDashboard() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
   const storefrontUrl = tenantOrigin(tenant.slug);
+  // F4: qué módulos están activos → cada card se muestra solo si su
+  // módulo lo está. El "widget Hoy" resume por módulo.
+  const modules = await getTenantModules(tenant.id);
 
   const now = Date.now();
   const since30 = new Date(now - 30 * 86400_000).toISOString();
@@ -218,6 +222,14 @@ export default async function OwnerDashboard() {
       {/* ─── Onboarding checklist (se auto-oculta cuando 4/4 completados) ─── */}
       <OnboardingChecklist steps={onboardingSteps} />
 
+      {/* ─── Widget "Hoy": stats accionables del día por módulo activo ─── */}
+      <TodayWidget
+        tenantId={tenant.id}
+        showSales={modules.sales !== false}
+        showCalendar={modules.calendar !== false}
+        showCrm={modules.crm !== false}
+      />
+
       {/* ─── Alertas críticas (no redundantes con el checklist) ─── */}
       {balance > 0 && (
         <Alert tone="amber" title={`Tenés $ ${ars(balance)} de comisión a pagar`}
@@ -225,38 +237,46 @@ export default async function OwnerDashboard() {
           cta={{ label: 'Ver finanzas', href: '/finance' }} />
       )}
 
-      {/* ─── KPIs ─── */}
+      {/* ─── KPIs (cada uno visible solo si su módulo lo está) ─── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi
-          label="Ventas 30 días"
-          value={`$ ${ars(gmv30)}`}
-          sub={`${sales30.length} transacciones`}
-          delta={gmvDelta}
-          chart={<Sparkline values={salesByDay} color="#f97316" width={140} height={36} className="mt-2" />}
-        />
-        <Kpi
-          label="Clientes activos"
-          value={String(totalClients)}
-          sub={totalClients === 0 ? 'Compartí tu sitio' : `${upcomingEvents.length > 0 ? upcomingEvents[0].ticketsSold + ' tickets en próximo evento' : ''}`}
-        />
-        <Kpi
-          label="Publicaciones publicados"
-          value={String(totalPublished)}
-          sub={totalCourses > totalPublished ? `${totalCourses - totalPublished} en borrador` : 'Todos publicados'}
-        />
-        <Kpi
-          label="Comisión a pagar"
-          value={`$ ${ars(balance)}`}
-          accent={balance > 0 ? 'amber' : undefined}
-        />
+        {modules.sales !== false && (
+          <Kpi
+            label="Ventas 30 días"
+            value={`$ ${ars(gmv30)}`}
+            sub={`${sales30.length} transacciones`}
+            delta={gmvDelta}
+            chart={<Sparkline values={salesByDay} color="#f97316" width={140} height={36} className="mt-2" />}
+          />
+        )}
+        {modules.crm !== false && (
+          <Kpi
+            label="Clientes activos"
+            value={String(totalClients)}
+            sub={totalClients === 0 ? 'Compartí tu sitio' : `${upcomingEvents.length > 0 ? upcomingEvents[0].ticketsSold + ' tickets en próximo evento' : ''}`}
+          />
+        )}
+        {modules.catalog !== false && (
+          <Kpi
+            label="Publicaciones publicados"
+            value={String(totalPublished)}
+            sub={totalCourses > totalPublished ? `${totalCourses - totalPublished} en borrador` : 'Todos publicados'}
+          />
+        )}
+        {modules.sales !== false && (
+          <Kpi
+            label="Comisión a pagar"
+            value={`$ ${ars(balance)}`}
+            accent={balance > 0 ? 'amber' : undefined}
+          />
+        )}
       </div>
 
-      {/* ─── Métricas VIP / Creator ─── */}
-      <VipMetrics tenantId={tenant.id} />
+      {/* ─── Métricas VIP / Creator (parte del catálogo) ─── */}
+      {modules.catalog !== false && <VipMetrics tenantId={tenant.id} />}
 
       <div className="grid lg:grid-cols-2 gap-4">
         {/* ─── Próximos eventos (hasta 3) ─── */}
-        {upcomingEvents.length > 0 && (
+        {modules.calendar !== false && upcomingEvents.length > 0 && (
           <div className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-amber-500/5 p-5">
             <div className="text-[10px] uppercase tracking-wider text-amber-400 font-semibold mb-3">🎟️ Próximos eventos</div>
             <ul className="space-y-3">
@@ -310,7 +330,7 @@ export default async function OwnerDashboard() {
       </div>
 
       {/* ─── Top publicaciones ─── */}
-      {topCourses.length > 0 && (
+      {modules.catalog !== false && modules.sales !== false && topCourses.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-white/55 mb-3">Top publicaciones · últimos 30 días</h2>
           <div className="rounded-xl border border-white/10 overflow-hidden">
@@ -342,7 +362,8 @@ export default async function OwnerDashboard() {
         </div>
       )}
 
-      {/* ─── Actividad reciente ─── */}
+      {/* ─── Actividad reciente (solo si sales activo) ─── */}
+      {modules.sales !== false && (
       <div>
         <h2 className="text-sm font-semibold uppercase tracking-wider text-white/55 mb-3">Últimas ventas</h2>
         {recentSales.length === 0 ? (
@@ -383,6 +404,7 @@ export default async function OwnerDashboard() {
           </div>
         )}
       </div>
+      )}
 
       {openSupport > 0 && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm flex items-center justify-between gap-4">
@@ -561,5 +583,113 @@ function QuickActions({ isNew, hasMp, storefrontUrl }: {
         ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * TodayWidget — resumen accionable del día.
+ * Muestra una fila con 1-4 cards según qué módulos estén activos.
+ * Cada card es un contador + link directo al lugar donde actuar.
+ * Defensivo: si alguna query falla, esa card no aparece (no rompe el dashboard).
+ */
+async function TodayWidget({
+  tenantId,
+  showSales,
+  showCalendar,
+  showCrm
+}: {
+  tenantId: string;
+  showSales: boolean;
+  showCalendar: boolean;
+  showCrm: boolean;
+}) {
+  const svc = getServiceClient();
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const todayStart = new Date(todayStr + 'T00:00:00').toISOString();
+  const todayEnd = new Date(todayStr + 'T23:59:59').toISOString();
+
+  const [salesTodayRes, eventsTodayRes, leadsTodayRes, dmsUnreadRes] = await Promise.all([
+    showSales
+      ? svc.from('sales').select('amount_gross_cents')
+          .eq('tenant_id', tenantId).eq('status', 'paid')
+          .gte('occurred_at', todayStart).lte('occurred_at', todayEnd)
+      : Promise.resolve({ data: [] }),
+    showCalendar
+      ? svc.from('calendar_dates').select('id, start_min, course_id')
+          .eq('tenant_id', tenantId).eq('date', todayStr).order('start_min')
+      : Promise.resolve({ data: [] }),
+    showCrm
+      ? svc.from('leads').select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId).gte('created_at', todayStart)
+      : Promise.resolve({ count: 0 }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    showCrm
+      ? (svc.from('dm_threads') as any).select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId).gt('unread_count_owner', 0)
+      : Promise.resolve({ count: 0 })
+  ]);
+
+  const salesToday = (salesTodayRes.data ?? []) as Array<{ amount_gross_cents: number }>;
+  const gmvToday = salesToday.reduce((s, r) => s + Number(r.amount_gross_cents), 0);
+  const eventsToday = ((eventsTodayRes.data ?? []) as Array<{ id: string; start_min: number }>);
+  const leadsCount = (leadsTodayRes as { count?: number | null }).count ?? 0;
+  const unreadDms = (dmsUnreadRes as { count?: number | null }).count ?? 0;
+
+  const cards: Array<{ icon: string; label: string; value: string; sub: string; href: string; tone: string }> = [];
+  if (showSales) {
+    cards.push({
+      icon: '💰', label: 'Ventas hoy',
+      value: `$ ${(gmvToday / 100).toLocaleString('es-AR')}`,
+      sub: `${salesToday.length} ${salesToday.length === 1 ? 'venta' : 'ventas'}`,
+      href: '/ventas', tone: 'emerald'
+    });
+  }
+  if (showCalendar) {
+    const nextTime = eventsToday.length > 0
+      ? `próximo ${String(Math.floor(eventsToday[0].start_min / 60)).padStart(2, '0')}:${String(eventsToday[0].start_min % 60).padStart(2, '0')}`
+      : 'sin agenda';
+    cards.push({
+      icon: '📅', label: 'Hoy en agenda',
+      value: String(eventsToday.length),
+      sub: nextTime,
+      href: '/eventos/calendario', tone: 'sky'
+    });
+  }
+  if (showCrm) {
+    cards.push({
+      icon: '🎯', label: 'Leads hoy',
+      value: String(leadsCount),
+      sub: leadsCount === 0 ? 'sin nuevos' : 'requieren atención',
+      href: '/crm', tone: 'amber'
+    });
+    cards.push({
+      icon: '💬', label: 'Mensajes sin leer',
+      value: String(unreadDms),
+      sub: unreadDms === 0 ? 'al día' : 'nuevos',
+      href: '/mensajes', tone: 'violet'
+    });
+  }
+  if (cards.length === 0) return null;
+
+  return (
+    <section>
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-white/55 mb-3">
+        Hoy · {now.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+      </h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {cards.map((c) => (
+          <Link key={c.label} href={c.href}
+            className="rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 p-4 transition group">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-white/50 font-semibold">
+              <span className="text-base">{c.icon}</span>
+              <span>{c.label}</span>
+            </div>
+            <div className="mt-2 text-2xl font-bold tabular-nums">{c.value}</div>
+            <div className="text-[11px] text-white/45 mt-0.5">{c.sub}</div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
