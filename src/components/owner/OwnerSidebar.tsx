@@ -7,7 +7,7 @@ import { useState, useMemo, useEffect } from 'react';
  * Iconos line-style (estilo Lucide/Feather, no coloridos).
  * No usamos emojis para no romper la paleta gráfica.
  */
-type IconName = 'home' | 'shopping-bag' | 'ticket' | 'users' | 'palette' | 'settings';
+type IconName = 'home' | 'shopping-bag' | 'calendar' | 'megaphone' | 'users' | 'dollar' | 'palette' | 'settings';
 
 function Icon({ name, className = 'w-4 h-4' }: { name: IconName; className?: string }) {
   const props = {
@@ -21,10 +21,14 @@ function Icon({ name, className = 'w-4 h-4' }: { name: IconName; className?: str
       return <svg {...props}><path d="M3 12L12 3l9 9"/><path d="M5 10v10h14V10"/></svg>;
     case 'shopping-bag':
       return <svg {...props}><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>;
-    case 'ticket':
-      return <svg {...props}><path d="M3 7h18v4a2 2 0 0 0 0 4v2H3v-2a2 2 0 0 0 0-4V7z"/><path d="M13 7v10" strokeDasharray="2 2"/></svg>;
+    case 'calendar':
+      return <svg {...props}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg>;
+    case 'megaphone':
+      return <svg {...props}><path d="M3 11v2a2 2 0 0 0 2 2h1l3 5v-4h1l7 3V5l-7 3H9v3"/><path d="M18 8v8"/></svg>;
     case 'users':
       return <svg {...props}><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1"/><circle cx="17" cy="9" r="2.5"/><path d="M16 15h2a3 3 0 0 1 3 3v1"/></svg>;
+    case 'dollar':
+      return <svg {...props}><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
     case 'palette':
       return <svg {...props}><path d="M12 3a9 9 0 1 0 9 9c0-2-2-2-2-4s2-2 2-4a5 5 0 0 0-5-5"/><circle cx="7.5" cy="11.5" r="1.2"/><circle cx="11.5" cy="7.5" r="1.2"/><circle cx="16.5" cy="11.5" r="1.2"/></svg>;
     case 'settings':
@@ -47,52 +51,86 @@ type NavItem = { label: string; href: string; badge?: string };
 type NavGroup = { label: string; icon: IconName; items: NavItem[] };
 type NavEntry = { kind: 'item'; item: NavItem; icon: IconName } | { kind: 'group'; group: NavGroup };
 
+// F1 (evolución nav): mismos ítems que antes, mejor agrupados.
+// Nada de rutas cambia — /courses sigue siendo /courses, etc. Solo se mueve
+// el árbol para que grupos tengan coherencia semántica.
 const NAV: NavEntry[] = [
   { kind: 'item', icon: 'home', item: { label: 'Inicio', href: '/dashboard' } },
+
+  // Todo lo que ofrecés + cómo se compra
   {
     kind: 'group',
     group: {
-      label: 'Mis ventas', icon: 'shopping-bag',
+      label: 'Catálogo', icon: 'shopping-bag',
       items: [
-        { label: 'Ofertas', href: '/courses' },
-        { label: 'Saldos', href: '/wallets' },
-        { label: 'Cuentas / Planes', href: '/cuentas' },
+        { label: 'Publicaciones', href: '/courses' },      // era "Ofertas"
         { label: 'Contenido VIP', href: '/vip' },
         { label: 'Bundles', href: '/bundles' },
-        { label: 'Categorías', href: '/categories' }
+        { label: 'Categorías', href: '/categories' },
+        { label: 'Cupones', href: '/coupons' },            // movido desde "Mi sitio"
+        { label: 'Checkout', href: '/checkout' }           // movido desde "Mi sitio"
       ]
     }
   },
+
+  // Todo lo que tiene fecha/hora (renombré "Eventos" → "Agenda")
   {
     kind: 'group',
     group: {
-      label: 'Eventos', icon: 'ticket',
+      label: 'Agenda', icon: 'calendar',
       items: [
         { label: 'Calendario', href: '/eventos/calendario' },
+        { label: 'Reservas', href: '/reservas' },
         { label: 'Validar entradas', href: '/eventos/validar' },
         { label: 'Asistencia', href: '/eventos/asistencia' },
-        { label: 'Sedes', href: '/venues' },
-        { label: 'Reservas', href: '/reservas' }
+        { label: 'Sedes', href: '/venues' }
       ]
     }
   },
+
+  // Captación + conversión + comunicación (afiliados va acá porque su
+  // función funcional es traer leads)
+  {
+    kind: 'group',
+    group: {
+      label: 'CRM & Marketing', icon: 'megaphone',
+      items: [
+        { label: 'Leads', href: '/crm' },                  // era "CRM (leads)"
+        { label: 'Clientes', href: '/clientes' },
+        { label: 'Formularios', href: '/forms' },
+        { label: 'Mensajes', href: '/mensajes' },
+        { label: 'Afiliados', href: '/affiliates' }        // movido desde "Personas"
+      ]
+    }
+  },
+
+  // Solo gente que trabaja con vos (staff / instructores)
   {
     kind: 'group',
     group: {
       label: 'Personas', icon: 'users',
       items: [
-        { label: 'Clientes', href: '/clientes' },
-        { label: 'CRM (leads)', href: '/crm' },
-        { label: 'Formularios', href: '/forms' },
         { label: 'Equipo', href: '/equipo' },
-        { label: 'Mensajes', href: '/mensajes' },
-        { label: 'Ventas', href: '/ventas' },
-        { label: 'Suscripciones', href: '/suscripciones' },
-        { label: 'Instructores', href: '/instructors' },
-        { label: 'Afiliados', href: '/affiliates' }
+        { label: 'Instructores', href: '/instructors' }
       ]
     }
   },
+
+  // Todo el dinero en un solo lugar
+  {
+    kind: 'group',
+    group: {
+      label: 'Ventas', icon: 'dollar',
+      items: [
+        { label: 'Ventas', href: '/ventas' },
+        { label: 'Suscripciones', href: '/suscripciones' },
+        { label: 'Saldos', href: '/wallets' },              // movido desde "Mis ventas"
+        { label: 'Finanzas', href: '/finance' }             // movido desde "Configuración"
+      ]
+    }
+  },
+
+  // Solo lo visual + su dirección web
   {
     kind: 'group',
     group: {
@@ -101,20 +139,20 @@ const NAV: NavEntry[] = [
         { label: 'Editor de páginas', href: '/site' },
         { label: 'Templates', href: '/templates' },
         { label: 'Identidad', href: '/branding' },
-        { label: 'Checkout', href: '/checkout' },
-        { label: 'Cupones', href: '/coupons' }
+        { label: 'Dominio', href: '/dominio' }              // movido desde "Configuración"
       ]
     }
   },
+
+  // Solo lo de la plataforma Curplat, no del negocio
   {
     kind: 'group',
     group: {
       label: 'Configuración', icon: 'settings',
       items: [
         { label: 'Mi plan', href: '/mi-plan' },
-        { label: 'Mi dominio', href: '/dominio' },
+        { label: 'Cuentas / Planes', href: '/cuentas' },    // movido desde "Mis ventas"
         { label: 'Integraciones', href: '/integrations' },
-        { label: 'Finanzas', href: '/finance' },
         { label: 'Soporte', href: '/soporte' }
       ]
     }
