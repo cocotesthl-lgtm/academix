@@ -7,6 +7,8 @@ import { signupAsAffiliateAction, markBroadcastReadAction, ensureAffiliateMember
 import { NETWORK_EMOJI } from "@/lib/affiliates/networks";
 import { buildCourseUrl } from "@/lib/affiliates/url";
 import { tenantOrigin } from "@/lib/env";
+import { getUserWorkspaces } from "@/lib/workspaces/queries";
+import { AffiliateWorkspaceHeader } from "@/components/affiliate/AffiliateWorkspaceHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -128,8 +130,20 @@ export default async function AffiliateDashboard({
   const urlFor = (courseSlug: string, code: string) =>
     buildCourseUrl({ origin, courseSlug, ref: code });
 
+  // F6.1: header con switcher de workspaces — reutilizado del owner sidebar.
+  const workspaces = await getUserWorkspaces(user.id);
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+      <AffiliateWorkspaceHeader
+        currentTenantName={tenant.name}
+        currentTenantLogo={tenant.brand?.logo_url ?? null}
+        currentBrand={primary}
+        workspaces={workspaces}
+        currentTenantId={tenantId}
+        email={user.email ?? ''}
+      />
+
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">Panel de afiliado</h1>
