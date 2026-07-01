@@ -8,6 +8,7 @@ import {
   rejectWithdrawalAction
 } from '@/lib/wallets/actions';
 import { PageHeader } from '@/components/owner/PageHeader';
+import { SegmentedTabs, SALES_TABS } from '@/components/owner/SegmentedTabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,6 +86,7 @@ export default async function WalletsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
+      <SegmentedTabs tabs={SALES_TABS} />
       <PageHeader
         title="💰 Saldos de clientes"
         description="Acá ves cuánto saldo tiene cada cliente en tu sitio. Se acreditan automáticamente al pagar productos tipo 'Carga de saldo'."

@@ -4,6 +4,7 @@ import { StudentRowActions } from "@/components/owner/StudentRowActions";
 import { EmptyState } from "@/components/owner/EmptyState";
 import { PageHeader, HeaderSecondary } from "@/components/owner/PageHeader";
 import { tenantOrigin } from "@/lib/env";
+import { SegmentedTabs, CONTACTS_TABS } from "@/components/owner/SegmentedTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -217,6 +218,7 @@ export default async function OwnerClientesPage({
 
   return (
     <div className="space-y-6 max-w-6xl">
+      <SegmentedTabs tabs={CONTACTS_TABS} />
       <PageHeader
         title="Clientes"
         description="Datos de contacto de quienes compraron publicaciones o tickets. También aparecen los pagos pendientes."

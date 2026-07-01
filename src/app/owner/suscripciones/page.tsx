@@ -5,6 +5,7 @@ import { Pill } from "@/components/owner/Pill";
 import { EmptyState } from "@/components/owner/EmptyState";
 import { cancelClientSubscriptionAction } from "@/lib/courses/subscriptions";
 import { relativeTime, absoluteTime } from "@/lib/time";
+import { SegmentedTabs, SALES_TABS } from "@/components/owner/SegmentedTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,7 @@ export default async function OwnerSubscriptionsPage({
   if (migrationMissing) {
     return (
       <div className="max-w-2xl space-y-4">
+        <SegmentedTabs tabs={SALES_TABS} />
         <PageHeader title="Suscripciones" description="Clientes con suscripción recurrente activa." />
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-200">
           <p className="font-semibold mb-2">⚠️ Migración 0013 pendiente</p>
@@ -109,6 +111,7 @@ export default async function OwnerSubscriptionsPage({
 
   return (
     <div className="max-w-6xl space-y-6">
+      <SegmentedTabs tabs={SALES_TABS} />
       <PageHeader
         title="Suscripciones"
         description="Clientes con pago recurrente activo en alguno de tus publicaciones. El dinero entra directo a tu MercadoPago."

@@ -2,6 +2,7 @@ import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { PageHeader, HeaderSecondary } from '@/components/owner/PageHeader';
 import { BarChart } from '@/components/owner/BarChart';
+import { SegmentedTabs, SALES_TABS } from '@/components/owner/SegmentedTabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,6 +121,7 @@ export default async function OwnerVentasPage({
 
   return (
     <div className="space-y-6 max-w-7xl">
+      <SegmentedTabs tabs={SALES_TABS} />
       <PageHeader
         title="Ventas"
         description="Cada compra confirmada genera una venta. Filtrá por publicación, estado o buscá por nombre, email o N° de orden."

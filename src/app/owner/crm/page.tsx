@@ -3,6 +3,7 @@ import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { ensureDefaultPipeline, createPipelineAction, renamePipelineAction, deletePipelineAction } from '@/lib/crm/actions';
 import { KanbanBoard, type Stage, type Lead, type ActivityRow, type TeamMember } from '@/components/owner/crm/KanbanBoard';
+import { SegmentedTabs, CONTACTS_TABS } from '@/components/owner/SegmentedTabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,6 +106,7 @@ export default async function CrmPage({ searchParams }: {
 
   return (
     <div className="space-y-5">
+      <SegmentedTabs tabs={CONTACTS_TABS} />
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">📊 CRM — Leads</h1>

@@ -3,6 +3,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { getOwnerBalance } from "@/lib/debt/accrue";
 import { CopyButton } from "@/components/owner/CopyButton";
 import { PageHeader, HeaderSecondary } from "@/components/owner/PageHeader";
+import { SegmentedTabs, SALES_TABS } from "@/components/owner/SegmentedTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +88,7 @@ export default async function OwnerFinance() {
 
   return (
     <div className="space-y-8 max-w-5xl">
+      <SegmentedTabs tabs={SALES_TABS} />
       <PageHeader
         title="Finanzas"
         description="Vos cobrás directo a tu MercadoPago. Acá vemos la comisión que vas acumulando como deuda con la plataforma."
