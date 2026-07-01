@@ -7,6 +7,7 @@ import {
   toggleAffiliateValidatorAction
 } from "@/lib/affiliates/panel";
 import { NETWORKS, NETWORK_EMOJI } from "@/lib/affiliates/networks";
+import { setAffiliateModeAction, decideAffiliateApplicationAction } from "@/lib/affiliates/join";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,31 @@ type BroadcastRow = { id: string; subject: string; body: string; pinned: boolean
 export default async function OwnerAffiliates() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
+
+  // F6: settings del programa "Trabajá con nosotros" (defensivo si 0047 pendiente)
+  let affMode: 'disabled' | '1click' | 'approval' = 'disabled';
+  let affCommissionRate: number | null = null;
+  let affTerms: string | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: t } = await (svc.from('tenants') as any)
+      .select('affiliate_mode, affiliate_commission_rate, affiliate_terms').eq('id', tenant.id).maybeSingle();
+    const r = t as { affiliate_mode?: string; affiliate_commission_rate?: number | null; affiliate_terms?: string | null } | null;
+    if (r?.affiliate_mode === '1click' || r?.affiliate_mode === 'approval') affMode = r.affiliate_mode;
+    affCommissionRate = r?.affiliate_commission_rate ?? null;
+    affTerms = r?.affiliate_terms ?? null;
+  } catch { /* migration pendiente */ }
+
+  // Solicitudes pending
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: pendingRaw } = await (svc.from('memberships') as any)
+    .select('user_id, created_at, profiles!inner(email, display_name)')
+    .eq('tenant_id', tenant.id).eq('role', 'affiliate').eq('status', 'pending')
+    .order('created_at', { ascending: true });
+  const pendingApplications = (pendingRaw ?? []) as Array<{
+    user_id: string; created_at: string;
+    profiles: { email: string | null; display_name: string | null } | null;
+  }>;
 
   const [
     { data: linksRaw },
@@ -99,6 +125,95 @@ export default async function OwnerAffiliates() {
           Tu programa de afiliados: links activos, material promocional, comunidades y broadcasts.
         </p>
       </div>
+
+      {/* F6: Programa "Trabajá con nosotros" — settings */}
+      <div className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-amber-500/5 p-5">
+        <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              🤝 Trabajá con nosotros
+              <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
+                affMode === 'disabled'
+                  ? 'bg-white/10 text-white/60'
+                  : 'bg-emerald-500/20 text-emerald-300'
+              }`}>
+                {affMode === 'disabled' ? 'Desactivado' : affMode === '1click' ? '1-Click' : 'Con aprobación'}
+              </span>
+            </h2>
+            <p className="text-sm text-white/65 mt-1">
+              Cuando está activo, aparece en tu storefront una sección con CTA. Los usuarios registrados aplican y se convierten en afiliados de tu sitio.
+            </p>
+          </div>
+        </div>
+        <form action={setAffiliateModeAction} className="grid sm:grid-cols-3 gap-3">
+          <label className="block">
+            <span className="text-xs uppercase tracking-wider text-white/55 font-semibold">Modo</span>
+            <select name="mode" defaultValue={affMode}
+              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
+              <option value="disabled" className="bg-[#0a0a0a]">Desactivado</option>
+              <option value="1click" className="bg-[#0a0a0a]">1-Click (activa al instante)</option>
+              <option value="approval" className="bg-[#0a0a0a]">Con aprobación</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs uppercase tracking-wider text-white/55 font-semibold">Comisión (%)</span>
+            <input type="number" name="commission_rate" min={0} max={100} step={0.5}
+              defaultValue={affCommissionRate !== null ? String(affCommissionRate * 100) : ''}
+              placeholder="ej. 20"
+              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <span className="text-[10px] text-white/40">Vacío = usar comisión global.</span>
+          </label>
+          <div className="sm:col-span-3">
+            <label className="block">
+              <span className="text-xs uppercase tracking-wider text-white/55 font-semibold">Términos (opcional)</span>
+              <textarea name="terms" rows={3} defaultValue={affTerms ?? ''}
+                placeholder="Requisitos, plazo de pago, condiciones..."
+                className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            </label>
+          </div>
+          <div className="sm:col-span-3">
+            <button type="submit"
+              className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90">
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* F6: Solicitudes pendientes (solo si modo=approval y hay pending) */}
+      {pendingApplications.length > 0 && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+          <h2 className="text-lg font-semibold mb-3">
+            ⏳ Solicitudes pendientes ({pendingApplications.length})
+          </h2>
+          <ul className="divide-y divide-white/5">
+            {pendingApplications.map((app) => (
+              <li key={app.user_id} className="py-3 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium">{app.profiles?.display_name || app.profiles?.email || app.user_id}</div>
+                  <div className="text-[11px] text-white/45">{app.profiles?.email} · {new Date(app.created_at).toLocaleDateString('es-AR')}</div>
+                </div>
+                <div className="flex gap-2">
+                  <form action={decideAffiliateApplicationAction}>
+                    <input type="hidden" name="user_id" value={app.user_id} />
+                    <input type="hidden" name="decision" value="approve" />
+                    <button className="text-xs px-3 py-1.5 rounded bg-emerald-500 text-black font-semibold hover:bg-emerald-400">
+                      Aprobar
+                    </button>
+                  </form>
+                  <form action={decideAffiliateApplicationAction}>
+                    <input type="hidden" name="user_id" value={app.user_id} />
+                    <input type="hidden" name="decision" value="reject" />
+                    <button className="text-xs px-3 py-1.5 rounded border border-rose-500/30 text-rose-300 hover:bg-rose-500/10">
+                      Rechazar
+                    </button>
+                  </form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MiniStat label="Afiliados activos" value={String(affiliateCount ?? 0)} />

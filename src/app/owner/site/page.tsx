@@ -65,6 +65,7 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   custom:       { title: "🎨 Bloque personalizado", desc: "Comodín 100% editable: título + texto + imagen + CTA + posición." },
   contact:      { title: "✉️ Contacto", desc: "Formulario de contacto con email y WhatsApp opcionales." },
   map:          { title: "📍 Mapa / Ubicación", desc: "Mostrá dónde estás con Google Maps embebido (sin API key)." },
+  workwithus:   { title: "🤝 Trabajá con nosotros", desc: "CTA de programa de afiliados. Aparece solo si activaste el programa en Afiliados → Configuración." },
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
 

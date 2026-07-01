@@ -108,6 +108,7 @@ export type SectionKey =
   | 'custom'
   | 'contact'
   | 'map'
+  | 'workwithus'
   | 'cta_final';
 
 /**
@@ -200,6 +201,14 @@ export type SiteConfig = {
       show_directions_cta: boolean;  // botón "Cómo llegar"
     };
     cta_final:    SectionBase & { title: string; body: string; cta_label: string; cta_href: string };
+    workwithus:   SectionBase & {
+      title: string;
+      subtitle: string;
+      benefits: Array<{ id: string; icon: string; title: string; body: string }>;
+      cta_label: string;
+      cta_label_logged_out: string;
+      show_terms: boolean;   // muestra el textarea affiliate_terms del tenant
+    };
   };
   order: SectionKey[];
   nav: {
@@ -235,7 +244,8 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'cta_final',
   'newsletter',
   'contact',
-  'map'       // mapa al final, normalmente antes del footer
+  'workwithus', // "Trabajá con nosotros" al final, antes del mapa
+  'map'         // mapa al final, normalmente antes del footer
 ];
 
 /**
@@ -440,6 +450,19 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       body: 'Sumate a los miles de alumnos que ya están transformando su camino con nosotros.',
       cta_label: 'Empezar ahora',
       cta_href: '#cursos'
+    },
+    workwithus: {
+      enabled: false, // el owner la prende cuando activa el programa
+      title: 'Trabajá con nosotros',
+      subtitle: 'Sumate a nuestro programa de afiliados y ganá una comisión por cada venta que traigas.',
+      benefits: [
+        { id: 'b1', icon: '💰', title: 'Comisiones competitivas', body: 'Ganás un porcentaje por cada venta que se cierre gracias a vos.' },
+        { id: 'b2', icon: '📊', title: 'Panel propio', body: 'Ves tus leads, comisiones y material de difusión desde tu cuenta.' },
+        { id: 'b3', icon: '🚀', title: 'Empezá en minutos', body: 'Aplicás en un click, y una vez aprobado empezás a compartir.' }
+      ],
+      cta_label: 'Quiero ser afiliado',
+      cta_label_logged_out: 'Iniciar sesión para aplicar',
+      show_terms: true
     }
   },
   order: DEFAULT_ORDER,

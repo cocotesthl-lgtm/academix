@@ -8,6 +8,8 @@ import { FadeIn } from "@/components/storefront/FadeIn";
 import { CatalogFilter } from "@/components/storefront/CatalogFilter";
 import { FormRenderer, type FormDef, type FormFieldDef } from "@/components/storefront/FormRenderer";
 import { CartWidget } from "@/components/storefront/cart/CartWidget";
+import { WorkWithUsCTA } from "@/components/storefront/WorkWithUsCTA";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
  * Render de un string que puede ser texto plano (legacy) o HTML del
@@ -62,6 +64,35 @@ export default async function StorefrontHome({
   void accent;
 
   const svc = getServiceClient();
+  // F6: affiliate mode + terms (defensivo si migration 0047 pendiente)
+  let affiliateMode: 'disabled' | '1click' | 'approval' = 'disabled';
+  let affiliateTerms: string | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: aff } = await (svc.from('tenants') as any)
+      .select('affiliate_mode, affiliate_terms').eq('id', tenantId).maybeSingle();
+    const r = aff as { affiliate_mode?: string; affiliate_terms?: string | null } | null;
+    if (r?.affiliate_mode === '1click' || r?.affiliate_mode === 'approval') affiliateMode = r.affiliate_mode;
+    affiliateTerms = r?.affiliate_terms ?? null;
+  } catch { /* migration pendiente */ }
+
+  // User logueado + su membership actual con este tenant (para decidir
+  // qué mostrar en el CTA: "Aplicar" / "Aplicación pendiente" / "Ya sos afiliado")
+  const supabaseAuth = await createSupabaseServerClient();
+  const { data: { user: currentUser } } = await supabaseAuth.auth.getUser();
+  let affiliateMembershipStatus: 'active' | 'pending' | null = null;
+  if (currentUser) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: m } = await (svc.from('memberships') as any)
+        .select('role, status').eq('user_id', currentUser.id).eq('tenant_id', tenantId).maybeSingle();
+      const mr = m as { role?: string; status?: string } | null;
+      if (mr?.role === 'affiliate' && (mr.status === 'active' || mr.status === 'pending')) {
+        affiliateMembershipStatus = mr.status as 'active' | 'pending';
+      }
+    } catch { /* ignore */ }
+  }
+
   const [{ data: tenantRow }, { data: coursesRaw }, { data: catsRaw }] = await Promise.all([
     svc.from('tenants').select('site_config').eq('id', tenantId).single<{ site_config: unknown }>(),
     // Defensivo: si migration 0029 (ribbon) no corrió, retry sin las columnas
@@ -1074,6 +1105,53 @@ export default async function StorefrontHome({
                     )}
                   </div>
                 </FadeIn>
+              </section>
+            );
+          }
+
+          case 'workwithus': {
+            // Solo aparece si affiliate_mode !== 'disabled' (defensivo:
+            // aún estando enabled en site_config, si el owner no activó
+            // el programa, no se muestra).
+            if ((affiliateMode ?? 'disabled') === 'disabled') return null;
+            const c = cfg.sections.workwithus;
+            return (
+              <section key={key} {...dt} id={key} className="px-6 py-20"
+                style={{ background: bg ?? '#0a0a0a', color: '#fff' }}>
+                <div className="max-w-5xl mx-auto">
+                  <FadeIn>
+                    <div className="text-center mb-10">
+                      <h2 className="text-3xl md:text-4xl font-bold mb-3">{c.title}</h2>
+                      {c.subtitle && <p className="text-white/70 max-w-2xl mx-auto">{c.subtitle}</p>}
+                    </div>
+                  </FadeIn>
+                  {c.benefits.length > 0 && (
+                    <div className="grid md:grid-cols-3 gap-4 mb-10">
+                      {c.benefits.map((b) => (
+                        <div key={b.id} className="rounded-xl bg-white/5 border border-white/10 p-5">
+                          <div className="text-3xl mb-2">{b.icon}</div>
+                          <h3 className="font-semibold mb-1">{b.title}</h3>
+                          <p className="text-sm text-white/60">{b.body}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {c.show_terms && affiliateTerms && (
+                    <div className="rounded-lg bg-white/5 border border-white/10 p-4 mb-8 text-sm text-white/70 whitespace-pre-wrap max-w-3xl mx-auto">
+                      {affiliateTerms}
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <WorkWithUsCTA
+                      tenantId={tenantId}
+                      loggedIn={!!currentUser}
+                      alreadyAffiliate={affiliateMembershipStatus}
+                      labelLoggedIn={c.cta_label}
+                      labelLoggedOut={c.cta_label_logged_out}
+                      primary={primary}
+                    />
+                  </div>
+                </div>
               </section>
             );
           }

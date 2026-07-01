@@ -6,7 +6,7 @@ type Workspace = {
   tenant_id: string;
   tenant_name: string;
   tenant_slug: string;
-  role: 'owner' | 'instructor' | 'student';
+  role: 'owner' | 'instructor' | 'student' | 'affiliate';
   brand_primary: string | null;
   logo_url: string | null;
   href: string;     // URL absoluta al panel correcto según rol
@@ -15,6 +15,7 @@ type Workspace = {
 const ROLE_LABEL: Record<Workspace['role'], string> = {
   owner: 'Propietario',
   instructor: 'Instructor',
+  affiliate: 'Afiliado',
   student: 'Alumno'
 };
 

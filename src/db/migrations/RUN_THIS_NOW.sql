@@ -1125,6 +1125,18 @@ alter table public.courses add column if not exists module_label text;
 alter table public.courses add column if not exists lesson_label text;
 alter table public.courses add column if not exists show_content_section boolean not null default true;
 
+-- ── 0047 Flow 'Trabajá con nosotros' (afiliación) ──
+alter table public.tenants
+  add column if not exists affiliate_mode text not null default 'disabled',
+  add column if not exists affiliate_commission_rate numeric(4,3),
+  add column if not exists affiliate_terms text;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'tenants_affiliate_mode_check') then
+    alter table public.tenants add constraint tenants_affiliate_mode_check
+      check (affiliate_mode in ('disabled', '1click', 'approval'));
+  end if;
+end $$;
+
 -- ── 0046 Permisos modulares por membership ──
 alter table public.memberships add column if not exists permissions jsonb;
 update public.memberships

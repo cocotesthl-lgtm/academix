@@ -53,7 +53,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   // Lo cargamos siempre para alimentar el WorkspaceSwitcher.
   type WS = {
     tenant_id: string; tenant_name: string; tenant_slug: string;
-    role: 'owner' | 'instructor' | 'student';
+    role: 'owner' | 'instructor' | 'student' | 'affiliate';
     brand_primary: string | null; logo_url: string | null;
     href: string;
   };
@@ -65,16 +65,17 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
         .select('tenant_id, role, tenants ( name, slug, brand )')
         .eq('user_id', user.id)
         .eq('status', 'active')
-        // Workspaces = sólo roles que dan acceso a un panel.
-        // 'affiliate' NO es workspace — es relación comercial y aparece
-        // automáticamente al visitar /affiliate de cualquier tenant.
-        .in('role', ['owner', 'instructor', 'student']);
+        // F6: 'affiliate' ahora TAMBIÉN es workspace context — se accede
+        // via "Trabajá con nosotros" (aprobación intencional del owner),
+        // no como side-effect de visitar /affiliate. Mostrarlo en el
+        // switcher permite al user cambiar entre sus roles sin logout.
+        .in('role', ['owner', 'instructor', 'student', 'affiliate']);
       const raw = ((data ?? []) as Array<{
         tenant_id: string; role: WS['role'];
         tenants: { name: string; slug: string; brand: { primary_color?: string; logo_url?: string } | null } | null;
       }>).filter((m) => m.tenants);
       // Dedup por tenant — gana el rol más alto
-      const priority = { owner: 3, instructor: 2, student: 1 } as const;
+      const priority = { owner: 4, instructor: 3, affiliate: 2, student: 1 } as const;
       const byTenant = new Map<string, WS>();
       for (const m of raw) {
         const ws: WS = {
@@ -86,9 +87,13 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
           logo_url: m.tenants!.brand?.logo_url ?? null,
           href: m.role === 'student'
             ? `https://${m.tenants!.slug}.${env.rootDomain}/learn`
-            : m.role === 'instructor'
-              ? subdomainUrl('app', '/instructor')
-              : subdomainUrl('app', '/dashboard')
+            : m.role === 'affiliate'
+              // Panel de afiliado sigue en el storefront del tenant.
+              // F6.2 puede consolidarlo en app.<root>/dashboard.
+              ? `https://${m.tenants!.slug}.${env.rootDomain}/affiliate`
+              : m.role === 'instructor'
+                ? subdomainUrl('app', '/instructor')
+                : subdomainUrl('app', '/dashboard')
         };
         const existing = byTenant.get(m.tenant_id);
         if (!existing || priority[m.role] > priority[existing.role]) byTenant.set(m.tenant_id, ws);
