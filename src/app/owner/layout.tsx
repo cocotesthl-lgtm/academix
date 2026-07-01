@@ -5,6 +5,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 import { OwnerShell } from "@/components/owner/OwnerShell";
 import { WorkspaceSwitcher } from "@/components/owner/WorkspaceSwitcher";
+import { SignoutButton } from "@/components/auth/SignoutButton";
 import { CommandPaletteTrigger } from "@/components/owner/CommandPalette";
 import { SaveStatusBar } from "@/components/owner/SaveStatusBar";
 import { GlobalSaveListener } from "@/components/owner/GlobalSaveListener";
@@ -111,7 +112,6 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
           workspaces={workspaces}
           currentTenantId={tenant.id}
           onboardingUrl={subdomainUrl('app', '/onboarding')}
-          signoutUrl={tenantLoginUrl}
         />
       </div>
       <div className="mb-3 cp-collapse-hide">
@@ -143,6 +143,11 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
           </svg>
           <span className="cp-collapse-hide">Ver mi sitio</span>
         </a>
+        {/* Logout ahora vive acá abajo, no dentro del WorkspaceSwitcher */}
+        <SignoutButton
+          redirectTo={tenantLoginUrl}
+          className="w-full flex items-center justify-center gap-1.5 rounded-lg text-white/55 hover:text-white hover:bg-white/[0.06] text-xs font-medium py-2 transition"
+        />
         <p className="text-[10px] text-white/35 text-center truncate cp-collapse-hide" title={`${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store'}`}>
           {tenant.slug}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'bzseguridad.store'}
         </p>

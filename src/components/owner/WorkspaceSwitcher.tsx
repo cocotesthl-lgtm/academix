@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
-import { signoutAction } from '@/lib/auth/actions';
+import { useEffect, useRef, useState } from 'react';
 
 type Workspace = {
   tenant_id: string;
@@ -31,8 +30,7 @@ export function WorkspaceSwitcher({
   email,
   workspaces,
   currentTenantId,
-  onboardingUrl,
-  signoutUrl
+  onboardingUrl
 }: {
   currentName: string;
   currentLogo: string | null;
@@ -41,10 +39,8 @@ export function WorkspaceSwitcher({
   workspaces: Workspace[];
   currentTenantId: string;
   onboardingUrl: string;
-  signoutUrl: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [pending, start] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
 
   // Click fuera → cerrar
@@ -129,19 +125,6 @@ export function WorkspaceSwitcher({
               <span className="w-7 h-7 rounded grid place-items-center border border-dashed border-white/25 text-white/50 shrink-0">+</span>
               <span>Crear un nuevo sitio</span>
             </a>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => start(() => signoutAction(signoutUrl))}
-              className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-white/5 text-sm text-white/65 transition border-t border-white/5 disabled:opacity-50 text-left"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-1.5">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-              <span className="ml-1.5">{pending ? 'Saliendo…' : 'Cerrar sesión'}</span>
-            </button>
           </div>
         </div>
       )}
