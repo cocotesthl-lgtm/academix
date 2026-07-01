@@ -1125,6 +1125,18 @@ alter table public.courses add column if not exists module_label text;
 alter table public.courses add column if not exists lesson_label text;
 alter table public.courses add column if not exists show_content_section boolean not null default true;
 
+-- ── 0046 Permisos modulares por membership ──
+alter table public.memberships add column if not exists permissions jsonb;
+update public.memberships
+  set permissions = '{"catalog":["admin"],"calendar":["admin"],"crm":["admin"],"team":["admin"],"sales":["admin"],"site":["admin"]}'::jsonb
+  where role = 'owner' and permissions is null;
+update public.memberships
+  set permissions = '{"catalog":["view"],"calendar":["edit"],"crm":["view"]}'::jsonb
+  where role = 'instructor' and permissions is null;
+update public.memberships
+  set permissions = '{"crm":["view"],"sales":["view"]}'::jsonb
+  where role = 'affiliate' and permissions is null;
+
 -- ── 0045 Módulos activables por workspace ──
 alter table public.tenants add column if not exists modules jsonb not null default
   '{"catalog":true,"calendar":true,"crm":true,"team":true,"sales":true,"site":true}'::jsonb;

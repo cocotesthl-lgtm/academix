@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
 import { ALL_MODULES_ON, type ModuleKey, type Modules } from '@/lib/modules/types';
+import { viewableModules, type Permissions } from '@/lib/permissions/types';
 
 /**
  * Iconos line-style (estilo Lucide/Feather, no coloridos).
@@ -172,20 +173,36 @@ function groupContainsActive(group: NavGroup, pathname: string): boolean {
   return group.items.some((i) => pathMatches(i.href, pathname));
 }
 
-export function OwnerSidebar({ modules = ALL_MODULES_ON }: { modules?: Modules }) {
+export function OwnerSidebar({
+  modules = ALL_MODULES_ON,
+  permissions = null
+}: {
+  modules?: Modules;
+  /** Null = owner (todo visible). Sino se filtra a lo que el user puede ver. */
+  permissions?: Permissions | null;
+}) {
   const pathname = usePathname() ?? '';
   const router = useRouter();
 
-  // Filtrar grupos según los módulos activos del workspace. Grupos sin
-  // moduleKey (ej.: "Configuración") siempre visibles.
+  // Filtrar grupos por dos capas:
+  //   1) módulos ACTIVOS del workspace (F2)
+  //   2) permisos del user en este workspace (F3.a)
+  // Grupos sin moduleKey (Inicio, Configuración) siempre visibles.
+  // Si permissions es null → tratamos como owner (retrocompat + safety
+  // hasta que F3.b propague permisos por todos los flows).
+  const viewable = useMemo(() => viewableModules(permissions), [permissions]);
+  const treatAsOwner = permissions === null;
+
   const visibleNav = useMemo(() => {
     return NAV.filter((entry) => {
       if (entry.kind === 'item') return true;
       const key = entry.group.moduleKey;
       if (!key) return true;
-      return modules[key] !== false;
+      if (modules[key] === false) return false;
+      if (treatAsOwner) return true;
+      return viewable.has(key);
     });
-  }, [modules]);
+  }, [modules, viewable, treatAsOwner]);
   // Highlight optimista — el item se marca activo APENAS se clickea,
   // sin esperar que la page nueva termine de cargar.
   const [pendingHref, setPendingHref] = useState<string | null>(null);

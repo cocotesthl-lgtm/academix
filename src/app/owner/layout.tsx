@@ -4,6 +4,7 @@ import { tenantOrigin, env } from "@/lib/env";
 import { getServiceClient } from "@/lib/supabase/service";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
 import { getTenantModules } from "@/lib/modules/queries";
+import { getUserPermissionsInTenant } from "@/lib/permissions/queries";
 import { OwnerShell } from "@/components/owner/OwnerShell";
 import { WorkspaceSwitcher } from "@/components/owner/WorkspaceSwitcher";
 import { SignoutButton } from "@/components/auth/SignoutButton";
@@ -29,6 +30,11 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   const user = await getCurrentUser();
   const email = user?.email ?? '';
   const modules = await getTenantModules(tenant.id);
+  // Si el user llegó a /owner via requireOwner(), es owner del tenant →
+  // permissions serán las de owner (full). Se pasa igual para que el
+  // sidebar aplique el mismo pipeline que aplicará para instructor/staff/
+  // affiliate cuando F3.b/c fusionen los otros portales.
+  const permissions = user ? await getUserPermissionsInTenant(user.id, tenant.id) : null;
   // Post-logout redirect → storefront del tenant (sensación white-label).
   // El login del storefront ya auto-redirige al owner a /dashboard via
   // postAuthRedirect, así que vuelven a su panel sin perderse.
@@ -126,7 +132,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
       </div>
       <GlobalSaveListener />
       <div className="flex-1 overflow-y-auto -mx-1 px-1">
-        <OwnerSidebar modules={modules} />
+        <OwnerSidebar modules={modules} permissions={permissions} />
       </div>
       <div className="mt-auto pt-4 border-t border-white/10 space-y-2">
         {/* CTA destacado: ver el sitio público — abre en pestaña nueva.
