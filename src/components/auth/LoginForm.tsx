@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { loginAction, type ActionResult } from '@/lib/auth/actions';
 import { GoogleAuthButton } from './GoogleAuthButton';
+import { GoogleOneTapButton } from './GoogleOneTapButton';
 
 /**
  * LoginForm reutilizable. Por defecto se renderiza con tema oscuro (para
@@ -58,8 +59,11 @@ export function LoginForm({
 
   return (
     <div className="space-y-4">
-      {/* Login con Google (OAuth via Supabase) */}
-      <GoogleAuthButton theme={theme} next={next ?? undefined} />
+      {/* Google login — popup in-site (GIS) si el env está configurado,
+          sino cae al redirect flow clásico. */}
+      {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+        ? <GoogleOneTapButton theme={theme} next={next ?? undefined} />
+        : <GoogleAuthButton theme={theme} next={next ?? undefined} />}
       <div className="flex items-center gap-3 text-xs uppercase tracking-wider">
         <div className={`flex-1 h-px ${isLight ? 'bg-black/10' : 'bg-white/10'}`} />
         <span className={isLight ? 'text-black/40' : 'text-white/40'}>o con email</span>
