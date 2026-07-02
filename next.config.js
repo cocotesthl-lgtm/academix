@@ -32,17 +32,22 @@ const nextConfig = {
     ]
   },
   /**
-   * COOP header para Google Identity Services (popup login).
-   * Sin esto, Chrome bloquea el postMessage entre Google y la ventana
-   * principal — el popup no puede completar el login.
-   * `same-origin-allow-popups` es lo recomendado por Google.
+   * Headers para Google Identity Services (popup + One Tap FedCM).
+   * `same-origin-allow-popups` NO alcanzó — Chrome seguía bloqueando el
+   * postMessage entre el iframe de Google y la ventana principal
+   * ("Cross-Origin-Opener-Policy policy would block the window.postMessage call").
+   *
+   * `unsafe-none` es lo que oficialmente pide GIS para funcionar. Es menos
+   * restrictivo que el default (`same-origin`) pero es lo que Google
+   * necesita para poder comunicarse con nuestro sitio desde su iframe.
    */
   async headers() {
     return [
       {
         source: '/(.*)',
         headers: [
-          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' }
+          { key: 'Cross-Origin-Opener-Policy', value: 'unsafe-none' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'unsafe-none' }
         ]
       }
     ];
