@@ -21,10 +21,13 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
  */
 export function GoogleOneTapButton({
   theme = 'dark',
-  next
+  next,
+  showButton = true
 }: {
   theme?: 'dark' | 'light';
   next?: string;
+  /** false = solo dispara el One Tap widget flotante, sin botón visible. */
+  showButton?: boolean;
 }) {
   const router = useRouter();
   const btnRef = useRef<HTMLDivElement>(null);
@@ -65,24 +68,36 @@ export function GoogleOneTapButton({
   function init() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const w = window as any;
-    if (!w.google?.accounts?.id || !btnRef.current) return;
+    if (!w.google?.accounts?.id) return;
+    // Cuando showButton=true necesitamos el ref para renderButton; cuando
+    // false solo disparamos el prompt (no hace falta el ref).
+    if (showButton && !btnRef.current) return;
     try {
       w.google.accounts.id.initialize({
         client_id: clientId,
         callback: handleCredential,
         ux_mode: 'popup',
         auto_select: false,
-        cancel_on_tap_outside: true
+        cancel_on_tap_outside: true,
+        // FedCM requerido por Chrome ≥ 128 para que el One Tap se muestre.
+        use_fedcm_for_prompt: true
       });
-      w.google.accounts.id.renderButton(btnRef.current, {
-        type: 'standard',
-        theme: theme === 'light' ? 'outline' : 'filled_black',
-        size: 'large',
-        text: 'continue_with',
-        shape: 'rectangular',
-        logo_alignment: 'left',
-        width: 360
-      });
+      if (showButton && btnRef.current) {
+        w.google.accounts.id.renderButton(btnRef.current, {
+          type: 'standard',
+          theme: theme === 'light' ? 'outline' : 'filled_black',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'rectangular',
+          logo_alignment: 'left',
+          width: 360
+        });
+      }
+      // One Tap: dispara el widget flotante en la esquina superior derecha
+      // con la lista de cuentas de Google del user. Sin clicks — aparece
+      // solo. Si el user tiene sesión de Google en el browser y no está
+      // ya logueado en el sitio, ve el prompt.
+      w.google.accounts.id.prompt();
       setReady(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error inicializando Google');
@@ -123,6 +138,15 @@ export function GoogleOneTapButton({
 
   // Sin client_id no renderea nada — el padre cae al fallback
   if (!clientId) return null;
+
+  // Modo solo-prompt: no renderea nada visible, solo dispara el widget
+  // flotante de One Tap desde el useEffect. Sí muestra el error si algo
+  // falla, chiquito abajo a la derecha.
+  if (!showButton) {
+    return error
+      ? <div className="fixed bottom-4 right-4 z-40 text-xs text-rose-400 bg-black/70 rounded px-2 py-1">{error}</div>
+      : null;
+  }
 
   return (
     <div className="w-full">

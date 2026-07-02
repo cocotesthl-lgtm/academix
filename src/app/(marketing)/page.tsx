@@ -1,10 +1,20 @@
 import Link from "next/link";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { GoogleOneTapButton } from "@/components/auth/GoogleOneTapButton";
 
 export const dynamic = "force-dynamic";
 
-export default function MarketingHome() {
+export default async function MarketingHome() {
+  // Si el user NO está logueado, dispara el widget One Tap flotante
+  // (esquina superior derecha) tipo Wix — sin que el user tenga que
+  // apretar nada. Si ya está logueado, no se muestra nada.
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const showOneTap = !user;
+
   return (
     <div data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white">
+      {showOneTap && <GoogleOneTapButton showButton={false} next="/" />}
       {/* Nav */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/40 border-b border-white/10">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
