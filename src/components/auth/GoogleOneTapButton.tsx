@@ -35,6 +35,22 @@ export function GoogleOneTapButton({
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  // Nonce compartido entre Google (hasheado con SHA-256) y Supabase (original).
+  // Se genera 1 vez por instancia del componente. Google exige que si el ID
+  // token tiene nonce, el nonce debe también pasarse a signInWithIdToken.
+  const nonceRef = useRef<{ raw: string; hashed: string } | null>(null);
+
+  /** Genera un nonce (raw + SHA-256 hexadecimal) para el flow GIS + Supabase. */
+  async function ensureNonce() {
+    if (nonceRef.current) return nonceRef.current;
+    const raw = crypto.randomUUID();
+    const encoded = new TextEncoder().encode(raw);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
+    const hashed = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, '0')).join('');
+    nonceRef.current = { raw, hashed };
+    return nonceRef.current;
+  }
 
   useEffect(() => {
     if (!clientId) return;
@@ -88,7 +104,7 @@ export function GoogleOneTapButton({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function init() {
+  async function init() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const w = window as any;
     if (!w.google?.accounts?.id) return;
@@ -96,9 +112,14 @@ export function GoogleOneTapButton({
     // false solo disparamos el prompt (no hace falta el ref).
     if (showButton && !btnRef.current) return;
     try {
+      // Nonce: SHA-256 va a Google; el original a Supabase en el callback.
+      // Sin esto, Google incluye un nonce autogenerado en el ID token y
+      // Supabase se queja de que el nonce que le pasamos no matchea.
+      const { hashed } = await ensureNonce();
       w.google.accounts.id.initialize({
         client_id: clientId,
         callback: handleCredential,
+        nonce: hashed,
         ux_mode: 'popup',
         auto_select: false,
         cancel_on_tap_outside: true,
@@ -139,7 +160,8 @@ export function GoogleOneTapButton({
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
-        token: resp.credential
+        token: resp.credential,
+        nonce: nonceRef.current?.raw
       });
       if (error) {
         setError(error.message);
