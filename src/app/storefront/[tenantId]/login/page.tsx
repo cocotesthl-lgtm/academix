@@ -1,47 +1,50 @@
-import { Suspense } from "react";
-import { getTenantById } from "@/lib/tenant/resolve";
-import { LoginForm } from "@/components/auth/LoginForm";
+import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
+import { env } from '@/lib/env';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 /**
- * Login del storefront del owner. Cuando alumno paga como invitado en
- * MercadoPago y vuelve a /learn sin estar logueado, lo redirigimos acá.
- * A diferencia del login global de Curplat, este:
- * - Usa el nombre + colores del owner (vía storefront layout)
- * - No muestra "Crear sitio" — esto es el sitio ya
- * - El CTA secundario es "Olvidaste tu contraseña" (TODO post-MVP)
+ * Login del storefront — ahora redirige al login GLOBAL de la plataforma
+ * (app.<root>/login) que es donde vive Google Identity Services (popup
+ * in-site sin salir del ecosistema).
+ *
+ * Google no acepta wildcards en Authorized JavaScript origins, así que
+ * no podemos poner un botón GIS en cada subdomain de tenant — sería
+ * insostenible tener que agregar cada tenant a mano.
+ *
+ * Solución: un único login (app.<root>) que sirve a todo el ecosistema.
+ * Después de autenticar, el usuario vuelve al tenant vía `next` param.
+ *
+ * Patrón usado por Notion, Vercel, Slack, Figma, etc.
  */
 export default async function StorefrontLoginPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ tenantId: string }>;
+  searchParams: Promise<{ next?: string }>;
 }) {
   const { tenantId } = await params;
-  const tenant = await getTenantById(tenantId);
-  const primary = tenant?.brand?.primary_color ?? '#0a0a0a';
+  const { next: incomingNext } = await searchParams;
 
-  return (
-    <main className="min-h-[60vh] flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Acceder a tu cuenta</h1>
-          <p className="text-sm text-black/60 mt-2">
-            Iniciá sesión con el email y contraseña que usaste al comprar la publicación.
-          </p>
-        </div>
-        <div
-          className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm"
-          style={{ ['--brand-primary' as string]: primary }}
-        >
-          <Suspense fallback={<div className="text-black/40 text-sm">Cargando…</div>}>
-            <LoginForm theme="light" hideCreateAccount primaryColor={primary} fallbackRedirect="/learn" />
-          </Suspense>
-        </div>
-        <p className="text-center text-xs text-black/50">
-          ¿Compraste una publicación? Usá el mismo email y contraseña que pusiste en el checkout.
-        </p>
-      </div>
-    </main>
-  );
+  // Reconstruir la URL absoluta a la que volver post-login. Si vino con
+  // ?next=… respetarlo (relativo al tenant); sino, mandar a /learn como
+  // fallback razonable para compradores.
+  const hdrs = await headers();
+  const host = hdrs.get('host') ?? '';
+  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
+  const tenantOrigin = `${proto}://${host}`;
+  const nextPath = incomingNext && incomingNext.startsWith('/') ? incomingNext : '/learn';
+  const nextAbsolute = `${tenantOrigin}${nextPath}`;
+
+  // URL absoluta al login global
+  const appUrl = new URL(env.appUrl);
+  const isLocal = appUrl.hostname === 'localhost' || appUrl.hostname.endsWith('.localhost');
+  const globalHost = isLocal
+    ? `app.localhost${appUrl.port ? ':' + appUrl.port : ''}`
+    : `app.${env.rootDomain}`;
+  const target = `${appUrl.protocol}//${globalHost}/login?next=${encodeURIComponent(nextAbsolute)}&tenant=${encodeURIComponent(tenantId)}`;
+
+  redirect(target);
 }

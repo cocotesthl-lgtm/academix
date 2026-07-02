@@ -202,7 +202,7 @@ export default async function StorefrontLayout({
                 loggedIn={!!user}
                 email={user?.email ?? ''}
                 primary={primary}
-                loginHref="/login"
+                loginHref={`${appSubdomainUrl('/login')}?next=${encodeURIComponent(`https://${tenant.slug}.${env.rootDomain}/learn`)}&tenant=${encodeURIComponent(tenantId)}`}
                 panelHref={panelHref}
                 hasEnrollments={hasEnrollments}
                 signoutRedirect="/"
