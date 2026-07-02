@@ -119,6 +119,10 @@ export function GoogleOneTapButton({
       w.google.accounts.id.initialize({
         client_id: clientId,
         callback: handleCredential,
+        // API nueva: nonce va dentro de `params` (Chrome deprecating top-level).
+        params: { nonce: hashed },
+        // También lo dejo top-level para browsers viejos que aún esperan esto.
+        // Cuando Chrome elimine el soporte top-level (2026+) sacar esta línea.
         nonce: hashed,
         ux_mode: 'popup',
         auto_select: false,
