@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "TURBOPACK=0 NEXT_TURBOPACK=false next build",
   "crons": [
     {
       "path": "/api/cron/debt-enforcement",
