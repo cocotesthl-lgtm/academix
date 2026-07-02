@@ -1,3 +1,16 @@
+/**
+ * ⚠️ CRÍTICO PARA EL BUILD DEL CLIENTE ⚠️
+ *
+ * Esta función usa notación DINÁMICA (bracket con variable), lo cual
+ * significa que Next.js/webpack NO puede reemplazarla al buildear el
+ * bundle del cliente. En el server funciona porque process.env existe
+ * en runtime. En el cliente, process.env NO existe → falla.
+ *
+ * ⚠️ NO usar `required()` o `optional()` para envs `NEXT_PUBLIC_*` que
+ * se llamen desde código que corre en el cliente. En cambio, usar
+ * acceso DIRECTO con dot: `process.env.NEXT_PUBLIC_XXX`. Ver env.supabase
+ * abajo como ejemplo.
+ */
 function required(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing env var: ${name}`);
@@ -61,8 +74,19 @@ export const env = {
   platformApiOrigin: computePlatformApiOrigin(),
 
   supabase: {
-    url: () => required('NEXT_PUBLIC_SUPABASE_URL'),
-    anonKey: () => required('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+    // Acceso DIRECTO (dot notation) para que Next.js/webpack inline el
+    // valor en el bundle del cliente. Ver comentario de required() arriba.
+    url: () => {
+      const v = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!v) throw new Error('Missing env var: NEXT_PUBLIC_SUPABASE_URL');
+      return v;
+    },
+    anonKey: () => {
+      const v = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!v) throw new Error('Missing env var: NEXT_PUBLIC_SUPABASE_ANON_KEY');
+      return v;
+    },
+    // Server-only: bracket notation OK aquí (nunca corre en el cliente).
     serviceRoleKey: () => required('SUPABASE_SERVICE_ROLE_KEY')
   },
 
