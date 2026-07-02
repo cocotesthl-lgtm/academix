@@ -3,14 +3,27 @@ const path = require('path');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Nota: se removió el bloque `turbopack: { root: __dirname }` porque
-  // en Next 16 activaba Turbopack para el build de producción, y
-  // Turbopack tiene un bug conocido con env vars NEXT_PUBLIC_* que
-  // no las inyecta al bundle del cliente (causaba
-  // "Missing env var: NEXT_PUBLIC_SUPABASE_URL" solo al ejecutar
-  // código client-side, aunque el server las leía sin problemas).
-  // El build ahora usa webpack — más lento pero estable.
-  // Dev sigue usando Turbopack por default (rápido y sin este bug).
+  /**
+   * Forzar inyección de env vars al bundle del cliente.
+   *
+   * Vercel autoactiva Turbopack para builds de Next 16 y tiene un
+   * bug conocido: no inyecta variables NEXT_PUBLIC_* al bundle del
+   * cliente aunque estén en process.env al build time. El servidor
+   * las lee bien, pero el JS del cliente sale sin ellas y explotan
+   * al llamar cosas como createSupabaseBrowserClient().
+   *
+   * La API `env` de next.config.js fuerza explícitamente la inyección.
+   * Es más viejo pero funciona con cualquier bundler. Cualquier var
+   * listada acá se hardcodea en el bundle del cliente como string
+   * literal, ignorando bugs del bundler.
+   */
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    NEXT_PUBLIC_ROOT_DOMAIN: process.env.NEXT_PUBLIC_ROOT_DOMAIN,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },
