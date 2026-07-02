@@ -40,9 +40,32 @@ export function GoogleOneTapButton({
     if (!clientId) return;
     if (typeof window === 'undefined') return;
 
-    // Ya cargado desde otra instancia?
+    // Guard: evitar re-inicializar GIS si ya lo hicimos en esta sesión.
+    // Sin esto, StrictMode / re-mounts causan
+    // "initialize() called multiple times" warnings.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const w = window as any;
+    if (w.__gsiInitialized) {
+      // Ya inicializado; si el botón está montado, renderizarlo con la
+      // config actual pero sin re-inicializar el prompt.
+      if (showButton && btnRef.current && w.google?.accounts?.id) {
+        try {
+          w.google.accounts.id.renderButton(btnRef.current, {
+            type: 'standard',
+            theme: theme === 'light' ? 'outline' : 'filled_black',
+            size: 'large',
+            text: 'continue_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+            width: 360
+          });
+          setReady(true);
+        } catch { /* ignore */ }
+      }
+      return;
+    }
+
+    // Ya cargado desde otra instancia?
     if (w.google?.accounts?.id) {
       init();
       return;
@@ -98,6 +121,7 @@ export function GoogleOneTapButton({
       // solo. Si el user tiene sesión de Google en el browser y no está
       // ya logueado en el sitio, ve el prompt.
       w.google.accounts.id.prompt();
+      w.__gsiInitialized = true; // Guard para próximos mounts
       setReady(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error inicializando Google');
