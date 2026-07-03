@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { CourseEditor, type Course, type Module, type Lesson, type Category } from "@/components/owner/courses/CourseEditor";
+import { CourseBuilderToolbar } from "@/components/owner/courses/CourseBuilderToolbar";
 import { GrantEnrollmentForm } from "@/components/owner/courses/GrantEnrollmentForm";
-import { deleteCourseAction, setCourseContentLabelsAction, setCourseStatusAction } from "@/lib/courses/actions";
+import { setCourseContentLabelsAction } from "@/lib/courses/actions";
 import { CourseCheckoutOverride } from "@/components/owner/checkout/CourseCheckoutOverride";
 import { CourseCalendarConfig } from "@/components/owner/courses/CourseCalendarConfig";
 import { CourseSubscriptionConfig } from "@/components/owner/courses/CourseSubscriptionConfig";
@@ -148,51 +148,28 @@ export default async function CourseEditPage({
     lessons: lessonRows.filter((l) => l.module_id === m.id)
   }));
 
+  const publicUrl = (() => {
+    const u = new URL(env.appUrl);
+    const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
+    const host = isLocal
+      ? `${tenant.slug}.localhost${u.port ? ':' + u.port : ''}`
+      : `${tenant.slug}.${env.rootDomain}`;
+    return `${u.protocol}//${host}/c/${course.slug}`;
+  })();
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 text-sm text-white/50">
-        <Link href="/courses" className="hover:text-white">← Publicaciones</Link>
-        <span>/</span>
-        <span className="text-white">{course.title}</span>
-        <a
-          href={(() => {
-            const u = new URL(env.appUrl);
-            const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
-            const host = isLocal
-              ? `${tenant.slug}.localhost${u.port ? ':' + u.port : ''}`
-              : `${tenant.slug}.${env.rootDomain}`;
-            return `${u.protocol}//${host}/c/${course.slug}`;
-          })()}
-          target="_blank"
-          rel="noopener"
-          className="ml-auto rounded-md border border-white/15 px-3 py-1 text-xs hover:bg-white/5"
-        >
-          Ver público →
-        </a>
-        <form action={deleteCourseAction}>
-          <input type="hidden" name="id" value={course.id} />
-          <button className="rounded-md border border-red-500/30 bg-red-500/10 text-red-300 px-3 py-1 text-xs hover:bg-red-500/20">
-            Eliminar
-          </button>
-        </form>
-      </div>
+      <CourseBuilderToolbar
+        courseId={course.id}
+        courseTitle={course.title}
+        courseStatus={course.status}
+        publicUrl={publicUrl}
+      />
 
-      {/* Banner draft — el producto NO es visible públicamente hasta publicarlo */}
+      {/* Banner draft compacto — recordatorio de que el producto no es visible */}
       {course.status !== 'published' && (
-        <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 flex items-center justify-between gap-4 flex-wrap">
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold text-amber-200">📝 En borrador — invisible para tus visitantes</div>
-            <p className="text-xs text-amber-200/80 mt-1">
-              Este producto existe pero no aparece en tu sitio público. Tu URL pública (/c/{course.slug}) devuelve 404 hasta que lo publiques.
-            </p>
-          </div>
-          <form action={setCourseStatusAction}>
-            <input type="hidden" name="id" value={course.id} />
-            <input type="hidden" name="status" value="published" />
-            <button className="rounded-md bg-emerald-500 text-white font-semibold px-5 py-2 hover:bg-emerald-400 whitespace-nowrap">
-              🚀 Publicar ahora
-            </button>
-          </form>
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-xs text-amber-200/80">
+          📝 En borrador — invisible para tus visitantes. La URL pública (/c/{course.slug}) devuelve 404 hasta que toques <strong>Publicar</strong> arriba.
         </div>
       )}
 

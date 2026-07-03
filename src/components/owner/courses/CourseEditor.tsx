@@ -1,9 +1,8 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 import {
   updateCourseAction,
-  setCourseStatusAction,
   addModuleAction,
   deleteModuleAction,
   addLessonAction,
@@ -56,12 +55,21 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
     null
   );
 
+  // Wix-style: el botón "Guardar" del toolbar dispara `cp:save-all`.
+  // Este form escucha ese evento y hace requestSubmit() para persistir.
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    function handler() { formRef.current?.requestSubmit(); }
+    window.addEventListener('cp:save-all', handler);
+    return () => window.removeEventListener('cp:save-all', handler);
+  }, []);
+
   return (
     <div className="space-y-10 max-w-3xl">
       {/* Course metadata */}
       <section>
         <h2 className="text-lg font-semibold mb-4">Información de la publicación</h2>
-        <form action={updateAction} className="space-y-4">
+        <form action={updateAction} className="space-y-4" ref={formRef}>
           <input type="hidden" name="id" value={course.id} />
           <div>
             <label className="block text-sm mb-1.5 text-white/70">Título</label>
@@ -128,43 +136,21 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
             </div>
           )}
           {updateState?.ok && (
-            <div className="rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-sm px-3 py-2">
-              Cambios guardados.
+            <div className="rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-sm px-3 py-2 text-xs">
+              ✓ Guardado
             </div>
           )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={updatePending}
-              className="rounded-md bg-white text-black px-5 py-2 font-semibold hover:bg-white/90 transition disabled:opacity-50"
-            >
-              {updatePending ? 'Guardando…' : 'Guardar'}
-            </button>
-          </div>
-        </form>
-
-        {/* Publicar/Despublicar va FUERA del form principal — HTML no permite
-            forms anidados (el botón quedaba silencioso). */}
-        <div className="mt-3">
-          {course.status !== 'published' ? (
-            <form action={setCourseStatusAction}>
-              <input type="hidden" name="id" value={course.id} />
-              <input type="hidden" name="status" value="published" />
-              <button className="rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-5 py-2 font-medium hover:bg-emerald-500/20">
-                Publicar
-              </button>
-            </form>
-          ) : (
-            <form action={setCourseStatusAction}>
-              <input type="hidden" name="id" value={course.id} />
-              <input type="hidden" name="status" value="draft" />
-              <button className="rounded-md border border-white/15 px-5 py-2 font-medium hover:bg-white/5">
-                Despublicar
-              </button>
-            </form>
+          {updatePending && (
+            <div className="text-xs text-white/60 flex items-center gap-1.5">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+              Guardando…
+            </div>
           )}
-        </div>
+        </form>
+        {/* Los botones Guardar / Publicar / Despublicar / Eliminar se movieron
+            al toolbar sticky arriba (CourseBuilderToolbar). Wix-style. */}
       </section>
 
       {/* Landing page de la publicación (template + overrides) */}
