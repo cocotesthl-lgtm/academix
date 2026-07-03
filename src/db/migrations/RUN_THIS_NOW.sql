@@ -1125,6 +1125,15 @@ alter table public.courses add column if not exists module_label text;
 alter table public.courses add column if not exists lesson_label text;
 alter table public.courses add column if not exists show_content_section boolean not null default true;
 
+-- ── 0048 Site draft vs published (builder Wix-style) ──
+alter table public.tenants
+  add column if not exists site_config_published jsonb,
+  add column if not exists site_config_published_at timestamptz;
+update public.tenants
+  set site_config_published = site_config,
+      site_config_published_at = coalesce(site_config_published_at, now())
+  where site_config_published is null;
+
 -- ── 0047 Flow 'Trabajá con nosotros' (afiliación) ──
 alter table public.tenants
   add column if not exists affiliate_mode text not null default 'disabled',

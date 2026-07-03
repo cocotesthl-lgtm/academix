@@ -65,12 +65,16 @@ export default async function StorefrontLayout({
   const logoText = (brand as { logo_text?: string | null }).logo_text ?? null;
 
   const svc = getServiceClient();
-  const { data: tenantRow } = await svc
-    .from('tenants')
-    .select('site_config')
+  // Storefront público lee site_config_published (snapshot del último
+  // Publicar). Fallback a site_config (draft) para tenants que nunca
+  // publicaron o si la migration 0048 está pendiente.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: tenantRow } = await (svc.from('tenants') as any)
+    .select('site_config, site_config_published')
     .eq('id', tenantId)
-    .single<{ site_config: unknown }>();
-  const cfg = mergeConfig(tenantRow?.site_config);
+    .single();
+  const row = tenantRow as { site_config?: unknown; site_config_published?: unknown } | null;
+  const cfg = mergeConfig(row?.site_config_published ?? row?.site_config);
 
   // ¿El user logueado es afiliado PLATFORM-LEVEL (de Curplat)?
   // Si sí, mostramos la barra superior — puede afiliarse a este tenant

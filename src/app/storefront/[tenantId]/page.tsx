@@ -94,7 +94,10 @@ export default async function StorefrontHome({
   }
 
   const [{ data: tenantRow }, { data: coursesRaw }, { data: catsRaw }] = await Promise.all([
-    svc.from('tenants').select('site_config').eq('id', tenantId).single<{ site_config: unknown }>(),
+    // Storefront público: lee site_config_published (snapshot del Publicar).
+    // Fallback a site_config si nunca se publicó / si migration 0048 pendiente.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (svc.from('tenants') as any).select('site_config, site_config_published').eq('id', tenantId).single(),
     // Defensivo: si migration 0029 (ribbon) no corrió, retry sin las columnas
     (async () => {
       try {
@@ -115,7 +118,9 @@ export default async function StorefrontHome({
       .order('position', { ascending: true })
   ]);
 
-  const cfg = mergeConfig(tenantRow?.site_config);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tRow = tenantRow as { site_config?: unknown; site_config_published?: unknown } | null;
+  const cfg = mergeConfig(tRow?.site_config_published ?? tRow?.site_config);
   const allCourses = (coursesRaw ?? []) as PublicCourse[];
 
   // Cart mode (defensivo si migration 0034 no corrió)

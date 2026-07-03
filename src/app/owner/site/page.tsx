@@ -40,6 +40,7 @@ import { SectionStyleEditor } from "@/components/owner/site/SectionStyleEditor";
 import { EyebrowAutoSave } from "@/components/owner/site/EyebrowAutoSave";
 import { HrefTargetsProvider } from "@/components/owner/site/HrefSelect";
 import { buildCourseTargets } from "@/components/owner/site/href-targets";
+import { SiteBuilderToolbar } from "@/components/owner/site/SiteBuilderToolbar";
 
 export const dynamic = "force-dynamic";
 
@@ -72,13 +73,29 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
 export default async function SiteBuilderPage() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
-  const { data: tenantRow } = await svc
-    .from("tenants")
-    .select("site_config, brand")
+  // Traigo también site_config_published + timestamp para el toolbar
+  // (Wix-style draft/published). Defensivo con any por si migration 0048
+  // aún no corrió: los campos vienen undefined y todo sigue funcionando.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: tenantRow } = await (svc.from("tenants") as any)
+    .select("site_config, site_config_published, site_config_published_at, brand")
     .eq("id", tenant.id)
-    .single<{ site_config: unknown; brand: { primary_color?: string } | null }>();
-  const cfg = mergeConfig(tenantRow?.site_config);
-  const primary = tenantRow?.brand?.primary_color ?? '#f97316';
+    .single();
+  const tr = tenantRow as {
+    site_config?: unknown;
+    site_config_published?: unknown;
+    site_config_published_at?: string | null;
+    brand?: { primary_color?: string } | null;
+  } | null;
+  const cfg = mergeConfig(tr?.site_config);
+  const primary = tr?.brand?.primary_color ?? '#f97316';
+  // ¿Hay cambios sin publicar? Comparo la serialización de ambos objetos.
+  // No hashing sofisticado — el jsonb ya es determinístico y esto corre
+  // 1× por page load, no en un loop.
+  const draftSerial = JSON.stringify(tr?.site_config ?? null);
+  const publishedSerial = JSON.stringify(tr?.site_config_published ?? null);
+  const hasUnpublishedChanges = draftSerial !== publishedSerial;
+  const lastPublishedAt = tr?.site_config_published_at ?? null;
 
   // Publicaciones del tenant para enriquecer el dropdown de href
   // (cada publicación aparece como link directo + opción de checkout).
@@ -136,23 +153,16 @@ export default async function SiteBuilderPage() {
       {previewCss && (
         <style dangerouslySetInnerHTML={{ __html: previewCss }} />
       )}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Editor de sitio</h1>
-          <p className="text-white/60 text-sm mt-1">
-            15 secciones + nav + footer. Cada cambio se ve en vivo en el preview.
-            Reordená con ▲▼, cambiá colores por sección, activá lo que necesites.
-          </p>
-        </div>
-        <a
-          href={publicUrl}
-          target="_blank"
-          rel="noopener"
-          className="rounded-md border border-white/15 px-3 py-2 text-sm hover:bg-white/5 whitespace-nowrap"
-        >
-          Ver storefront →
-        </a>
-      </div>
+      {/* Wix-style: barra fija arriba con estado guardado + Publicar */}
+      <SiteBuilderToolbar
+        publicUrl={publicUrl}
+        initiallyDirty={hasUnpublishedChanges}
+        lastPublishedAt={lastPublishedAt}
+      />
+      <p className="text-white/60 text-sm">
+        Cada cambio se guarda solo. Cuando estés listo, tocá <strong>Publicar</strong> para
+        que aparezca en tu sitio. Podés descartar cambios sin publicar en cualquier momento.
+      </p>
 
       {/* Pre-built themes */}
       <div className="rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-amber-500/5 p-5">

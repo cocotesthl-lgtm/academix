@@ -1062,3 +1062,47 @@ export async function deleteSocialLinkAction(formData: FormData): Promise<void> 
   revalidatePath('/site');
 }
 
+/* ===== Publish / discard (Wix-style draft → published flow) ===== */
+
+/**
+ * Copia el draft (`site_config`) al snapshot público
+ * (`site_config_published`) y actualiza el timestamp. A partir de este
+ * momento, el sitio público muestra el estado actual del draft.
+ */
+export async function publishSiteAction(): Promise<void> {
+  const { tenant } = await requireOwner();
+  const cfg = await loadConfig(tenant.id);
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('tenants') as any)
+    .update({
+      site_config_published: cfg,
+      site_config_published_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', tenant.id);
+  revalidatePath('/site');
+  revalidatePath('/', 'layout'); // invalidar cache del storefront público
+}
+
+/**
+ * Descarta los cambios del draft y vuelve al último snapshot publicado.
+ * Útil cuando el owner arrepiente de sus cambios antes de publicar.
+ * Defensivo: si nunca publicó nada, se cae al DEFAULT_SITE_CONFIG.
+ */
+export async function discardDraftChangesAction(): Promise<void> {
+  const { tenant } = await requireOwner();
+  const svc = getServiceClient();
+  const { data } = await svc
+    .from('tenants')
+    .select('site_config_published')
+    .eq('id', tenant.id)
+    .single<{ site_config_published: unknown }>();
+  const published = mergeConfig(data?.site_config_published);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('tenants') as any)
+    .update({ site_config: published, updated_at: new Date().toISOString() })
+    .eq('id', tenant.id);
+  revalidatePath('/site');
+}
+
