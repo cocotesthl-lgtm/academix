@@ -6,8 +6,7 @@ import {
   toggleSectionAction,
   moveSectionAction,
   setSectionBgColorAction,
-  setSectionTextColorAction,
-  applyThemeAction
+  setSectionTextColorAction
 } from "@/lib/site/actions";
 import {
   HeroEditor,
@@ -164,53 +163,10 @@ export default async function SiteBuilderPage() {
         que aparezca en tu sitio. Podés descartar cambios sin publicar en cualquier momento.
       </p>
 
-      {/* Pre-built themes */}
-      <div className="rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-amber-500/5 p-5">
-        <h2 className="text-lg font-bold mb-1">✨ Plantillas pre-armadas</h2>
-        <p className="text-sm text-white/60 mb-4">
-          La opción <strong className="text-white">Sitio completo</strong> reescribe todo con contenido de muestra (para arrancar con un sitio bonito y editar después).
-          Las otras solo encienden secciones del vertical sin pisar tu contenido. <strong className="text-amber-400">Hotmart</strong> y <strong className="text-amber-400">Funnel</strong> sí cambian el orden de las secciones (son layouts completos).
-        </p>
-        <p className="text-xs text-white/50 italic mb-3">
-          💡 ¿Buscás plantillas Hotmart o Funnel para vender UN publicación específico? Ya no van acá
-          (eran para todo el sitio). Ahora las elegís por publicación en{' '}
-          <a href="/courses" className="text-amber-400 hover:underline">/courses</a> → editar publicación → sección "Landing page".
-        </p>
-        <div className="grid md:grid-cols-4 gap-3">
-          <form action={applyThemeAction}>
-            <input type="hidden" name="theme" value="sample" />
-            <button className="w-full text-left rounded-lg border border-orange-500/30 bg-orange-500/10 p-4 hover:bg-orange-500/20">
-              <div className="text-2xl mb-1">✨</div>
-              <div className="font-semibold text-sm">Sitio completo</div>
-              <div className="text-xs text-white/60 mt-1">15 secciones con contenido de muestra (pisa todo)</div>
-            </button>
-          </form>
-          <form action={applyThemeAction}>
-            <input type="hidden" name="theme" value="fitness" />
-            <button className="w-full text-left rounded-lg border border-white/15 bg-white/[0.02] p-4 hover:bg-white/[0.05]">
-              <div className="text-2xl mb-1">💪</div>
-              <div className="font-semibold text-sm">Fitness / Coaching</div>
-              <div className="text-xs text-white/50 mt-1">Hero split + instructor + before-after</div>
-            </button>
-          </form>
-          <form action={applyThemeAction}>
-            <input type="hidden" name="theme" value="tech" />
-            <button className="w-full text-left rounded-lg border border-white/15 bg-white/[0.02] p-4 hover:bg-white/[0.05]">
-              <div className="text-2xl mb-1">💻</div>
-              <div className="font-semibold text-sm">Tech / Educación</div>
-              <div className="text-xs text-white/50 mt-1">Trusted + features + learn-points + FAQ</div>
-            </button>
-          </form>
-          <form action={applyThemeAction}>
-            <input type="hidden" name="theme" value="business" />
-            <button className="w-full text-left rounded-lg border border-white/15 bg-white/[0.02] p-4 hover:bg-white/[0.05]">
-              <div className="text-2xl mb-1">📈</div>
-              <div className="font-semibold text-sm">Business / Pro</div>
-              <div className="text-xs text-white/50 mt-1">Hero gallery + stats + features + pricing</div>
-            </button>
-          </form>
-        </div>
-      </div>
+      {/* Las plantillas pre-armadas se movieron a la sección Templates
+          (/owner/templates) que tiene un catálogo completo por vertical.
+          El bloque viejo fue eliminado de acá porque duplicaba esa entrada
+          de menú y confundía. */}
 
       {cfg.order.map((key, idx) => {
         const meta = SECTION_META[key];
