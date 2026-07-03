@@ -77,11 +77,15 @@ export function SiteBuilderToolbar({
     if (savingManual) return;
     startSave(async () => {
       window.dispatchEvent(new CustomEvent('cp:save-start'));
+      // Dispara el save de TODAS las secciones abiertas. Cada SaveBar
+      // en SectionEditors escucha este evento y ejecuta su onSave.
+      window.dispatchEvent(new CustomEvent('cp:save-all'));
+      // Delay para que los saves lleguen a la DB antes de refresh.
+      await new Promise((r) => setTimeout(r, 900));
       // Force server sync — re-fetch de los datos del server para
-      // reflejar el estado más reciente y validar que todo llegó a la DB.
+      // reflejar el estado más reciente.
       router.refresh();
-      // Pequeño delay para dar sensación de "guardando".
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 300));
       window.dispatchEvent(new CustomEvent('cp:save-end'));
       setSaveTick('ok');
       setTimeout(() => setSaveTick('idle'), 1500);

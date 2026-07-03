@@ -112,14 +112,51 @@ function Textarea({ label, value, onChange, rows = 3 }: {
   );
 }
 
+/**
+ * Componente invisible que dispara una función `onSave` cuando llega el
+ * evento global `cp:save-all`. Uso para editores que no usan `SaveBar`
+ * (ej. UrlPicker, footer text).
+ */
+function SaveOnGlobalEvent({ onSave }: { onSave: () => void }) {
+  useEffect(() => {
+    function handler() { onSave(); }
+    window.addEventListener('cp:save-all', handler);
+    return () => window.removeEventListener('cp:save-all', handler);
+  }, [onSave]);
+  return null;
+}
+
+/**
+ * Estado de guardado por sección (SIN botón visible).
+ *
+ * Wix-style: el usuario aprieta un solo botón "Guardar" arriba en el
+ * toolbar. Ese botón dispara el evento global `cp:save-all`, que este
+ * componente escucha y usa para disparar el save del editor en el que
+ * está montado.
+ *
+ * Sigue mostrando el status "Guardando…" / "✓ Guardado" para feedback
+ * local. Cada sección se guarda cuando llega el evento global.
+ */
 function SaveBar({ pending, saved, onSave }: { pending: boolean; saved: boolean; onSave: () => void }) {
+  useEffect(() => {
+    function handler() { onSave(); }
+    window.addEventListener('cp:save-all', handler);
+    return () => window.removeEventListener('cp:save-all', handler);
+  }, [onSave]);
+
+  // Sin botón — solo indicador visual. Si nada está pasando, no muestra nada.
+  if (!pending && !saved) return null;
   return (
-    <div className="flex items-center gap-3 pt-1">
-      <button type="button" onClick={onSave} disabled={pending}
-        className="rounded bg-white text-black px-4 py-1.5 text-sm font-medium hover:bg-white/90 disabled:opacity-50">
-        {pending ? 'Guardando…' : 'Guardar'}
-      </button>
-      {saved && <span className="text-xs text-emerald-300">✓ Guardado</span>}
+    <div className="flex items-center gap-2 pt-1 text-xs">
+      {pending && (
+        <>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin text-white/60">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+          <span className="text-white/60">Guardando…</span>
+        </>
+      )}
+      {saved && !pending && <span className="text-emerald-300">✓ Guardado</span>}
     </div>
   );
 }
@@ -142,40 +179,41 @@ function UrlPicker({
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
 
+  function fire() {
+    setSaved(false);
+    start(async () => {
+      const fd = new FormData();
+      fd.set('section', section);
+      fd.set('field', field);
+      fd.set('url', v);
+      await setSectionImageUrlAction(fd);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    });
+  }
+
+  // Escucha el "Guardar" global del toolbar — Wix-style.
+  useEffect(() => {
+    function handler() { fire(); }
+    window.addEventListener('cp:save-all', handler);
+    return () => window.removeEventListener('cp:save-all', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [v, section, field]);
+
   return (
     <div>
       <label className="block text-xs text-white/60 mb-1">{label}</label>
-      <div className="flex gap-2">
-        <input
-          type="url"
-          value={v}
-          onChange={(e) => { setV(e.target.value); onLocalChange?.(e.target.value); setSaved(false); }}
-          placeholder="https://… (pegá la URL de la imagen)"
-          className="flex-1 rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
-        />
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => {
-            setSaved(false);
-            start(async () => {
-              const fd = new FormData();
-              fd.set('section', section);
-              fd.set('field', field);
-              fd.set('url', v);
-              await setSectionImageUrlAction(fd);
-              setSaved(true);
-              setTimeout(() => setSaved(false), 2500);
-            });
-          }}
-          className="rounded bg-white text-black px-3 py-2 text-sm font-medium disabled:opacity-50"
-        >
-          {pending ? '…' : 'Guardar'}
-        </button>
-      </div>
-      <div className="flex items-center justify-between mt-1">
-        {hint && <span className="text-[10px] text-white/40">📐 {hint}</span>}
-        {saved && <span className="text-[10px] text-emerald-300">✓ Guardado</span>}
+      <input
+        type="url"
+        value={v}
+        onChange={(e) => { setV(e.target.value); onLocalChange?.(e.target.value); setSaved(false); }}
+        placeholder="https://… (pegá la URL de la imagen)"
+        className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+      />
+      <div className="flex items-center justify-between mt-1 text-[10px]">
+        {hint && <span className="text-white/40">📐 {hint}</span>}
+        {pending && <span className="text-white/60">Guardando…</span>}
+        {saved && !pending && <span className="text-emerald-300">✓ Guardado</span>}
       </div>
     </div>
   );
@@ -3149,14 +3187,13 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
     <div className="grid md:grid-cols-2 gap-6">
       <div className="space-y-3">
         <Textarea label="Texto principal del footer" value={text} onChange={setText} rows={2} />
-        <button type="button" disabled={textPending} onClick={() => {
+        <SaveOnGlobalEvent onSave={() => {
           startText(async () => {
             const fd = new FormData(); fd.set('text', text);
             await updateFooterTextAction(fd);
           });
-        }} className="rounded bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-50">
-          {textPending ? 'Guardando…' : 'Guardar texto'}
-        </button>
+        }} />
+        {textPending && <span className="text-xs text-white/60">Guardando texto del footer…</span>}
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
           <label className="text-xs text-white/60 block mb-1">
