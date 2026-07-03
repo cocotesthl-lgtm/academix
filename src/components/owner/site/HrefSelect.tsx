@@ -61,7 +61,9 @@ export function HrefField({
   const extra = useContext(HrefTargetsContext);
   const allTargets = [...COMMON_TARGETS, ...extra];
   const isCommon = allTargets.some((t) => t.value === value);
-  const [mode, setMode] = useState<'common' | 'custom'>(isCommon || !value ? 'common' : 'custom');
+  // Estado 'custom' cuando el user eligió URL custom del dropdown o el
+  // valor almacenado no matchea ninguna opción conocida.
+  const [customMode, setCustomMode] = useState<boolean>(!!value && !isCommon);
 
   const grouped: Record<string, HrefTarget[]> = {};
   for (const t of allTargets) {
@@ -72,48 +74,39 @@ export function HrefField({
   return (
     <label className="block space-y-1.5">
       <span className="block text-[10px] uppercase tracking-wider text-white/45">{label}</span>
-      <div className="flex gap-1">
-        <button
-          type="button"
-          onClick={() => setMode('common')}
-          className={`text-[10px] px-2 py-1 rounded ${
-            mode === 'common' ? 'bg-white/15 text-white' : 'text-white/45 hover:bg-white/5'
-          }`}
-        >
-          Sección
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('custom')}
-          className={`text-[10px] px-2 py-1 rounded ${
-            mode === 'custom' ? 'bg-white/15 text-white' : 'text-white/45 hover:bg-white/5'
-          }`}
-        >
-          URL custom
-        </button>
-      </div>
-      {mode === 'common' ? (
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
-        >
-          <option value="">— elegí destino —</option>
-          {Object.entries(grouped).map(([group, items]) => (
-            <optgroup key={group} label={group}>
-              {items.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      ) : (
+      <select
+        value={customMode ? '__custom__' : value}
+        onChange={(e) => {
+          if (e.target.value === '__custom__') {
+            setCustomMode(true);
+            onChange('');
+          } else {
+            setCustomMode(false);
+            onChange(e.target.value);
+          }
+        }}
+        className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
+      >
+        <option value="">— elegí destino —</option>
+        {Object.entries(grouped).map(([group, items]) => (
+          <optgroup key={group} label={group}>
+            {items.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </optgroup>
+        ))}
+        <optgroup label="Personalizado">
+          <option value="__custom__">🔗 URL custom (pegar link)</option>
+        </optgroup>
+      </select>
+      {customMode && (
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://otro-sitio.com  o  /pagina-interna"
           className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono"
+          autoFocus
         />
       )}
     </label>
@@ -150,47 +143,44 @@ export function HrefSelect({
     grouped[t.group].push(t);
   }
 
+  const isCustom = mode === 'custom';
+
   return (
     <div className="space-y-1.5">
-      <div className="flex gap-1">
-        <button
-          type="button"
-          onClick={() => setMode('common')}
-          className={`text-[10px] px-2 py-1 rounded ${
-            mode === 'common' ? 'bg-white/15 text-white' : 'text-white/45 hover:bg-white/5'
-          }`}
-        >
-          Sección del sitio
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('custom')}
-          className={`text-[10px] px-2 py-1 rounded ${
-            mode === 'custom' ? 'bg-white/15 text-white' : 'text-white/45 hover:bg-white/5'
-          }`}
-        >
-          URL custom
-        </button>
-      </div>
+      <select
+        // Cuando estamos en modo custom, el select solo muestra la opción
+        // "URL custom" seleccionada. El value real (la URL tipeada) va al
+        // input de abajo, que es el que carga el name real del form.
+        value={isCustom ? '__custom__' : value}
+        onChange={(e) => {
+          if (e.target.value === '__custom__') {
+            setMode('custom');
+            setValue('');
+          } else {
+            setMode('common');
+            setValue(e.target.value);
+          }
+        }}
+        className={`w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm ${className}`}
+        // Cuando NO estamos en custom, este select carga el name.
+        // Cuando estamos en custom, el input de abajo carga el name.
+        name={isCustom ? undefined : name}
+        required={!isCustom && required}
+      >
+        <option value="">— elegí destino —</option>
+        {Object.entries(grouped).map(([group, items]) => (
+          <optgroup key={group} label={group}>
+            {items.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </optgroup>
+        ))}
+        <optgroup label="Personalizado">
+          <option value="__custom__">🔗 URL custom (pegar link)</option>
+        </optgroup>
+      </select>
 
-      {mode === 'common' ? (
-        <select
-          name={name}
-          required={required}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className={`w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm ${className}`}
-        >
-          <option value="">— elegí destino —</option>
-          {Object.entries(grouped).map(([group, items]) => (
-            <optgroup key={group} label={group}>
-              {items.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      ) : (
+      {isCustom && (
         <input
           type="text"
           name={name}
@@ -199,6 +189,7 @@ export function HrefSelect({
           onChange={(e) => setValue(e.target.value)}
           placeholder="https://otro-sitio.com  o  /pagina-interna"
           className={`w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono ${className}`}
+          autoFocus
         />
       )}
     </div>
