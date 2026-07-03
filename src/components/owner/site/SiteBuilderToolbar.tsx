@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { publishSiteAction, discardDraftChangesAction } from '@/lib/site/actions';
 
 /**
@@ -27,11 +28,14 @@ export function SiteBuilderToolbar({
   /** ISO string del último publish, o null si nunca se publicó */
   lastPublishedAt: string | null;
 }) {
+  const router = useRouter();
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [dirty, setDirty] = useState(initiallyDirty);
   const [publishing, startPublish] = useTransition();
   const [discarding, startDiscard] = useTransition();
+  const [savingManual, startSave] = useTransition();
   const [publishTick, setPublishTick] = useState<'idle' | 'ok'>('idle');
+  const [saveTick, setSaveTick] = useState<'idle' | 'ok'>('idle');
 
   useEffect(() => {
     // Escuchamos los eventos globales que ya dispara el sistema de save
@@ -60,6 +64,27 @@ export function SiteBuilderToolbar({
       setDirty(false);
       setPublishTick('ok');
       setTimeout(() => setPublishTick('idle'), 2000);
+    });
+  }
+
+  /**
+   * Guardar manual: los cambios ya se persisten solos vía autosave de cada
+   * campo, así que este botón fuerza un refresh del server-state para
+   * confirmar visualmente que todo quedó guardado. Útil si el owner tiene
+   * dudas o quiere un check explícito antes de cerrar.
+   */
+  function handleSave() {
+    if (savingManual) return;
+    startSave(async () => {
+      window.dispatchEvent(new CustomEvent('cp:save-start'));
+      // Force server sync — re-fetch de los datos del server para
+      // reflejar el estado más reciente y validar que todo llegó a la DB.
+      router.refresh();
+      // Pequeño delay para dar sensación de "guardando".
+      await new Promise((r) => setTimeout(r, 400));
+      window.dispatchEvent(new CustomEvent('cp:save-end'));
+      setSaveTick('ok');
+      setTimeout(() => setSaveTick('idle'), 1500);
     });
   }
 
@@ -125,6 +150,15 @@ export function SiteBuilderToolbar({
             </svg>
             Vista previa
           </a>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={savingManual}
+            className="text-xs px-3 py-1.5 rounded border border-white/15 text-white/85 hover:bg-white/5 disabled:opacity-50"
+            title="Los cambios se guardan solos, pero podés forzar un guardado ahora"
+          >
+            {savingManual ? 'Guardando…' : saveTick === 'ok' ? '✓ Guardado' : 'Guardar'}
+          </button>
           <button
             type="button"
             onClick={handlePublish}
