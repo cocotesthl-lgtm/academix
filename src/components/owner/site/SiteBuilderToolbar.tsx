@@ -113,7 +113,7 @@ export function SiteBuilderToolbar({
   return (
     <div className="sticky top-0 z-40 -mx-6 px-6 py-2.5 mb-4 border-b border-white/10 bg-[#0a0a0a]/95 backdrop-blur">
       <div className="flex items-center justify-between gap-3 flex-wrap max-w-6xl">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <span className="text-sm font-semibold">Editor de sitio</span>
           <span className={`text-xs flex items-center gap-1.5 ${statusColor}`}>
             {status === 'saving' && (
@@ -123,6 +123,13 @@ export function SiteBuilderToolbar({
             )}
             {statusLabel}
           </span>
+          {lastPublishedAt && (
+            <span className="text-[10px] text-white/40">
+              · última publicación {new Date(lastPublishedAt).toLocaleString('es-AR', {
+                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+              })}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -173,13 +180,6 @@ export function SiteBuilderToolbar({
           </button>
         </div>
       </div>
-      {lastPublishedAt && (
-        <div className="text-[10px] text-white/40 mt-1">
-          Última publicación: {new Date(lastPublishedAt).toLocaleString('es-AR', {
-            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-          })}
-        </div>
-      )}
     </div>
   );
 }
