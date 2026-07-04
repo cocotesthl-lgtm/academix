@@ -115,20 +115,30 @@ export function ProductBuyBox({
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={handleAdd}
-        disabled={outOfStock}
-        className={`w-full py-3.5 rounded-lg text-base font-semibold transition ${
-          outOfStock
-            ? 'bg-black/10 text-black/40 cursor-not-allowed'
-            : added
-              ? 'bg-emerald-600 text-white'
-              : 'bg-black text-white hover:bg-black/85'
-        }`}
-      >
-        {outOfStock ? 'Sin stock' : added ? '✓ Agregado al carrito' : 'Agregar al carrito'}
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={outOfStock}
+          className={`flex-1 py-3.5 rounded-lg text-base font-semibold transition ${
+            outOfStock
+              ? 'bg-black/10 text-black/40 cursor-not-allowed'
+              : added
+                ? 'bg-emerald-600 text-white'
+                : 'bg-black text-white hover:bg-black/85'
+          }`}
+        >
+          {outOfStock ? 'Sin stock' : added ? '✓ Agregado' : 'Agregar al carrito'}
+        </button>
+        {added && (
+          <a
+            href="/tienda/checkout"
+            className="py-3.5 px-5 rounded-lg text-base font-semibold border border-black text-black hover:bg-black/[0.03] transition"
+          >
+            Ir al checkout →
+          </a>
+        )}
+      </div>
 
       {product.requires_shipping && !outOfStock && (
         <div className="text-xs text-black/55 flex items-center gap-1.5">

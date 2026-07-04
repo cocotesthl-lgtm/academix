@@ -128,6 +128,7 @@ const NAV: NavEntry[] = [
       label: 'Ventas', icon: 'dollar', moduleKey: 'sales',
       items: [
         { label: 'Ventas', href: '/ventas' },
+        { label: 'Órdenes (tienda)', href: '/orders' },     // ecommerce físico
         { label: 'Suscripciones', href: '/suscripciones' },
         { label: 'Saldos', href: '/wallets' },              // movido desde "Mis ventas"
         { label: 'Finanzas', href: '/finance' }             // movido desde "Configuración"

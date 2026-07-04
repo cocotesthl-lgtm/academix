@@ -2,7 +2,7 @@ import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { PageHeader } from '@/components/owner/PageHeader';
 import { ShippingManager } from '@/components/owner/products/ShippingManager';
-import type { ShippingZone, ShippingRate } from '@/lib/shipping/actions';
+import type { ShippingZone, ShippingRate } from '@/lib/shipping/types';
 
 export const dynamic = 'force-dynamic';
 

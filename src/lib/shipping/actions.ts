@@ -3,61 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
-
-export type ShippingZone = {
-  id: string;
-  tenant_id: string;
-  name: string;
-  provinces: string[];  // códigos ISO como "AR-C", "AR-B". ["*"] = todas.
-  is_pickup: boolean;
-  is_default: boolean;
-  sort_order: number;
-};
-
-export type ShippingRate = {
-  id: string;
-  tenant_id: string;
-  zone_id: string;
-  name: string;
-  price_cents: number;
-  free_from_cents: number | null;
-  delivery_days_min: number | null;
-  delivery_days_max: number | null;
-  sort_order: number;
-};
-
-// Provincias AR con código ISO 3166-2
-export const AR_PROVINCES: Array<{ code: string; name: string }> = [
-  { code: 'AR-C', name: 'CABA' },
-  { code: 'AR-B', name: 'Buenos Aires' },
-  { code: 'AR-K', name: 'Catamarca' },
-  { code: 'AR-H', name: 'Chaco' },
-  { code: 'AR-U', name: 'Chubut' },
-  { code: 'AR-X', name: 'Córdoba' },
-  { code: 'AR-W', name: 'Corrientes' },
-  { code: 'AR-E', name: 'Entre Ríos' },
-  { code: 'AR-P', name: 'Formosa' },
-  { code: 'AR-Y', name: 'Jujuy' },
-  { code: 'AR-L', name: 'La Pampa' },
-  { code: 'AR-F', name: 'La Rioja' },
-  { code: 'AR-M', name: 'Mendoza' },
-  { code: 'AR-N', name: 'Misiones' },
-  { code: 'AR-Q', name: 'Neuquén' },
-  { code: 'AR-R', name: 'Río Negro' },
-  { code: 'AR-A', name: 'Salta' },
-  { code: 'AR-J', name: 'San Juan' },
-  { code: 'AR-D', name: 'San Luis' },
-  { code: 'AR-Z', name: 'Santa Cruz' },
-  { code: 'AR-S', name: 'Santa Fe' },
-  { code: 'AR-G', name: 'Santiago del Estero' },
-  { code: 'AR-V', name: 'Tierra del Fuego' },
-  { code: 'AR-T', name: 'Tucumán' }
-];
-
-export function provinceName(code: string): string {
-  const p = AR_PROVINCES.find((x) => x.code === code);
-  return p?.name ?? code;
-}
+import type { RateOption } from './types';
 
 // ═══════════════════════════════════════════════════════════════
 // Zonas
@@ -169,16 +115,6 @@ export async function deleteRateAction(id: string): Promise<void> {
 // Cálculo de tarifas (público — usado en checkout)
 // ═══════════════════════════════════════════════════════════════
 
-export type RateOption = {
-  rate_id: string;
-  zone_id: string;
-  zone_name: string;
-  name: string;
-  price_cents: number;
-  is_free: boolean;
-  delivery_label: string | null;  // "3-5 días hábiles"
-};
-
 /**
  * Calcula opciones de envío para un tenant + provincia + subtotal.
  * Retorna todas las rates de zonas que matchean la provincia (o "*" wildcard).
@@ -235,6 +171,7 @@ export async function calculateShippingOptions(
       name: r.name,
       price_cents: isFree ? 0 : r.price_cents,
       is_free: isFree,
+      is_pickup: zone.is_pickup,
       delivery_label: deliveryLabel
     };
   });

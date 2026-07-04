@@ -146,6 +146,79 @@ export async function processMpPayment(opts: {
     return { ok: true, saleId: null, reused: false };
   }
 
+  // ─── Branch: si external_reference es "phys:<id>", procesar como orden física.
+  //     Marca la orden como pagada, decrementa stock (de variante o producto),
+  //     y registra el movimiento en product_stock_movements.
+  if (payment.external_reference && String(payment.external_reference).startsWith('phys:')) {
+    const orderId = String(payment.external_reference).slice(5);
+    const status = payment.status === 'approved' ? 'paid'
+      : payment.status === 'refunded' ? 'refunded'
+      : payment.status === 'pending' ? 'pending'
+      : 'failed';
+    try {
+      // Resolver buyer_user_id
+      let buyerId: string | null = null;
+      if (buyerEmail) {
+        const { data: prof } = await svc.from('profiles').select('id')
+          .eq('email', buyerEmail).maybeSingle<{ id: string }>();
+        buyerId = prof?.id ?? null;
+      }
+
+      // Update order status
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('physical_orders') as any).update({
+        status, payment_id: String(payment.id),
+        paid_at: status === 'paid' ? new Date().toISOString() : null,
+        buyer_user_id: buyerId,
+        updated_at: new Date().toISOString()
+      }).eq('id', orderId).eq('tenant_id', opts.tenantId);
+
+      // Si está pagada, decrementar stock item por item
+      if (status === 'paid') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: items } = await (svc.from('physical_order_items') as any)
+          .select('product_id, variant_id, qty').eq('order_id', orderId);
+        const orderItems = (items ?? []) as Array<{
+          product_id: string | null; variant_id: string | null; qty: number;
+        }>;
+        for (const it of orderItems) {
+          if (!it.product_id) continue;
+          if (it.variant_id) {
+            // decrementar variant.stock_qty
+            const { data: v } = await svc.from('product_variants')
+              .select('stock_qty').eq('id', it.variant_id).maybeSingle<{ stock_qty: number }>();
+            if (v) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (svc.from('product_variants') as any)
+                .update({ stock_qty: Math.max(0, v.stock_qty - it.qty) }).eq('id', it.variant_id);
+            }
+          } else {
+            // decrementar product.stock_qty
+            const { data: p } = await svc.from('physical_products')
+              .select('stock_qty').eq('id', it.product_id).maybeSingle<{ stock_qty: number }>();
+            if (p) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              await (svc.from('physical_products') as any)
+                .update({ stock_qty: Math.max(0, p.stock_qty - it.qty) }).eq('id', it.product_id);
+            }
+          }
+          // Log stock movement
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (svc.from('product_stock_movements') as any).insert({
+            tenant_id: opts.tenantId,
+            product_id: it.product_id,
+            variant_id: it.variant_id,
+            delta: -it.qty,
+            reason: 'sale',
+            order_id: orderId,
+            note: `MP payment ${payment.id}`
+          });
+        }
+      }
+    } catch { /* silent — retry via webhook idempotency */ }
+    return { ok: true, saleId: null, reused: false };
+  }
+
   // ─── Branch: si external_reference es "tip:<id>", procesar como tip y salir.
   if (payment.external_reference && String(payment.external_reference).startsWith('tip:')) {
     const tipId = String(payment.external_reference).slice(4);

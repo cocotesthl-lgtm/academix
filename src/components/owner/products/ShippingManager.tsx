@@ -4,10 +4,12 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   createZoneAction, updateZoneAction, deleteZoneAction,
-  createRateAction, updateRateAction, deleteRateAction,
+  createRateAction, updateRateAction, deleteRateAction
+} from '@/lib/shipping/actions';
+import {
   AR_PROVINCES, provinceName,
   type ShippingZone, type ShippingRate
-} from '@/lib/shipping/actions';
+} from '@/lib/shipping/types';
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat('es-AR', {
