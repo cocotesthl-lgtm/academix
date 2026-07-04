@@ -1,13 +1,30 @@
 import { cookies } from "next/headers";
+import type { Metadata } from "next";
 import { getTenantById } from "@/lib/tenant/resolve";
 import { getServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mergeConfig } from "@/lib/site/types";
 import { env } from "@/lib/env";
+import { tenantMetadata } from "@/lib/seo/meta";
 import { AffiliateBar } from "@/components/storefront/AffiliateBar";
 import { StorefrontUserMenu } from "@/components/storefront/StorefrontUserMenu";
 import { CartWidget } from "@/components/storefront/cart/CartWidget";
 import { WhatsAppFloat } from "@/components/storefront/WhatsAppFloat";
+
+/**
+ * Metadata default para TODO el storefront. Cada page individual puede
+ * overridear con su propia `generateMetadata` con más precisión.
+ * Los meta tags aparecen en preview de WhatsApp/Twitter/Facebook cuando
+ * alguien comparte un link del sitio.
+ */
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ tenantId: string }>;
+}): Promise<Metadata> {
+  const { tenantId } = await params;
+  return tenantMetadata(tenantId);
+}
 
 /**
  * URL completa al subdomain 'app' (panel global donde vive el

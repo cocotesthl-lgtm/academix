@@ -1,9 +1,55 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTenantById } from '@/lib/tenant/resolve';
 import { getServiceClient } from '@/lib/supabase/service';
+import { storefrontOrigin, truncate } from '@/lib/seo/meta';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ tenantId: string; slug: string }>;
+}): Promise<Metadata> {
+  const { tenantId, slug } = await params;
+  const tenant = await getTenantById(tenantId);
+  if (!tenant) return {};
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (svc.from('articles') as any)
+    .select('title, excerpt, cover_url, author_name, published_at, body_html')
+    .eq('tenant_id', tenantId).eq('slug', slug).eq('status', 'published').maybeSingle();
+  const a = data as {
+    title: string; excerpt: string | null; cover_url: string | null;
+    author_name: string | null; published_at: string; body_html: string;
+  } | null;
+  if (!a) return {};
+  const origin = storefrontOrigin(tenant.slug);
+  const description = truncate(a.excerpt || a.body_html, 160);
+  const url = `${origin}/blog/${slug}`;
+  return {
+    title: a.title,
+    description,
+    openGraph: {
+      type: 'article',
+      title: a.title,
+      description,
+      url,
+      siteName: tenant.name,
+      publishedTime: a.published_at,
+      authors: a.author_name ? [a.author_name] : undefined,
+      images: a.cover_url ? [{ url: a.cover_url }] : undefined
+    },
+    twitter: {
+      card: a.cover_url ? 'summary_large_image' : 'summary',
+      title: a.title,
+      description,
+      images: a.cover_url ? [a.cover_url] : undefined
+    },
+    alternates: { canonical: url }
+  };
+}
 
 type ArticleFull = {
   id: string;

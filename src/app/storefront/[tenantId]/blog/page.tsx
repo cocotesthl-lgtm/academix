@@ -1,9 +1,36 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTenantById } from '@/lib/tenant/resolve';
 import { getServiceClient } from '@/lib/supabase/service';
+import { storefrontOrigin } from '@/lib/seo/meta';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ tenantId: string }>;
+}): Promise<Metadata> {
+  const { tenantId } = await params;
+  const tenant = await getTenantById(tenantId);
+  if (!tenant) return {};
+  const origin = storefrontOrigin(tenant.slug);
+  const description = `Últimas notas, artículos y novedades de ${tenant.name}.`;
+  return {
+    title: 'Blog',
+    description,
+    openGraph: {
+      type: 'website',
+      title: `Blog · ${tenant.name}`,
+      description,
+      url: `${origin}/blog`,
+      siteName: tenant.name,
+      images: tenant.brand?.logo_url ? [{ url: tenant.brand.logo_url }] : undefined
+    },
+    alternates: { canonical: `${origin}/blog`, types: { 'application/rss+xml': `${origin}/rss.xml` } }
+  };
+}
 
 type ArticleCard = {
   id: string;

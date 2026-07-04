@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getTenantById } from "@/lib/tenant/resolve";
+import { storefrontOrigin, truncate } from "@/lib/seo/meta";
 import { getServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { trackClick } from "@/lib/affiliates/tracking";
@@ -16,6 +18,49 @@ import { VipPackLanding, type VipMediaItem } from "@/components/storefront/VipPa
 import { ReservationWidget } from "@/components/storefront/ReservationWidget";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Meta tags dinámicos por publicación. Cuando alguien comparte
+ * <tenant>/c/<slug> en WhatsApp/Twitter/Facebook, aparece una tarjeta
+ * con la portada del producto + título + descripción.
+ */
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ tenantId: string; courseSlug: string }>;
+}): Promise<Metadata> {
+  const { tenantId, courseSlug } = await params;
+  const tenant = await getTenantById(tenantId);
+  if (!tenant) return {};
+  const svc = getServiceClient();
+  const { data } = await svc.from('courses')
+    .select('title, description, cover_url')
+    .eq('tenant_id', tenantId).eq('slug', courseSlug).eq('status', 'published')
+    .maybeSingle<{ title: string; description: string | null; cover_url: string | null }>();
+  if (!data) return {};
+  const origin = storefrontOrigin(tenant.slug);
+  const description = truncate(data.description, 160);
+  const url = `${origin}/c/${courseSlug}`;
+  return {
+    title: data.title,
+    description,
+    openGraph: {
+      type: 'website',
+      title: data.title,
+      description,
+      url,
+      siteName: tenant.name,
+      images: data.cover_url ? [{ url: data.cover_url }] : undefined
+    },
+    twitter: {
+      card: data.cover_url ? 'summary_large_image' : 'summary',
+      title: data.title,
+      description,
+      images: data.cover_url ? [data.cover_url] : undefined
+    },
+    alternates: { canonical: url }
+  };
+}
 
 type CourseDetail = {
   id: string;
