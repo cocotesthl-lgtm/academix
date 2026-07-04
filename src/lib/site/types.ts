@@ -109,6 +109,7 @@ export type SectionKey =
   | 'contact'
   | 'map'
   | 'workwithus'
+  | 'blog_preview'
   | 'cta_final';
 
 /**
@@ -209,6 +210,12 @@ export type SiteConfig = {
       cta_label_logged_out: string;
       show_terms: boolean;   // muestra el textarea affiliate_terms del tenant
     };
+    blog_preview: SectionBase & {
+      title: string;
+      subtitle: string;
+      count: number;       // cuántos artículos mostrar (1-6)
+      cta_label: string;   // "Ver todo el blog" — link a /blog
+    };
   };
   order: SectionKey[];
   nav: {
@@ -243,6 +250,7 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'custom',
   'cta_final',
   'newsletter',
+  'blog_preview', // preview del blog antes del contacto
   'contact',
   'workwithus', // "Trabajá con nosotros" al final, antes del mapa
   'map'         // mapa al final, normalmente antes del footer
@@ -463,6 +471,13 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       cta_label: 'Quiero ser afiliado',
       cta_label_logged_out: 'Iniciar sesión para aplicar',
       show_terms: true
+    },
+    blog_preview: {
+      enabled: false, // se prende cuando el owner publica su primer artículo
+      title: 'Últimas del blog',
+      subtitle: 'Novedades, guías y notas.',
+      count: 3,
+      cta_label: 'Ver todos los artículos'
     }
   },
   order: DEFAULT_ORDER,

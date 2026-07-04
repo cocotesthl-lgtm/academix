@@ -204,6 +204,11 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
     const n = parseInt(String(formData.get('max_visible') ?? '3'), 10);
     section.max_visible = Math.min(48, Math.max(1, Number.isFinite(n) ? n : 3));
   }
+  // blog_preview: cantidad de artículos a mostrar (1-6).
+  if (formData.has('count')) {
+    const n = parseInt(String(formData.get('count') ?? '3'), 10);
+    section.count = Math.min(6, Math.max(1, Number.isFinite(n) ? n : 3));
+  }
   if (formData.has('pagination_mode')) {
     const v = String(formData.get('pagination_mode') ?? 'show_more');
     section.pagination_mode = v === 'paginated' ? 'paginated' : 'show_more';

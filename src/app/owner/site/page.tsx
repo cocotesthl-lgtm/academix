@@ -30,6 +30,7 @@ import {
   CtaFinalEditor,
   ContactEditor,
   MapEditor,
+  BlogPreviewEditor,
   CustomEditor,
   NavEditor,
   FooterEditor
@@ -67,6 +68,7 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   contact:      { title: "✉️ Contacto", desc: "Formulario de contacto con email y WhatsApp opcionales." },
   map:          { title: "📍 Mapa / Ubicación", desc: "Mostrá dónde estás con Google Maps embebido (sin API key)." },
   workwithus:   { title: "🤝 Trabajá con nosotros", desc: "CTA de programa de afiliados. Aparece solo si activaste el programa en Afiliados → Configuración." },
+  blog_preview: { title: "📰 Últimas del blog", desc: "Grid con los últimos artículos publicados en tu blog. Link para ver todo." },
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
 
@@ -497,6 +499,16 @@ export default async function SiteBuilderPage() {
                   zoom: cfg.sections.map.zoom ?? 15,
                   height_px: cfg.sections.map.height_px ?? 400,
                   show_directions_cta: cfg.sections.map.show_directions_cta ?? true
+                }}
+              />
+            )}
+            {key === 'blog_preview' && (
+              <BlogPreviewEditor
+                initial={{
+                  title: cfg.sections.blog_preview.title,
+                  subtitle: cfg.sections.blog_preview.subtitle,
+                  count: cfg.sections.blog_preview.count ?? 3,
+                  cta_label: cfg.sections.blog_preview.cta_label
                 }}
               />
             )}

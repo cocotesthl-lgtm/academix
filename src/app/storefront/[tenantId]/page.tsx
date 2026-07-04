@@ -157,6 +157,27 @@ export default async function StorefrontHome({
     } catch { /* migración no corrida — render sin form */ }
   }
   const categories = (catsRaw ?? []) as Category[];
+
+  // Últimos artículos del blog (solo si la sección blog_preview está enabled).
+  // Defensivo si migration 0050 no corrió: tabla no existe → catch silencioso.
+  type BlogPreviewArticle = {
+    id: string; slug: string; title: string;
+    excerpt: string | null; cover_url: string | null;
+    author_name: string | null; published_at: string;
+  };
+  let blogPreviewArticles: BlogPreviewArticle[] = [];
+  const blogPreviewCfg = cfg.sections.blog_preview;
+  if (blogPreviewCfg?.enabled) {
+    try {
+      const count = Math.max(1, Math.min(6, blogPreviewCfg.count || 3));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: articlesRaw } = await (svc.from('articles') as any)
+        .select('id, slug, title, excerpt, cover_url, author_name, published_at')
+        .eq('tenant_id', tenantId).eq('status', 'published')
+        .order('published_at', { ascending: false }).limit(count);
+      blogPreviewArticles = (articlesRaw ?? []) as BlogPreviewArticle[];
+    } catch { /* migration 0050 pendiente */ }
+  }
   const catById = new Map(categories.map((c) => [c.id, c]));
   const selectedCat = selectedCatSlug ? categories.find((c) => c.slug === selectedCatSlug) ?? null : null;
 
@@ -1104,6 +1125,63 @@ export default async function StorefrontHome({
                       </a>
                     )}
                   </div>
+                </div>
+              </section>
+            );
+          }
+
+          case 'blog_preview': {
+            // Si no hay artículos publicados, no renderea nada aunque la sección esté enabled.
+            if (blogPreviewArticles.length === 0) return null;
+            const c = cfg.sections.blog_preview;
+            const gridCols = blogPreviewArticles.length === 1 ? 'md:grid-cols-1'
+              : blogPreviewArticles.length === 2 ? 'md:grid-cols-2'
+              : 'md:grid-cols-3';
+            return (
+              <section key={key} {...dt} id={key} className="px-6 py-16"
+                style={{ background: bg ?? undefined }}>
+                <div className="max-w-6xl mx-auto">
+                  <FadeIn>
+                    <div className="text-center mb-10">
+                      <h2 className="text-3xl md:text-4xl font-bold mb-2"
+                        dangerouslySetInnerHTML={richHtml(c.title)} />
+                      {c.subtitle && <p className="text-black/60">{c.subtitle}</p>}
+                    </div>
+                  </FadeIn>
+                  <div className={`grid ${gridCols} gap-6`}>
+                    {blogPreviewArticles.map((a) => {
+                      const dateLabel = new Date(a.published_at).toLocaleDateString('es-AR', {
+                        day: 'numeric', month: 'short', year: 'numeric'
+                      });
+                      return (
+                        <Link key={a.id} href={`/blog/${a.slug}`}
+                          className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
+                          {a.cover_url && (
+                            <div className="aspect-[16/9] bg-zinc-100 overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <div className="p-5">
+                            <div className="text-[10px] uppercase tracking-widest text-black/45 mb-2">
+                              {dateLabel}{a.author_name ? ` · ${a.author_name}` : ''}
+                            </div>
+                            <h3 className="font-bold text-lg mb-1.5 leading-tight">{a.title}</h3>
+                            {a.excerpt && <p className="text-sm text-black/60 line-clamp-2">{a.excerpt}</p>}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                  {c.cta_label && (
+                    <div className="text-center mt-10">
+                      <Link href="/blog"
+                        className="inline-block rounded-md border border-black/15 px-6 py-3 text-sm font-semibold hover:bg-black/[0.03] transition"
+                        style={{ borderColor: primary, color: primary }}>
+                        {c.cta_label} →
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </section>
             );
