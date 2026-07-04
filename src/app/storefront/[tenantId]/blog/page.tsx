@@ -17,6 +17,7 @@ export async function generateMetadata({
   if (!tenant) return {};
   const origin = storefrontOrigin(tenant.slug);
   const description = `Últimas notas, artículos y novedades de ${tenant.name}.`;
+  const ogImage = tenant.brand?.og_image_url ?? null;
   return {
     title: 'Blog',
     description,
@@ -26,7 +27,13 @@ export async function generateMetadata({
       description,
       url: `${origin}/blog`,
       siteName: tenant.name,
-      images: tenant.brand?.logo_url ? [{ url: tenant.brand.logo_url }] : undefined
+      images: ogImage ? [{ url: ogImage, width: 1200, height: 630 }] : undefined
+    },
+    twitter: {
+      card: ogImage ? 'summary_large_image' : 'summary',
+      title: `Blog · ${tenant.name}`,
+      description,
+      images: ogImage ? [ogImage] : undefined
     },
     alternates: { canonical: `${origin}/blog`, types: { 'application/rss+xml': `${origin}/rss.xml` } }
   };

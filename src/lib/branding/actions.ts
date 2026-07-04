@@ -56,6 +56,8 @@ export async function updateBrandingAction(
   const logoLayoutRaw = String(formData.get('logo_layout') ?? '').trim();
   const logoUrl = String(formData.get('logo_url') ?? '').trim();
   const logoText = String(formData.get('logo_text') ?? '').trim();
+  const ogImageUrl = String(formData.get('og_image_url') ?? '').trim();
+  const tagline = String(formData.get('tagline') ?? '').trim();
 
   if (!name) return { ok: false, error: 'El nombre no puede estar vacío.' };
 
@@ -75,6 +77,10 @@ export async function updateBrandingAction(
   brand.logo_url = safeImageUrl(logoUrl);
   // En modo horizontal el texto no se renderiza, lo guardamos vacío.
   brand.logo_text = logoLayout === 'horizontal' ? null : (logoText.slice(0, 40) || null);
+  // OG image (1200×630) para preview en WhatsApp/Twitter/Facebook.
+  brand.og_image_url = safeImageUrl(ogImageUrl);
+  // Tagline corta que enriquece el <title> hasta 50-60 chars ideales de SEO.
+  brand.tagline = tagline.slice(0, 80) || null;
 
   const updatePayload = { name, brand, updated_at: new Date().toISOString() };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

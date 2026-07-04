@@ -7,6 +7,10 @@ export type TenantBrand = {
   favicon_url?: string;
   primary_color?: string;
   accent_color?: string;
+  /** Imagen 1200×630 usada como preview en WhatsApp/Twitter/Facebook cuando se comparte un link. */
+  og_image_url?: string;
+  /** Frase corta (ej. "Cursos de inglés online"). Se concatena al title para llegar a 50-60 chars ideales de SEO. */
+  tagline?: string;
 };
 
 export type Tenant = {

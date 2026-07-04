@@ -33,32 +33,43 @@ export async function tenantMetadata(tenantId: string): Promise<Metadata> {
   const tenant = await getTenantById(tenantId);
   if (!tenant) return { title: 'Sitio no encontrado' };
   const origin = storefrontOrigin(tenant.slug);
-  const logo = tenant.brand?.logo_url ?? null;
+  // OG image debe ser 1200×630 (1.91:1). El logo NO cumple ese ratio →
+  // solo usamos og_image_url si el owner lo cargó específicamente para esto.
+  const ogImage = tenant.brand?.og_image_url ?? null;
+  const tagline = tenant.brand?.tagline?.trim();
+
+  // Title de 50-60 chars ideal para SEO. Si hay tagline, lo concatenamos.
+  const titleWithTagline = tagline
+    ? truncate(`${tenant.name} — ${tagline}`, 60)
+    : tenant.name;
+
   const description = truncate(
-    `${tenant.name} — sitio oficial. Publicaciones, artículos y contacto.`,
+    tagline
+      ? `${tenant.name} — ${tagline}. Publicaciones, artículos y contacto.`
+      : `${tenant.name} — sitio oficial. Publicaciones, artículos y contacto.`,
     160
   );
   return {
     metadataBase: new URL(origin),
     title: {
-      default: tenant.name,
+      default: titleWithTagline,
       template: `%s · ${tenant.name}`
     },
     description,
     openGraph: {
       type: 'website',
       siteName: tenant.name,
-      title: tenant.name,
+      title: titleWithTagline,
       description,
       url: origin,
-      images: logo ? [{ url: logo }] : undefined,
+      images: ogImage ? [{ url: ogImage, width: 1200, height: 630 }] : undefined,
       locale: 'es_AR'
     },
     twitter: {
-      card: logo ? 'summary_large_image' : 'summary',
-      title: tenant.name,
+      card: ogImage ? 'summary_large_image' : 'summary',
+      title: titleWithTagline,
       description,
-      images: logo ? [logo] : undefined
+      images: ogImage ? [ogImage] : undefined
     },
     alternates: { canonical: origin }
   };

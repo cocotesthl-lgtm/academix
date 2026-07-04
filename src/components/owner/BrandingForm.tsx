@@ -10,6 +10,8 @@ type Brand = {
   logo_layout?: 'square' | 'horizontal' | null;
   primary_color?: string;
   accent_color?: string;
+  og_image_url?: string | null;
+  tagline?: string | null;
 };
 
 export function BrandingForm({
@@ -34,6 +36,8 @@ export function BrandingForm({
   );
   const [logoUrl, setLogoUrl] = useState(initialBrand.logo_url ?? '');
   const [logoText, setLogoText] = useState(initialBrand.logo_text ?? '');
+  const [ogImageUrl, setOgImageUrl] = useState(initialBrand.og_image_url ?? '');
+  const [tagline, setTagline] = useState(initialBrand.tagline ?? '');
 
   const domain = rootDomain ?? 'bzseguridad.store';
 
@@ -174,6 +178,64 @@ export function BrandingForm({
               className="w-12 h-10 rounded-md bg-transparent border border-white/15 cursor-pointer"
             />
             <span className="text-sm text-white/60 font-mono">{accent}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* SEO / compartir en redes */}
+      <div className="rounded-xl border border-white/10 p-4 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-white/85">SEO y compartir en redes</h3>
+          <p className="text-xs text-white/50 mt-0.5">
+            Lo que aparece cuando alguien busca tu sitio en Google o comparte un link en WhatsApp / Twitter / Facebook.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm mb-1.5 text-white/70">
+            Tagline <span className="text-white/40">(frase corta)</span>
+          </label>
+          <input
+            type="text"
+            name="tagline"
+            value={tagline}
+            onChange={(e) => setTagline(e.target.value)}
+            maxLength={80}
+            placeholder="Ej: Cursos de inglés online para adultos"
+            className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+          />
+          <p className="text-xs text-white/40 mt-1">
+            Se agrega al título de tu sitio en Google. Ideal 40-60 caracteres. ({tagline.length}/80)
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm mb-1.5 text-white/70">
+            Imagen para compartir <span className="text-white/40">(1200×630 px)</span>
+          </label>
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 rounded-md bg-white/5 border border-white/15 flex items-center justify-center overflow-hidden w-40 h-[84px]">
+              {ogImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={ogImageUrl} alt="og" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs text-white/40 text-center px-2">sin imagen<br />(no aparece foto al compartir)</span>
+              )}
+            </div>
+            <div className="flex-1">
+              <input
+                type="url"
+                name="og_image_url"
+                value={ogImageUrl}
+                onChange={(e) => setOgImageUrl(e.target.value)}
+                placeholder="https://… (URL de imagen 1200×630)"
+                className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                📐 Exactamente <strong>1200×630 px</strong> (ratio 1.91:1). Es lo que exigen WhatsApp / Twitter / Facebook.
+                Si dejás vacío, se comparte el link sin foto — mejor eso que una foto cortada.
+              </p>
+            </div>
           </div>
         </div>
       </div>
