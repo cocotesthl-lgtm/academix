@@ -99,6 +99,7 @@ const NAV: NavEntry[] = [
       items: [
         { label: 'Leads', href: '/crm' },                  // era "CRM (leads)"
         { label: 'Clientes', href: '/clientes' },
+        { label: 'Blog', href: '/blog' },                  // Módulo nuevo — artículos editoriales
         { label: 'Formularios', href: '/forms' },
         { label: 'Mensajes', href: '/mensajes' },
         { label: 'Afiliados', href: '/affiliates' }        // movido desde "Personas"

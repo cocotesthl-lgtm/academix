@@ -1125,6 +1125,30 @@ alter table public.courses add column if not exists module_label text;
 alter table public.courses add column if not exists lesson_label text;
 alter table public.courses add column if not exists show_content_section boolean not null default true;
 
+-- ── 0050 Blog / CMS de artículos ──
+create table if not exists public.articles (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  slug text not null,
+  title text not null,
+  excerpt text,
+  cover_url text,
+  body_html text not null default '',
+  author_name text,
+  category_id uuid references public.course_categories(id) on delete set null,
+  status text not null default 'draft' check (status in ('draft', 'published')),
+  published_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (tenant_id, slug)
+);
+create index if not exists idx_articles_tenant_status on public.articles (tenant_id, status, published_at desc);
+alter table public.articles enable row level security;
+drop policy if exists articles_owner_all on public.articles;
+create policy articles_owner_all on public.articles for all using (public.is_tenant_owner(tenant_id)) with check (public.is_tenant_owner(tenant_id));
+drop policy if exists articles_public_read on public.articles;
+create policy articles_public_read on public.articles for select using (status = 'published');
+
 -- ── 0049 Botón flotante de WhatsApp ──
 alter table public.tenants
   add column if not exists whatsapp_number text,
