@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { setCourseRibbonAction } from '@/lib/courses/actions';
 import { showToast } from '@/components/owner/ToastBus';
 
@@ -38,6 +38,14 @@ export function CourseRibbonEditor({
       showToast(text ? `Cinta "${text}" aplicada` : 'Cinta eliminada', 'success');
     });
   }
+
+  // Escucha el "Guardar" global del toolbar del editor.
+  useEffect(() => {
+    function handler() { save(); }
+    window.addEventListener('cp:save-all', handler);
+    return () => window.removeEventListener('cp:save-all', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, tone]);
 
   const currentToneCls = TONE_OPTIONS.find((t) => t.value === tone)?.preview ?? 'bg-orange-500 text-white';
 
@@ -110,14 +118,14 @@ export function CourseRibbonEditor({
               Quitar
             </button>
           )}
-          <button
-            type="button"
-            onClick={save}
-            disabled={pending}
-            className="text-sm rounded bg-white text-black px-4 py-2 font-semibold hover:bg-white/90 disabled:opacity-50"
-          >
-            {pending ? 'Guardando…' : 'Guardar cinta'}
-          </button>
+          {pending && (
+            <span className="text-xs text-white/60 flex items-center gap-1">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+              Guardando…
+            </span>
+          )}
         </div>
       </div>
     </section>

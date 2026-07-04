@@ -5,7 +5,7 @@ import { env } from "@/lib/env";
 import { CourseEditor, type Course, type Module, type Lesson, type Category } from "@/components/owner/courses/CourseEditor";
 import { CourseBuilderToolbar } from "@/components/owner/courses/CourseBuilderToolbar";
 import { GrantEnrollmentForm } from "@/components/owner/courses/GrantEnrollmentForm";
-import { setCourseContentLabelsAction } from "@/lib/courses/actions";
+import { ContentLabelsForm } from "@/components/owner/courses/ContentLabelsForm";
 import { CourseCheckoutOverride } from "@/components/owner/checkout/CourseCheckoutOverride";
 import { CourseCalendarConfig } from "@/components/owner/courses/CourseCalendarConfig";
 import { CourseSubscriptionConfig } from "@/components/owner/courses/CourseSubscriptionConfig";
@@ -216,41 +216,13 @@ export default async function CourseEditPage({
           Personalizá los textos de la sección que muestra los módulos/lecciones en la
           página de venta del producto. Útil si no vendés una publicación (ej. ecommerce → &quot;Detalles&quot; / &quot;variantes&quot; / &quot;opciones&quot;).
         </p>
-        <form action={setCourseContentLabelsAction} className="grid sm:grid-cols-2 gap-3">
-          <input type="hidden" name="id" value={course.id} />
-          <label className="block sm:col-span-2">
-            <span className="text-xs text-white/55">Título de la sección</span>
-            <input name="content_title" defaultValue={courseExtras?.content_title ?? ''}
-              placeholder="Contenido de la publicación"
-              maxLength={80}
-              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          </label>
-          <label className="block">
-            <span className="text-xs text-white/55">Etiqueta &quot;módulos&quot; (plural)</span>
-            <input name="module_label" defaultValue={courseExtras?.module_label ?? ''}
-              placeholder="módulos"
-              maxLength={40}
-              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          </label>
-          <label className="block">
-            <span className="text-xs text-white/55">Etiqueta &quot;lecciones&quot; (plural)</span>
-            <input name="lesson_label" defaultValue={courseExtras?.lesson_label ?? ''}
-              placeholder="lecciones"
-              maxLength={40}
-              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
-          </label>
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
-            <input type="checkbox" name="show_content_section"
-              defaultChecked={courseExtras?.show_content_section !== false} />
-            Mostrar la sección de contenido en la página pública
-          </label>
-          <div className="sm:col-span-2">
-            <button type="submit"
-              className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90">
-              Guardar
-            </button>
-          </div>
-        </form>
+        <ContentLabelsForm
+          courseId={course.id}
+          contentTitle={courseExtras?.content_title}
+          moduleLabel={courseExtras?.module_label}
+          lessonLabel={courseExtras?.lesson_label}
+          showContentSection={courseExtras?.show_content_section !== false}
+        />
       </section>
 
       <section className="max-w-3xl pt-8 border-t border-white/10">

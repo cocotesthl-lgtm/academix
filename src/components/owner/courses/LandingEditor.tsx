@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateCourseAction } from '@/lib/courses/actions';
 import {
@@ -148,6 +148,14 @@ export function LandingEditor({
       setTimeout(() => setSaved(false), 2200);
     });
   }
+
+  // Escucha el evento global "Guardar" del toolbar.
+  useEffect(() => {
+    function handler() { save(); }
+    window.addEventListener('cp:save-all', handler);
+    return () => window.removeEventListener('cp:save-all', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template, config, variants, courseTitle]);
 
   /* Alias para mantener el resto del JSX usando 'template'/'config' como antes */
   const tplForView = currentTemplate;
@@ -495,18 +503,20 @@ export function LandingEditor({
           </div>
         )}
 
-        {/* Botón guardar */}
-        <div className="flex items-center gap-3 pt-3 border-t border-white/10 sticky bottom-0 bg-[#0a0a0a] py-3 -mx-1 px-1">
-          <button
-            type="button"
-            onClick={save}
-            disabled={pending}
-            className="rounded bg-white text-black px-5 py-2 text-sm font-bold disabled:opacity-40"
-          >
-            {pending ? 'Guardando…' : '💾 Guardar landing'}
-          </button>
-          {saved && <span className="text-sm text-emerald-400">✓ Landing actualizada</span>}
-        </div>
+        {/* Botón "Guardar landing" sacado: se dispara desde el toolbar arriba. */}
+        {(pending || saved) && (
+          <div className="pt-3 border-t border-white/10 text-xs flex items-center gap-2">
+            {pending && (
+              <>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin text-white/60">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+                <span className="text-white/60">Guardando landing…</span>
+              </>
+            )}
+            {saved && !pending && <span className="text-emerald-400">✓ Landing actualizada</span>}
+          </div>
+        )}
       </div>
 
       {/* Preview en vivo */}
