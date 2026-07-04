@@ -7,6 +7,7 @@ import { env } from "@/lib/env";
 import { AffiliateBar } from "@/components/storefront/AffiliateBar";
 import { StorefrontUserMenu } from "@/components/storefront/StorefrontUserMenu";
 import { CartWidget } from "@/components/storefront/cart/CartWidget";
+import { WhatsAppFloat } from "@/components/storefront/WhatsAppFloat";
 
 /**
  * URL completa al subdomain 'app' (panel global donde vive el
@@ -125,18 +126,28 @@ export default async function StorefrontLayout({
       }
     } catch { /* ignore */ }
   }
-  // Cart mode + UI config (defensivo si migrations 0034/0044 pendientes)
+  // Cart mode + WhatsApp config (defensivo si migrations 0034/0044/0049 pendientes)
   let cartEnabled = false;
   let cartPosition: 'header' | 'floating' | 'both' = 'header';
   let cartDisplay: 'dropdown' | 'page' = 'dropdown';
+  let whatsappNumber: string | null = null;
+  let whatsappGreeting: string | null = null;
+  let whatsappPosition: 'left' | 'right' = 'right';
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: tcart } = await (svc.from('tenants') as any)
-      .select('cart_enabled, cart_position, cart_display').eq('id', tenantId).maybeSingle();
-    const row = tcart as { cart_enabled?: boolean; cart_position?: string; cart_display?: string } | null;
+      .select('cart_enabled, cart_position, cart_display, whatsapp_number, whatsapp_greeting, whatsapp_position')
+      .eq('id', tenantId).maybeSingle();
+    const row = tcart as {
+      cart_enabled?: boolean; cart_position?: string; cart_display?: string;
+      whatsapp_number?: string | null; whatsapp_greeting?: string | null; whatsapp_position?: string;
+    } | null;
     cartEnabled = row?.cart_enabled ?? false;
     if (row?.cart_position === 'floating' || row?.cart_position === 'both') cartPosition = row.cart_position;
     if (row?.cart_display === 'page') cartDisplay = 'page';
+    whatsappNumber = row?.whatsapp_number ?? null;
+    whatsappGreeting = row?.whatsapp_greeting ?? null;
+    if (row?.whatsapp_position === 'left') whatsappPosition = 'left';
   } catch { /* migration pendiente */ }
   const showHeaderCart = cartEnabled && (cartPosition === 'header' || cartPosition === 'both');
   const showFloatingCart = cartEnabled && (cartPosition === 'floating' || cartPosition === 'both');
@@ -222,6 +233,15 @@ export default async function StorefrontLayout({
       {showFloatingCart && (
         <CartWidget tenantId={tenantId} primary={primary} variant="floating" display={cartDisplay} />
       )}
+
+      {/* Botón flotante de WhatsApp (si el owner cargó un número).
+          Si el cart flotante está en la misma esquina, el WhatsApp se
+          empuja a la otra para no superponer. */}
+      <WhatsAppFloat
+        number={whatsappNumber}
+        greeting={whatsappGreeting}
+        position={showFloatingCart && whatsappPosition === 'right' ? 'left' : whatsappPosition}
+      />
 
       <footer data-storefront-footer className="storefront-footer border-t border-black/10 mt-16 py-10">
         <div className="max-w-5xl mx-auto px-6 text-center space-y-4">

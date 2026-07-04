@@ -40,6 +40,7 @@ import { EyebrowAutoSave } from "@/components/owner/site/EyebrowAutoSave";
 import { HrefTargetsProvider } from "@/components/owner/site/HrefSelect";
 import { buildCourseTargets } from "@/components/owner/site/href-targets";
 import { SiteBuilderToolbar } from "@/components/owner/site/SiteBuilderToolbar";
+import { setWhatsAppConfigAction } from "@/lib/whatsapp/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,7 @@ export default async function SiteBuilderPage() {
   // aún no corrió: los campos vienen undefined y todo sigue funcionando.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: tenantRow } = await (svc.from("tenants") as any)
-    .select("site_config, site_config_published, site_config_published_at, brand")
+    .select("site_config, site_config_published, site_config_published_at, brand, whatsapp_number, whatsapp_greeting, whatsapp_position")
     .eq("id", tenant.id)
     .single();
   const tr = tenantRow as {
@@ -85,7 +86,13 @@ export default async function SiteBuilderPage() {
     site_config_published?: unknown;
     site_config_published_at?: string | null;
     brand?: { primary_color?: string } | null;
+    whatsapp_number?: string | null;
+    whatsapp_greeting?: string | null;
+    whatsapp_position?: string | null;
   } | null;
+  const waNumber = tr?.whatsapp_number ?? '';
+  const waGreeting = tr?.whatsapp_greeting ?? '';
+  const waPosition = (tr?.whatsapp_position === 'left' ? 'left' : 'right') as 'left' | 'right';
   const cfg = mergeConfig(tr?.site_config);
   const primary = tr?.brand?.primary_color ?? '#f97316';
   // ¿Hay cambios sin publicar? Comparo la serialización de ambos objetos.
@@ -167,6 +174,54 @@ export default async function SiteBuilderPage() {
           (/owner/templates) que tiene un catálogo completo por vertical.
           El bloque viejo fue eliminado de acá porque duplicaba esa entrada
           de menú y confundía. */}
+
+      {/* Botón flotante de WhatsApp */}
+      <div className="rounded-xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-emerald-500/[0.02] p-5">
+        <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              💬 Botón flotante de WhatsApp
+              {waNumber && (
+                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Activo</span>
+              )}
+            </h2>
+            <p className="text-sm text-white/60 mt-1">
+              Aparece en tu sitio abajo a la derecha (o izquierda). Al clickearlo
+              abre WhatsApp Web / la app con un mensaje pre-cargado.
+            </p>
+          </div>
+        </div>
+        <form action={setWhatsAppConfigAction} className="grid sm:grid-cols-2 gap-3">
+          <label className="block sm:col-span-2">
+            <span className="text-xs uppercase tracking-wider text-white/55 font-semibold">Número de WhatsApp</span>
+            <input name="whatsapp_number" defaultValue={waNumber}
+              placeholder="+54 9 11 2345 6789"
+              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+            <span className="text-[10px] text-white/40">Formato internacional. Dejalo vacío para desactivar el botón.</span>
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="text-xs uppercase tracking-wider text-white/55 font-semibold">Mensaje que se abre pre-cargado (opcional)</span>
+            <textarea name="whatsapp_greeting" defaultValue={waGreeting} rows={2}
+              maxLength={300}
+              placeholder="Hola, vi tu sitio y quería consultar por..."
+              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+          </label>
+          <label className="block">
+            <span className="text-xs uppercase tracking-wider text-white/55 font-semibold">Posición</span>
+            <select name="whatsapp_position" defaultValue={waPosition}
+              className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
+              <option value="right" className="bg-[#0a0a0a]">Abajo a la derecha (default)</option>
+              <option value="left" className="bg-[#0a0a0a]">Abajo a la izquierda</option>
+            </select>
+          </label>
+          <div className="sm:col-span-2">
+            <button type="submit"
+              className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90">
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
 
       {cfg.order.map((key, idx) => {
         const meta = SECTION_META[key];

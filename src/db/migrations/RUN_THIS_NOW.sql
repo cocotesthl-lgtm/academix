@@ -1125,6 +1125,18 @@ alter table public.courses add column if not exists module_label text;
 alter table public.courses add column if not exists lesson_label text;
 alter table public.courses add column if not exists show_content_section boolean not null default true;
 
+-- ── 0049 Botón flotante de WhatsApp ──
+alter table public.tenants
+  add column if not exists whatsapp_number text,
+  add column if not exists whatsapp_greeting text,
+  add column if not exists whatsapp_position text not null default 'right';
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'tenants_whatsapp_position_check') then
+    alter table public.tenants add constraint tenants_whatsapp_position_check
+      check (whatsapp_position in ('left', 'right'));
+  end if;
+end $$;
+
 -- ── 0048 Site draft vs published (builder Wix-style) ──
 alter table public.tenants
   add column if not exists site_config_published jsonb,
