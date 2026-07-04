@@ -66,9 +66,11 @@ const NAV: NavEntry[] = [
       label: 'Catálogo', icon: 'shopping-bag', moduleKey: 'catalog',
       items: [
         { label: 'Publicaciones', href: '/courses' },      // era "Ofertas"
+        { label: 'Productos físicos', href: '/products' }, // ecommerce físico
         { label: 'Contenido VIP', href: '/vip' },
         { label: 'Bundles', href: '/bundles' },
         { label: 'Categorías', href: '/categories' },
+        { label: 'Envíos', href: '/shipping' },            // zonas + tarifas
         { label: 'Cupones', href: '/coupons' },            // movido desde "Mi sitio"
         { label: 'Checkout', href: '/checkout' }           // movido desde "Mi sitio"
       ]
