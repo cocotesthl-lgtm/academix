@@ -12,13 +12,28 @@ import { useState, useEffect, useCallback } from 'react';
  */
 
 export type CartItem = {
-  id: string;          // course_id (o pack/event id)
+  /**
+   * ID único dentro del carrito. Para cursos = course_id.
+   * Para productos físicos = `phys:${product_id}:${variant_id | 'default'}`
+   * — así múltiples variantes del mismo producto se contabilizan aparte.
+   */
+  id: string;
   slug: string;
   title: string;
   price_cents: number;
   currency: string;
   cover_url?: string | null;
   qty: number;
+  /** kind default 'course' (retrocompat). Físicos = 'physical'. */
+  kind?: 'course' | 'physical';
+  /** Solo para físicos: referencias reales que necesita el checkout. */
+  product_id?: string;
+  variant_id?: string | null;
+  variant_label?: string | null;
+  /** Stock máximo permitido (para bloquear +qty en cart). */
+  max_stock?: number;
+  /** True si el producto necesita dirección de envío. */
+  requires_shipping?: boolean;
 };
 
 const STORAGE_KEY_PREFIX = 'curplat_cart_';

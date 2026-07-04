@@ -178,6 +178,28 @@ export default async function StorefrontHome({
       blogPreviewArticles = (articlesRaw ?? []) as BlogPreviewArticle[];
     } catch { /* migration 0050 pendiente */ }
   }
+
+  // Productos físicos destacados (solo si la sección products está enabled).
+  // Defensivo si migration 0051 no corrió: tabla no existe → catch silencioso.
+  type ProductPreview = {
+    id: string; slug: string; title: string;
+    price_cents: number; compare_at_price_cents: number | null;
+    currency: string; cover_url: string | null;
+    stock_qty: number; track_stock: boolean;
+  };
+  let previewProducts: ProductPreview[] = [];
+  const productsCfg = cfg.sections.products;
+  if (productsCfg?.enabled) {
+    try {
+      const count = Math.max(1, Math.min(12, productsCfg.count || 8));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: rowsRaw } = await (svc.from('physical_products') as any)
+        .select('id, slug, title, price_cents, compare_at_price_cents, currency, cover_url, stock_qty, track_stock')
+        .eq('tenant_id', tenantId).eq('status', 'published')
+        .order('updated_at', { ascending: false }).limit(count);
+      previewProducts = (rowsRaw ?? []) as ProductPreview[];
+    } catch { /* migration 0051 pendiente */ }
+  }
   const catById = new Map(categories.map((c) => [c.id, c]));
   const selectedCat = selectedCatSlug ? categories.find((c) => c.slug === selectedCatSlug) ?? null : null;
 
@@ -1177,6 +1199,83 @@ export default async function StorefrontHome({
                     <div className="text-center mt-10">
                       <Link href="/blog"
                         className="inline-block rounded-md border border-black/15 px-6 py-3 text-sm font-semibold hover:bg-black/[0.03] transition"
+                        style={{ borderColor: primary, color: primary }}>
+                        {c.cta_label} →
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </section>
+            );
+          }
+
+          case 'products': {
+            if (previewProducts.length === 0) return null;
+            const c = cfg.sections.products;
+            return (
+              <section key={key} {...dt} id={key} className="px-6 py-16"
+                style={{ background: bg ?? undefined }}>
+                <div className="max-w-6xl mx-auto">
+                  <FadeIn>
+                    <div className="text-center mb-10">
+                      <h2 className="text-3xl md:text-4xl font-bold mb-2"
+                        dangerouslySetInnerHTML={richHtml(c.title)} />
+                      {c.subtitle && <p className="text-black/60">{c.subtitle}</p>}
+                    </div>
+                  </FadeIn>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                    {previewProducts.map((p) => {
+                      const discount = p.compare_at_price_cents && p.compare_at_price_cents > p.price_cents
+                        ? Math.round((1 - p.price_cents / p.compare_at_price_cents) * 100)
+                        : null;
+                      const outOfStock = p.track_stock && p.stock_qty <= 0;
+                      const price = new Intl.NumberFormat('es-AR', {
+                        style: 'currency', currency: p.currency, maximumFractionDigits: 0
+                      }).format(p.price_cents / 100);
+                      const compareAt = p.compare_at_price_cents
+                        ? new Intl.NumberFormat('es-AR', {
+                            style: 'currency', currency: p.currency, maximumFractionDigits: 0
+                          }).format(p.compare_at_price_cents / 100)
+                        : null;
+                      return (
+                        <Link key={p.id} href={`/p/${p.slug}`}
+                          className="group block rounded-xl border border-black/10 overflow-hidden bg-white hover:shadow-lg transition">
+                          <div className="aspect-square bg-zinc-100 overflow-hidden relative">
+                            {p.cover_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.cover_url} alt={p.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            ) : (
+                              <div className="flex items-center justify-center h-full text-black/25 text-4xl">📦</div>
+                            )}
+                            {discount !== null && (
+                              <div className="absolute top-2 left-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded">
+                                -{discount}%
+                              </div>
+                            )}
+                            {outOfStock && (
+                              <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                                <span className="text-xs font-bold uppercase tracking-wider text-black/70">Sin stock</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-3">
+                            <h3 className="font-medium text-sm mb-1 line-clamp-2 leading-tight">{p.title}</h3>
+                            <div className="flex items-baseline gap-2 mt-1">
+                              <span className="font-bold text-base">{price}</span>
+                              {compareAt && (
+                                <span className="text-xs text-black/40 line-through">{compareAt}</span>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                  {c.cta_label && (
+                    <div className="text-center mt-10">
+                      <Link href="/tienda"
+                        className="inline-block rounded-md border px-6 py-3 text-sm font-semibold hover:bg-black/[0.03] transition"
                         style={{ borderColor: primary, color: primary }}>
                         {c.cta_label} →
                       </Link>

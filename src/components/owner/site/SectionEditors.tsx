@@ -2950,6 +2950,68 @@ export function BlogPreviewEditor({ initial }: { initial: BlogPreviewValues }) {
   );
 }
 
+export type ProductsValues = {
+  title: string;
+  subtitle: string;
+  count: number;
+  layout: 'grid' | 'carousel';
+  cta_label: string;
+};
+
+export function ProductsEditor({ initial }: { initial: ProductsValues }) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('products');
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <RichTextField label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
+        <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+        <label className="block">
+          <span className="text-xs text-white/60 block mb-1">Cantidad de productos a mostrar</span>
+          <select
+            value={String(v.count)}
+            onChange={(e) => setV({ ...v, count: parseInt(e.target.value, 10) })}
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
+          >
+            <option value="4" className="bg-[#0a0a0a]">4 productos</option>
+            <option value="6" className="bg-[#0a0a0a]">6 productos</option>
+            <option value="8" className="bg-[#0a0a0a]">8 productos (recomendado)</option>
+            <option value="12" className="bg-[#0a0a0a]">12 productos</option>
+          </select>
+        </label>
+        <Field label="Texto del botón hacia /tienda" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} placeholder="Ver todos los productos" />
+        <p className="text-[10px] text-white/40">
+          💡 La sección solo aparece si tenés al menos un producto físico publicado.
+        </p>
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, count: String(v.count) })} />
+      </div>
+      <PreviewFrame>
+        <div className="p-4">
+          <div className="text-center mb-3">
+            <p className="text-sm font-bold" dangerouslySetInnerHTML={{ __html: v.title || 'Tienda' }} />
+            {v.subtitle && <p className="text-[10px] text-black/60 mt-0.5">{v.subtitle}</p>}
+          </div>
+          <div className="grid grid-cols-4 gap-1">
+            {Array.from({ length: Math.min(v.count, 4) }).map((_, i) => (
+              <div key={i} className="rounded border border-black/10 bg-white overflow-hidden">
+                <div className="aspect-square bg-zinc-200 flex items-center justify-center text-[8px] text-black/25">📦</div>
+                <div className="p-1">
+                  <div className="h-1 bg-black/20 rounded w-3/4 mb-0.5" />
+                  <div className="h-1.5 bg-black/40 rounded w-1/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-2">
+            <span className="text-[9px] text-black/60 border border-black/20 rounded px-2 py-0.5">{v.cta_label || 'Ver todos'} →</span>
+          </div>
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
 export function ContactEditor({ initial, primary }: { initial: ContactValues; primary: string }) {
   const [v, setV] = useState(initial);
   const { pending, saved, fire } = useSave('contact');

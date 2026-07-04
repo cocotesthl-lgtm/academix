@@ -110,6 +110,7 @@ export type SectionKey =
   | 'map'
   | 'workwithus'
   | 'blog_preview'
+  | 'products'
   | 'cta_final';
 
 /**
@@ -216,6 +217,13 @@ export type SiteConfig = {
       count: number;       // cuántos artículos mostrar (1-6)
       cta_label: string;   // "Ver todo el blog" — link a /blog
     };
+    products: SectionBase & {
+      title: string;
+      subtitle: string;
+      count: number;       // cuántos productos mostrar (1-12)
+      layout: 'grid' | 'carousel';
+      cta_label: string;   // "Ver todos" — link a /productos (grilla completa)
+    };
   };
   order: SectionKey[];
   nav: {
@@ -250,7 +258,8 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'custom',
   'cta_final',
   'newsletter',
-  'blog_preview', // preview del blog antes del contacto
+  'products',      // productos físicos destacados
+  'blog_preview',  // preview del blog antes del contacto
   'contact',
   'workwithus', // "Trabajá con nosotros" al final, antes del mapa
   'map'         // mapa al final, normalmente antes del footer
@@ -478,6 +487,14 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       subtitle: 'Novedades, guías y notas.',
       count: 3,
       cta_label: 'Ver todos los artículos'
+    },
+    products: {
+      enabled: false, // se prende cuando el owner publica su primer producto físico
+      title: 'Tienda',
+      subtitle: 'Nuestros productos disponibles.',
+      count: 8,
+      layout: 'grid',
+      cta_label: 'Ver todos los productos'
     }
   },
   order: DEFAULT_ORDER,

@@ -31,6 +31,7 @@ import {
   ContactEditor,
   MapEditor,
   BlogPreviewEditor,
+  ProductsEditor,
   CustomEditor,
   NavEditor,
   FooterEditor
@@ -69,6 +70,7 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   map:          { title: "📍 Mapa / Ubicación", desc: "Mostrá dónde estás con Google Maps embebido (sin API key)." },
   workwithus:   { title: "🤝 Trabajá con nosotros", desc: "CTA de programa de afiliados. Aparece solo si activaste el programa en Afiliados → Configuración." },
   blog_preview: { title: "📰 Últimas del blog", desc: "Grid con los últimos artículos publicados en tu blog. Link para ver todo." },
+  products:     { title: "📦 Tienda / Productos físicos", desc: "Grid con productos publicados. Link para ver toda la tienda." },
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
 
@@ -509,6 +511,17 @@ export default async function SiteBuilderPage() {
                   subtitle: cfg.sections.blog_preview.subtitle,
                   count: cfg.sections.blog_preview.count ?? 3,
                   cta_label: cfg.sections.blog_preview.cta_label
+                }}
+              />
+            )}
+            {key === 'products' && (
+              <ProductsEditor
+                initial={{
+                  title: cfg.sections.products.title,
+                  subtitle: cfg.sections.products.subtitle,
+                  count: cfg.sections.products.count ?? 8,
+                  layout: cfg.sections.products.layout ?? 'grid',
+                  cta_label: cfg.sections.products.cta_label
                 }}
               />
             )}
