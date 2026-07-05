@@ -60,6 +60,25 @@ export function InventoryScanner({ tenantId }: { tenantId: string }) {
     if (!cameraOn) inputRef.current?.focus();
   }, [cameraOn, last]);
 
+  // Fallback global: si el usuario tipea (o la pistola dispara caracteres) y
+  // el input no está focused (p.ej. clickeó una card del historial), forzamos
+  // el focus para no perder el escaneo. Ignoramos si otro input/textarea/select
+  // ya tiene focus.
+  useEffect(() => {
+    function onGlobalKey(e: KeyboardEvent) {
+      if (cameraOn) return;
+      const tag = (document.activeElement?.tagName ?? '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      // Solo caracteres imprimibles o Enter (evita atajos con Ctrl/Alt/Meta)
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.key.length === 1 || e.key === 'Enter') {
+        inputRef.current?.focus();
+      }
+    }
+    window.addEventListener('keydown', onGlobalKey);
+    return () => window.removeEventListener('keydown', onGlobalKey);
+  }, [cameraOn]);
+
   function beep(ok: boolean) {
     try {
       const ctx = new (window.AudioContext ||
@@ -83,6 +102,10 @@ export function InventoryScanner({ tenantId }: { tenantId: string }) {
       return;
     }
     lastCodeRef.current = { code: sku, at: now };
+
+    // Devolvemos focus al input inmediatamente — la operación es async pero
+    // el operador ya puede pasar al siguiente escaneo (procesamos en orden).
+    setTimeout(() => inputRef.current?.focus(), 0);
 
     start(async () => {
       // 1) Lookup
@@ -118,6 +141,8 @@ export function InventoryScanner({ tenantId }: { tenantId: string }) {
         setLast(entry);
         setLog((prev) => [entry, ...prev].slice(0, 50));
         beep(true);
+        // Re-focus por si algo lo perdió durante el await
+        inputRef.current?.focus();
       } catch (e) {
         const entry: LogEntry = {
           at: now, sku, ok: false,
@@ -127,6 +152,7 @@ export function InventoryScanner({ tenantId }: { tenantId: string }) {
         setLast(entry);
         setLog((prev) => [entry, ...prev].slice(0, 50));
         beep(false);
+        inputRef.current?.focus();
       }
       setCode('');
     });
@@ -238,9 +264,18 @@ export function InventoryScanner({ tenantId }: { tenantId: string }) {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); processScan(code); } }}
+            onBlur={(e) => {
+              // Si el focus salió a un elemento que NO es interactivo (o a nada),
+              // volvemos a enfocar el input. Los clicks en otros inputs (modo/razón)
+              // llevan el focus a esos elementos legítimamente y no interferimos.
+              const next = e.relatedTarget as HTMLElement | null;
+              const tag = (next?.tagName ?? '').toLowerCase();
+              if (!next || (tag !== 'input' && tag !== 'button' && tag !== 'select' && tag !== 'textarea')) {
+                setTimeout(() => inputRef.current?.focus(), 0);
+              }
+            }}
             placeholder="Escaneá con pistola o tipeá el SKU y Enter…"
-            disabled={pending}
-            className="flex-1 min-w-[220px] rounded-lg bg-black/40 border border-white/20 px-4 py-3 text-base font-mono tracking-wider focus:border-orange-400 outline-none disabled:opacity-50"
+            className="flex-1 min-w-[220px] rounded-lg bg-black/40 border border-white/20 px-4 py-3 text-base font-mono tracking-wider focus:border-orange-400 outline-none"
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="characters"
