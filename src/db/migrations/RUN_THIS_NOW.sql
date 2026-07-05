@@ -1536,4 +1536,11 @@ alter table public.shipping_rates
   add column if not exists per_kg_cents int,
   add column if not exists included_grams int default 1000;
 
+-- ── 0054 Categorías con jerarquía (mega-menu) ──
+alter table public.course_categories
+  add column if not exists parent_id uuid references public.course_categories(id) on delete set null,
+  add column if not exists is_featured boolean not null default false;
+create index if not exists idx_categories_parent on public.course_categories(parent_id);
+create index if not exists idx_categories_tenant_featured on public.course_categories(tenant_id, is_featured);
+
 -- ✓ Listo. Recargá la app.

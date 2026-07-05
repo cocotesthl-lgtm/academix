@@ -22,6 +22,7 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const name = String(formData.get('name') ?? '').trim();
   if (!name) return;
+  const parentId = String(formData.get('parent_id') ?? '').trim() || null;
 
   let slug = slugify(name);
   if (!SLUG_RE.test(slug)) slug = `cat-${Date.now()}`;
@@ -32,16 +33,67 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
     .select('id', { count: 'exact', head: true })
     .eq('tenant_id', tenant.id);
 
-  const payload = {
+  const payload: Record<string, unknown> = {
     tenant_id: tenant.id,
     slug,
     name,
-    position: count ?? 0
+    position: count ?? 0,
+    parent_id: parentId
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (svc.from('course_categories') as any).insert(payload);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (svc.from('course_categories') as any).insert(payload);
+    // Defensivo: si migration 0054 no corrió, parent_id no existe → reintentamos sin.
+    if (error && error.message.includes('parent_id')) {
+      delete payload.parent_id;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('course_categories') as any).insert(payload);
+    }
+  } catch (e) {
+    if (String(e).includes('parent_id')) {
+      delete payload.parent_id;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('course_categories') as any).insert(payload);
+    } else {
+      throw e;
+    }
+  }
   revalidatePath('/categories');
   revalidatePath('/courses');
+}
+
+export async function setCategoryParentAction(id: string, parentId: string | null): Promise<void> {
+  const { tenant } = await requireOwner();
+  const svc = getServiceClient();
+  // Guardra contra ciclos: si el parent propuesto es descendiente de la categoría, rechazar.
+  // Como el tree es chico (max 2-3 niveles), un walk O(N) alcanza.
+  if (parentId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: allRaw } = await (svc.from('course_categories') as any)
+      .select('id, parent_id').eq('tenant_id', tenant.id);
+    const all = (allRaw ?? []) as Array<{ id: string; parent_id: string | null }>;
+    const childrenOf = new Set<string>();
+    const queue = [id];
+    while (queue.length > 0) {
+      const cur = queue.shift()!;
+      childrenOf.add(cur);
+      for (const c of all) if (c.parent_id === cur) queue.push(c.id);
+    }
+    if (childrenOf.has(parentId)) throw new Error('No se puede mover una categoría dentro de sí misma.');
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('course_categories') as any)
+    .update({ parent_id: parentId }).eq('id', id).eq('tenant_id', tenant.id);
+  revalidatePath('/categories');
+}
+
+export async function toggleCategoryFeaturedAction(id: string, featured: boolean): Promise<void> {
+  const { tenant } = await requireOwner();
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('course_categories') as any)
+    .update({ is_featured: featured }).eq('id', id).eq('tenant_id', tenant.id);
+  revalidatePath('/categories');
 }
 
 export async function renameCategoryAction(formData: FormData): Promise<void> {

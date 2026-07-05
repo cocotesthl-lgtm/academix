@@ -5,6 +5,8 @@ import { getTenantById } from '@/lib/tenant/resolve';
 import { getServiceClient } from '@/lib/supabase/service';
 import { storefrontOrigin } from '@/lib/seo/meta';
 import { StoreFiltersBar } from '@/components/storefront/products/StoreFiltersBar';
+import { CategoryMegamenu } from '@/components/storefront/products/CategoryMegamenu';
+import { loadTenantCategories, collectCategoryAndDescendants } from '@/lib/categories/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,12 +74,9 @@ export default async function StorePage({
 
   const svc = getServiceClient();
 
-  // Categorías (reusa course_categories) — solo las que tienen ≥1 producto físico
-  // publicado, para no mostrar categorías vacías en el filtro.
-  const { data: catsRaw } = await svc.from('course_categories')
-    .select('id, slug, name').eq('tenant_id', tenantId)
-    .order('position', { ascending: true });
-  const allCategories = (catsRaw ?? []) as Category[];
+  // Categorías con jerarquía (incluye parent_id + is_featured para el mega-menú)
+  const allWithHierarchy = await loadTenantCategories(tenantId);
+  const allCategories = allWithHierarchy.map((c) => ({ id: c.id, slug: c.slug, name: c.name })) as Category[];
 
   // Query base
   const q = (sp.q ?? '').trim().slice(0, 100);
@@ -100,7 +99,15 @@ export default async function StorePage({
     const safe = q.replace(/[%_]/g, '\\$&');
     query = query.or(`title.ilike.%${safe}%,description.ilike.%${safe}%`);
   }
-  if (selectedCat) query = query.eq('category_id', selectedCat.id);
+  if (selectedCat) {
+    // Si es un root con hijos, incluir productos de toda la descendencia.
+    const includedIds = collectCategoryAndDescendants(allWithHierarchy, selectedCatSlug);
+    if (includedIds.size > 1) {
+      query = query.in('category_id', Array.from(includedIds));
+    } else {
+      query = query.eq('category_id', selectedCat.id);
+    }
+  }
   if (minPrice !== null) query = query.gte('price_cents', minPrice * 100);
   if (maxPrice !== null && maxPrice > 0) query = query.lte('price_cents', maxPrice * 100);
   if (inStockOnly) query = query.gt('stock_qty', 0);
@@ -135,8 +142,16 @@ export default async function StorePage({
 
   return (
     <article className="max-w-7xl mx-auto px-6 py-10">
+      <div className="flex items-center justify-between mb-4 border-b border-black/5 pb-3">
+        <CategoryMegamenu categories={allWithHierarchy} />
+        {selectedCat && (
+          <div className="text-xs text-black/55">
+            Estás en <strong className="text-black/80">{selectedCat.name}</strong>
+          </div>
+        )}
+      </div>
       <header className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-2">Tienda</h1>
+        <h1 className="text-4xl font-bold mb-2">{selectedCat?.name || 'Tienda'}</h1>
         <p className="text-black/55">
           {anyFilterActive
             ? `${totalCount} resultado${totalCount === 1 ? '' : 's'}`
