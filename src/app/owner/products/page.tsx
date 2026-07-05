@@ -66,6 +66,12 @@ export default async function ProductsListPage() {
         actions={
           <div className="flex gap-2">
             <Link
+              href="/labels"
+              className="rounded border border-white/15 text-white/85 text-sm px-4 py-2 hover:bg-white/5 flex items-center gap-1.5"
+            >
+              🏷️ Etiquetas
+            </Link>
+            <Link
               href="/inventory-scan"
               className="rounded border border-white/15 text-white/85 text-sm px-4 py-2 hover:bg-white/5 flex items-center gap-1.5"
             >
