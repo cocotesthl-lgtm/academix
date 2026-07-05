@@ -232,7 +232,7 @@ function ZoneCard({ zone, rates }: { zone: ShippingZone; rates: ShippingRate[] }
             <div className="grid grid-cols-2 gap-2">
               <input name="name" placeholder="Estándar, Express…" required
                 className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
-              <input type="number" name="price_cents" placeholder="Precio (cents)" required min={0}
+              <input type="number" name="price_cents" placeholder="Precio base (cents)" required min={0}
                 className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
               <input type="number" name="free_from_cents" placeholder="Envío gratis desde (cents, opc)" min={0}
                 className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
@@ -242,7 +242,14 @@ function ZoneCard({ zone, rates }: { zone: ShippingZone; rates: ShippingRate[] }
                 <input type="number" name="delivery_days_max" placeholder="hasta" min={0}
                   className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
               </div>
+              <input type="number" name="per_kg_cents" placeholder="Extra por kg (cents, opc)" min={0}
+                className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
+              <input type="number" name="included_grams" placeholder="Gramos incluidos (default 1000)" min={0}
+                className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
             </div>
+            <p className="text-[10px] text-white/40">
+              💡 Ejemplo Correo AR CABA: base <strong>350000</strong> ($3.500) + por kg <strong>80000</strong> ($800) desde <strong>1000g</strong>.
+            </p>
             <div className="flex gap-2">
               <button type="submit" disabled={pending}
                 className="text-xs px-3 py-1.5 rounded bg-white text-black font-semibold hover:bg-white/90 disabled:opacity-50">
@@ -297,6 +304,10 @@ function RateRow({ rate }: { rate: ShippingRate }) {
             <input type="number" name="delivery_days_max" defaultValue={rate.delivery_days_max ?? ''} placeholder="Hasta" min={0}
               className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
           </div>
+          <input type="number" name="per_kg_cents" defaultValue={rate.per_kg_cents ?? ''} placeholder="Extra por kg (opc)" min={0}
+            className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
+          <input type="number" name="included_grams" defaultValue={rate.included_grams ?? ''} placeholder="Gramos incluidos" min={0}
+            className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
         </div>
         <div className="flex gap-2">
           <button type="submit" disabled={pending}

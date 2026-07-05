@@ -17,9 +17,10 @@ export async function GET(
   const url = new URL(req.url);
   const province = url.searchParams.get('province') ?? '';
   const subtotal = Number(url.searchParams.get('subtotal') ?? '0');
+  const weight = Number(url.searchParams.get('weight') ?? '0');
 
   if (!province) return NextResponse.json({ options: [] });
 
-  const options = await calculateShippingOptions(tenantId, province, subtotal);
+  const options = await calculateShippingOptions(tenantId, province, subtotal, weight);
   return NextResponse.json({ options });
 }

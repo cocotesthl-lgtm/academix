@@ -72,11 +72,12 @@ export async function POST(
   const productIds = Array.from(new Set(body.items.map((i) => i.product_id))).slice(0, 30);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: productsRaw } = await (svc.from('physical_products') as any)
-    .select('id, title, price_cents, currency, stock_qty, track_stock, requires_shipping, status')
+    .select('id, title, price_cents, currency, stock_qty, track_stock, requires_shipping, weight_g, status')
     .eq('tenant_id', tenantId).in('id', productIds);
   const products = ((productsRaw ?? []) as Array<{
     id: string; title: string; price_cents: number; currency: string;
-    stock_qty: number; track_stock: boolean; requires_shipping: boolean; status: string;
+    stock_qty: number; track_stock: boolean; requires_shipping: boolean;
+    weight_g: number | null; status: string;
   }>).filter((p) => p.status === 'published');
   const productById = new Map(products.map((p) => [p.id, p]));
 
@@ -101,6 +102,7 @@ export async function POST(
     variant_label: string | null; sku: string | null;
   }> = [];
   let itemsTotal = 0;
+  let totalWeightG = 0;
   let anyRequiresShipping = false;
   for (const i of body.items) {
     const p = productById.get(i.product_id);
@@ -124,6 +126,8 @@ export async function POST(
       }
     }
     if (p.requires_shipping) anyRequiresShipping = true;
+    // Sumamos peso — 500g default si el producto no tiene weight_g.
+    totalWeightG += (p.weight_g ?? 500) * qty;
     orderItems.push({
       product_id: p.id, variant_id: i.variant_id ?? null, qty,
       unit_price_cents: unitPrice, product_title: p.title,
@@ -141,13 +145,33 @@ export async function POST(
     if (!body.shipping_rate_id) {
       return NextResponse.json({ error: 'shipping_required' }, { status: 400 });
     }
+    // Traemos todos los campos; si migration 0053 no corrió, per_kg_cents queda undefined.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: rate } = await (svc.from('shipping_rates') as any)
-      .select('id, name, price_cents, free_from_cents, zone_id, delivery_days_min, delivery_days_max')
-      .eq('id', body.shipping_rate_id).eq('tenant_id', tenantId).maybeSingle();
+    let rate: any = null;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res = await (svc.from('shipping_rates') as any)
+        .select('id, name, price_cents, free_from_cents, zone_id, delivery_days_min, delivery_days_max, per_kg_cents, included_grams')
+        .eq('id', body.shipping_rate_id).eq('tenant_id', tenantId).maybeSingle();
+      if (res.error) throw res.error;
+      rate = res.data;
+    } catch {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res = await (svc.from('shipping_rates') as any)
+        .select('id, name, price_cents, free_from_cents, zone_id, delivery_days_min, delivery_days_max')
+        .eq('id', body.shipping_rate_id).eq('tenant_id', tenantId).maybeSingle();
+      rate = res.data;
+    }
     if (!rate) return NextResponse.json({ error: 'shipping_rate_invalid' }, { status: 400 });
+    // Recalcular precio con peso si aplica
+    let ratePrice = rate.price_cents;
+    if (rate.per_kg_cents && rate.per_kg_cents > 0 && totalWeightG > 0) {
+      const included = rate.included_grams ?? 1000;
+      const extraG = Math.max(0, totalWeightG - included);
+      ratePrice += Math.round(extraG * rate.per_kg_cents / 1000);
+    }
     const isFree = rate.free_from_cents != null && itemsTotal >= rate.free_from_cents;
-    shippingCost = isFree ? 0 : rate.price_cents;
+    shippingCost = isFree ? 0 : ratePrice;
     shippingLabel = rate.name;
     shippingZoneId = rate.zone_id;
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { addToCart } from '@/components/storefront/cart/CartWidget';
+import { trackEvent } from '@/lib/analytics/client';
 import type { PhysicalProduct, ProductVariant } from '@/lib/products/actions';
 
 function formatMoney(cents: number, currency: string): string {
@@ -54,7 +55,12 @@ export function ProductBuyBox({
       variant_id: currentVariant?.id ?? null,
       variant_label: currentVariant?.name ?? null,
       max_stock: product.track_stock ? displayStock : undefined,
-      requires_shipping: product.requires_shipping
+      requires_shipping: product.requires_shipping,
+      weight_g: product.weight_g ?? undefined
+    });
+    trackEvent(tenantId, 'add_to_cart', {
+      product_id: product.id,
+      amount_cents: displayPrice
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);

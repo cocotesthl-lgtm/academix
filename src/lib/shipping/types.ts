@@ -23,6 +23,8 @@ export type ShippingRate = {
   free_from_cents: number | null;
   delivery_days_min: number | null;
   delivery_days_max: number | null;
+  per_kg_cents: number | null;
+  included_grams: number | null;
   sort_order: number;
 };
 

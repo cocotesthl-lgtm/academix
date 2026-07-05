@@ -34,6 +34,8 @@ export type CartItem = {
   max_stock?: number;
   /** True si el producto necesita dirección de envío. */
   requires_shipping?: boolean;
+  /** Peso unitario en gramos — usado para tarifas de envío por peso. */
+  weight_g?: number;
 };
 
 const STORAGE_KEY_PREFIX = 'curplat_cart_';

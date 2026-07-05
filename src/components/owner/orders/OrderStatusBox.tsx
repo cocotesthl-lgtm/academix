@@ -51,7 +51,7 @@ export function OrderStatusBox({
   }
 
   function cancel() {
-    if (!confirm('¿Cancelar esta orden? El stock NO se repone automáticamente — hacé un ajuste manual si corresponde.')) return;
+    if (!confirm('¿Cancelar esta orden? El stock se repone automáticamente si ya se había descontado.')) return;
     startTransition(async () => {
       await setOrderStatusAction(orderId, 'cancelled');
       router.refresh();

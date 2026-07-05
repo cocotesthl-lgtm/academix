@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTenantById } from '@/lib/tenant/resolve';
 import { getServiceClient } from '@/lib/supabase/service';
 import { ClearCartOnMount } from '@/components/storefront/products/ClearCartOnMount';
+import { TrackPageView } from '@/components/storefront/TrackPageView';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,14 @@ export default async function ThanksPage({
   return (
     <article className="max-w-2xl mx-auto px-6 py-16 text-center">
       <ClearCartOnMount tenantId={tenantId} />
+      {order && paid && (
+        <TrackPageView
+          tenantId={tenantId}
+          eventType="purchase"
+          orderId={order.id}
+          amountCents={order.total_cents}
+        />
+      )}
 
       <div className="text-6xl mb-4">{pending ? '⏳' : paid ? '✅' : '🎉'}</div>
       <h1 className="text-3xl font-bold mb-3">

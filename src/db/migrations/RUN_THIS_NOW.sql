@@ -1493,5 +1493,47 @@ create policy order_items_buyer_read on public.physical_order_items
       where o.id = physical_order_items.order_id and o.buyer_user_id = auth.uid())
   );
 
+-- ── 0052 Analytics de storefront (funnel de conversión) ──
+create table if not exists public.analytics_events (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  event_type text not null check (event_type in (
+    'page_view', 'product_view', 'add_to_cart', 'checkout_start', 'purchase'
+  )),
+  product_id uuid references public.physical_products(id) on delete set null,
+  order_id uuid,
+  path text,
+  session_id uuid,
+  amount_cents int,
+  referer text,
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_analytics_tenant_time on public.analytics_events(tenant_id, created_at desc);
+create index if not exists idx_analytics_tenant_type_time on public.analytics_events(tenant_id, event_type, created_at desc);
+create index if not exists idx_analytics_product on public.analytics_events(product_id) where product_id is not null;
+create index if not exists idx_analytics_session on public.analytics_events(tenant_id, session_id);
+
+alter table public.analytics_events enable row level security;
+
+drop policy if exists analytics_insert_public on public.analytics_events;
+create policy analytics_insert_public on public.analytics_events
+  for insert to anon, authenticated with check (true);
+
+drop policy if exists analytics_read_owner on public.analytics_events;
+create policy analytics_read_owner on public.analytics_events
+  for select to authenticated
+  using (
+    exists (select 1 from public.memberships m
+      where m.tenant_id = analytics_events.tenant_id
+      and m.user_id = auth.uid() and m.role = 'owner' and m.status = 'active')
+  );
+
+-- ── 0053 Tarifas por peso ──
+alter table public.shipping_rates
+  add column if not exists per_kg_cents int,
+  add column if not exists included_grams int default 1000;
 
 -- ✓ Listo. Recargá la app.

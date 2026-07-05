@@ -129,6 +129,7 @@ const NAV: NavEntry[] = [
       items: [
         { label: 'Ventas', href: '/ventas' },
         { label: 'Órdenes (tienda)', href: '/orders' },     // ecommerce físico
+        { label: 'Analytics', href: '/analytics' },         // funnel de conversión
         { label: 'Suscripciones', href: '/suscripciones' },
         { label: 'Saldos', href: '/wallets' },              // movido desde "Mis ventas"
         { label: 'Finanzas', href: '/finance' }             // movido desde "Configuración"

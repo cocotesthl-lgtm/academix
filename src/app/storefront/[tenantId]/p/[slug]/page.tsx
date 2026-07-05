@@ -5,6 +5,7 @@ import { getTenantById } from '@/lib/tenant/resolve';
 import { getServiceClient } from '@/lib/supabase/service';
 import { storefrontOrigin, truncate } from '@/lib/seo/meta';
 import { ProductBuyBox } from '@/components/storefront/products/ProductBuyBox';
+import { TrackPageView } from '@/components/storefront/TrackPageView';
 import type { PhysicalProduct, ProductVariant } from '@/lib/products/actions';
 
 export const dynamic = 'force-dynamic';
@@ -81,6 +82,7 @@ export default async function ProductPublicPage({
 
   return (
     <article className="max-w-6xl mx-auto px-6 py-10">
+      <TrackPageView tenantId={tenantId} eventType="product_view" productId={product.id} />
       <Link href="/" className="text-sm text-black/55 hover:text-black">← Volver al inicio</Link>
 
       <div className="mt-6 grid md:grid-cols-2 gap-10">

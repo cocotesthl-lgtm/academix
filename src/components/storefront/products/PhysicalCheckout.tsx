@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { type CartItem } from '@/components/storefront/cart/CartWidget';
 import { AR_PROVINCES } from '@/lib/shipping/types';
+import { trackEvent } from '@/lib/analytics/client';
 
 type RateOption = {
   rate_id: string;
@@ -64,13 +65,17 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
     [items]
   );
   const requiresShipping = items.some((i) => i.requires_shipping);
+  const totalWeightG = useMemo(
+    () => items.reduce((s, i) => s + (i.weight_g ?? 500) * i.qty, 0),
+    [items]
+  );
 
   // Fetch shipping options cuando cambia provincia
   useEffect(() => {
     if (!requiresShipping) { setRateOptions([]); return; }
     if (!province) { setRateOptions([]); return; }
     setLoadingRates(true);
-    const url = `/api/shipping/${tenantId}/options?province=${province}&subtotal=${itemsTotal}`;
+    const url = `/api/shipping/${tenantId}/options?province=${province}&subtotal=${itemsTotal}&weight=${totalWeightG}`;
     fetch(url)
       .then((r) => r.json())
       .then((d: { options?: RateOption[] }) => {
@@ -81,7 +86,7 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
         }
       })
       .finally(() => setLoadingRates(false));
-  }, [province, itemsTotal, tenantId, requiresShipping, selectedRate]);
+  }, [province, itemsTotal, totalWeightG, tenantId, requiresShipping, selectedRate]);
 
   const selectedRateData = rateOptions.find((o) => o.rate_id === selectedRate) ?? null;
   const shippingCost = selectedRateData?.price_cents ?? 0;
@@ -127,6 +132,7 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
     }
 
     setSubmitting(true);
+    trackEvent(tenantId, 'checkout_start', { amount_cents: total });
     const payload = {
       items: items.map((i) => ({
         product_id: i.product_id!,
