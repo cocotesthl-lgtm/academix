@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
+import { notifyPhysicalOrderShipped } from '@/lib/emails/dispatch';
 
 export async function setOrderStatusAction(
   orderId: string,
@@ -18,6 +19,13 @@ export async function setOrderStatusAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('physical_orders') as any).update(patch)
     .eq('id', orderId).eq('tenant_id', tenant.id);
+
+  // Email al comprador cuando marcamos como enviada (con tracking si está cargado).
+  // No bloquea la action — si falla el email, la transición ya quedó guardada.
+  if (status === 'shipped') {
+    await notifyPhysicalOrderShipped({ tenantId: tenant.id, orderId });
+  }
+
   revalidatePath('/orders');
   revalidatePath(`/orders/${orderId}`);
 }

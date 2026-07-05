@@ -6,7 +6,8 @@ import { accrueAffiliateCommissionsForSale } from '@/lib/affiliates/commission';
 import {
   notifyPurchaseConfirmed,
   notifyEventTicketsConfirmed,
-  notifyBookingConfirmed
+  notifyBookingConfirmed,
+  notifyPhysicalOrderPaid
 } from '@/lib/emails/dispatch';
 
 type CourseLookup = {
@@ -214,6 +215,8 @@ export async function processMpPayment(opts: {
             note: `MP payment ${payment.id}`
           });
         }
+        // Notificar al comprador — best-effort, no bloquea el webhook.
+        await notifyPhysicalOrderPaid({ tenantId: opts.tenantId, orderId });
       }
     } catch { /* silent — retry via webhook idempotency */ }
     return { ok: true, saleId: null, reused: false };

@@ -10,7 +10,9 @@ import {
   bookingConfirmedEmail,
   bookingRescheduledEmail,
   instructorWelcomeEmail,
-  vipNewContentEmail
+  vipNewContentEmail,
+  physicalOrderPaidEmail,
+  physicalOrderShippedEmail
 } from './templates';
 
 /**
@@ -335,5 +337,91 @@ export async function notifyInstructorAssigned(opts: {
     await sendEmail({ to: opts.instructorEmail, subject, html });
   } catch (e) {
     console.error('[emails] notifyInstructorAssigned falló:', e);
+  }
+}
+
+/**
+ * Orden física confirmada — llama desde el webhook MP cuando la orden
+ * pasa a 'paid'. Carga los items snapshot y arma el email con detalle.
+ * NUNCA tira: cualquier fallo se loguea y sigue.
+ */
+export async function notifyPhysicalOrderPaid(opts: {
+  tenantId: string;
+  orderId: string;
+}): Promise<void> {
+  try {
+    const brand = await loadTenantBrand(opts.tenantId);
+    if (!brand) return;
+    const svc = getServiceClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: order } = await (svc.from('physical_orders') as any)
+      .select('buyer_email, buyer_name, items_total_cents, shipping_cost_cents, total_cents, currency, shipping_method_label, shipping_address')
+      .eq('id', opts.orderId).eq('tenant_id', opts.tenantId).maybeSingle();
+    if (!order?.buyer_email) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: itemsRaw } = await (svc.from('physical_order_items') as any)
+      .select('product_title, variant_label, qty, unit_price_cents').eq('order_id', opts.orderId);
+    const items = ((itemsRaw ?? []) as Array<{
+      product_title: string; variant_label: string | null;
+      qty: number; unit_price_cents: number;
+    }>).map((i) => ({
+      title: i.product_title,
+      variantLabel: i.variant_label,
+      qty: i.qty,
+      unitPriceCents: i.unit_price_cents
+    }));
+
+    const currency = order.currency || 'ARS';
+    const origin = tenantOrigin(brand.slug);
+    const { subject, html } = physicalOrderPaidEmail({
+      ...brandToLayout(brand),
+      buyerName: order.buyer_name ?? undefined,
+      orderId: opts.orderId,
+      items,
+      itemsTotalFormatted: formatAmount(order.items_total_cents, currency),
+      shippingCostFormatted: order.shipping_cost_cents === 0 ? 'Gratis' : formatAmount(order.shipping_cost_cents, currency),
+      totalFormatted: formatAmount(order.total_cents, currency),
+      currency,
+      shippingLabel: order.shipping_method_label,
+      shippingAddress: order.shipping_address,
+      orderUrl: `${origin}/gracias?order=${opts.orderId}`
+    });
+    await sendEmail({ to: order.buyer_email, subject, html });
+  } catch (e) {
+    console.error('[emails] notifyPhysicalOrderPaid falló:', e);
+  }
+}
+
+/**
+ * Orden física despachada — llama desde setOrderStatusAction cuando la
+ * transición es a 'shipped'. Incluye tracking si el owner lo cargó.
+ */
+export async function notifyPhysicalOrderShipped(opts: {
+  tenantId: string;
+  orderId: string;
+}): Promise<void> {
+  try {
+    const brand = await loadTenantBrand(opts.tenantId);
+    if (!brand) return;
+    const svc = getServiceClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: order } = await (svc.from('physical_orders') as any)
+      .select('buyer_email, buyer_name, tracking_number, tracking_url, shipping_method_label')
+      .eq('id', opts.orderId).eq('tenant_id', opts.tenantId).maybeSingle();
+    if (!order?.buyer_email) return;
+
+    const origin = tenantOrigin(brand.slug);
+    const { subject, html } = physicalOrderShippedEmail({
+      ...brandToLayout(brand),
+      buyerName: order.buyer_name ?? undefined,
+      orderId: opts.orderId,
+      trackingNumber: order.tracking_number,
+      trackingUrl: order.tracking_url,
+      shippingLabel: order.shipping_method_label,
+      orderUrl: `${origin}/gracias?order=${opts.orderId}`
+    });
+    await sendEmail({ to: order.buyer_email, subject, html });
+  } catch (e) {
+    console.error('[emails] notifyPhysicalOrderShipped falló:', e);
   }
 }

@@ -254,3 +254,106 @@ export function instructorWelcomeEmail(opts: Brand & {
     })
   };
 }
+
+/**
+ * Orden física confirmada — pago recibido, empezamos a preparar.
+ * Se manda desde el webhook MP cuando la orden pasa a 'paid'.
+ */
+export function physicalOrderPaidEmail(opts: Brand & {
+  buyerName?: string;
+  orderId: string;
+  items: Array<{ title: string; variantLabel?: string | null; qty: number; unitPriceCents: number }>;
+  itemsTotalFormatted: string;
+  shippingCostFormatted: string;
+  totalFormatted: string;
+  currency: string;
+  shippingLabel?: string | null;
+  shippingAddress?: {
+    street?: string; number?: string; apt?: string;
+    city?: string; postal_code?: string;
+  } | null;
+  orderUrl: string;   // link a /gracias?order=<id>
+}): { subject: string; html: string } {
+  const greeting = opts.buyerName ? `¡Hola ${opts.buyerName}!` : '¡Hola!';
+  const itemsHtml = opts.items.map((it) => {
+    const line = `${it.qty}× ${esc(it.title)}${it.variantLabel ? ' · ' + esc(it.variantLabel) : ''}`;
+    return infoRow(line, `${opts.currency} ${(it.unitPriceCents * it.qty / 100).toLocaleString('es-AR')}`);
+  }).join('');
+  const addressLine = opts.shippingAddress
+    ? `${esc(opts.shippingAddress.street ?? '')} ${esc(opts.shippingAddress.number ?? '')}${opts.shippingAddress.apt ? ', ' + esc(opts.shippingAddress.apt) : ''} · ${esc(opts.shippingAddress.city ?? '')} · CP ${esc(opts.shippingAddress.postal_code ?? '')}`
+    : null;
+  const shortId = opts.orderId.slice(0, 8);
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f0a1e;">${greeting}</h1>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#374151;">
+      Recibimos tu pago. Ya estamos preparando tu pedido <strong>#${esc(shortId)}</strong>.
+      Te avisamos por email cuando lo despachemos con el número de seguimiento.
+    </p>
+    ${infoTable(
+      itemsHtml +
+      infoRow('<span style="color:#6b7280">Subtotal</span>', opts.itemsTotalFormatted) +
+      (opts.shippingLabel ? infoRow('<span style="color:#6b7280">Envío · ' + esc(opts.shippingLabel) + '</span>', opts.shippingCostFormatted) : '') +
+      infoRow('<strong>Total</strong>', '<strong>' + opts.totalFormatted + '</strong>')
+    )}
+    ${addressLine ? `
+      <p style="margin:16px 0 8px;font-size:13px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Envío a</p>
+      <p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.5;">${addressLine}</p>
+    ` : ''}
+    ${ctaButton({ href: opts.orderUrl, label: 'Ver detalle de la orden', color: opts.brandColor || '#f97316' })}
+    <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+      Cualquier duda respondé este email y te ayudamos.
+    </p>
+  `;
+  return {
+    subject: `✓ Pago confirmado · Orden #${shortId}`,
+    html: renderLayout({
+      ...opts,
+      preheader: `Ya estamos preparando tu pedido #${shortId}`,
+      content
+    })
+  };
+}
+
+/**
+ * Orden física despachada — con número de tracking si el owner lo cargó.
+ * Se manda desde setOrderStatusAction cuando la orden pasa a 'shipped'.
+ */
+export function physicalOrderShippedEmail(opts: Brand & {
+  buyerName?: string;
+  orderId: string;
+  trackingNumber?: string | null;
+  trackingUrl?: string | null;
+  shippingLabel?: string | null;
+  orderUrl: string;
+}): { subject: string; html: string } {
+  const greeting = opts.buyerName ? `¡Hola ${opts.buyerName}!` : '¡Hola!';
+  const shortId = opts.orderId.slice(0, 8);
+  const trackingBlock = opts.trackingNumber
+    ? infoTable(
+        infoRow('Número', `<span style="font-family:monospace">${esc(opts.trackingNumber)}</span>`) +
+        (opts.shippingLabel ? infoRow('Método', opts.shippingLabel) : '')
+      )
+    : '';
+  const trackButton = opts.trackingUrl
+    ? ctaButton({ href: opts.trackingUrl, label: '📦 Seguir el envío', color: opts.brandColor || '#f97316' })
+    : ctaButton({ href: opts.orderUrl, label: 'Ver detalle de la orden', color: opts.brandColor || '#f97316' });
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0f0a1e;">${greeting}</h1>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#374151;">
+      Tu pedido <strong>#${esc(shortId)}</strong> salió para envío.
+    </p>
+    ${trackingBlock}
+    ${trackButton}
+    <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+      Si tenés problemas con la entrega, respondé este email.
+    </p>
+  `;
+  return {
+    subject: `📦 Tu pedido salió · #${shortId}`,
+    html: renderLayout({
+      ...opts,
+      preheader: `Orden #${shortId} en camino`,
+      content
+    })
+  };
+}
