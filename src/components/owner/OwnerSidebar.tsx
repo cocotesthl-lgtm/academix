@@ -72,6 +72,7 @@ const NAV: NavEntry[] = [
         { label: 'Categorías', href: '/categories' },
         { label: 'Envíos', href: '/shipping' },            // zonas + tarifas
         { label: 'Cupones', href: '/coupons' },            // movido desde "Mi sitio"
+        { label: 'Gift cards', href: '/giftcards' },       // regalos con QR
         { label: 'Checkout', href: '/checkout' }           // movido desde "Mi sitio"
       ]
     }

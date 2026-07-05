@@ -32,6 +32,7 @@ type Body = {
   shipping_rate_id?: string;   // null cuando ningún producto requiere envío
   shipping_address?: BuyerAddress;
   buyer_notes?: string;
+  gift_card_code?: string;     // opcional — código guardado por el buyer
 };
 
 /**
@@ -195,7 +196,30 @@ export async function POST(
     }
   }
 
-  const total = itemsTotal + shippingCost;
+  // Gift card: si el buyer mandó un código, lo validamos y descontamos.
+  // No marcamos como redeemed acá — eso sucede en el webhook cuando el pago
+  // se aprueba (evita quemar la card si el user abandona el checkout).
+  let giftCardDiscount = 0;
+  let giftCardCode: string | null = null;
+  let giftCardId: string | null = null;
+  if (body.gift_card_code) {
+    const code = body.gift_card_code.trim().toUpperCase();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: gc } = await (svc.from('gift_cards') as any)
+      .select('id, code, amount_cents, tenant_id, status, expires_at')
+      .eq('code', code).maybeSingle();
+    if (gc && gc.tenant_id === tenantId && gc.status === 'active') {
+      const expired = gc.expires_at && new Date(gc.expires_at) < new Date();
+      if (!expired) {
+        // Descuento nunca mayor al total. Si sobra, se pierde (single-use full-redemption).
+        giftCardDiscount = Math.min(gc.amount_cents, itemsTotal + shippingCost);
+        giftCardCode = gc.code;
+        giftCardId = gc.id;
+      }
+    }
+  }
+
+  const total = Math.max(0, itemsTotal + shippingCost - giftCardDiscount);
   const currency = products[0]?.currency || 'ARS';
 
   // Create order
@@ -212,10 +236,13 @@ export async function POST(
     shipping_method_label: shippingLabel,
     items_total_cents: itemsTotal,
     shipping_cost_cents: shippingCost,
+    discount_cents: giftCardDiscount,
     total_cents: total,
     currency,
     status: 'pending',
-    buyer_notes: body.buyer_notes?.slice(0, 500) ?? null
+    buyer_notes: body.buyer_notes?.slice(0, 500) ?? null,
+    // Guardamos en JSON de notas el código para el webhook
+    notes: giftCardCode ? `gift_card:${giftCardCode}:${giftCardId}` : null
   });
   if (ordErr) return NextResponse.json({ error: 'order_create_failed', detail: ordErr.message }, { status: 500 });
 
@@ -225,8 +252,62 @@ export async function POST(
     orderItems.map((oi) => ({ order_id: orderId, ...oi }))
   );
 
-  // MP preference
   const h = await headers();
+
+  // Caso especial: gift card cubre todo → salteamos MP y marcamos como pagada.
+  if (total === 0 && giftCardId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('physical_orders') as any).update({
+      status: 'paid',
+      paid_at: new Date().toISOString(),
+      payment_id: `giftcard:${giftCardCode}`
+    }).eq('id', orderId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('gift_cards') as any).update({
+      status: 'redeemed',
+      redeemed_at: new Date().toISOString(),
+      redeemed_by_email: body.buyer_email,
+      redeemed_order_id: orderId,
+      updated_at: new Date().toISOString()
+    }).eq('id', giftCardId).eq('status', 'active');
+    // Decremento de stock inline (webhook no se dispara sin pago MP)
+    for (const oi of orderItems) {
+      if (oi.variant_id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: v } = await (svc.from('product_variants') as any)
+          .select('stock_qty').eq('id', oi.variant_id).maybeSingle();
+        if (v) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (svc.from('product_variants') as any)
+            .update({ stock_qty: Math.max(0, v.stock_qty - oi.qty) }).eq('id', oi.variant_id);
+        }
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: p } = await (svc.from('physical_products') as any)
+          .select('stock_qty').eq('id', oi.product_id).maybeSingle();
+        if (p) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (svc.from('physical_products') as any)
+            .update({ stock_qty: Math.max(0, p.stock_qty - oi.qty) }).eq('id', oi.product_id);
+        }
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('product_stock_movements') as any).insert({
+        tenant_id: tenantId, product_id: oi.product_id, variant_id: oi.variant_id,
+        delta: -oi.qty, reason: 'sale', order_id: orderId,
+        note: `Free via gift card ${giftCardCode}`
+      });
+    }
+    const proto = (h.get('x-forwarded-proto') ?? 'http').split(',')[0];
+    const host = h.get('host') ?? `${tenant.slug}.localhost:3000`;
+    return NextResponse.json({
+      init_point: `${proto}://${host}/gracias?order=${orderId}`,
+      order_id: orderId,
+      free: true
+    });
+  }
+
+  // MP preference
   const proto = (h.get('x-forwarded-proto') ?? 'http').split(',')[0];
   const host = h.get('host') ?? `${tenant.slug}.localhost:3000`;
   const origin = `${proto}://${host}`;

@@ -1543,4 +1543,37 @@ alter table public.course_categories
 create index if not exists idx_categories_parent on public.course_categories(parent_id);
 create index if not exists idx_categories_tenant_featured on public.course_categories(tenant_id, is_featured);
 
+-- ── 0055 Gift cards ──
+create table if not exists public.gift_cards (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  code text not null,
+  amount_cents int not null check (amount_cents > 0),
+  currency text not null default 'ARS',
+  recipient_name text, sender_name text, message text,
+  expires_at timestamptz,
+  status text not null default 'active' check (status in ('active','redeemed','expired','cancelled')),
+  redeemed_at timestamptz, redeemed_by_email text, redeemed_order_id uuid,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (code)
+);
+create index if not exists idx_giftcards_tenant on public.gift_cards(tenant_id, created_at desc);
+create index if not exists idx_giftcards_status on public.gift_cards(tenant_id, status);
+create index if not exists idx_giftcards_code on public.gift_cards(code);
+alter table public.gift_cards enable row level security;
+
+drop policy if exists giftcards_owner on public.gift_cards;
+create policy giftcards_owner on public.gift_cards
+  for all to authenticated
+  using (
+    exists (select 1 from public.memberships m
+      where m.tenant_id = gift_cards.tenant_id
+      and m.user_id = auth.uid() and m.role = 'owner' and m.status = 'active')
+  );
+
+drop policy if exists giftcards_public_read_by_code on public.gift_cards;
+create policy giftcards_public_read_by_code on public.gift_cards
+  for select to anon, authenticated using (true);
+
 -- ✓ Listo. Recargá la app.

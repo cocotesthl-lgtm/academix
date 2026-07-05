@@ -17,6 +17,26 @@ type RateOption = {
 };
 
 const STORAGE_KEY_PREFIX = 'curplat_cart_';
+const GC_KEY_PREFIX = 'curplat_giftcard_';
+
+type SavedGiftCard = {
+  code: string;
+  amount_cents: number;
+  currency: string;
+  savedAt: number;
+};
+
+function readGiftCard(tenantId: string): SavedGiftCard | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(`${GC_KEY_PREFIX}${tenantId}`);
+    return raw ? (JSON.parse(raw) as SavedGiftCard) : null;
+  } catch { return null; }
+}
+
+function removeGiftCard(tenantId: string) {
+  localStorage.removeItem(`${GC_KEY_PREFIX}${tenantId}`);
+}
 
 function readCart(tenantId: string): CartItem[] {
   if (typeof window === 'undefined') return [];
@@ -39,6 +59,7 @@ function formatMoney(cents: number, currency: string): string {
 
 export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [giftCard, setGiftCard] = useState<SavedGiftCard | null>(null);
   const [buyerEmail, setBuyerEmail] = useState('');
   const [buyerName, setBuyerName] = useState('');
   const [buyerPhone, setBuyerPhone] = useState('');
@@ -57,6 +78,7 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
 
   useEffect(() => {
     setItems(readCart(tenantId).filter((i) => i.kind === 'physical'));
+    setGiftCard(readGiftCard(tenantId));
   }, [tenantId]);
 
   const currency = items[0]?.currency || 'ARS';
@@ -90,7 +112,9 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
 
   const selectedRateData = rateOptions.find((o) => o.rate_id === selectedRate) ?? null;
   const shippingCost = selectedRateData?.price_cents ?? 0;
-  const total = itemsTotal + shippingCost;
+  const preDiscount = itemsTotal + shippingCost;
+  const giftCardDiscount = giftCard ? Math.min(giftCard.amount_cents, preDiscount) : 0;
+  const total = Math.max(0, preDiscount - giftCardDiscount);
   const needsAddress = selectedRateData && !selectedRateData.is_pickup;
 
   function updateQty(id: string, delta: number) {
@@ -148,7 +172,8 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
         city: city.trim(), province, postal_code: postalCode.trim(),
         country: 'AR'
       } : undefined,
-      buyer_notes: notes.trim() || undefined
+      buyer_notes: notes.trim() || undefined,
+      gift_card_code: giftCard?.code
     };
 
     try {
@@ -159,6 +184,9 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
       });
       const data = await res.json() as { init_point?: string; error?: string; detail?: string };
       if (data.init_point) {
+        // Limpiar gift card guardada — no queremos re-aplicar si el user
+        // vuelve al carrito (ya está redeemed o pending redeem)
+        if (giftCard) removeGiftCard(tenantId);
         window.location.href = data.init_point;
       } else {
         setError(data.detail || data.error || 'error al procesar el pago');
@@ -316,6 +344,23 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
             ))}
           </ul>
 
+          {giftCard && (
+            <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-emerald-800">🎁 Gift card aplicada</span>
+                <button type="button"
+                  onClick={() => { removeGiftCard(tenantId); setGiftCard(null); }}
+                  className="text-[10px] text-emerald-700 hover:underline">
+                  Quitar
+                </button>
+              </div>
+              <div className="font-mono text-emerald-700 mt-0.5">{giftCard.code}</div>
+              <div className="text-emerald-900 mt-1">
+                Descuento: <strong>−{formatMoney(giftCardDiscount, currency)}</strong>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-1 pt-2 border-t border-black/5 text-sm">
             <div className="flex justify-between text-black/60">
               <span>Subtotal</span>
@@ -327,6 +372,12 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
                 <span>{selectedRateData
                   ? (selectedRateData.is_free ? 'Gratis' : formatMoney(shippingCost, currency))
                   : '—'}</span>
+              </div>
+            )}
+            {giftCardDiscount > 0 && (
+              <div className="flex justify-between text-emerald-700 font-medium">
+                <span>Gift card</span>
+                <span>−{formatMoney(giftCardDiscount, currency)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-lg pt-2 border-t border-black/10">

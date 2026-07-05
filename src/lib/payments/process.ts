@@ -215,6 +215,26 @@ export async function processMpPayment(opts: {
             note: `MP payment ${payment.id}`
           });
         }
+        // Si la orden tenía gift card aplicada, marcarla como redeemed.
+        // El código está en la columna notes: "gift_card:<code>:<id>"
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: orderMeta } = await (svc.from('physical_orders') as any)
+          .select('notes').eq('id', orderId).maybeSingle();
+        const rawNotes = (orderMeta as { notes: string | null } | null)?.notes ?? null;
+        if (rawNotes && rawNotes.startsWith('gift_card:')) {
+          const parts = rawNotes.split(':');
+          const gcId = parts[2];
+          if (gcId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (svc.from('gift_cards') as any).update({
+              status: 'redeemed',
+              redeemed_at: new Date().toISOString(),
+              redeemed_by_email: buyerEmail,
+              redeemed_order_id: orderId,
+              updated_at: new Date().toISOString()
+            }).eq('id', gcId).eq('status', 'active');
+          }
+        }
         // Notificar al comprador — best-effort, no bloquea el webhook.
         await notifyPhysicalOrderPaid({ tenantId: opts.tenantId, orderId });
       }
