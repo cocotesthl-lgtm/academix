@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { GoogleOneTapButton } from "@/components/auth/GoogleOneTapButton";
 import { DomainChecker } from "@/components/marketing/DomainChecker";
+import { LastSalePopup } from "@/components/marketing/LastSalePopup";
 
 export const dynamic = "force-dynamic";
 
@@ -115,17 +116,8 @@ export default async function MarketingHome() {
               style={{ maxWidth: '100%' }}
             />
 
-            {/* Card flotante superior-derecha: "Última venta" */}
-            <div className="hidden md:block absolute top-4 right-4 lg:-right-4 lg:top-0 w-72 rounded-xl bg-white shadow-xl p-4 z-10 border border-neutral-100">
-              <div className="flex items-center gap-2 text-xs text-neutral-500 uppercase tracking-wider mb-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                Última venta
-              </div>
-              <div className="font-bold text-lg text-neutral-900">hace 4 minutos</div>
-              <div className="text-xs text-neutral-500 mt-0.5">Curso de inglés A1 · $9.900</div>
-            </div>
+            {/* Card flotante superior-derecha: "Última venta" — rota con múltiples ejemplos */}
+            <LastSalePopup />
 
             {/* Card flotante inferior-izquierda: "Tiempo de actividad" */}
             <div className="hidden md:block absolute bottom-4 left-4 lg:-left-4 lg:bottom-0 w-64 rounded-xl bg-white shadow-xl p-4 z-10 border border-neutral-100">
