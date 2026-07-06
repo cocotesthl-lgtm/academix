@@ -59,8 +59,9 @@ export default async function MarketingHome() {
             </span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-white/70 max-w-2xl mx-auto">
-            Vendé publicaciones, eventos con tickets, suscripciones o mentorías. Todo en tu propio dominio,
-            con tu marca, cobrando directo a tu MercadoPago.
+            Vendé <strong className="text-white">lo que quieras</strong>: cursos, productos físicos, eventos con tickets,
+            reservas, mentorías, gift cards, suscripciones. Todo en tu propio dominio, con tu marca,
+            cobrando directo a tu MercadoPago.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -88,44 +89,44 @@ export default async function MarketingHome() {
           <div className="text-center mb-16">
             <p className="text-sm uppercase tracking-widest text-orange-400 mb-3">Beneficios</p>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-              Todo lo que necesitás para vender educación.
+              Todo lo que necesitás para vender online.
             </h2>
             <p className="mt-4 text-lg text-white/60 max-w-2xl mx-auto">
-              No es un LMS más. Es el sistema operativo de tu negocio educativo.
+              No es un builder más. Es el sistema operativo de tu negocio — de una remera hasta un curso.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
+                icon: "🛒",
+                title: "Vendé cualquier cosa",
+                body: "Cursos, productos físicos con stock y variantes, entradas para eventos, mentorías, reservas de restaurante, gift cards, suscripciones. Un solo panel para todo.",
+              },
+              {
                 icon: "🌐",
-                title: "Tu subdominio propio",
-                body: "tunombre.bzseguridad.store con tu logo, tus colores y tu identidad. Tus alumnos te ven a vos, no a nosotros.",
+                title: "Tu dominio, tu marca",
+                body: "tunegocio.com con tu logo y tus colores. Tus clientes te ven a vos, no a nosotros. Editor de páginas tipo Wix, sin código.",
               },
               {
                 icon: "💳",
                 title: "Cobrás vos, directo",
-                body: "Conectás tu MercadoPago o tu Shopify. La plata entra a tu cuenta. Nosotros solo cobramos comisión sobre las ventas reales.",
+                body: "Conectás tu MercadoPago con un click. La plata entra directo a tu cuenta. Nosotros cobramos solo una comisión sobre ventas confirmadas.",
+              },
+              {
+                icon: "📦",
+                title: "Ecommerce físico completo",
+                body: "Productos con variantes, stock automático, zonas de envío por provincia, tarifas por peso, órdenes con tracking, scanner de barras + etiquetas imprimibles.",
               },
               {
                 icon: "🚀",
-                title: "Afiliados multinivel",
-                body: "Sistema viral de 3 niveles con tracking, cookies y antifraude. Tus alumnos te traen alumnos.",
-              },
-              {
-                icon: "📁",
-                title: "Sin costos de almacenamiento",
-                body: "Conectás tu Google Drive y subís lo que quieras. No te cobramos por GB ni por video — usás tu propio espacio.",
+                title: "Marketing built-in",
+                body: "Afiliados multinivel con tracking, cupones, gift cards con QR, blog/CMS, formularios y CRM con pipeline. Todo integrado — sin plugins ni extras.",
               },
               {
                 icon: "📊",
-                title: "Panel de finanzas claro",
-                body: "Ves cada venta, cada comisión, cada afiliado pago. Sin sorpresas, sin letra chica.",
-              },
-              {
-                icon: "💬",
-                title: "Soporte directo",
-                body: "Sistema de tickets con respuesta del equipo fundador. No bots, no esperas eternas.",
+                title: "Analytics + soporte real",
+                body: "Funnel de conversión, top productos, ingresos por canal. Sistema de tickets con respuesta del equipo fundador. No bots, no esperas.",
               },
             ].map((f) => (
               <div
@@ -147,15 +148,22 @@ export default async function MarketingHome() {
           <div className="text-center mb-16">
             <p className="text-sm uppercase tracking-widest text-amber-400 mb-3">Para quién</p>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-              Pensado para creators de LatAm.
+              Pensado para negocios de LatAm.
             </h2>
+            <p className="mt-4 text-lg text-white/60 max-w-2xl mx-auto">
+              Si vendés algo — físico o digital — necesitás un sitio profesional.
+            </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { title: "Sitios", body: "Que ya venden publicaciones y necesitan estructura, marca y crecimiento." },
-              { title: "Coaches y mentores", body: "Mentorías 1 a 1, grupales y masterminds — en un solo lugar." },
-              { title: "Profesores y instructores", body: "Que quieren su propia plataforma sin pagar Kajabi en dólares." },
-              { title: "Creators y comunidades", body: "Monetizá tu audiencia con publicaciones, membresías y eventos." },
+              { title: "🛍️ Tiendas físicas", body: "Indumentaria, deco, librerías, kioscos. Stock + envíos + scanner + etiquetas + gift cards." },
+              { title: "🎓 Cursos y academias", body: "Videos por Drive, comunidades, mentorías 1-a-1, membresías. Sin pagar Kajabi en dólares." },
+              { title: "🎟️ Eventos y venues", body: "Entradas con QR, reservas de restaurante o cancha, gestión de asientos numerados." },
+              { title: "💇 Servicios y coaches", body: "Turnos, reservas por sede, packs de sesiones, propinas. Todo con MercadoPago." },
+              { title: "💎 Creators y VIP content", body: "Membresías, suscripciones mensuales, contenido bloqueado tipo OnlyFans, DMs con fans." },
+              { title: "📰 Editoriales y blogs", body: "CMS integrado con SEO, sitemap.xml y RSS. Publicá noticias y monetizá el tráfico." },
+              { title: "🛠️ Freelancers y agencias", body: "Vendé servicios con checkout, formularios de brief, CRM de leads y afiliados." },
+              { title: "🍽️ Gastronomía", body: "Menú digital, reservas con QR, gift cards, WhatsApp integrado, delivery con envío por provincia." },
             ].map((p) => (
               <div key={p.title} className="rounded-xl border border-white/10 p-5">
                 <h3 className="font-semibold mb-2">{p.title}</h3>
@@ -180,22 +188,22 @@ export default async function MarketingHome() {
               {
                 n: "01",
                 title: "Creás tu cuenta y elegís tu subdominio",
-                body: "miacademia.bzseguridad.store — único, gratis, tuyo. Subís tu logo y elegís tus colores.",
+                body: "tunegocio.bzseguridad.store — único, gratis, tuyo. Subís tu logo y elegís tus colores. Después conectás tu dominio propio si querés.",
               },
               {
                 n: "02",
-                title: "Conectás tu pasarela de pago",
-                body: "MercadoPago o Shopify, con un click. La plata de cada venta entra directo a tu cuenta.",
+                title: "Conectás tu MercadoPago",
+                body: "OAuth con un click. La plata de cada venta entra directo a tu cuenta. Sin intermediarios ni holds.",
               },
               {
                 n: "03",
-                title: "Cargás tus publicaciones desde Google Drive",
-                body: "Conectás tu Drive y elegís los videos. Nosotros nunca tocamos tus archivos.",
+                title: "Elegís qué vender y activás módulos",
+                body: "Cursos con Google Drive, productos físicos con stock, entradas con QR, gift cards, reservas. Solo activás lo que usás.",
               },
               {
                 n: "04",
-                title: "Empezás a vender y a sumar afiliados",
-                body: "Tu primer alumno puede comprar el mismo día. Los afiliados generan su link y te traen ventas.",
+                title: "Empezás a vender el mismo día",
+                body: "Tu primera venta puede llegar en horas. Sumás afiliados que te traen tráfico y usás analytics para optimizar.",
               },
             ].map((s) => (
               <li
@@ -246,10 +254,10 @@ export default async function MarketingHome() {
       <section className="border-t border-white/10 py-24">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-            ¿Listo para tener tu propia plataforma web?
+            ¿Listo para tener tu propio sitio?
           </h2>
           <p className="text-lg text-white/60 mb-10">
-            Creá tu cuenta gratis y configurá tu plataforma hoy mismo.
+            Vendas cursos, remeras, entradas o mentorías — creá tu cuenta gratis y configurá todo hoy mismo.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
