@@ -44,7 +44,7 @@ export default async function MarketingHome() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-br from-orange-600/30 via-orange-600/20 to-blue-600/30 blur-3xl rounded-full" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-br from-orange-600/40 via-orange-500/20 to-orange-700/10 blur-3xl rounded-full" />
         </div>
         <div className="max-w-5xl mx-auto px-6 pt-24 pb-32 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs text-white/80 mb-8">
@@ -53,7 +53,7 @@ export default async function MarketingHome() {
           </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight">
             Creá tu propia <br className="hidden md:inline" />
-            <span className="bg-gradient-to-r from-orange-400 via-amber-400 to-blue-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 bg-clip-text text-transparent">
               plataforma web.
             </span>
           </h1>
@@ -169,7 +169,7 @@ export default async function MarketingHome() {
       <section id="como-funciona" className="border-t border-white/10 py-24">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-16">
-            <p className="text-sm uppercase tracking-widest text-blue-400 mb-3">Cómo funciona</p>
+            <p className="text-sm uppercase tracking-widest text-orange-400 mb-3">Cómo funciona</p>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
               Listo en menos de 10 minutos.
             </h2>
@@ -223,7 +223,7 @@ export default async function MarketingHome() {
             5% sobre cada venta confirmada. Si no vendés, no pagás nada. Sin tarjetas,
             sin pruebas que se vencen, sin sorpresas.
           </p>
-          <div className="inline-flex flex-col sm:flex-row gap-6 items-center justify-center rounded-2xl border border-white/20 bg-gradient-to-br from-orange-500/10 via-amber-500/10 to-blue-500/10 p-10">
+          <div className="inline-flex flex-col sm:flex-row gap-6 items-center justify-center rounded-2xl border border-white/20 bg-gradient-to-br from-orange-500/15 via-amber-500/10 to-orange-600/5 p-10">
             <div className="text-left">
               <div className="text-6xl font-bold tracking-tight">
                 5<span className="text-3xl align-top">%</span>
