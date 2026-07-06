@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { GoogleOneTapButton } from "@/components/auth/GoogleOneTapButton";
+import { DomainChecker } from "@/components/marketing/DomainChecker";
 
 export const dynamic = "force-dynamic";
 
@@ -160,23 +161,7 @@ export default async function MarketingHome() {
           <p className="text-lg text-neutral-700 mb-10">
             Elegí un subdominio gratis o conectá tu propio dominio con un CNAME.
           </p>
-          <div className="max-w-md mx-auto">
-            <div className="flex rounded-full border-2 border-neutral-900 bg-white overflow-hidden shadow-lg">
-              <input
-                type="text"
-                placeholder="miNegocio"
-                className="flex-1 px-5 py-3 text-neutral-900 placeholder:text-neutral-400 focus:outline-none"
-              />
-              <div className="flex items-center px-4 text-neutral-500 border-l border-neutral-200 bg-neutral-50">
-                .bzseguridad.store
-              </div>
-            </div>
-            <div className="mt-3 text-xs text-neutral-600 flex flex-wrap gap-3 justify-center">
-              <span className="rounded-full bg-white/80 backdrop-blur px-3 py-1 border border-orange-200">✓ SSL incluido</span>
-              <span className="rounded-full bg-white/80 backdrop-blur px-3 py-1 border border-orange-200">✓ Dominio propio soportado</span>
-              <span className="rounded-full bg-white/80 backdrop-blur px-3 py-1 border border-orange-200">✓ CDN global</span>
-            </div>
-          </div>
+          <DomainChecker />
         </div>
       </section>
 
