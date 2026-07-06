@@ -150,18 +150,18 @@ export default async function MarketingHome() {
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* Dominio propio */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section className="border-t border-neutral-200 py-24 bg-white">
+      <section className="border-t border-neutral-200 py-24 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-sm uppercase tracking-widest text-orange-500 mb-3 font-semibold">Tu dominio</p>
+          <p className="text-sm uppercase tracking-widest text-orange-600 mb-3 font-semibold">Tu dominio</p>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
             Hazte con tu <br className="hidden md:inline" />
-            <span className="italic font-serif">pedacito de internet.</span>
+            <span className="italic font-serif text-orange-600">pedacito de internet.</span>
           </h2>
-          <p className="text-lg text-neutral-600 mb-10">
+          <p className="text-lg text-neutral-700 mb-10">
             Elegí un subdominio gratis o conectá tu propio dominio con un CNAME.
           </p>
           <div className="max-w-md mx-auto">
-            <div className="flex rounded-full border-2 border-neutral-900 bg-white overflow-hidden shadow-sm">
+            <div className="flex rounded-full border-2 border-neutral-900 bg-white overflow-hidden shadow-lg">
               <input
                 type="text"
                 placeholder="miNegocio"
@@ -171,10 +171,10 @@ export default async function MarketingHome() {
                 .bzseguridad.store
               </div>
             </div>
-            <div className="mt-3 text-xs text-neutral-500 flex flex-wrap gap-3 justify-center">
-              <span className="rounded-full bg-neutral-100 px-3 py-1">✓ SSL incluido</span>
-              <span className="rounded-full bg-neutral-100 px-3 py-1">✓ Dominio propio soportado</span>
-              <span className="rounded-full bg-neutral-100 px-3 py-1">✓ CDN global</span>
+            <div className="mt-3 text-xs text-neutral-600 flex flex-wrap gap-3 justify-center">
+              <span className="rounded-full bg-white/80 backdrop-blur px-3 py-1 border border-orange-200">✓ SSL incluido</span>
+              <span className="rounded-full bg-white/80 backdrop-blur px-3 py-1 border border-orange-200">✓ Dominio propio soportado</span>
+              <span className="rounded-full bg-white/80 backdrop-blur px-3 py-1 border border-orange-200">✓ CDN global</span>
             </div>
           </div>
         </div>
