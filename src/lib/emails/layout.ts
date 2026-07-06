@@ -6,7 +6,7 @@
  * tags y las clases no aplican. Inline styles es lo único confiable.
  *
  * El `brandColor` lo pasa cada llamada (cada tenant tiene su color), default
- * morado de Curplat si no se pasa.
+ * morado de OfferNow si no se pasa.
  */
 function esc(str: string | null | undefined): string {
   if (!str) return '';
@@ -31,7 +31,7 @@ export type LayoutOpts = {
 
 export function renderLayout(opts: LayoutOpts & { content: string }): string {
   const brand = opts.brandColor || '#f97316';
-  const brandName = esc(opts.brandName) || 'Curplat';
+  const brandName = esc(opts.brandName) || 'OfferNow';
   const preheader = esc(opts.preheader) || '';
   const logo = opts.logoUrl
     ? `<img src="${esc(opts.logoUrl)}" alt="${brandName}" style="max-height:40px;max-width:160px;display:block;margin:0 auto;" />`
@@ -79,7 +79,7 @@ export function renderLayout(opts: LayoutOpts & { content: string }): string {
     ${customFooter}
     <tr><td style="padding:20px 32px;border-top:1px solid #eaeaef;background:#fafafb;font-size:12px;color:#6b7280;line-height:1.6;">
       ${opts.footerNote ? esc(opts.footerNote) + '<br/>' : ''}
-      Este email fue enviado por <strong style="color:#1a1a1a;">${brandName}</strong> a través de Curplat.<br/>
+      Este email fue enviado por <strong style="color:#1a1a1a;">${brandName}</strong> a través de OfferNow.<br/>
       Si recibiste este email por error, podés ignorarlo.
     </td></tr>
   </table>

@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
  * producción, con la clave secreta en MERCADOPAGO_WEBHOOK_SECRET.
  *
  * MP manda acá TODAS las notificaciones de pago (de cualquier owner
- * conectado a Curplat). Resolvemos el tenant haciendo:
+ * conectado a OfferNow). Resolvemos el tenant haciendo:
  *   1. Fetch del payment desde MP usando el access_token del platform
  *      (NO funciona porque cada pago pertenece al owner, no a la plataforma)
  *   2. Mejor: leer external_reference que tiene 'courseId::userId::affId'

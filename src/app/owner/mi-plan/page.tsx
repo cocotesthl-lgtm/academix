@@ -39,7 +39,7 @@ export default async function MiPlanPage({
         <EmptyState
           icon="📦"
           title="Los planes aún no están configurados"
-          description="El equipo de Curplat está terminando de armar los planes disponibles."
+          description="El equipo de OfferNow está terminando de armar los planes disponibles."
         />
       ) : (
         <PlanPricingCards

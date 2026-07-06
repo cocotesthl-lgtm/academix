@@ -51,7 +51,7 @@ export default async function OnboardingPage() {
     <main data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6">
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
-          <Link href="/" className="text-2xl font-bold tracking-tight">Curplat</Link>
+          <Link href="/" className="text-2xl font-bold tracking-tight">OfferNow</Link>
           <h1 className="mt-6 text-3xl font-bold">Configurá tu sitio</h1>
           <p className="mt-2 text-white/60">Estos datos los podés cambiar después.</p>
         </div>

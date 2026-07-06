@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function InstructorLayout({ children }: { children: React.ReactNode }) {
   const { tenant, userId } = await requireInstructor();
-  // Si también es afiliado de Curplat, mostramos un link al panel global
+  // Si también es afiliado de OfferNow, mostramos un link al panel global
   const svc = getServiceClient();
   const { data: prof } = await svc
     .from('profiles').select('is_affiliate').eq('id', userId)

@@ -1,5 +1,5 @@
 -- =====================================================================
--- Curplat — Permitir slugs de 3 caracteres (era 4+).
+-- OfferNow — Permitir slugs de 3 caracteres (era 4+).
 -- El constraint original era ^[a-z0-9][a-z0-9-]{2,30}[a-z0-9]$
 -- (1 + 2-30 + 1 = mínimo 4 chars). Lo bajamos a 3.
 -- =====================================================================

@@ -29,7 +29,7 @@ export default async function OwnerTickets() {
     <div className="max-w-4xl">
       <PageHeader
         title="Soporte"
-        description="Tus conversaciones con el equipo de Curplat. Acá reportás bugs, pedís features o pedís ayuda."
+        description="Tus conversaciones con el equipo de OfferNow. Acá reportás bugs, pedís features o pedís ayuda."
         actions={<HeaderPrimary href="/soporte/new">+ Nuevo ticket</HeaderPrimary>}
       />
 

@@ -1,5 +1,5 @@
 -- =====================================================================
--- Curplat — Optional seed data (Week 10)
+-- OfferNow — Optional seed data (Week 10)
 -- Run AFTER 0001_init.sql + 0002_storage_policies.sql.
 -- Requires: at least one signed-up user exists (auth.users / profiles).
 --

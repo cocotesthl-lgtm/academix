@@ -5,7 +5,7 @@ import type { ProductType } from '@/lib/courses/product-types';
  * de "Nueva publicación" con título, descripción, precio y cover de muestra
  * para que el owner clone el ejemplo y ajuste — en vez de empezar en blanco.
  *
- * Hardcoded en Curplat (no per-tenant) → cero costo DB, fácil curar/editar.
+ * Hardcoded en OfferNow (no per-tenant) → cero costo DB, fácil curar/editar.
  */
 
 export type OfferTemplate = {

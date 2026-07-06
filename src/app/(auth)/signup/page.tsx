@@ -23,7 +23,7 @@ export default async function SignupPage({
     <main data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <Link href="/" className="text-2xl font-bold tracking-tight">Curplat</Link>
+          <Link href="/" className="text-2xl font-bold tracking-tight">OfferNow</Link>
           {isAffiliate ? (
             <>
               <div className="text-4xl mt-6 mb-2">💼</div>
@@ -65,7 +65,7 @@ function AccountChooser() {
     <main data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6">
       <div className="w-full max-w-2xl space-y-8">
         <div className="text-center">
-          <Link href="/" className="text-2xl font-bold tracking-tight">Curplat</Link>
+          <Link href="/" className="text-2xl font-bold tracking-tight">OfferNow</Link>
           <h1 className="mt-6 text-3xl md:text-4xl font-bold">¿Qué tipo de cuenta querés crear?</h1>
           <p className="mt-3 text-white/60">
             Elegí el rol con el que vas a empezar. Después podés sumar otros si querés (no es excluyente).
@@ -105,7 +105,7 @@ function AccountChooser() {
             <p className="text-sm text-white/65 leading-snug">
               Quiero <strong>revender publicaciones</strong> de sitios existentes, conseguir
               trabajo como <strong>instructor</strong> y/o ayudar como <strong>administrador</strong>
-              en sitios de Curplat.
+              en sitios de OfferNow.
             </p>
             <ul className="text-xs text-white/50 mt-3 space-y-1">
               <li>✓ 1 cuenta para todos los sitios</li>

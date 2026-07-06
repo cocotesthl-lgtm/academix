@@ -28,7 +28,7 @@ type SubRow = {
  * clientes a sus publicaciones. Diferente a /mi-plan (donde el owner paga al
  * founder) — acá el owner cobra a sus propios compradores.
  *
- * El dinero va directo al MP del owner (no pasa por Curplat).
+ * El dinero va directo al MP del owner (no pasa por OfferNow).
  */
 export default async function OwnerSubscriptionsPage({
   searchParams

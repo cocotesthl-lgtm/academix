@@ -18,7 +18,7 @@ const VALID_TEAM_ROLES = new Set(['staff', 'admin']);
 
 /**
  * Invita a un usuario al equipo por email. El usuario tiene que existir ya
- * (haberse registrado en Curplat). Si no, falla silenciosamente.
+ * (haberse registrado en OfferNow). Si no, falla silenciosamente.
  * Si el user bloqueó al tenant, también falla en silencio.
  */
 export async function inviteTeamMemberAction(formData: FormData): Promise<void> {

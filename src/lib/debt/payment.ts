@@ -32,7 +32,7 @@ export async function payDebtAction(): Promise<void> {
   const prefBody = {
     items: [
       {
-        title: `Curplat — comisión pendiente · ${tenant.name}`,
+        title: `OfferNow — comisión pendiente · ${tenant.name}`,
         quantity: 1,
         unit_price: balanceCents / 100,
         currency_id: 'ARS'

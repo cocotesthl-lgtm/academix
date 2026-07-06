@@ -115,7 +115,7 @@ export default async function DomainPage({
           <div>
             <h2 className="font-semibold">Aparecer en el marketplace público</h2>
             <p className="text-xs text-white/55 mt-1">
-              Cuando está activado, tu plataforma aparece en el listado público de Curplat (donde la gente busca sitios).
+              Cuando está activado, tu plataforma aparece en el listado público de OfferNow (donde la gente busca sitios).
               Si lo apagás, sigue funcionando todo pero solo aparece a quienes tienen el link directo.
             </p>
           </div>
@@ -139,7 +139,7 @@ export default async function DomainPage({
         {!customDomain ? (
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
             <p className="text-sm">
-              Estás usando el subdominio gratuito de Curplat:
+              Estás usando el subdominio gratuito de OfferNow:
             </p>
             <p className="font-mono text-lg mt-2 text-white">
               {tenant.slug}.{rootDomain}

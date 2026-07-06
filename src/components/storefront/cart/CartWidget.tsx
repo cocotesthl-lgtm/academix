@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
  * Solo se monta cuando el tenant tiene cart_enabled=true.
  *
  * Las API públicas para que otros componentes interactúen con el carrito:
- *   - addToCurplatCart(item) → fuerza re-render del widget via 'storage' event
+ *   - addToOfferNowCart(item) → fuerza re-render del widget via 'storage' event
  *   - dispatcha custom event 'curplat-cart-changed' que el widget escucha
  */
 

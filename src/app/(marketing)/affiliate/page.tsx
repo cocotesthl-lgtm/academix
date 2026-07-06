@@ -154,7 +154,7 @@ export default async function AffiliateGlobalPage({
       {/* Nav */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/40 border-b border-white/10">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
-          <Link href="/" className="text-xl font-bold tracking-tight">Curplat</Link>
+          <Link href="/" className="text-xl font-bold tracking-tight">OfferNow</Link>
           <div className="flex items-center gap-3">
             <Link href="/buscar" className="text-sm text-white/80 hover:text-white">
               🔍 Explorar sitios
@@ -166,7 +166,7 @@ export default async function AffiliateGlobalPage({
       <main className="max-w-5xl mx-auto px-6 py-10 space-y-10">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs text-amber-300 mb-3">
-            💼 Afiliado de Curplat
+            💼 Afiliado de OfferNow
           </div>
           <h1 className="text-3xl md:text-4xl font-bold">Tu panel global de afiliado</h1>
           <p className="text-white/60 mt-2 max-w-2xl">
@@ -436,12 +436,12 @@ function NotLoggedIn() {
     <div data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white">
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/40 border-b border-white/10">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
-          <Link href="/" className="text-xl font-bold tracking-tight">Curplat</Link>
+          <Link href="/" className="text-xl font-bold tracking-tight">OfferNow</Link>
         </div>
       </nav>
       <main className="max-w-2xl mx-auto px-6 py-20 text-center">
         <div className="text-5xl mb-4">💼</div>
-        <h1 className="text-3xl md:text-4xl font-bold">Volvete afiliado de Curplat</h1>
+        <h1 className="text-3xl md:text-4xl font-bold">Volvete afiliado de OfferNow</h1>
         <p className="text-white/65 mt-4 max-w-md mx-auto">
           Una sola cuenta para promocionar publicaciones de <strong>todas</strong> los sitios
           de la plataforma. Generás link único por publicación, te damos material promocional,
@@ -477,7 +477,7 @@ function BecomeAffiliate({ displayName }: { displayName: string | null }) {
     <div data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white">
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/40 border-b border-white/10">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
-          <Link href="/" className="text-xl font-bold tracking-tight">Curplat</Link>
+          <Link href="/" className="text-xl font-bold tracking-tight">OfferNow</Link>
         </div>
       </nav>
       <main className="max-w-2xl mx-auto px-6 py-20 text-center">
@@ -486,7 +486,7 @@ function BecomeAffiliate({ displayName }: { displayName: string | null }) {
           {displayName ? `Hola ${displayName.split(' ')[0]}, ` : ''}sumate como afiliado
         </h1>
         <p className="text-white/65 mt-4 max-w-md mx-auto">
-          Activá tu cuenta de afiliado de <strong>Curplat</strong>. Vas a poder promocionar
+          Activá tu cuenta de afiliado de <strong>OfferNow</strong>. Vas a poder promocionar
           publicaciones de cualquier sitio de la plataforma y ver tus comisiones en un solo panel.
         </p>
         <form action={becomeAffiliateAction} className="mt-8">

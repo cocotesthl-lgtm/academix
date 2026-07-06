@@ -5,7 +5,7 @@ export default function DemoPage() {
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Banner demo */}
       <div className="bg-gradient-to-r from-orange-600 via-orange-600 to-blue-600 text-center text-sm py-2.5 px-4">
-        🎬 Estás viendo una demo. Así se ve un sitio real en Curplat.{" "}
+        🎬 Estás viendo una demo. Así se ve un sitio real en OfferNow.{" "}
         <Link href="/signup" className="underline font-semibold hover:no-underline">
           Crear la tuya gratis →
         </Link>

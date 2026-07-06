@@ -106,7 +106,7 @@ export const TEMPLATE_LABELS: Record<LandingTemplate, { label: string; emoji: st
   classic: {
     emoji: '📄',
     label: 'Clásica',
-    description: 'Layout simple: descripción + módulos + sidebar con precio. La que viene por defecto en Curplat.'
+    description: 'Layout simple: descripción + módulos + sidebar con precio. La que viene por defecto en OfferNow.'
   },
   hotmart: {
     emoji: '🛒',

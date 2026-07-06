@@ -19,7 +19,8 @@ export default async function MarketingHome() {
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-black/40 border-b border-white/10">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
           <Link href="/" className="text-xl font-bold tracking-tight">
-            Curplat
+            {/* Wordmark del logo: "Offer" en blanco (nav oscura) + "Now" en naranja */}
+            <span className="text-white">Offer</span><span className="text-orange-500">Now</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/70">
             <a href="#beneficios" className="hover:text-white transition">Beneficios</a>
@@ -270,7 +271,7 @@ export default async function MarketingHome() {
       {/* Footer */}
       <footer className="border-t border-white/10 py-10">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-white/50">
-          <div>© {new Date().getFullYear()} Curplat. Hecho en Argentina.</div>
+          <div>© {new Date().getFullYear()} OfferNow · Sites 4 Everything · Hecho en Argentina.</div>
           <div className="flex gap-6">
             <a href="#" className="hover:text-white">Términos</a>
             <a href="#" className="hover:text-white">Privacidad</a>

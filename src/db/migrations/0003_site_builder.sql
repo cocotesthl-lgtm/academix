@@ -1,5 +1,5 @@
 -- =====================================================================
--- Curplat — Site builder + course merchandising (Sprint 1)
+-- OfferNow — Site builder + course merchandising (Sprint 1)
 -- Run AFTER 0001 + 0002.
 -- =====================================================================
 

@@ -96,7 +96,7 @@ export async function processMpPayment(opts: {
               venueName: r.venues?.name ?? null,
               date: r.reservation_date, time: r.reservation_time,
               partySize: r.party_size,
-              tenantName: t?.name ?? 'Curplat',
+              tenantName: t?.name ?? 'OfferNow',
               status: 'confirmed'
             });
           }

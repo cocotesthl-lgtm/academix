@@ -48,7 +48,7 @@ export default async function TeamPage() {
       >
         <h2 className="font-semibold text-sm">Invitar a un miembro</h2>
         <p className="text-[11px] text-white/55">
-          La persona debe haberse registrado antes en Curplat (con cualquier email).
+          La persona debe haberse registrado antes en OfferNow (con cualquier email).
           Después invitala desde acá usando ese email.
         </p>
         <div className="flex gap-2 flex-wrap">

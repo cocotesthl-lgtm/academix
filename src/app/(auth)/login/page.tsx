@@ -16,7 +16,7 @@ export default async function LoginPage({
     <main data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <Link href="/" className="text-2xl font-bold tracking-tight">Curplat</Link>
+          <Link href="/" className="text-2xl font-bold tracking-tight">OfferNow</Link>
           {isAffiliate ? (
             <>
               <div className="text-4xl mt-6 mb-2">💼</div>
@@ -41,7 +41,7 @@ export default async function LoginPage({
             <div className="text-2xl mb-1">💼</div>
             <h2 className="font-bold">¿Querés promocionar publicaciones y ganar comisión?</h2>
             <p className="text-sm text-white/65 mt-1 leading-snug">
-              Registrate como afiliado de Curplat. Una cuenta para promocionar
+              Registrate como afiliado de OfferNow. Una cuenta para promocionar
               publicaciones de todos los sitios.
             </p>
             <Link

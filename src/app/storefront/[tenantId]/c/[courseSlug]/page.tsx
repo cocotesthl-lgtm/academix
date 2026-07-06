@@ -651,7 +651,7 @@ export default async function CourseDetailPage({
     );
   }
 
-  // Default: classic landing (la histórica de Curplat).
+  // Default: classic landing (la histórica de OfferNow).
   return (
     <article className="max-w-5xl mx-auto px-6 py-10">
       <div className="grid md:grid-cols-3 gap-8">

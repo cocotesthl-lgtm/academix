@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       amountCents,
       currency: plan.currency,
       frequency: period,
-      reason: `Curplat Plan ${plan.name} (${reasonSuffix})${trialSuffix}`,
+      reason: `OfferNow Plan ${plan.name} (${reasonSuffix})${trialSuffix}`,
       externalReference: `${ctx.tenant.id}::${plan.id}::${period}${appliedPromoCode ? '::' + appliedPromoCode : ''}`,
       payerEmail,
       backUrl: `${env.platformApiOrigin}/mi-plan?status=success`,

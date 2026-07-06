@@ -152,7 +152,7 @@ const NAV: NavEntry[] = [
     }
   },
 
-  // Solo lo de la plataforma Curplat, no del negocio
+  // Solo lo de la plataforma OfferNow, no del negocio
   {
     kind: 'group',
     group: {

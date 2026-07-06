@@ -24,7 +24,7 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
   const { data: tRow } = await (svc.from('tenants') as any)
     .select('brand').eq('id', tenant.id).maybeSingle();
   const currentPrimary = tRow?.brand?.primary_color;
-  // Si el tenant nunca tocó el color (default Curplat o uno de los legacy)
+  // Si el tenant nunca tocó el color (default OfferNow o uno de los legacy)
   // aplicamos el sugerido del template — sino respetamos su elección.
   // Naranja (brand actual) + morado (legacy) + negro (sin elegir) = "no eligió"
   const defaults = ['#f97316', '#a855f7', '#0a0a0a', ''];

@@ -1,13 +1,13 @@
 -- 0010_platform_affiliates.sql
 --
--- Afiliados pasan a ser un rol PLATFORM-LEVEL (de Curplat), no per-tenant.
+-- Afiliados pasan a ser un rol PLATFORM-LEVEL (de OfferNow), no per-tenant.
 -- Cualquier afiliado registrado puede promocionar cursos de cualquier
 -- academia. La membership por tenant se sigue creando, pero se autocrea
 -- la primera vez que el afiliado genera un link para esa academia (así el
 -- owner lo ve listado entre "sus afiliados").
 --
 -- Flujo nuevo:
---   1. User se registra como afiliado (de Curplat) desde apex/marketplace/login
+--   1. User se registra como afiliado (de OfferNow) desde apex/marketplace/login
 --      → profiles.is_affiliate = true
 --   2. Navega cualquier storefront → AffiliateBar aparece (lee is_affiliate)
 --   3. Click "Copiar mi link" en una landing → /api/aff/my-code crea el

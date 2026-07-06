@@ -14,7 +14,7 @@ type IntegrationRow = {
 };
 
 const MP_ERROR_LABELS: Record<string, string> = {
-  mp_not_configured: 'La integración con MercadoPago todavía no está habilitada en la plataforma. El admin de Curplat la activará pronto.',
+  mp_not_configured: 'La integración con MercadoPago todavía no está habilitada en la plataforma. El admin de OfferNow la activará pronto.',
   mp_oauth_failed: 'No pudimos iniciar el flujo OAuth con MercadoPago.',
   invalid_state: 'La sesión de conexión expiró. Volvé a clickear "Conectar".',
   not_owner: 'No sos owner de este tenant.',
@@ -134,7 +134,7 @@ export default async function IntegrationsPage({
               </a>
             ) : (
               <span
-                title="Esperando que el admin de Curplat configure las credenciales de MP"
+                title="Esperando que el admin de OfferNow configure las credenciales de MP"
                 className="rounded-md bg-white/10 text-white/40 border border-white/15 px-4 py-2 text-sm font-medium whitespace-nowrap cursor-not-allowed select-none"
               >
                 Conectar MercadoPago
@@ -175,7 +175,7 @@ export default async function IntegrationsPage({
               </code>
               <p className="text-xs text-white/50 mt-1.5 leading-snug">
                 Pegala en <strong>MercadoPago Developers → tu app → Webhooks</strong> (eventos: <span className="font-mono">payment</span>).
-                Sin esto, las ventas no se confirman automáticamente en Curplat.
+                Sin esto, las ventas no se confirman automáticamente en OfferNow.
               </p>
             </div>
 

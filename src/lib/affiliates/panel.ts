@@ -23,10 +23,10 @@ function revalidateAffiliatePanels(): void {
   revalidateAffiliatePanels();
 }
 
-/* ─────────── Afiliados platform-level (Curplat) ─────────── */
+/* ─────────── Afiliados platform-level (OfferNow) ─────────── */
 
 /**
- * Marca al user logueado como afiliado de Curplat (platform-level).
+ * Marca al user logueado como afiliado de OfferNow (platform-level).
  * Setea profiles.is_affiliate = true. La membership por tenant se autocrea
  * después, cuando genera el primer link en alguna academia.
  *

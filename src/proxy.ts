@@ -64,8 +64,8 @@ function buildResponse(req: NextRequest): { response: NextResponse; portal: stri
   const slug = parsed.slug!;
 
   if (isAuthPath(pathname)) {
-    // Para subdominios admin y app, el login es el global de Curplat (el
-    // que dice "Curplat / Crear academia") porque ahí los users SON
+    // Para subdominios admin y app, el login es el global de OfferNow (el
+    // que dice "OfferNow / Crear academia") porque ahí los users SON
     // owners o founders.
     if (slug === 'admin' || slug === 'app') {
       return {

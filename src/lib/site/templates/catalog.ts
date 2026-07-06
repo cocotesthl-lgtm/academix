@@ -179,7 +179,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       name: 'Academia online',
       category: 'Educación',
       emoji: '🎓',
-      shortDesc: 'El default de Curplat. Cursos online, catálogo, testimonios. Para creators y formadores.',
+      shortDesc: 'El default de OfferNow. Cursos online, catálogo, testimonios. Para creators y formadores.',
       suggestedPrimary: '#f97316',
       config: c
     };

@@ -66,7 +66,7 @@ export default async function FounderTicketDetail({
             <li key={m.id} className={`rounded-xl border p-4 ${isFounder ? 'border-orange-500/30 bg-orange-500/5' : 'border-white/10 bg-white/[0.02]'}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">
-                  {isFounder ? '🛟 Equipo Curplat' : (m.profiles?.display_name ?? m.profiles?.email ?? 'Owner')}
+                  {isFounder ? '🛟 Equipo OfferNow' : (m.profiles?.display_name ?? m.profiles?.email ?? 'Owner')}
                 </span>
                 <span className="text-xs text-white/40">{new Date(m.created_at).toLocaleString('es-AR')}</span>
               </div>

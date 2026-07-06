@@ -30,7 +30,7 @@ export type CreatePreapprovalOpts = {
   amountCents: number;
   currency: string;          // 'ARS'
   frequency: 'monthly' | 'annual';
-  reason: string;            // ej. "Curplat Plan Medium (mensual)"
+  reason: string;            // ej. "OfferNow Plan Medium (mensual)"
   externalReference: string; // tenant_id (para identificarlo después)
   payerEmail: string;
   backUrl: string;           // URL de retorno post-pago

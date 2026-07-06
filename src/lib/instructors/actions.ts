@@ -15,7 +15,7 @@ import { notifyInstructorAssigned, notifyBookingRescheduled } from '@/lib/emails
  */
 /**
  * Sumar/promover user como instructor del tenant.
- * Acepta email (cualquier user de Curplat) o user_id directo
+ * Acepta email (cualquier user de OfferNow) o user_id directo
  * (para el flow de "ascender afiliado" que ya tiene id resuelto).
  *
  * Importante: NO toca otras memberships del mismo user (si era afiliado,

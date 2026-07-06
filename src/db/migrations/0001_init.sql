@@ -1,5 +1,5 @@
 -- =====================================================================
--- Curplat — Initial schema (Week 2 of MVP build)
+-- OfferNow — Initial schema (Week 2 of MVP build)
 -- Multi-tenant SaaS for academias. RLS-first.
 -- =====================================================================
 

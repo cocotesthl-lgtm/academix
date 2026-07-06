@@ -20,7 +20,7 @@ function formatDate(d: string): string {
 }
 
 function shell(body: string, accent = '#7c3aed'): string {
-  return `<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a;">${body}<hr style="border:none;border-top:1px solid #e5e5e5;margin:32px 0 16px;"><p style="font-size:11px;color:#888;">Enviado automáticamente. <span style="color:${accent};">Curplat</span></p></div>`;
+  return `<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a;">${body}<hr style="border:none;border-top:1px solid #e5e5e5;margin:32px 0 16px;"><p style="font-size:11px;color:#888;">Enviado automáticamente. <span style="color:${accent};">OfferNow</span></p></div>`;
 }
 
 export async function sendReservationCreatedEmail(r: ReservationEmail): Promise<void> {

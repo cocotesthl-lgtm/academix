@@ -113,7 +113,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ tenantId: 
     productTitle: course.title,
     venueName: venue?.name ?? null,
     date, time, partySize: party,
-    tenantName: tenant?.name ?? 'Curplat'
+    tenantName: tenant?.name ?? 'OfferNow'
   }).catch(() => { /* email best-effort */ });
 
   // Crear MP preference si hay algo que cobrar

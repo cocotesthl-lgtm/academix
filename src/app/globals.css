@@ -7,7 +7,7 @@
   --background: #ffffff;
   --foreground: #0a0a0a;
 
-  /* ───────── Curplat brand palette ─────────
+  /* ───────── OfferNow brand palette ─────────
      Negro + blanco + gradiente naranja→ámbar (estilo "fuego").
      Single source of truth — todos los lugares "platform" leen de acá. */
   --cp-brand-black: #0a0a0a;

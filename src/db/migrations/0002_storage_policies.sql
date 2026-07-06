@@ -1,5 +1,5 @@
 -- =====================================================================
--- Curplat — Storage buckets + RLS policies (Week 3)
+-- OfferNow — Storage buckets + RLS policies (Week 3)
 -- Run AFTER 0001_init.sql.
 -- =====================================================================
 

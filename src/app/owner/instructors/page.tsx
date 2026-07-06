@@ -124,7 +124,7 @@ export default async function OwnerInstructorsPage() {
           + Sumar
         </button>
         <p className="text-[11px] text-white/45 basis-full">
-          ⚠️ El user tiene que estar registrado en Curplat (signup público o como afiliado).
+          ⚠️ El user tiene que estar registrado en OfferNow (signup público o como afiliado).
           Si no existe, no hace nada.
         </p>
       </form>

@@ -228,7 +228,7 @@ export default async function OwnerFinance() {
       </section>
 
       <p className="text-xs text-white/40">
-        Cuando el equipo de Curplat confirme tu pago en cripto, tu saldo vuelve a 0 automáticamente
+        Cuando el equipo de OfferNow confirme tu pago en cripto, tu saldo vuelve a 0 automáticamente
         y, si estabas suspendido, tu storefront se reactiva.
       </p>
     </div>
@@ -266,7 +266,7 @@ function CryptoPayoutCard({ balanceCents }: { balanceCents: number }) {
 
       {wallets.length === 0 ? (
         <div className="rounded border border-white/15 bg-white/5 p-4 text-xs text-white/60">
-          El admin de Curplat todavía no publicó las direcciones de cripto. Pedile el dato por soporte
+          El admin de OfferNow todavía no publicó las direcciones de cripto. Pedile el dato por soporte
           y te las pasa a mano mientras tanto.
         </div>
       ) : (

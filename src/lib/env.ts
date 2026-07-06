@@ -102,7 +102,7 @@ export const env = {
   resend: {
     apiKey: () => optional('RESEND_API_KEY'),
     fromEmail: () => optional('RESEND_FROM_EMAIL') ?? 'noreply@bzseguridad.store',
-    fromName: () => optional('RESEND_FROM_NAME') ?? 'Curplat'
+    fromName: () => optional('RESEND_FROM_NAME') ?? 'OfferNow'
   }
 };
 

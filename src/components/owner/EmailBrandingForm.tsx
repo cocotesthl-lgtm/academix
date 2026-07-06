@@ -149,7 +149,7 @@ export function EmailBrandingForm({
               </div>
             )}
             <div className="px-4 py-2 border-t border-black/10 bg-black/[0.03] text-center text-[10px] text-black/50">
-              Enviado por <strong>{brandName}</strong> a través de Curplat.
+              Enviado por <strong>{brandName}</strong> a través de OfferNow.
             </div>
           </div>
         </div>

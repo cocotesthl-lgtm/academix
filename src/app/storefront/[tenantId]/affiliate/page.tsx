@@ -50,7 +50,7 @@ export default async function AffiliateDashboard({
 
   const svc = getServiceClient();
 
-  // Afiliado platform-level (Curplat)? Si no lo es, ofrecemos signup.
+  // Afiliado platform-level (OfferNow)? Si no lo es, ofrecemos signup.
   const { data: profile } = await svc
     .from('profiles').select('is_affiliate').eq('id', user.id)
     .maybeSingle<{ is_affiliate: boolean }>();
@@ -59,7 +59,7 @@ export default async function AffiliateDashboard({
     return <AffiliateJoin tenantId={tenantId} tenantName={tenant.name} primary={primary} />;
   }
 
-  // Es afiliado de Curplat — autocreamos su membership en este tenant para
+  // Es afiliado de OfferNow — autocreamos su membership en este tenant para
   // que el owner lo vea entre sus afiliados.
   await ensureAffiliateMembership({ tenantId, userId: user.id });
 
@@ -373,7 +373,7 @@ function AffiliateJoin({ tenantId, tenantName, primary }: { tenantId: string; te
       <div className="text-5xl mb-4">💼</div>
       <h1 className="text-3xl font-bold">Sumate al programa de afiliados</h1>
       <p className="text-black/60 mt-3 max-w-md mx-auto">
-        Te registrás como afiliado de <strong>Curplat</strong> y podés promocionar publicaciones de{' '}
+        Te registrás como afiliado de <strong>OfferNow</strong> y podés promocionar publicaciones de{' '}
         <strong>{tenantName}</strong> y de cualquier otro sitio de la plataforma. Te damos
         link único por publicación, material promocional y comisión por cada venta.
       </p>

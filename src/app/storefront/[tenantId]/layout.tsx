@@ -94,7 +94,7 @@ export default async function StorefrontLayout({
   const row = tenantRow as { site_config?: unknown; site_config_published?: unknown } | null;
   const cfg = mergeConfig(row?.site_config_published ?? row?.site_config);
 
-  // ¿El user logueado es afiliado PLATFORM-LEVEL (de Curplat)?
+  // ¿El user logueado es afiliado PLATFORM-LEVEL (de OfferNow)?
   // Si sí, mostramos la barra superior — puede afiliarse a este tenant
   // generando un link (la membership se autocrea ahí).
   // El user puede ocultar la barra con la ✕: setea cookie y la layout
@@ -284,7 +284,7 @@ export default async function StorefrontLayout({
             </div>
           )}
 
-          <p className="text-xs text-black/30">Hecho con Curplat</p>
+          <p className="text-xs text-black/30">Hecho con OfferNow</p>
         </div>
       </footer>
     </div>

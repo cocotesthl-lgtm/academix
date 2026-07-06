@@ -9,7 +9,7 @@ import { GoogleOneTapButton } from './GoogleOneTapButton';
 
 /**
  * LoginForm reutilizable. Por defecto se renderiza con tema oscuro (para
- * el login global de Curplat). En el storefront pasamos theme='light' y
+ * el login global de OfferNow). En el storefront pasamos theme='light' y
  * un primaryColor para que matchee con el branding del owner.
  */
 export function LoginForm({
