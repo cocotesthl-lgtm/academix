@@ -24,7 +24,7 @@ export function SignupForm() {
       <div className="text-center space-y-4">
         <div className="text-5xl">📧</div>
         <h2 className="text-2xl font-bold">Revisá tu email</h2>
-        <p className="text-white/70">
+        <p className="text-neutral-600">
           Te mandamos un link de confirmación. Hacé click ahí para activar tu cuenta y
           empezar a crear tu sitio.
         </p>
@@ -35,19 +35,19 @@ export function SignupForm() {
   return (
     <div className="space-y-4">
       {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-        ? <GoogleOneTapButton theme="dark" next={next || undefined} />
-        : <GoogleAuthButton theme="dark" next={next || undefined} label="Registrarme con Google" />}
+        ? <GoogleOneTapButton theme="light" next={next || undefined} />
+        : <GoogleAuthButton theme="light" next={next || undefined} label="Registrarme con Google" />}
       <div className="flex items-center gap-3 text-xs uppercase tracking-wider">
-        <div className="flex-1 h-px bg-white/10" />
-        <span className="text-white/40">o con email</span>
-        <div className="flex-1 h-px bg-white/10" />
+        <div className="flex-1 h-px bg-neutral-200" />
+        <span className="text-neutral-400">o con email</span>
+        <div className="flex-1 h-px bg-neutral-200" />
       </div>
     <form action={formAction} className="space-y-4">
       {next && <input type="hidden" name="next" value={next} />}
       {/* Nombre eliminado para reducir fricción. El name del user se deriva
           del email o del nombre del sitio en el onboarding. */}
       <div>
-        <label className="block text-sm mb-1.5 text-white/70" htmlFor="email">
+        <label className="block text-sm mb-1.5 text-neutral-700" htmlFor="email">
           Email
         </label>
         <input
@@ -57,11 +57,11 @@ export function SignupForm() {
           required
           autoComplete="email"
           placeholder="vos@ejemplo.com"
-          className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/40"
+          className="w-full rounded-md bg-white border border-neutral-300 px-3 py-2.5 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900"
         />
       </div>
       <div>
-        <label className="block text-sm mb-1.5 text-white/70" htmlFor="password">
+        <label className="block text-sm mb-1.5 text-neutral-700" htmlFor="password">
           Contraseña
         </label>
         <input
@@ -72,12 +72,12 @@ export function SignupForm() {
           minLength={8}
           autoComplete="new-password"
           placeholder="Mínimo 8 caracteres"
-          className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/40"
+          className="w-full rounded-md bg-white border border-neutral-300 px-3 py-2.5 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900"
         />
       </div>
 
       {state?.ok === false && (
-        <div className="rounded-md bg-red-500/10 border border-red-500/30 text-red-200 text-sm px-3 py-2">
+        <div className="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
           {state.error}
         </div>
       )}
@@ -85,14 +85,14 @@ export function SignupForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-white text-black py-2.5 font-semibold hover:bg-white/90 transition disabled:opacity-50"
+        className="w-full rounded-md bg-neutral-900 text-white py-2.5 font-semibold hover:bg-neutral-800 transition disabled:opacity-50"
       >
         {pending ? 'Creando…' : 'Crear cuenta'}
       </button>
 
-      <p className="text-center text-sm text-white/50">
+      <p className="text-center text-sm text-neutral-600">
         ¿Ya tenés cuenta?{' '}
-        <Link href="/login" className="text-white hover:underline">
+        <Link href="/login" className="text-neutral-900 hover:underline font-medium">
           Iniciar sesión
         </Link>
       </p>

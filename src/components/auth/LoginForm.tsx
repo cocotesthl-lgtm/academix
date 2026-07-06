@@ -8,12 +8,12 @@ import { GoogleAuthButton } from './GoogleAuthButton';
 import { GoogleOneTapButton } from './GoogleOneTapButton';
 
 /**
- * LoginForm reutilizable. Por defecto se renderiza con tema oscuro (para
- * el login global de OfferNow). En el storefront pasamos theme='light' y
- * un primaryColor para que matchee con el branding del owner.
+ * LoginForm reutilizable. Por defecto tema claro (matchea con el resto
+ * de la marketing/auth de OfferNow, que usan fondo #fafafa). Si algún
+ * storefront legacy sigue en dark, se puede pasar theme='dark'.
  */
 export function LoginForm({
-  theme = 'dark',
+  theme = 'light',
   hideCreateAccount = false,
   primaryColor,
   fallbackRedirect = '/onboarding'

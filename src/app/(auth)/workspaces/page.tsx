@@ -40,9 +40,9 @@ const ROLE_LABEL: Record<Workspace['role'], string> = {
   student: 'Alumno'
 };
 const ROLE_BADGE: Record<Workspace['role'], string> = {
-  owner: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  instructor: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
-  student: 'bg-white/10 text-white/70 border-white/15'
+  owner: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+  instructor: 'bg-sky-100 text-sky-700 border-sky-300',
+  student: 'bg-neutral-100 text-neutral-700 border-neutral-300'
 };
 
 export default async function WorkspacesPage() {
@@ -104,32 +104,34 @@ export default async function WorkspacesPage() {
   const userName = profile?.display_name ?? user.email?.split('@')[0] ?? 'vos';
 
   return (
-    <main data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-[#fafafa] text-neutral-900">
       <div className="max-w-2xl mx-auto px-6 py-12 space-y-6">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold">OfferNow</Link>
+          <Link href="/" className="text-2xl font-bold">
+            <span className="text-neutral-900">Offer</span><span className="text-orange-500">Now</span>
+          </Link>
           <form action={async () => { 'use server'; await signoutAction(); }}>
-            <button className="text-xs text-white/55 hover:text-white">Cerrar sesión</button>
+            <button className="text-xs text-neutral-500 hover:text-neutral-900">Cerrar sesión</button>
           </form>
         </div>
 
         <div className="space-y-2 pt-4">
           <h1 className="text-3xl font-bold">Hola, {userName} 👋</h1>
-          <p className="text-white/60">Elegí un espacio de trabajo para entrar.</p>
-          <p className="text-xs text-white/40">Sesión: {user.email}</p>
+          <p className="text-neutral-600">Elegí un espacio de trabajo para entrar.</p>
+          <p className="text-xs text-neutral-500">Sesión: {user.email}</p>
         </div>
 
         {profile?.is_super_admin && (
           <Link
             href={subdomainUrl('admin', '/dashboard')}
-            className="block rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 hover:bg-amber-500/15 transition"
+            className="block rounded-xl border border-amber-300 bg-amber-50 p-4 hover:bg-amber-100 transition"
           >
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs uppercase tracking-wider text-amber-300 font-semibold">Founder</div>
+                <div className="text-xs uppercase tracking-wider text-amber-700 font-semibold">Founder</div>
                 <div className="font-bold text-lg">Panel de administración</div>
               </div>
-              <span className="text-amber-300">→</span>
+              <span className="text-amber-700">→</span>
             </div>
           </Link>
         )}
@@ -137,7 +139,7 @@ export default async function WorkspacesPage() {
         {/* Workspaces existentes */}
         <div className="space-y-2.5">
           {sorted.length === 0 && (
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6 text-center text-white/55">
+            <div className="rounded-xl border border-neutral-200 bg-white p-6 text-center text-neutral-500">
               Todavía no formás parte de ningún sitio.
             </div>
           )}
@@ -152,15 +154,15 @@ export default async function WorkspacesPage() {
               <a
                 key={w.tenant_id}
                 href={href}
-                className="block rounded-xl border border-white/10 bg-white/[0.03] p-4 hover:bg-white/[0.06] hover:border-white/25 transition"
+                className="block rounded-xl border border-neutral-200 bg-white p-4 hover:border-neutral-900 hover:shadow-sm transition"
               >
                 <div className="flex items-center gap-3">
                   {w.logo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={w.logo_url} alt="" className="w-11 h-11 rounded-lg object-cover border border-white/10" />
+                    <img src={w.logo_url} alt="" className="w-11 h-11 rounded-lg object-cover border border-neutral-200" />
                   ) : (
                     <div
-                      className="w-11 h-11 rounded-lg grid place-items-center font-bold text-white border border-white/10"
+                      className="w-11 h-11 rounded-lg grid place-items-center font-bold text-white border border-neutral-200"
                       style={{ background: primary }}
                     >
                       {w.tenant_name.slice(0, 1).toUpperCase()}
@@ -173,9 +175,9 @@ export default async function WorkspacesPage() {
                         {ROLE_LABEL[w.role]}
                       </span>
                     </div>
-                    <div className="text-xs text-white/45 truncate">{w.tenant_slug}.{env.rootDomain}</div>
+                    <div className="text-xs text-neutral-500 truncate">{w.tenant_slug}.{env.rootDomain}</div>
                   </div>
-                  <span className="text-white/40">→</span>
+                  <span className="text-neutral-400">→</span>
                 </div>
               </a>
             );
@@ -185,12 +187,12 @@ export default async function WorkspacesPage() {
         {/* CTA crear nuevo */}
         <Link
           href="/onboarding"
-          className="block rounded-xl border border-dashed border-white/15 hover:border-white/40 p-4 text-center text-white/70 hover:text-white transition"
+          className="block rounded-xl border border-dashed border-neutral-300 hover:border-neutral-900 bg-white p-4 text-center text-neutral-600 hover:text-neutral-900 transition"
         >
           + Crear un nuevo sitio
         </Link>
 
-        <p className="text-[11px] text-center text-white/35 pt-2">
+        <p className="text-[11px] text-center text-neutral-400 pt-2">
           Tip: con una sola cuenta podés ser parte de varios sitios — propio,
           alumno en algunos, instructor en otros. Cambiá entre ellos cuando quieras.
         </p>

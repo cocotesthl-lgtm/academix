@@ -48,14 +48,16 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <main data-ui-theme="dark" className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6">
+    <main className="min-h-screen bg-[#fafafa] text-neutral-900 flex items-center justify-center p-6">
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
-          <Link href="/" className="text-2xl font-bold tracking-tight">OfferNow</Link>
+          <Link href="/" className="text-2xl font-bold tracking-tight">
+            <span className="text-neutral-900">Offer</span><span className="text-orange-500">Now</span>
+          </Link>
           <h1 className="mt-6 text-3xl font-bold">Configurá tu sitio</h1>
-          <p className="mt-2 text-white/60">Estos datos los podés cambiar después.</p>
+          <p className="mt-2 text-neutral-600">Estos datos los podés cambiar después.</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
           <OnboardingForm rootDomain={env.rootDomain} />
         </div>
       </div>
