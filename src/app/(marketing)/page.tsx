@@ -51,97 +51,171 @@ export default async function MarketingHome() {
       </nav>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* Hero — centrado con mockup */}
+      {/* Hero — 2 columnas estilo WordPress.com sobre fondo naranja */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden pt-16 pb-12">
-        <div className="max-w-5xl mx-auto px-6 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-600 mb-6 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Beta abierta · Argentina · LatAm
-          </div>
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.05]">
-            OfferNow, como <br className="hidden md:inline" />
-            <span className="italic font-serif text-orange-500">debe ser.</span>
-          </h1>
-          <p className="mt-8 text-lg md:text-xl text-neutral-600 max-w-2xl mx-auto leading-relaxed">
-            Un solo sistema para vender cualquier cosa online — cursos, productos físicos, entradas,
-            gift cards, mentorías, reservas. Sin mensualidades, con tu dominio, cobrando directo a MercadoPago.
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/signup"
-              className="w-full sm:w-auto rounded-full bg-orange-500 text-white px-8 py-4 text-base font-semibold hover:bg-orange-600 transition"
-            >
-              Empezar ahora
-            </Link>
-            <Link
-              href="/demo"
-              className="w-full sm:w-auto rounded-full border border-neutral-300 bg-white text-neutral-900 px-8 py-4 text-base font-semibold hover:border-neutral-900 transition"
-            >
-              Ver demo en vivo
-            </Link>
-          </div>
-          <p className="mt-5 text-xs text-neutral-500">Sin tarjeta · Sin mensualidades · 5% por venta</p>
-        </div>
+      <section className="relative overflow-hidden bg-orange-500 text-white">
+        {/* Pattern de líneas sutiles en el fondo (como WP) */}
+        <div className="absolute inset-0 opacity-[0.07] pointer-events-none" aria-hidden
+          style={{
+            backgroundImage: 'linear-gradient(30deg, transparent 45%, white 45%, white 46%, transparent 46%), linear-gradient(150deg, transparent 45%, white 45%, white 46%, transparent 46%)',
+            backgroundSize: '80px 80px'
+          }} />
 
-        {/* Mockup del producto — browser frame con dashboard adentro */}
-        <div className="max-w-6xl mx-auto px-6 mt-16">
-          <BrowserMockup />
+        <div className="relative max-w-7xl mx-auto px-6 py-20 lg:py-28 grid lg:grid-cols-2 gap-12 items-center">
+          {/* Columna izquierda: texto */}
+          <div>
+            {/* Badge rating estilo G² */}
+            <div className="inline-flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-full bg-white text-orange-500 flex items-center justify-center font-black text-lg">
+                ★
+              </div>
+              <div className="text-sm">
+                <span className="font-bold">Beta abierta</span>
+                <span className="text-white/80"> · Argentina · LatAm</span>
+              </div>
+            </div>
+
+            <h1 className="font-serif font-normal tracking-tight leading-[1.0] text-5xl md:text-6xl lg:text-7xl">
+              OfferNow,<br />
+              <span className="italic">como debe ser</span>
+            </h1>
+
+            <p className="mt-8 text-lg md:text-xl text-white/90 max-w-lg leading-relaxed">
+              La plataforma para vender cualquier cosa online — cursos, productos físicos,
+              entradas, gift cards, reservas — con tu dominio, tu marca, y cobrando directo a MercadoPago.
+            </p>
+
+            <div className="mt-10">
+              <Link
+                href="/signup"
+                className="inline-block rounded-md bg-white text-orange-600 px-8 py-4 text-base font-bold hover:bg-neutral-100 transition shadow-lg"
+              >
+                Empezá ahora
+              </Link>
+            </div>
+          </div>
+
+          {/* Columna derecha: mockup + floating cards */}
+          <div className="relative h-[420px] lg:h-[520px]">
+            {/*
+              Imagen principal — el src apunta a un placeholder por ahora.
+              Reemplazá el URL cuando tengas la captura real del producto:
+
+                <img src="TU_URL_AQUI.png" ... />
+
+              Recomendado: screenshot de /owner/dashboard o similar,
+              proporciones 4:3 aprox, fondo blanco.
+            */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://placehold.co/900x680/ffffff/525252?text=Cambiar+URL+de+la+imagen+aca&font=inter"
+              alt="Mockup del panel de OfferNow"
+              className="absolute inset-y-0 right-0 h-full w-auto rounded-xl shadow-2xl border border-white/20 object-cover"
+              style={{ maxWidth: '100%' }}
+            />
+
+            {/* Card flotante superior-derecha: "Última copia de seguridad" */}
+            <div className="hidden md:block absolute top-4 right-4 lg:-right-4 lg:top-0 w-72 rounded-xl bg-white text-neutral-900 shadow-xl p-4 z-10">
+              <div className="flex items-center gap-2 text-xs text-neutral-500 uppercase tracking-wider mb-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Última venta
+              </div>
+              <div className="font-bold text-lg">hace 4 minutos</div>
+              <div className="text-xs text-neutral-500 mt-0.5">Curso de inglés A1 · $9.900</div>
+            </div>
+
+            {/* Card flotante inferior-izquierda: "Tiempo de actividad" */}
+            <div className="hidden md:block absolute bottom-4 left-4 lg:-left-4 lg:bottom-0 w-64 rounded-xl bg-white text-neutral-900 shadow-xl p-4 z-10">
+              <div className="text-[10px] uppercase tracking-widest text-neutral-500 mb-1 font-semibold">
+                Tiempo de actividad
+              </div>
+              <div className="text-emerald-600 text-2xl font-bold">99,999 %</div>
+              <svg viewBox="0 0 200 40" className="w-full h-8 mt-1">
+                <path d="M0,32 Q30,25 60,22 T120,15 T200,8"
+                  stroke="rgb(16 185 129)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <circle cx="200" cy="8" r="4" fill="rgb(16 185 129)" />
+              </svg>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* Confía en el mejor sistema — features verticales */}
+      {/* Sistema completo — 4 cards con ícono circular estilo WordPress */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section id="features" className="border-t border-neutral-200 py-24 bg-[#fafafa]">
-        <div className="max-w-5xl mx-auto px-6">
+      <section id="features" className="relative border-t border-neutral-200 py-24 bg-[#f5f5f5]">
+        {/* Patrón de líneas sutil (como en el WP hero) */}
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none" aria-hidden
+          style={{
+            backgroundImage: 'linear-gradient(30deg, transparent 45%, #262626 45%, #262626 46%, transparent 46%), linear-gradient(150deg, transparent 45%, #262626 45%, #262626 46%, transparent 46%)',
+            backgroundSize: '80px 80px'
+          }} />
+
+        <div className="relative max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <p className="text-sm uppercase tracking-widest text-orange-500 mb-3 font-semibold">Sistema completo</p>
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
-              Todo integrado, sin plugins.
+            <h2 className="text-4xl md:text-5xl font-serif italic">
+              Todo integrado, sin plugins
             </h2>
             <p className="mt-4 text-lg text-neutral-600 max-w-2xl mx-auto">
               Otras plataformas te venden el sitio y te cobran aparte por cada módulo. Acá está todo.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               {
-                title: "Vendé cualquier cosa",
-                body: "Cursos con videos por Drive, productos físicos con stock y variantes, entradas con QR, gift cards, reservas de mesa, mentorías, membresías. Un panel para todo.",
-                stat: "10+ tipos de producto"
+                title: "Todo tipo de producto",
+                body: "Cursos, productos físicos con variantes y stock, entradas con QR, gift cards, reservas y mentorías. Un panel para vender lo que quieras.",
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                  </svg>
+                )
               },
               {
-                title: "Cobrás vos, directo a MercadoPago",
-                body: "OAuth con un click. La plata de cada venta entra a tu cuenta. Nosotros cobramos comisión solo sobre ventas confirmadas — nunca por adelantado.",
-                stat: "0 pesos por adelantado"
+                title: "Cobrás vos, directo",
+                body: "Conectás tu MercadoPago con OAuth. La plata de cada venta entra a tu cuenta. Nosotros cobramos comisión solo sobre ventas confirmadas.",
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="2"/>
+                    <line x1="2" y1="10" x2="22" y2="10"/>
+                  </svg>
+                )
               },
               {
-                title: "Sin costos de almacenamiento",
-                body: "Conectás tu Google Drive y cargás lo que quieras. No cobramos por GB ni por video. Usás tu propio espacio, sin límites artificiales.",
-                stat: "Espacio ilimitado"
+                title: "Sin costos de storage",
+                body: "Conectás Google Drive y cargás lo que quieras. No cobramos por GB ni por video. Usás tu propio espacio, sin límites artificiales.",
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                )
               },
               {
-                title: "Marketing built-in",
-                body: "Afiliados multinivel de 3 niveles, cupones, gift cards con QR, CRM con pipeline, formularios conectados, blog con SEO, analytics de funnel.",
-                stat: "12 módulos incluidos"
+                title: "Marketing incluido",
+                body: "Afiliados multinivel, cupones, gift cards con QR, CRM con pipeline, formularios, blog con SEO, analytics de funnel — todo integrado.",
+                icon: (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 3v18h18"/>
+                    <polyline points="7 14 12 9 15 12 21 6"/>
+                  </svg>
+                )
               }
-            ].map((f, i) => (
+            ].map((f) => (
               <div
                 key={f.title}
-                className="grid md:grid-cols-[1fr_2fr_auto] gap-6 items-center rounded-2xl border border-neutral-200 bg-white p-6 hover:border-neutral-900 hover:shadow-md transition"
+                className="rounded-2xl bg-white p-6 hover:shadow-md transition"
               >
-                <div className="text-2xl font-bold text-neutral-300 shrink-0">
-                  0{i + 1}
+                <div className="w-12 h-12 rounded-full bg-orange-500 text-white flex items-center justify-center mb-6">
+                  {f.icon}
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold mb-1.5">{f.title}</h3>
-                  <p className="text-neutral-600 leading-relaxed">{f.body}</p>
-                </div>
-                <div className="text-sm font-semibold text-orange-500 whitespace-nowrap">
-                  {f.stat}
-                </div>
+                <h3 className="text-lg font-bold mb-3 text-neutral-900">{f.title}</h3>
+                <p className="text-neutral-600 leading-relaxed text-sm">{f.body}</p>
               </div>
             ))}
           </div>
@@ -491,111 +565,6 @@ export default async function MarketingHome() {
           </div>
         </div>
       </footer>
-    </div>
-  );
-}
-
-/**
- * Mockup del producto — browser frame CSS puro con dashboard estilizado
- * adentro. Sin dependencia de imágenes externas.
- */
-function BrowserMockup() {
-  return (
-    <div className="rounded-t-2xl md:rounded-2xl border border-neutral-200 bg-white shadow-2xl overflow-hidden">
-      {/* Browser chrome */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-neutral-100 border-b border-neutral-200">
-        <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-red-400" />
-          <div className="w-3 h-3 rounded-full bg-amber-400" />
-          <div className="w-3 h-3 rounded-full bg-emerald-400" />
-        </div>
-        <div className="flex-1 mx-4 rounded-md bg-white border border-neutral-200 px-3 py-1 text-xs text-neutral-500">
-          🔒 miNegocio.bzseguridad.store
-        </div>
-        <div className="w-6 h-6 rounded bg-neutral-200" />
-      </div>
-
-      {/* Dashboard content */}
-      <div className="grid md:grid-cols-[220px_1fr] min-h-[420px]">
-        {/* Sidebar */}
-        <div className="hidden md:block bg-[#0a0a0a] text-white p-4">
-          <div className="text-sm font-bold mb-6">
-            <span className="text-white">Offer</span><span className="text-orange-500">Now</span>
-          </div>
-          <div className="space-y-1">
-            {[
-              { label: "Inicio", active: true },
-              { label: "Catálogo" },
-              { label: "Ventas" },
-              { label: "Ecommerce" },
-              { label: "Analytics" },
-              { label: "Marketing" },
-              { label: "Configuración" }
-            ].map((item) => (
-              <div key={item.label}
-                className={`px-2 py-1.5 rounded text-xs ${item.active ? "bg-white/10 text-white font-medium" : "text-white/60"}`}>
-                {item.label}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Main content */}
-        <div className="p-6 bg-white">
-          <div className="flex items-baseline justify-between mb-6">
-            <h3 className="text-xl font-bold">Dashboard</h3>
-            <span className="text-xs text-neutral-500">Últimos 30 días</span>
-          </div>
-
-          {/* KPI cards */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            {[
-              { label: "Ingresos", value: "$284.500", change: "+18%" },
-              { label: "Órdenes", value: "126", change: "+24%" },
-              { label: "Conversión", value: "3.4%", change: "+0.8%" }
-            ].map((k) => (
-              <div key={k.label} className="rounded-lg border border-neutral-200 p-3">
-                <div className="text-[10px] uppercase tracking-wider text-neutral-500">{k.label}</div>
-                <div className="text-xl font-bold mt-1">{k.value}</div>
-                <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">{k.change}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Fake chart */}
-          <div className="rounded-lg border border-neutral-200 p-4">
-            <div className="text-xs font-semibold text-neutral-700 mb-3">Ventas por día</div>
-            <div className="flex items-end gap-1 h-24">
-              {[40, 55, 30, 65, 45, 70, 60, 80, 50, 90, 75, 95, 85, 70].map((h, i) => (
-                <div key={i} className="flex-1 bg-gradient-to-t from-orange-400 to-orange-300 rounded-t"
-                  style={{ height: `${h}%` }} />
-              ))}
-            </div>
-          </div>
-
-          {/* Order list */}
-          <div className="mt-4 rounded-lg border border-neutral-200 p-4">
-            <div className="text-xs font-semibold text-neutral-700 mb-2">Últimas órdenes</div>
-            <div className="space-y-1.5">
-              {[
-                { name: "Remera básica · M", price: "$4.500", status: "pagada" },
-                { name: "Curso de inglés A1", price: "$9.900", status: "pagada" },
-                { name: "Reserva mesa · Sáb 20hs", price: "$2.000", status: "pendiente" }
-              ].map((o, i) => (
-                <div key={i} className="flex items-center justify-between text-xs">
-                  <span className="text-neutral-700">{o.name}</span>
-                  <span className="flex items-center gap-2">
-                    <span className="font-mono text-neutral-900">{o.price}</span>
-                    <span className={`text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded ${
-                      o.status === "pagada" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                    }`}>{o.status}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
