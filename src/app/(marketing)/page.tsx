@@ -51,91 +51,92 @@ export default async function MarketingHome() {
       </nav>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* Hero — 2 columnas estilo WordPress.com sobre fondo naranja */}
+      {/* Hero — 2 columnas sobre fondo blanco con acentos naranja/negro */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-orange-500 text-white">
-        {/* Pattern de líneas sutiles en el fondo (como WP) */}
-        <div className="absolute inset-0 opacity-[0.07] pointer-events-none" aria-hidden
-          style={{
-            backgroundImage: 'linear-gradient(30deg, transparent 45%, white 45%, white 46%, transparent 46%), linear-gradient(150deg, transparent 45%, white 45%, white 46%, transparent 46%)',
-            backgroundSize: '80px 80px'
-          }} />
+      <section className="relative overflow-hidden bg-white text-neutral-900">
+        {/* Blob decorativo naranja detrás del contenido */}
+        <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-orange-100/60 blur-3xl pointer-events-none" aria-hidden />
+        <div className="absolute -bottom-24 left-1/4 w-[400px] h-[400px] rounded-full bg-amber-100/40 blur-3xl pointer-events-none" aria-hidden />
 
         <div className="relative max-w-7xl mx-auto px-6 py-20 lg:py-28 grid lg:grid-cols-2 gap-12 items-center">
           {/* Columna izquierda: texto */}
           <div>
             {/* Badge rating estilo G² */}
             <div className="inline-flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 rounded-full bg-white text-orange-500 flex items-center justify-center font-black text-lg">
+              <div className="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-black text-lg">
                 ★
               </div>
               <div className="text-sm">
-                <span className="font-bold">Beta abierta</span>
-                <span className="text-white/80"> · Argentina · LatAm</span>
+                <span className="font-bold text-neutral-900">Beta abierta</span>
+                <span className="text-neutral-600"> · Argentina · LatAm</span>
               </div>
             </div>
 
-            <h1 className="font-serif font-normal tracking-tight leading-[1.0] text-5xl md:text-6xl lg:text-7xl">
+            <h1 className="font-serif font-normal tracking-tight leading-[1.0] text-5xl md:text-6xl lg:text-7xl text-neutral-900">
               OfferNow,<br />
-              <span className="italic">como debe ser</span>
+              <span className="italic text-orange-500">como debe ser</span>
             </h1>
 
-            <p className="mt-8 text-lg md:text-xl text-white/90 max-w-lg leading-relaxed">
+            <p className="mt-8 text-lg md:text-xl text-neutral-700 max-w-lg leading-relaxed">
               La plataforma para vender cualquier cosa online — cursos, productos físicos,
               entradas, gift cards, reservas — con tu dominio, tu marca, y cobrando directo a MercadoPago.
             </p>
 
-            <div className="mt-10">
+            <div className="mt-10 flex flex-wrap gap-3">
               <Link
                 href="/signup"
-                className="inline-block rounded-md bg-white text-orange-600 px-8 py-4 text-base font-bold hover:bg-neutral-100 transition shadow-lg"
+                className="inline-block rounded-md bg-neutral-900 text-white px-8 py-4 text-base font-bold hover:bg-neutral-800 transition shadow-lg"
               >
                 Empezá ahora
+              </Link>
+              <Link
+                href="/demo"
+                className="inline-block rounded-md border-2 border-neutral-900 bg-white text-neutral-900 px-8 py-4 text-base font-bold hover:bg-neutral-100 transition"
+              >
+                Ver demo
               </Link>
             </div>
           </div>
 
-          {/* Columna derecha: mockup + floating cards */}
+          {/* Columna derecha: imagen stock + floating cards */}
           <div className="relative h-[420px] lg:h-[520px]">
             {/*
-              Imagen principal — el src apunta a un placeholder por ahora.
-              Reemplazá el URL cuando tengas la captura real del producto:
-
-                <img src="TU_URL_AQUI.png" ... />
-
-              Recomendado: screenshot de /owner/dashboard o similar,
-              proporciones 4:3 aprox, fondo blanco.
+              Imagen de stock (Unsplash CDN, license libre para uso).
+              Reemplazable con cualquier URL — cuando tengas screenshot
+              real del panel, cambiá src y alt:
+                <img src="TU_URL.png" alt="..." ... />
+              Recomendado: screenshot 4:3, fondo blanco.
             */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="https://placehold.co/900x680/ffffff/525252?text=Cambiar+URL+de+la+imagen+aca&font=inter"
-              alt="Mockup del panel de OfferNow"
-              className="absolute inset-y-0 right-0 h-full w-auto rounded-xl shadow-2xl border border-white/20 object-cover"
+              src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=900&h=680&fit=crop&auto=format&q=80"
+              alt="Persona atendiendo su tienda online"
+              className="absolute inset-y-0 right-0 h-full w-auto rounded-2xl shadow-2xl object-cover"
               style={{ maxWidth: '100%' }}
             />
 
-            {/* Card flotante superior-derecha: "Última copia de seguridad" */}
-            <div className="hidden md:block absolute top-4 right-4 lg:-right-4 lg:top-0 w-72 rounded-xl bg-white text-neutral-900 shadow-xl p-4 z-10">
+            {/* Card flotante superior-derecha: "Última venta" */}
+            <div className="hidden md:block absolute top-4 right-4 lg:-right-4 lg:top-0 w-72 rounded-xl bg-white shadow-xl p-4 z-10 border border-neutral-100">
               <div className="flex items-center gap-2 text-xs text-neutral-500 uppercase tracking-wider mb-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
                 Última venta
               </div>
-              <div className="font-bold text-lg">hace 4 minutos</div>
+              <div className="font-bold text-lg text-neutral-900">hace 4 minutos</div>
               <div className="text-xs text-neutral-500 mt-0.5">Curso de inglés A1 · $9.900</div>
             </div>
 
             {/* Card flotante inferior-izquierda: "Tiempo de actividad" */}
-            <div className="hidden md:block absolute bottom-4 left-4 lg:-left-4 lg:bottom-0 w-64 rounded-xl bg-white text-neutral-900 shadow-xl p-4 z-10">
+            <div className="hidden md:block absolute bottom-4 left-4 lg:-left-4 lg:bottom-0 w-64 rounded-xl bg-white shadow-xl p-4 z-10 border border-neutral-100">
               <div className="text-[10px] uppercase tracking-widest text-neutral-500 mb-1 font-semibold">
                 Tiempo de actividad
               </div>
-              <div className="text-emerald-600 text-2xl font-bold">99,999 %</div>
+              <div className="text-orange-500 text-2xl font-bold">99,999 %</div>
               <svg viewBox="0 0 200 40" className="w-full h-8 mt-1">
                 <path d="M0,32 Q30,25 60,22 T120,15 T200,8"
-                  stroke="rgb(16 185 129)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                <circle cx="200" cy="8" r="4" fill="rgb(16 185 129)" />
+                  stroke="rgb(249 115 22)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <circle cx="200" cy="8" r="4" fill="rgb(249 115 22)" />
               </svg>
             </div>
           </div>
