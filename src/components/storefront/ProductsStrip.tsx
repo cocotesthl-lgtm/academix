@@ -108,14 +108,18 @@ export function ProductsStrip({
                   ? Math.round((1 - p.price_cents / p.compare_at_price_cents) * 100)
                   : null;
 
+                const isDemo = p.id.startsWith('demo-');
+                const CardWrap = isDemo
+                  ? ({ children, className }: { children: React.ReactNode; className?: string }) =>
+                      <div data-product-card className={className}>{children}</div>
+                  : ({ children, className }: { children: React.ReactNode; className?: string }) =>
+                      <Link href={`/p/${p.slug}`} data-product-card className={className}>{children}</Link>;
                 return (
-                  <Link
+                  <CardWrap
                     key={p.id}
-                    href={`/p/${p.slug}`}
-                    data-product-card
-                    className="snap-start shrink-0 w-[42vw] sm:w-[240px] md:w-[220px] group"
+                    className="snap-start shrink-0 w-[42vw] sm:w-[240px] md:w-[220px] group relative"
                   >
-                    <div className="aspect-square rounded-lg bg-zinc-100 overflow-hidden">
+                    <div className="aspect-square rounded-lg bg-zinc-100 overflow-hidden relative">
                       {p.cover_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -125,6 +129,11 @@ export function ProductsStrip({
                         />
                       ) : (
                         <div className="flex items-center justify-center h-full text-black/25 text-4xl">📦</div>
+                      )}
+                      {isDemo && (
+                        <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded">
+                          Muestra
+                        </div>
                       )}
                     </div>
                     <div className="pt-2.5 pr-1">
@@ -143,7 +152,7 @@ export function ProductsStrip({
                         )}
                       </div>
                     </div>
-                  </Link>
+                  </CardWrap>
                 );
               })}
             </div>

@@ -1304,9 +1304,10 @@ export default async function StorefrontHome({
                             style: 'currency', currency: p.currency, maximumFractionDigits: 0
                           }).format(p.compare_at_price_cents / 100)
                         : null;
-                      return (
-                        <Link key={p.id} href={`/p/${p.slug}`}
-                          className="group block rounded-xl border border-black/10 overflow-hidden bg-white hover:shadow-lg transition">
+                      const isDemo = p.id.startsWith('demo-');
+                      const cardClassName = "group block rounded-xl border border-black/10 overflow-hidden bg-white hover:shadow-lg transition";
+                      const inner = (
+                        <>
                           <div className="aspect-square bg-zinc-100 overflow-hidden relative">
                             {p.cover_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
@@ -1318,6 +1319,11 @@ export default async function StorefrontHome({
                             {discount !== null && (
                               <div className="absolute top-2 left-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded">
                                 -{discount}%
+                              </div>
+                            )}
+                            {isDemo && (
+                              <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded">
+                                Muestra
                               </div>
                             )}
                             {outOfStock && (
@@ -1335,7 +1341,12 @@ export default async function StorefrontHome({
                               )}
                             </div>
                           </div>
-                        </Link>
+                        </>
+                      );
+                      return isDemo ? (
+                        <div key={p.id} className={cardClassName}>{inner}</div>
+                      ) : (
+                        <Link key={p.id} href={`/p/${p.slug}`} className={cardClassName}>{inner}</Link>
                       );
                     })}
                   </div>
@@ -1398,12 +1409,24 @@ export default async function StorefrontHome({
                       {c.subtitle && <p className="text-black/55 mt-2">{c.subtitle}</p>}
                     </div>
                   )}
-                  <div className={`grid gap-4 md:gap-5 ${isSquare ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 md:grid-cols-4'}`}>
+                  <div
+                    className={`grid gap-4 md:gap-5 ${isSquare ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 md:grid-cols-4'}`}
+                    style={{
+                      // Altura de fila FIJA en desktop → span 2 solo cambia el
+                      // ancho, no el alto (evita que la card grande quede el
+                      // doble de alta). Se ignora en mobile (1 col, altura
+                      // controlada por aspect-square del item).
+                      gridAutoRows: isSquare ? undefined : 'minmax(240px, 1fr)'
+                    }}>
                     {c.items.map((it) => {
                       const overlay = it.overlay ?? 0.25;
                       const textColor = it.text_color ?? '#ffffff';
                       const span = it.span === 2 ? 'md:col-span-2' : '';
-                      const aspect = isSquare ? 'aspect-square' : 'aspect-[16/10]';
+                      // Aspect solo se aplica en mobile (o siempre en square).
+                      // En desktop wide, la altura la fija gridAutoRows así
+                      // span 1 y span 2 tienen la misma altura y solo cambia el
+                      // ancho (que es lo que se espera de un grid tipo Amazon).
+                      const aspect = isSquare ? 'aspect-square' : 'aspect-[16/10] md:aspect-auto md:h-full';
                       return (
                         <Link key={it.id} href={it.cta_href || '#'}
                           className={`relative overflow-hidden rounded-xl group ${aspect} ${span}`}>
