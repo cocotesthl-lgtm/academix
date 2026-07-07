@@ -8,6 +8,8 @@ import { FadeIn } from "@/components/storefront/FadeIn";
 import { CatalogFilter } from "@/components/storefront/CatalogFilter";
 import { FormRenderer, type FormDef, type FormFieldDef } from "@/components/storefront/FormRenderer";
 import { CartWidget } from "@/components/storefront/cart/CartWidget";
+import { HeroSlider } from "@/components/storefront/HeroSlider";
+import { ProductsStrip } from "@/components/storefront/ProductsStrip";
 import { WorkWithUsCTA } from "@/components/storefront/WorkWithUsCTA";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -200,6 +202,26 @@ export default async function StorefrontHome({
       previewProducts = (rowsRaw ?? []) as ProductPreview[];
     } catch { /* migration 0051 pendiente */ }
   }
+
+  // Productos para products_strip (carrusel horizontal tipo ML "Inspirado en...")
+  let stripProducts: ProductPreview[] = [];
+  const stripCfg = cfg.sections.products_strip;
+  if (stripCfg?.enabled) {
+    try {
+      const count = Math.max(4, Math.min(24, stripCfg.count || 12));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q = (svc.from('physical_products') as any)
+        .select('id, slug, title, price_cents, compare_at_price_cents, currency, cover_url, stock_qty, track_stock, category_id')
+        .eq('tenant_id', tenantId).eq('status', 'published');
+      if (stripCfg.source === 'category' && stripCfg.category_slug) {
+        const cat = categories.find((c) => c.slug === stripCfg.category_slug);
+        if (cat) q = q.eq('category_id', cat.id);
+      }
+      // 'featured' y 'all' usan orden por updated_at descending
+      const { data: rowsRaw } = await q.order('updated_at', { ascending: false }).limit(count);
+      stripProducts = (rowsRaw ?? []) as ProductPreview[];
+    } catch { /* migration 0051 pendiente */ }
+  }
   const catById = new Map(categories.map((c) => [c.id, c]));
   const selectedCat = selectedCatSlug ? categories.find((c) => c.slug === selectedCatSlug) ?? null : null;
 
@@ -297,6 +319,19 @@ export default async function StorefrontHome({
         switch (key) {
           case 'hero': {
             const h = cfg.sections.hero;
+            // Modo slider auto (MercadoLibre-style) — si hay ≥1 slide,
+            // ignoramos el hero base y renderemos el carrusel rotativo.
+            if (h.slides && h.slides.length > 0) {
+              return (
+                <div key={key} {...dt} id={key}>
+                  <HeroSlider
+                    slides={h.slides}
+                    intervalSec={h.slide_interval ?? 5}
+                    primary={primary}
+                  />
+                </div>
+              );
+            }
             const heroTitle = h.title || tenant?.name || 'Sitio';
             const btnHidden = !buttonsVisible(h);
             const heroBtnStyle = buttonStyle(h, primary);
@@ -1283,6 +1318,112 @@ export default async function StorefrontHome({
                   )}
                 </div>
               </section>
+            );
+          }
+
+          case 'benefits_bar': {
+            const c = cfg.sections.benefits_bar;
+            if (!c.items || c.items.length === 0) return null;
+            const dark = c.variant !== 'light';
+            return (
+              <section key={key} {...dt} id={key}
+                className={dark ? "px-6 py-6 bg-neutral-900 text-white" : "px-6 py-6 bg-white border-y border-black/10 text-neutral-900"}
+                style={bg ? { background: bg } : undefined}>
+                <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {c.items.slice(0, 6).map((it) => (
+                    <div key={it.id} className="flex items-start gap-3">
+                      <div className={`text-2xl md:text-3xl shrink-0 ${dark ? 'text-white/85' : 'text-neutral-700'}`}>
+                        {it.icon || '✓'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className={`text-sm font-bold uppercase tracking-wide ${dark ? 'text-white' : 'text-neutral-900'}`}>
+                          {it.title}
+                        </div>
+                        {it.subtitle && (
+                          <div className={`text-xs mt-1 leading-relaxed ${dark ? 'text-white/60' : 'text-neutral-500'}`}>
+                            {it.subtitle}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          }
+
+          case 'category_cards': {
+            const c = cfg.sections.category_cards;
+            if (!c.items || c.items.length === 0) return null;
+            const isSquare = c.aspect === 'square';
+            return (
+              <section key={key} {...dt} id={key} className="px-6 py-12 md:py-16"
+                style={{ background: bg ?? '#f4f5f7' }}>
+                <div className="max-w-7xl mx-auto">
+                  {c.title && (
+                    <div className="text-center mb-8 md:mb-10">
+                      <h2 className="text-2xl md:text-3xl font-bold" dangerouslySetInnerHTML={richHtml(c.title)} />
+                      {c.subtitle && <p className="text-black/55 mt-2">{c.subtitle}</p>}
+                    </div>
+                  )}
+                  <div className={`grid gap-4 md:gap-5 ${isSquare ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 md:grid-cols-4'}`}>
+                    {c.items.map((it) => {
+                      const overlay = it.overlay ?? 0.25;
+                      const textColor = it.text_color ?? '#ffffff';
+                      const span = it.span === 2 ? 'md:col-span-2' : '';
+                      const aspect = isSquare ? 'aspect-square' : 'aspect-[16/10]';
+                      return (
+                        <Link key={it.id} href={it.cta_href || '#'}
+                          className={`relative overflow-hidden rounded-xl group ${aspect} ${span}`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={it.image_url} alt={it.label}
+                            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
+                          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlay})` }} />
+                          <div className="absolute inset-0 p-5 md:p-7 flex flex-col justify-end" style={{ color: textColor }}>
+                            {it.eyebrow && (
+                              <div className="text-[10px] md:text-xs uppercase tracking-widest font-bold mb-2 opacity-90">
+                                {it.eyebrow}
+                              </div>
+                            )}
+                            <div className="text-lg md:text-2xl font-black leading-tight tracking-tight">
+                              {it.label}
+                            </div>
+                            {it.subtitle && (
+                              <div className="text-xs md:text-sm mt-1 opacity-90 leading-snug">
+                                {it.subtitle}
+                              </div>
+                            )}
+                            {it.cta_label && (
+                              <div className="mt-3">
+                                <span className="inline-block rounded-md text-xs md:text-sm font-semibold px-4 py-2"
+                                  style={{ background: primary, color: '#fff' }}>
+                                  {it.cta_label}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+            );
+          }
+
+          case 'products_strip': {
+            const c = cfg.sections.products_strip;
+            if (stripProducts.length === 0) return null;
+            return (
+              <div key={key} {...dt} id={key} style={bg ? { background: bg } : undefined}>
+                <ProductsStrip
+                  products={stripProducts}
+                  title={c.title || 'Destacados'}
+                  subtitle={c.subtitle}
+                  ctaLabel={c.cta_label}
+                  ctaHref={c.cta_href}
+                />
+              </div>
             );
           }
 

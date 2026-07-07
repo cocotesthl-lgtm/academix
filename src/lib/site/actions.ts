@@ -1112,3 +1112,168 @@ export async function discardDraftChangesAction(): Promise<void> {
   revalidatePath('/site');
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+ * Ecommerce sections (benefits_bar, category_cards, hero slides)
+ * ═══════════════════════════════════════════════════════════════ */
+
+// ── Benefits bar ──
+export async function addBenefitItemAction(): Promise<void> {
+  const { tenant } = await requireOwner();
+  const cfg = await loadConfig(tenant.id);
+  const id = crypto.randomUUID();
+  cfg.sections.benefits_bar.items.push({ id, icon: '✨', title: 'Nuevo beneficio', subtitle: '' });
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateBenefitItemAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const icon = String(formData.get('icon') ?? '').trim().slice(0, 8) || '✨';
+  const title = String(formData.get('title') ?? '').trim().slice(0, 120);
+  const subtitle = String(formData.get('subtitle') ?? '').trim().slice(0, 200);
+  if (!id) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.benefits_bar.items;
+  const idx = arr.findIndex((it) => it.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, icon, title, subtitle };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function removeBenefitItemAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.benefits_bar.items = cfg.sections.benefits_bar.items.filter((it) => it.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function setBenefitsBarVariantAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const v = String(formData.get('variant') ?? '') === 'light' ? 'light' : 'dark';
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.benefits_bar.variant = v;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+// ── Category cards ──
+export async function addCategoryCardAction(): Promise<void> {
+  const { tenant } = await requireOwner();
+  const cfg = await loadConfig(tenant.id);
+  const id = crypto.randomUUID();
+  cfg.sections.category_cards.items.push({
+    id, span: 1, label: 'NUEVA CATEGORÍA', eyebrow: '', subtitle: '',
+    cta_label: 'Ver más', cta_href: '/tienda',
+    image_url: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=1000&auto=format&fit=crop&q=80',
+    text_color: '#ffffff', overlay: 0.3
+  });
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateCategoryCardAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const label = String(formData.get('label') ?? '').trim().slice(0, 120);
+  const eyebrow = String(formData.get('eyebrow') ?? '').trim().slice(0, 80);
+  const subtitle = String(formData.get('subtitle') ?? '').trim().slice(0, 200);
+  const cta_label = String(formData.get('cta_label') ?? '').trim().slice(0, 60);
+  const cta_href = String(formData.get('cta_href') ?? '').trim().slice(0, 500);
+  const image_url = String(formData.get('image_url') ?? '').trim().slice(0, 2000);
+  const text_color = String(formData.get('text_color') ?? '#ffffff').trim();
+  const overlayRaw = Number(formData.get('overlay') ?? 0.3);
+  const overlay = Math.max(0, Math.min(1, isFinite(overlayRaw) ? overlayRaw : 0.3));
+  const spanRaw = Number(formData.get('span') ?? 1);
+  const span = (spanRaw === 2 ? 2 : 1) as 1 | 2;
+  if (!id) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.category_cards.items;
+  const idx = arr.findIndex((it) => it.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, span, label, eyebrow, subtitle, cta_label, cta_href, image_url, text_color, overlay };
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function removeCategoryCardAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.category_cards.items = cfg.sections.category_cards.items.filter((it) => it.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function setCategoryCardsAspectAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const v = String(formData.get('aspect') ?? '') === 'square' ? 'square' : 'wide';
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.category_cards.aspect = v;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+// ── Hero slides ──
+export async function addHeroSlideAction(): Promise<void> {
+  const { tenant } = await requireOwner();
+  const cfg = await loadConfig(tenant.id);
+  if (!cfg.sections.hero.slides) cfg.sections.hero.slides = [];
+  const id = crypto.randomUUID();
+  cfg.sections.hero.slides.push({
+    id, title: 'Nuevo slide', subtitle: '',
+    image_url: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1800&auto=format&fit=crop&q=80',
+    cta_label: 'Ver más', cta_href: '/tienda',
+    text_color: '#ffffff', overlay: 0.35
+  });
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function updateHeroSlideAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  const title = String(formData.get('title') ?? '').trim().slice(0, 200);
+  const subtitle = String(formData.get('subtitle') ?? '').trim().slice(0, 300);
+  const image_url = String(formData.get('image_url') ?? '').trim().slice(0, 2000);
+  const cta_label = String(formData.get('cta_label') ?? '').trim().slice(0, 60);
+  const cta_href = String(formData.get('cta_href') ?? '').trim().slice(0, 500);
+  const text_color = String(formData.get('text_color') ?? '#ffffff').trim();
+  const overlayRaw = Number(formData.get('overlay') ?? 0.35);
+  const overlay = Math.max(0, Math.min(1, isFinite(overlayRaw) ? overlayRaw : 0.35));
+  if (!id) return;
+  const cfg = await loadConfig(tenant.id);
+  const arr = cfg.sections.hero.slides ?? [];
+  const idx = arr.findIndex((s) => s.id === id);
+  if (idx === -1) return;
+  arr[idx] = { id, title, subtitle, image_url, cta_label, cta_href, text_color, overlay };
+  cfg.sections.hero.slides = arr;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function removeHeroSlideAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.hero.slides = (cfg.sections.hero.slides ?? []).filter((s) => s.id !== id);
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
+export async function setHeroSlideIntervalAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const nRaw = Number(formData.get('interval') ?? 5);
+  const n = Math.max(2, Math.min(20, isFinite(nRaw) ? Math.round(nRaw) : 5));
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.hero.slide_interval = n;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}

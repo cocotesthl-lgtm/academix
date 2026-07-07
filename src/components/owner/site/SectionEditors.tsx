@@ -67,12 +67,26 @@ import {
   addFooterLinkAction,
   deleteFooterLinkAction,
   addSocialLinkAction,
-  deleteSocialLinkAction
+  deleteSocialLinkAction,
+  // Ecommerce sections
+  addBenefitItemAction,
+  updateBenefitItemAction,
+  removeBenefitItemAction,
+  setBenefitsBarVariantAction,
+  addCategoryCardAction,
+  updateCategoryCardAction,
+  removeCategoryCardAction,
+  setCategoryCardsAspectAction,
+  addHeroSlideAction,
+  updateHeroSlideAction,
+  removeHeroSlideAction,
+  setHeroSlideIntervalAction
 } from '@/lib/site/actions';
 import type {
   TestimonialItem, FaqItem, StatItem, LearnItem, FeatureItem, LogoItem,
   NavLink, SocialLink, HeroLayout, PricingTier, GalleryItem,
-  InstructorItem, InstructorDisplay, CustomImagePos, ManualCard
+  InstructorItem, InstructorDisplay, CustomImagePos, ManualCard,
+  BenefitItem, CategoryCardItem, HeroSlide
 } from '@/lib/site/types';
 
 /* =====================================================================
@@ -3426,6 +3440,374 @@ export function FooterEditor({ initialText, links, socials, tenantName }: {
               {links.map((l) => <span key={l.id}>{l.label}</span>)}
             </div>
           )}
+        </div>
+      </PreviewFrame>
+    </div>
+  );
+}
+
+/* =====================================================================
+ * ECOMMERCE SECTIONS EDITORS
+ * ===================================================================== */
+
+export function BenefitsBarEditor({ initial, variant }: {
+  initial: BenefitItem[];
+  variant?: 'light' | 'dark';
+}) {
+  const [pending, start] = useTransition();
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+        <label className="text-xs text-white/60 block mb-2">Variante visual</label>
+        <div className="flex gap-2">
+          {['dark', 'light'].map((v) => (
+            <button key={v} type="button"
+              onClick={() => start(() => withSaveStatus(async () => {
+                const fd = new FormData(); fd.set('variant', v);
+                await setBenefitsBarVariantAction(fd);
+              }))}
+              disabled={pending}
+              className={`text-xs px-3 py-1.5 rounded border ${
+                (variant ?? 'dark') === v
+                  ? 'bg-white text-black border-white font-semibold'
+                  : 'bg-white/5 border-white/15 text-white/70 hover:bg-white/10'
+              }`}>
+              {v === 'dark' ? '🖤 Fondo oscuro (Amazon)' : '⚪ Fondo claro (con divisores)'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {initial.length === 0 && (
+          <p className="text-xs text-white/40 italic">Sin items todavía. Agregá el primero.</p>
+        )}
+        {initial.map((it) => (
+          <form key={it.id} action={updateBenefitItemAction}
+            className="grid grid-cols-[70px_1fr_1fr_auto] gap-2 items-start rounded-lg border border-white/10 bg-white/[0.02] p-3">
+            <input type="hidden" name="id" value={it.id} />
+            <input name="icon" defaultValue={it.icon} placeholder="🚚"
+              className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xl text-center focus:outline-none focus:border-white/40" />
+            <input name="title" defaultValue={it.title} placeholder="Envíos gratis a todo el país"
+              className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
+            <input name="subtitle" defaultValue={it.subtitle ?? ''} placeholder="A partir de $190.000"
+              className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+            <div className="flex gap-1">
+              <button type="submit"
+                className="text-xs px-2 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30">
+                ✓
+              </button>
+              <button type="button"
+                onClick={() => start(() => withSaveStatus(async () => {
+                  const fd = new FormData(); fd.set('id', it.id);
+                  await removeBenefitItemAction(fd);
+                }))}
+                disabled={pending}
+                className="text-xs px-2 py-1.5 rounded bg-red-500/15 text-red-300 hover:bg-red-500/25">
+                ✕
+              </button>
+            </div>
+          </form>
+        ))}
+      </div>
+
+      <button type="button"
+        onClick={() => start(() => withSaveStatus(() => addBenefitItemAction()))}
+        disabled={pending}
+        className="text-sm text-white/70 hover:text-white border border-dashed border-white/20 rounded-lg py-2 w-full hover:bg-white/[0.02]">
+        + Agregar beneficio (icono + título + subtítulo)
+      </button>
+
+      <p className="text-[10px] text-white/40 italic">
+        💡 Iconos: podés usar emojis (🚚 💳 💰 🔒 ⚡ ✨) o texto corto ('24/7', '5⭐').
+        Máximo 3-4 items para no saturar la cinta.
+      </p>
+    </div>
+  );
+}
+
+export function CategoryCardsEditor({ initial, aspect }: {
+  initial: CategoryCardItem[];
+  aspect?: 'wide' | 'square';
+}) {
+  const [pending, start] = useTransition();
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+        <label className="text-xs text-white/60 block mb-2">Aspecto de las cards</label>
+        <div className="flex gap-2">
+          {['wide', 'square'].map((v) => (
+            <button key={v} type="button"
+              onClick={() => start(() => withSaveStatus(async () => {
+                const fd = new FormData(); fd.set('aspect', v);
+                await setCategoryCardsAspectAction(fd);
+              }))}
+              disabled={pending}
+              className={`text-xs px-3 py-1.5 rounded border ${
+                (aspect ?? 'wide') === v
+                  ? 'bg-white text-black border-white font-semibold'
+                  : 'bg-white/5 border-white/15 text-white/70 hover:bg-white/10'
+              }`}>
+              {v === 'wide' ? '📱 Wide (16:10 tipo banners)' : '🟪 Square (1:1 tipo Yamamoto)'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {initial.length === 0 && (
+          <p className="text-xs text-white/40 italic">Sin categorías todavía. Agregá la primera.</p>
+        )}
+        {initial.map((it) => (
+          <form key={it.id} action={updateCategoryCardAction}
+            className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
+            <input type="hidden" name="id" value={it.id} />
+            <div className="grid grid-cols-[80px_1fr] gap-3">
+              <div className="aspect-square rounded-md overflow-hidden bg-black/40 border border-white/10">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {it.image_url && <img src={it.image_url} alt="" className="w-full h-full object-cover" />}
+              </div>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <input name="eyebrow" defaultValue={it.eyebrow ?? ''} placeholder="INTERNACIONAL"
+                    className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs uppercase tracking-wider focus:outline-none focus:border-white/40" />
+                  <select name="span" defaultValue={String(it.span ?? 1)}
+                    className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40">
+                    <option value="1" className="bg-[#0a0a0a]">Ancho 1 (normal)</option>
+                    <option value="2" className="bg-[#0a0a0a]">Ancho 2 (doble)</option>
+                  </select>
+                </div>
+                <input name="label" defaultValue={it.label} placeholder="MODA HOMBRE ¡HASTA 20% OFF!"
+                  className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm font-bold focus:outline-none focus:border-white/40" />
+                <input name="subtitle" defaultValue={it.subtitle ?? ''} placeholder="Subtítulo (opcional)"
+                  className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <input name="image_url" defaultValue={it.image_url} placeholder="URL imagen"
+                className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+              <div className="grid grid-cols-2 gap-2">
+                <input name="cta_label" defaultValue={it.cta_label ?? ''} placeholder="Ver ofertas"
+                  className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+                <input name="cta_href" defaultValue={it.cta_href ?? ''} placeholder="/tienda?cat=X"
+                  className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+              </div>
+            </div>
+            <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 items-center">
+              <label className="text-[10px] text-white/50">Color texto:</label>
+              <input type="color" name="text_color" defaultValue={it.text_color ?? '#ffffff'}
+                className="w-full h-7 rounded bg-transparent border border-white/15 cursor-pointer" />
+              <label className="text-[10px] text-white/50 whitespace-nowrap">Overlay:</label>
+              <input type="number" name="overlay" min={0} max={1} step={0.05}
+                defaultValue={it.overlay ?? 0.3}
+                className="w-16 rounded bg-white/5 border border-white/15 px-2 py-1 text-xs" />
+            </div>
+            <div className="flex gap-2">
+              <button type="submit" disabled={pending}
+                className="flex-1 text-xs px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 font-semibold">
+                Guardar cambios
+              </button>
+              <button type="button"
+                onClick={() => start(() => withSaveStatus(async () => {
+                  if (!confirm('¿Eliminar esta categoría?')) return;
+                  const fd = new FormData(); fd.set('id', it.id);
+                  await removeCategoryCardAction(fd);
+                }))}
+                disabled={pending}
+                className="text-xs px-3 py-1.5 rounded bg-red-500/15 text-red-300 hover:bg-red-500/25">
+                Eliminar
+              </button>
+            </div>
+          </form>
+        ))}
+      </div>
+
+      <button type="button"
+        onClick={() => start(() => withSaveStatus(() => addCategoryCardAction()))}
+        disabled={pending}
+        className="text-sm text-white/70 hover:text-white border border-dashed border-white/20 rounded-lg py-2 w-full hover:bg-white/[0.02]">
+        + Agregar categoría
+      </button>
+
+      <p className="text-[10px] text-white/40 italic">
+        💡 Combiná anchos 1 y 2 para armar layouts variados tipo Yamamoto:
+        4 cards de ancho 1 + 1 de ancho 2 → 6 en total en un grid de 4 columnas.
+      </p>
+    </div>
+  );
+}
+
+export function HeroSlidesEditor({ initial, interval }: {
+  initial: HeroSlide[];
+  interval?: number;
+}) {
+  const [pending, start] = useTransition();
+  const hasSlides = initial.length > 0;
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-orange-500/30 bg-orange-500/[0.05] p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg">🎠</span>
+          <strong className="text-sm">Modo slider auto (MercadoLibre-style)</strong>
+        </div>
+        <p className="text-xs text-white/60 leading-relaxed">
+          {hasSlides
+            ? `El hero rota entre ${initial.length} slide${initial.length === 1 ? '' : 's'} cada ${interval ?? 5}s.
+               Ignora el título/subtítulo/imagen del hero base — se usa el contenido de los slides.`
+            : 'Si agregás al menos 1 slide, el hero pasa a modo carrusel automático. Sino usa el layout normal (centrado, dividido, galería).'}
+        </p>
+      </div>
+
+      {hasSlides && (
+        <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+          <label className="text-xs text-white/60 block mb-2">Segundos entre slides</label>
+          <form action={setHeroSlideIntervalAction} className="flex gap-2 items-center">
+            <input type="number" name="interval" min={2} max={20} defaultValue={interval ?? 5}
+              className="w-20 rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
+            <button type="submit"
+              className="text-xs px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30">
+              Aplicar
+            </button>
+          </form>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {initial.map((s, i) => (
+          <form key={s.id} action={updateHeroSlideAction}
+            className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
+            <input type="hidden" name="id" value={s.id} />
+            <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold">
+              Slide {i + 1}
+            </div>
+            <div className="grid grid-cols-[100px_1fr] gap-3">
+              <div className="aspect-video rounded-md overflow-hidden bg-black/40 border border-white/10">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {s.image_url && <img src={s.image_url} alt="" className="w-full h-full object-cover" />}
+              </div>
+              <div className="space-y-2">
+                <input name="title" defaultValue={s.title} placeholder="Título grande"
+                  className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-white/40" />
+                <input name="subtitle" defaultValue={s.subtitle ?? ''} placeholder="Subtítulo"
+                  className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+              </div>
+            </div>
+            <input name="image_url" defaultValue={s.image_url} placeholder="URL de imagen (1800x600 recomendado)"
+              className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+            <div className="grid grid-cols-2 gap-2">
+              <input name="cta_label" defaultValue={s.cta_label ?? ''} placeholder="Botón CTA"
+                className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+              <input name="cta_href" defaultValue={s.cta_href ?? ''} placeholder="/tienda"
+                className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+            </div>
+            <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 items-center">
+              <label className="text-[10px] text-white/50">Color texto:</label>
+              <input type="color" name="text_color" defaultValue={s.text_color ?? '#ffffff'}
+                className="w-full h-7 rounded bg-transparent border border-white/15 cursor-pointer" />
+              <label className="text-[10px] text-white/50 whitespace-nowrap">Overlay:</label>
+              <input type="number" name="overlay" min={0} max={1} step={0.05}
+                defaultValue={s.overlay ?? 0.35}
+                className="w-16 rounded bg-white/5 border border-white/15 px-2 py-1 text-xs" />
+            </div>
+            <div className="flex gap-2">
+              <button type="submit" disabled={pending}
+                className="flex-1 text-xs px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 font-semibold">
+                Guardar slide
+              </button>
+              <button type="button"
+                onClick={() => start(() => withSaveStatus(async () => {
+                  if (!confirm('¿Eliminar este slide?')) return;
+                  const fd = new FormData(); fd.set('id', s.id);
+                  await removeHeroSlideAction(fd);
+                }))}
+                disabled={pending}
+                className="text-xs px-3 py-1.5 rounded bg-red-500/15 text-red-300 hover:bg-red-500/25">
+                Eliminar
+              </button>
+            </div>
+          </form>
+        ))}
+      </div>
+
+      <button type="button"
+        onClick={() => start(() => withSaveStatus(() => addHeroSlideAction()))}
+        disabled={pending}
+        className="text-sm text-white/70 hover:text-white border border-dashed border-white/20 rounded-lg py-2 w-full hover:bg-white/[0.02]">
+        + Agregar slide
+      </button>
+    </div>
+  );
+}
+
+export function ProductsStripEditor({ initial, categoriesOptions }: {
+  initial: { title: string; subtitle: string; source: 'featured' | 'category' | 'all'; category_slug: string; count: number; cta_label: string; cta_href: string };
+  categoriesOptions: Array<{ slug: string; name: string }>;
+}) {
+  const [v, setV] = useState(initial);
+  const { pending, saved, fire } = useSave('products_strip');
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="space-y-3">
+        <Field label="Título de la sección" value={v.title} onChange={(x) => setV({ ...v, title: x })} placeholder="Destacados de la semana" />
+        <Field label="Subtítulo (opcional)" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} placeholder="Los más vendidos en Argentina" />
+
+        <label className="block">
+          <span className="text-xs text-white/60 block mb-1">Fuente de productos</span>
+          <select value={v.source} onChange={(e) => setV({ ...v, source: e.target.value as typeof v.source })}
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
+            <option value="featured" className="bg-[#0a0a0a]">⭐ Destacados (updated recently)</option>
+            <option value="category" className="bg-[#0a0a0a]">🗂️ Por categoría</option>
+            <option value="all" className="bg-[#0a0a0a]">📦 Todos los productos</option>
+          </select>
+        </label>
+
+        {v.source === 'category' && (
+          <label className="block">
+            <span className="text-xs text-white/60 block mb-1">Categoría</span>
+            <select value={v.category_slug} onChange={(e) => setV({ ...v, category_slug: e.target.value })}
+              className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm">
+              <option value="" className="bg-[#0a0a0a]">— elegí una —</option>
+              {categoriesOptions.map((c) => (
+                <option key={c.slug} value={c.slug} className="bg-[#0a0a0a]">{c.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <label className="block">
+          <span className="text-xs text-white/60 block mb-1">Cantidad de productos</span>
+          <input type="number" min={4} max={24} value={v.count}
+            onChange={(e) => setV({ ...v, count: Math.max(4, Math.min(24, parseInt(e.target.value, 10) || 12)) })}
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+        </label>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Botón CTA (opcional)" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} placeholder="Ver todos" />
+          <Field label="Link del CTA" value={v.cta_href} onChange={(x) => setV({ ...v, cta_href: x })} placeholder="/tienda" />
+        </div>
+
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({
+          ...v, count: String(v.count), source: v.source
+        })} />
+        <p className="text-[10px] text-white/40 italic">
+          💡 La sección solo aparece si hay al menos 1 producto físico publicado que matchee el filtro.
+        </p>
+      </div>
+      <PreviewFrame>
+        <div className="p-3">
+          <div className="text-[10px] font-bold mb-2 text-black">{v.title || 'Destacados'}</div>
+          {v.subtitle && <div className="text-[8px] text-black/50 mb-2">{v.subtitle}</div>}
+          <div className="flex gap-1.5 overflow-x-auto">
+            {Array.from({ length: Math.min(6, v.count) }).map((_, i) => (
+              <div key={i} className="rounded-md border border-black/10 bg-white overflow-hidden shrink-0 w-16">
+                <div className="aspect-square bg-zinc-200" />
+                <div className="p-1">
+                  <div className="h-1 bg-black/20 rounded w-full mb-0.5" />
+                  <div className="h-1.5 bg-black/40 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </PreviewFrame>
     </div>

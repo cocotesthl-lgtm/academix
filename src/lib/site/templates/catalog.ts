@@ -185,26 +185,55 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     };
   })(),
 
-  /* 7. E-commerce simple */
+  /* 7. E-commerce (Amazon / MercadoLibre / Tienda Nube style) */
   (() => {
     const c = clone();
-    enableOnly(c, ['hero', 'trusted_by', 'catalog', 'features', 'testimonials', 'faq', 'cta_final']);
-    c.sections.hero.eyebrow = 'Nuevo drop';
-    c.sections.hero.title = 'Diseño que te representa';
+    // Sin features/testimonials/faq — no van en un ecommerce estándar.
+    // Reemplazado por benefits_bar + category_cards + products_strip
+    // que son los bloques que sí ves en Amazon, ML, Tienda Nube, Shopify.
+    enableOnly(c, ['hero', 'benefits_bar', 'category_cards', 'products_strip', 'products', 'contact']);
+    // Hero en modo slider auto — como el carrusel superior de MercadoLibre
+    c.sections.hero.layout = 'gallery';
+    c.sections.hero.title = 'Nueva colección';
     c.sections.hero.subtitle = 'Envíos a todo el país. Cambios sin vueltas en 30 días.';
-    c.sections.hero.cta_label = 'Ver productos';
-    c.sections.hero.cta_href = '#catalog';
-    c.sections.catalog.title = 'Tienda';
-    c.sections.features.title = 'Por qué elegirnos';
+    c.sections.hero.cta_label = 'Ver toda la tienda';
+    c.sections.hero.cta_href = '/tienda';
+    c.sections.hero.eyebrow = '';
+    c.sections.hero.slide_interval = 5;
+    c.sections.hero.slides = [
+      { id: 'hs1', title: '3X2 · LLEVÁS 3, PAGÁS 2', subtitle: '10% EXTRA POR TRANSFERENCIA', cta_label: 'Ver colección', cta_href: '/tienda?cat=promo', image_url: 'https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?w=1800&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.5 },
+      { id: 'hs2', title: 'MODA HOMBRE', subtitle: '¡Hasta 20% OFF! · Nueva colección internacional', cta_label: 'Ver ofertas', cta_href: '/tienda?cat=hombre', image_url: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1800&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.35 },
+      { id: 'hs3', title: 'DESCUENTAZOS', subtitle: 'Celulares, tablets y accesorios · Envío gratis', cta_label: 'Ver descuentos', cta_href: '/tienda?cat=tech', image_url: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=1800&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.4 }
+    ];
+    // Cinta debajo del hero — envíos + cuotas + transferencia
+    c.sections.benefits_bar.enabled = true;
+    c.sections.benefits_bar.variant = 'dark';
+    // Grid de categorías
+    c.sections.category_cards.enabled = true;
+    c.sections.category_cards.title = 'Comprá por categoría';
+    c.sections.category_cards.subtitle = '';
+    // Cinta de productos horizontal
+    c.sections.products_strip.enabled = true;
+    c.sections.products_strip.title = 'Destacados de la semana';
+    c.sections.products_strip.source = 'featured';
+    c.sections.products_strip.count = 12;
+    // Grid completo de productos abajo
+    c.sections.products.enabled = true;
+    c.sections.products.title = 'Todos los productos';
+    c.sections.products.count = 12;
+    // Contact al final para consultas de post-venta
+    c.sections.contact.title = 'Atención al cliente';
+    c.sections.contact.subtitle = 'Consultas sobre envíos, cambios y devoluciones.';
     c.nav.show_my_courses = true;
     c.nav.my_courses_label = 'Mis compras';
     c.nav.show_affiliates = false;
     return {
       id: 'ecommerce',
-      name: 'E-commerce simple',
+      name: 'E-commerce',
       category: 'Comercio',
       emoji: '🛍️',
-      shortDesc: 'Catálogo grande + features + testimonios. Para indumentaria, accesorios, productos digitales.',
+      shortDesc: 'Estilo Amazon / MercadoLibre / Tienda Nube. Hero slider + cinta beneficios + categorías + productos.',
+      longDesc: 'Template pensado para negocios que venden productos físicos. No incluye FAQs, testimonios ni "por qué elegirnos" — cosas que no van en un ecommerce estándar. Sí incluye lo que sí va: hero rotativo, cinta con envíos/cuotas/transferencia, grid de categorías con imágenes grandes, carrusel horizontal de productos destacados, y grid completo del catálogo.',
       suggestedPrimary: '#0a0a0a',
       config: c
     };

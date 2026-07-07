@@ -32,6 +32,10 @@ import {
   MapEditor,
   BlogPreviewEditor,
   ProductsEditor,
+  BenefitsBarEditor,
+  CategoryCardsEditor,
+  HeroSlidesEditor,
+  ProductsStripEditor,
   CustomEditor,
   NavEditor,
   FooterEditor
@@ -47,7 +51,10 @@ import { setWhatsAppConfigAction } from "@/lib/whatsapp/actions";
 export const dynamic = "force-dynamic";
 
 const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
-  hero:         { title: "🏆 Hero", desc: "Primera impresión. Plantilla centrada, dividida o galería." },
+  hero:         { title: "🏆 Hero", desc: "Primera impresión. Plantilla centrada, dividida, galería o slider auto." },
+  benefits_bar: { title: "🚚 Cinta de beneficios", desc: "Cinta debajo del hero con envíos, cuotas, transferencia. Estilo ecommerce Amazon/ML." },
+  category_cards: { title: "🗂️ Grid de categorías", desc: "Bloques grandes con imagen + label, links a filtros. Tipo Tienda Nube, Shopify." },
+  products_strip: { title: "🎠 Carrusel de productos", desc: "Cinta horizontal scrolleable con productos. Tipo 'Inspirado en lo último que viste' de MercadoLibre." },
   trusted_by:   { title: "🤝 Confían en nosotros", desc: "Logos de clientes/marcas, con filtro grayscale opcional." },
   about:        { title: "🪪 Sobre nosotros", desc: "Quién sos, qué te diferencia, por qué eligen tu sitio." },
   instructor:   { title: "👤 Instructor", desc: "Quién va a enseñar. Foto, biografía, credenciales." },
@@ -524,6 +531,44 @@ export default async function SiteBuilderPage() {
                   cta_label: cfg.sections.products.cta_label
                 }}
               />
+            )}
+            {key === 'benefits_bar' && (
+              <BenefitsBarEditor
+                initial={cfg.sections.benefits_bar.items}
+                variant={cfg.sections.benefits_bar.variant}
+              />
+            )}
+            {key === 'category_cards' && (
+              <CategoryCardsEditor
+                initial={cfg.sections.category_cards.items}
+                aspect={cfg.sections.category_cards.aspect}
+              />
+            )}
+            {key === 'products_strip' && (
+              <ProductsStripEditor
+                initial={{
+                  title: cfg.sections.products_strip.title,
+                  subtitle: cfg.sections.products_strip.subtitle,
+                  source: cfg.sections.products_strip.source ?? 'featured',
+                  category_slug: cfg.sections.products_strip.category_slug ?? '',
+                  count: cfg.sections.products_strip.count ?? 12,
+                  cta_label: cfg.sections.products_strip.cta_label ?? '',
+                  cta_href: cfg.sections.products_strip.cta_href ?? '/tienda'
+                }}
+                categoriesOptions={[]}
+              />
+            )}
+            {/* Hero slider — editor accesible siempre dentro del hero */}
+            {key === 'hero' && (
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <div className="text-xs uppercase tracking-wider text-white/60 mb-3 font-semibold">
+                  🎠 Modo slider auto (opcional)
+                </div>
+                <HeroSlidesEditor
+                  initial={cfg.sections.hero.slides ?? []}
+                  interval={cfg.sections.hero.slide_interval}
+                />
+              </div>
             )}
             {key === 'cta_final' && (
               <CtaFinalEditor

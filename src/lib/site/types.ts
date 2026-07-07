@@ -88,6 +88,9 @@ export type HeroMediaType = 'image' | 'video' | 'carousel' | 'form';
 
 export type SectionKey =
   | 'hero'
+  | 'benefits_bar'      // cinta debajo del hero: envíos, cuotas, transferencia
+  | 'category_cards'    // grid grande de categorías (Amazon/ML style)
+  | 'products_strip'    // carrusel horizontal scrollable de productos
   | 'trusted_by'
   | 'about'
   | 'instructor'
@@ -112,6 +115,43 @@ export type SectionKey =
   | 'blog_preview'
   | 'products'
   | 'cta_final';
+
+/** Ítem de la cinta de beneficios (envío gratis, cuotas, etc.) */
+export type BenefitItem = {
+  id: string;
+  icon: string;         // emoji o clave de icon (📦, 💳, 💰, ✨, 🔒, 🚚, ⚡)
+  title: string;        // "Envíos gratis a todo el país"
+  subtitle?: string;    // "A partir de los $190.000"
+};
+
+/** Ítem del grid de categorías (imagen full-bleed con label overlay) */
+export type CategoryCardItem = {
+  id: string;
+  label: string;        // "MODA HOMBRE" / "REMERAS" / "SALE"
+  eyebrow?: string;     // "INTERNACIONAL" / "DESCUENTAZOS"
+  subtitle?: string;    // "¡Hasta 20% OFF!"
+  cta_label?: string;   // "Ver ofertas" — vacío = solo imagen
+  cta_href?: string;    // link
+  image_url: string;
+  /** span 1 (chico) o 2 (grande, ocupa doble ancho). Usa layouts variados como Yamamoto. */
+  span?: 1 | 2;
+  /** Color de texto sobre la imagen. Default white. */
+  text_color?: string;
+  /** Overlay para legibilidad (0 = sin overlay, 1 = negro total). Default 0.25. */
+  overlay?: number;
+};
+
+/** Slide del hero en modo carrusel/slider */
+export type HeroSlide = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  image_url: string;
+  cta_label?: string;
+  cta_href?: string;
+  text_color?: string;  // color del texto sobre la imagen (default white)
+  overlay?: number;     // 0-1 oscurecimiento sobre la imagen para legibilidad
+};
 
 /**
  * Shared base for every section: enable flag + optional bg color override.
@@ -155,6 +195,34 @@ export type SiteConfig = {
       video_url?: string;                 // youtube/drive URL si media_type='video'
       carousel_urls?: string[];           // imágenes si media_type='carousel'
       form_id?: string;                   // id del formulario si media_type='form'
+      /** Modo slider full-width tipo MercadoLibre: rota entre slides completos
+       *  (imagen full con overlay + texto + CTA). Si tiene ≥1 slide activo,
+       *  ignora title/subtitle/image_url del hero base y renderea los slides. */
+      slides?: HeroSlide[];
+      /** Segundos entre cada slide. Default 5. Min 2, max 20. Solo si hay slides. */
+      slide_interval?: number;
+    };
+    benefits_bar: SectionBase & {
+      items: BenefitItem[];
+      /** Tema visual: 'light' (fondo claro con divisores) o 'dark' (fondo oscuro con texto blanco, tipo Amazon) */
+      variant?: 'light' | 'dark';
+    };
+    category_cards: SectionBase & {
+      title: string;
+      subtitle: string;
+      items: CategoryCardItem[];
+      /** Aspecto de las cards. 'wide' (16:9 tipo banners) | 'square' (1:1 tipo Yamamoto) */
+      aspect?: 'wide' | 'square';
+    };
+    products_strip: SectionBase & {
+      title: string;
+      subtitle: string;
+      /** Fuente: 'featured' = productos destacados, 'category' = filtro por category_slug, 'all' = todos */
+      source?: 'featured' | 'category' | 'all';
+      category_slug?: string;   // usado si source='category'
+      count?: number;           // productos a mostrar (default 12)
+      cta_label?: string;       // "Ver más productos" — vacío = sin CTA
+      cta_href?: string;
     };
     trusted_by:   SectionBase & { title: string; items: LogoItem[]; grayscale: boolean; marquee: boolean;
       /** Segundos que dura un loop completo del marquee. Menor = más rápido.
@@ -239,6 +307,8 @@ export type SiteConfig = {
 
 export const DEFAULT_ORDER: SectionKey[] = [
   'hero',
+  'benefits_bar',    // cinta debajo del hero (envío, cuotas, transferencia)
+  'category_cards',  // grid de categorías tipo Amazon/ML
   'trusted_by',
   'stats',
   'about',
@@ -247,6 +317,7 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'features',
   'instructor',
   'featured',
+  'products_strip',  // carrusel horizontal de productos (Inspirado en...)
   'catalog',
   'cards',
   'pricing',
@@ -258,11 +329,11 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'custom',
   'cta_final',
   'newsletter',
-  'products',      // productos físicos destacados
-  'blog_preview',  // preview del blog antes del contacto
+  'products',        // grid completo de productos físicos
+  'blog_preview',    // preview del blog antes del contacto
   'contact',
-  'workwithus', // "Trabajá con nosotros" al final, antes del mapa
-  'map'         // mapa al final, normalmente antes del footer
+  'workwithus',
+  'map'
 ];
 
 /**
@@ -495,6 +566,35 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       count: 8,
       layout: 'grid',
       cta_label: 'Ver todos los productos'
+    },
+    benefits_bar: {
+      enabled: false,
+      variant: 'dark',
+      items: [
+        { id: 'bb1', icon: '🚚', title: 'Envíos gratis a todo el país', subtitle: 'A partir de los $190.000' },
+        { id: 'bb2', icon: '💳', title: 'Pagá en cuotas sin interés con tarjetas bancarias', subtitle: '3 cuotas sin interés desde $40.000 · 6 cuotas desde $100.000' },
+        { id: 'bb3', icon: '💰', title: '10% OFF pago por Transferencia', subtitle: 'Descuento automático en el checkout' }
+      ]
+    },
+    category_cards: {
+      enabled: false,
+      title: 'Comprá por categoría',
+      subtitle: 'Descubrí lo mejor de cada rubro.',
+      aspect: 'wide',
+      items: [
+        { id: 'cc1', span: 1, label: 'MODA HOMBRE', eyebrow: 'INTERNACIONAL', subtitle: '¡Hasta 20% OFF!', cta_label: 'Ver ofertas', cta_href: '/tienda?cat=moda-hombre', image_url: 'https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?w=1000&auto=format&fit=crop&q=80', text_color: '#111827', overlay: 0.05 },
+        { id: 'cc2', span: 1, label: '¡CELULARES Y TABLETS!', eyebrow: 'DESCUENTAZOS', cta_label: 'Ver ofertas', cta_href: '/tienda?cat=tech', image_url: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=1000&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.35 },
+        { id: 'cc3', span: 2, label: '3X2 LLEVÁS 3, PAGÁS 2', subtitle: '10% EXTRA POR TRANSFERENCIA', cta_label: 'Ver colección', cta_href: '/tienda?cat=promo', image_url: 'https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?w=1600&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.45 }
+      ]
+    },
+    products_strip: {
+      enabled: false,
+      title: 'Inspirado en lo último que viste',
+      subtitle: '',
+      source: 'featured',
+      count: 12,
+      cta_label: '',
+      cta_href: '/tienda'
     }
   },
   order: DEFAULT_ORDER,
