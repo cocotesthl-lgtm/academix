@@ -32,8 +32,26 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
     patch.brand = { ...(tRow?.brand ?? {}), primary_color: tpl.suggestedPrimary };
   }
 
+  // Ecommerce template → habilitar carrito automáticamente (sin cart no hay
+  // tienda). El owner puede seguir apagándolo desde /owner/checkout si
+  // realmente no lo quiere. Defensivo por si la migration 0034 está pendiente.
+  if (tpl.id === 'ecommerce') {
+    patch.cart_enabled = true;
+    patch.cart_position = 'header';
+    patch.cart_display = 'dropdown';
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (svc.from('tenants') as any).update(patch).eq('id', tenant.id);
+  const { error: updErr } = await (svc.from('tenants') as any).update(patch).eq('id', tenant.id);
+  if (updErr && tpl.id === 'ecommerce') {
+    // Reintento sin las columnas de carrito por si la migration 0034 está
+    // pendiente en el tenant — no queremos que se rompa el apply del template.
+    delete patch.cart_enabled;
+    delete patch.cart_position;
+    delete patch.cart_display;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('tenants') as any).update(patch).eq('id', tenant.id);
+  }
   revalidatePath('/owner/site');
   revalidatePath('/owner/templates');
   redirect('/owner/site?templateApplied=' + encodeURIComponent(tpl.name));

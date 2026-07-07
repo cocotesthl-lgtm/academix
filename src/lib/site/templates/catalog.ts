@@ -224,9 +224,19 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     // Contact al final para consultas de post-venta
     c.sections.contact.title = 'Atención al cliente';
     c.sections.contact.subtitle = 'Consultas sobre envíos, cambios y devoluciones.';
+    // Nav ecommerce: reemplaza "Cursos / Testimonios / FAQ" (nav académica)
+    // por labels reales de tienda. El grid de categorías y la cinta
+    // scrollean con anclas #category_cards / #products_strip.
+    c.nav.links = [
+      { id: '00000000-0000-0000-0000-000000000e01', label: 'Categorías', href: '#category_cards' },
+      { id: '00000000-0000-0000-0000-000000000e02', label: 'Ofertas', href: '/tienda?cat=promo' },
+      { id: '00000000-0000-0000-0000-000000000e03', label: 'Novedades', href: '#products_strip' }
+    ];
     c.nav.show_my_courses = true;
     c.nav.my_courses_label = 'Mis compras';
     c.nav.show_affiliates = false;
+    // Footer en tono ecommerce
+    c.footer.text = 'Envíos a todo el país · Cambios y devoluciones sin vueltas · Pagos seguros';
     return {
       id: 'ecommerce',
       name: 'E-commerce',

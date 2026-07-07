@@ -582,9 +582,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       subtitle: 'Descubrí lo mejor de cada rubro.',
       aspect: 'wide',
       items: [
-        { id: 'cc1', span: 1, label: 'MODA HOMBRE', eyebrow: 'INTERNACIONAL', subtitle: '¡Hasta 20% OFF!', cta_label: 'Ver ofertas', cta_href: '/tienda?cat=moda-hombre', image_url: 'https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?w=1000&auto=format&fit=crop&q=80', text_color: '#111827', overlay: 0.05 },
-        { id: 'cc2', span: 1, label: '¡CELULARES Y TABLETS!', eyebrow: 'DESCUENTAZOS', cta_label: 'Ver ofertas', cta_href: '/tienda?cat=tech', image_url: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=1000&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.35 },
-        { id: 'cc3', span: 2, label: '3X2 LLEVÁS 3, PAGÁS 2', subtitle: '10% EXTRA POR TRANSFERENCIA', cta_label: 'Ver colección', cta_href: '/tienda?cat=promo', image_url: 'https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?w=1600&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.45 }
+        { id: 'cc1', span: 1, label: 'MODA HOMBRE', eyebrow: 'INTERNACIONAL', subtitle: '¡Hasta 20% OFF!', cta_label: 'Ver ofertas', cta_href: '/tienda?cat=moda-hombre', image_url: 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=1200&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.35 },
+        { id: 'cc2', span: 1, label: '¡CELULARES Y TABLETS!', eyebrow: 'DESCUENTAZOS', cta_label: 'Ver ofertas', cta_href: '/tienda?cat=tech', image_url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.4 },
+        { id: 'cc3', span: 2, label: '3X2 LLEVÁS 3, PAGÁS 2', subtitle: '10% EXTRA POR TRANSFERENCIA', cta_label: 'Ver colección', cta_href: '/tienda?cat=promo', image_url: 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1800&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.5 }
       ]
     },
     products_strip: {
