@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { env, RESERVED_SLUGS } from '@/lib/env';
 import { DEFAULT_SITE_CONFIG } from '@/lib/site/types';
+import { SITE_TEMPLATES } from '@/lib/site/templates/catalog';
 import { defaultsForTemplate } from '@/lib/courses/landing';
 
 export type OnboardingResult =
@@ -21,6 +22,7 @@ export async function createTenantAction(
   const slug = String(formData.get('slug') ?? '').trim().toLowerCase();
   const name = String(formData.get('name') ?? '').trim();
   const primaryColor = String(formData.get('primary_color') ?? '#0a0a0a').trim();
+  const templateId = String(formData.get('template_id') ?? '').trim() || null;
 
   // Validate
   if (!name) return { ok: false, error: 'El nombre de la academia es obligatorio.' };
@@ -44,15 +46,20 @@ export async function createTenantAction(
   if (existing) return { ok: false, error: 'Ese subdominio ya está tomado. Elegí otro.' };
 
   // Insert tenant via service-role (RLS would otherwise require a custom INSERT policy)
-  // site_config se popula con DEFAULT_SITE_CONFIG (rich sample content) para que el
-  // storefront se vea armado desde el día 1.
+  // Si el owner eligió un template, aplicamos su config; si no, DEFAULT_SITE_CONFIG.
+  const chosenTemplate = templateId ? SITE_TEMPLATES.find((t) => t.id === templateId) : null;
+  const siteConfig = chosenTemplate ? chosenTemplate.config : DEFAULT_SITE_CONFIG;
+  // Si el template sugiere un color y el owner no cambió el default, usamos el del template.
+  const effectivePrimary = (primaryColor === '#0a0a0a' && chosenTemplate?.suggestedPrimary)
+    ? chosenTemplate.suggestedPrimary
+    : primaryColor;
   const tenantPayload = {
     slug,
     name,
     owner_user_id: user.id,
-    brand: { primary_color: primaryColor },
+    brand: { primary_color: effectivePrimary },
     status: 'active',
-    site_config: DEFAULT_SITE_CONFIG
+    site_config: siteConfig
   };
   const { data: tenant, error: insertErr } = await svc
     .from('tenants')

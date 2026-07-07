@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react';
 import { createTenantAction, type OnboardingResult } from '@/lib/tenant/actions';
+import { SITE_TEMPLATES } from '@/lib/site/templates/catalog';
 
 /** Slugifica el nombre de un sitio para usarlo como subdominio:
  *  pasa a lowercase, saca acentos, reemplaza espacios por guiones,
@@ -20,7 +21,10 @@ function slugify(input: string): string {
 export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
   const [state, formAction, pending] = useActionState<OnboardingResult | null, FormData>(createTenantAction, null);
   const [name, setName] = useState('');
+  const [templateId, setTemplateId] = useState<string>('');
+  const [primaryColor, setPrimaryColor] = useState<string>('#f97316');
   const slug = slugify(name);
+  const chosenTemplate = SITE_TEMPLATES.find((t) => t.id === templateId);
 
   useEffect(() => {
     if (state?.ok && state.redirectTo) {
@@ -28,11 +32,19 @@ export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
     }
   }, [state]);
 
+  // Cuando elegís template, sugerimos su color primario si no lo cambiaste manualmente
+  function selectTemplate(id: string) {
+    setTemplateId(id);
+    const t = SITE_TEMPLATES.find((x) => x.id === id);
+    if (t?.suggestedPrimary) setPrimaryColor(t.suggestedPrimary);
+  }
+
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="space-y-8">
+      {/* Paso 1: Nombre */}
       <div>
-        <label className="block text-sm mb-1.5 text-white/70" htmlFor="name">
-          Nombre de tu sitio
+        <label className="block text-sm mb-1.5 text-neutral-700 font-semibold" htmlFor="name">
+          1. ¿Cómo se llama tu sitio?
         </label>
         <input
           id="name"
@@ -41,38 +53,114 @@ export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
           maxLength={80}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Mi Academia de Diseño"
-          className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/40"
+          placeholder="Ej. La Voz del Barrio, Deco Norte, Cursos Ana"
+          className="w-full rounded-md bg-white border border-neutral-300 px-3 py-2.5 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900"
         />
-        {/* El subdominio se auto-deriva del nombre. El owner siempre puede
-            cambiarlo después desde el panel. */}
         <input type="hidden" name="slug" value={slug} />
         {slug && slug.length >= 3 && (
-          <p className="text-xs text-white/50 mt-1.5">
-            Tu sitio va a estar en <span className="text-white">{slug}.{rootDomain}</span>
-            <span className="text-white/35"> (podés cambiar el dominio después)</span>
+          <p className="text-xs text-neutral-500 mt-1.5">
+            Tu sitio va a estar en <span className="font-mono text-neutral-900">{slug}.{rootDomain}</span>
           </p>
         )}
       </div>
 
+      {/* Paso 2: Template picker */}
       <div>
-        <label className="block text-sm mb-1.5 text-white/70" htmlFor="primary_color">
-          Color principal de marca
+        <div className="flex items-baseline justify-between mb-3">
+          <label className="block text-sm text-neutral-700 font-semibold">
+            2. Elegí un template para arrancar
+          </label>
+          <span className="text-xs text-neutral-500">Podés cambiar todo después.</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Opción 'Empezar en blanco' */}
+          <button
+            type="button"
+            onClick={() => setTemplateId('')}
+            className={`text-left rounded-xl border-2 p-4 transition ${
+              templateId === ''
+                ? 'border-neutral-900 bg-neutral-50'
+                : 'border-neutral-200 bg-white hover:border-neutral-400'
+            }`}
+          >
+            <div className="text-2xl mb-2">✨</div>
+            <div className="font-semibold text-sm">Empezar en blanco</div>
+            <div className="text-xs text-neutral-500 mt-1">
+              Base neutra con hero + secciones estándar. Editás todo desde el builder.
+            </div>
+          </button>
+
+          {SITE_TEMPLATES.map((t) => {
+            const selected = templateId === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => selectTemplate(t.id)}
+                className={`text-left rounded-xl border-2 p-4 transition ${
+                  selected
+                    ? 'border-neutral-900 bg-neutral-50'
+                    : 'border-neutral-200 bg-white hover:border-neutral-400'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="text-2xl">{t.emoji}</div>
+                  <div className="w-6 h-6 rounded-full border-2"
+                    style={{
+                      background: t.suggestedPrimary,
+                      borderColor: t.suggestedPrimary
+                    }}
+                    title={t.suggestedPrimary}
+                  />
+                </div>
+                <div className="font-semibold text-sm">{t.name}</div>
+                <div className="text-xs text-neutral-500 mt-1 line-clamp-2">{t.shortDesc}</div>
+                <a
+                  href={`/preview/${t.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-block mt-3 text-xs text-orange-600 font-semibold hover:underline"
+                >
+                  Ver preview →
+                </a>
+              </button>
+            );
+          })}
+        </div>
+
+        <input type="hidden" name="template_id" value={templateId} />
+
+        {chosenTemplate && (
+          <div className="mt-3 text-xs text-neutral-500">
+            <strong className="text-neutral-900">Elegiste:</strong> {chosenTemplate.name} — categoría: {chosenTemplate.category}
+          </div>
+        )}
+      </div>
+
+      {/* Paso 3: Color */}
+      <div>
+        <label className="block text-sm mb-1.5 text-neutral-700 font-semibold" htmlFor="primary_color">
+          3. Color principal de marca
         </label>
         <div className="flex gap-3 items-center">
           <input
             id="primary_color"
             name="primary_color"
             type="color"
-            defaultValue="#f97316"
-            className="w-14 h-11 rounded-md bg-transparent border border-white/15 cursor-pointer"
+            value={primaryColor}
+            onChange={(e) => setPrimaryColor(e.target.value)}
+            className="w-14 h-11 rounded-md bg-transparent border border-neutral-300 cursor-pointer"
           />
-          <span className="text-sm text-white/50">Lo podés cambiar después en branding.</span>
+          <span className="text-sm text-neutral-500">
+            {chosenTemplate ? 'Sugerido por el template — cambialo si querés.' : 'Lo podés cambiar después en Identidad.'}
+          </span>
         </div>
       </div>
 
       {state?.ok === false && (
-        <div className="rounded-md bg-red-500/10 border border-red-500/30 text-red-200 text-sm px-3 py-2">
+        <div className="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
           {state.error}
         </div>
       )}
@@ -80,9 +168,9 @@ export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-white text-black py-3 font-semibold hover:bg-white/90 transition disabled:opacity-50"
+        className="w-full rounded-md bg-neutral-900 text-white py-3 font-semibold hover:bg-neutral-800 transition disabled:opacity-50"
       >
-        {pending ? 'Creando tu sitio…' : 'Crear sitio'}
+        {pending ? 'Creando tu sitio…' : 'Crear mi sitio →'}
       </button>
     </form>
   );

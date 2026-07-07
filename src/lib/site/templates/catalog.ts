@@ -233,6 +233,42 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       suggestedPrimary: '#0891b2',
       config: c
     };
+  })(),
+
+  /* 9. Sitio de noticias / editorial */
+  (() => {
+    const c = clone();
+    enableOnly(c, ['hero', 'blog_preview', 'newsletter', 'about', 'contact']);
+    c.sections.hero.eyebrow = 'Sitio editorial';
+    c.sections.hero.title = 'Las noticias que importan.';
+    c.sections.hero.subtitle = 'Cobertura diaria, análisis y opinión sobre lo que pasa en tu comunidad.';
+    c.sections.hero.cta_label = 'Ver todas las notas';
+    c.sections.hero.cta_href = '/blog';
+    c.sections.hero.cta_label_2 = 'Suscribirme';
+    c.sections.hero.cta_href_2 = '#newsletter';
+    c.sections.blog_preview.enabled = true;
+    c.sections.blog_preview.title = 'Últimas notas';
+    c.sections.blog_preview.subtitle = 'Lo más reciente de nuestra redacción.';
+    c.sections.blog_preview.count = 6;
+    c.sections.blog_preview.cta_label = 'Ver todo el blog';
+    c.sections.newsletter.title = 'Recibí las noticias por email';
+    c.sections.newsletter.subtitle = 'Un resumen semanal en tu casilla, sin spam.';
+    c.sections.about.title = 'Sobre nosotros';
+    c.sections.about.body = 'Somos un equipo pequeño con una convicción: la información local importa. Contamos historias que otros no cuentan.';
+    c.sections.contact.title = 'Escribinos';
+    c.sections.contact.subtitle = '¿Tenés un dato? ¿Una historia? Contanos.';
+    c.nav.show_my_courses = false;
+    c.nav.show_affiliates = false;
+    return {
+      id: 'news',
+      name: 'Sitio de noticias',
+      category: 'Editorial',
+      emoji: '📰',
+      shortDesc: 'Portada con las últimas notas, newsletter y sección editorial. Blog CMS + SEO + RSS listos.',
+      longDesc: 'Ideal para portales de noticias locales, revistas independientes o blogs de opinión. Incluye artículos con imagen destacada, categorías, RSS feed automático, sitemap.xml y meta tags Open Graph. Podés cobrar por suscripciones premium.',
+      suggestedPrimary: '#dc2626',
+      config: c
+    };
   })()
 ];
 
