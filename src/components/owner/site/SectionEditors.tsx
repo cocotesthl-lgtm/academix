@@ -3656,6 +3656,9 @@ export function HeroSlidesEditor({ initial, interval }: {
                Ignora el título/subtítulo/imagen del hero base — se usa el contenido de los slides.`
             : 'Si agregás al menos 1 slide, el hero pasa a modo carrusel automático. Sino usa el layout normal (centrado, dividido, galería).'}
         </p>
+        <p className="text-[11px] text-white/45 mt-2 leading-relaxed">
+          <strong>Medida sugerida:</strong> imágenes de <code className="bg-white/10 px-1 rounded">1580×500</code> (banner ML). En mobile usa aspect 4:3 automático — el object-cover recorta desde el centro.
+        </p>
       </div>
 
       {hasSlides && (

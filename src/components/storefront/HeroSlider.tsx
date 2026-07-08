@@ -47,11 +47,20 @@ export function HeroSlider({
 
   return (
     <section
-      className="relative overflow-hidden"
+      className="relative overflow-hidden max-w-[1580px] mx-auto"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative h-[380px] md:h-[480px] lg:h-[560px]">
+      {/*
+        Banner tipo MercadoLibre: aspect ratio 1580/500 = 3.16:1.
+        Cargá imágenes de 1580×500 y quedan sin recorte.
+        · Desktop (≥1580px): 500px de alto (cap por max-w-[1580px]).
+        · Tablets 768-1580px: escala proporcional (~245-500px).
+        · Mobile (<768px): aspect más cuadrado (4:3) para que no quede
+          una banda mini ilegible. Podés usar imágenes 800×600 o solo
+          confiar en el object-cover para el recorte.
+      */}
+      <div className="relative w-full aspect-[4/3] md:aspect-[1580/500]">
         {slides.map((s, i) => {
           const active = i === idx;
           const overlay = s.overlay ?? 0.35;
