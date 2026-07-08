@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createCourseAction, type Result } from '@/lib/courses/actions';
 import { PRODUCT_TYPES, type ProductType } from '@/lib/courses/product-types';
 import { getTemplatesForType, type OfferTemplate } from '@/lib/courses/templates/offer-templates';
+import { ALL_MODULES_ON, type Modules } from '@/lib/modules/types';
 import { ProductTypeMockup } from './ProductTypeMockup';
 
 /**
@@ -14,10 +15,15 @@ import { ProductTypeMockup } from './ProductTypeMockup';
  * Paso 1.5 (opcional): elegir una plantilla pre-armada o empezar en blanco.
  * Paso 2: título + precio + descripción opcional. Placeholders adaptados.
  */
-export function NewCourseForm() {
+export function NewCourseForm({ modules = ALL_MODULES_ON }: { modules?: Modules }) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
-  const [type, setType] = useState<ProductType>('course');
+  // Filtrar tipos por módulos activos. Si el owner apagó 'ecommerce', no
+  // aparece 'physical'; si apagó 'events', no aparece 'event', etc. Siempre
+  // dejamos al menos uno (fallback a courses hardcodeado).
+  const visibleTypes = PRODUCT_TYPES.filter((p) => modules[p.moduleKey] !== false);
+  const initialType = (visibleTypes[0]?.id ?? 'course') as ProductType;
+  const [type, setType] = useState<ProductType>(initialType);
   const [template, setTemplate] = useState<OfferTemplate | null>(null);
   const [state, action, pending] = useActionState<Result<{ id: string }> | null, FormData>(
     createCourseAction,
@@ -34,6 +40,17 @@ export function NewCourseForm() {
 
   const spec = PRODUCT_TYPES.find((p) => p.id === type) ?? PRODUCT_TYPES[0];
 
+  // Si el tipo actual tiene createHref (ej: physical → /products/new),
+  // el botón "Siguiente" del step 1 nos manda ahí en vez de al step 2.
+  // El resto del formulario ya no aplica: el flujo lo maneja el otro form.
+  function handleNext() {
+    if (spec.createHref) {
+      router.push(spec.createHref);
+      return;
+    }
+    setStep(2);
+  }
+
   if (step === 1) {
     return (
       <div className="space-y-5 max-w-4xl">
@@ -47,7 +64,7 @@ export function NewCourseForm() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {PRODUCT_TYPES.map((p) => {
+          {visibleTypes.map((p) => {
             const selected = type === p.id;
             return (
               <button
@@ -150,10 +167,10 @@ export function NewCourseForm() {
         <div className="flex justify-end pt-2">
           <button
             type="button"
-            onClick={() => setStep(2)}
+            onClick={handleNext}
             className="rounded-md bg-white text-black px-6 py-2.5 font-semibold hover:bg-white/90 transition"
           >
-            Siguiente →
+            {spec.createHref ? 'Ir al form de producto físico →' : 'Siguiente →'}
           </button>
         </div>
       </div>

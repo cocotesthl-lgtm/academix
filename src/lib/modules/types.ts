@@ -12,50 +12,156 @@
  *   4. Actualizar OwnerSidebar.tsx para asociar el/los grupos filtrables
  */
 
-export const MODULE_KEYS = ['catalog', 'calendar', 'crm', 'team', 'sales', 'site'] as const;
+/**
+ * Módulos macro (grupos del sidebar) + submódulos (features dentro de un grupo).
+ *
+ * ─ MACRO ────────────────────────────────────────────────────────
+ * catalog, calendar, crm, team, sales, site
+ *   Cada uno controla un grupo entero del sidebar. Apagarlo esconde
+ *   todo el grupo.
+ *
+ * ─ SUBMÓDULOS ───────────────────────────────────────────────────
+ * courses, ecommerce, vip, bundles → dentro de "Catálogo"
+ * events, reservations             → dentro de "Agenda"
+ * blog, forms, affiliates          → dentro de "CRM & Marketing"
+ *
+ *   Controlan items específicos del sidebar y sirven para que el owner
+ *   diga "vendo cursos, NO productos físicos" y le desaparezca la
+ *   duplicación de "Publicaciones" vs "Productos físicos".
+ *   Un submódulo apagado no borra la data — solo lo esconde del
+ *   sidebar y del wizard "Crear oferta".
+ */
+export const MODULE_KEYS = [
+  // Macro (F2)
+  'catalog', 'calendar', 'crm', 'team', 'sales', 'site',
+  // Submódulos de Catálogo (F2.b)
+  'courses', 'ecommerce', 'vip', 'bundles',
+  // Submódulos de Agenda (F2.b)
+  'events', 'reservations',
+  // Submódulos de CRM (F2.b)
+  'blog', 'forms', 'affiliates'
+] as const;
 export type ModuleKey = (typeof MODULE_KEYS)[number];
 export type Modules = Record<ModuleKey, boolean>;
 
 /** Todo prendido — default para tenants existentes (retrocompat). */
 export const ALL_MODULES_ON: Modules = {
-  catalog: true,
-  calendar: true,
-  crm: true,
-  team: true,
-  sales: true,
-  site: true
+  catalog: true, calendar: true, crm: true, team: true, sales: true, site: true,
+  courses: true, ecommerce: true, vip: true, bundles: true,
+  events: true, reservations: true,
+  blog: true, forms: true, affiliates: true
 };
 
-export const MODULE_META: Record<ModuleKey, { label: string; description: string; sidebarGroup: string }> = {
+/**
+ * Relación macro → submódulos. Se usa en /owner/modulos para agrupar
+ * visualmente los toggles. Un submódulo solo aparece si su macro
+ * está prendido; apagar el macro esconde toda la sección.
+ */
+export const MODULE_TREE: Partial<Record<ModuleKey, ModuleKey[]>> = {
+  catalog:  ['courses', 'ecommerce', 'vip', 'bundles'],
+  calendar: ['events', 'reservations'],
+  crm:      ['blog', 'forms', 'affiliates']
+};
+
+/**
+ * Nivel de módulo. Los macro controlan grupos enteros del sidebar; los
+ * sub controlan items individuales dentro del grupo.
+ */
+export const MODULE_LEVEL: Record<ModuleKey, 'macro' | 'sub'> = {
+  catalog: 'macro', calendar: 'macro', crm: 'macro', team: 'macro', sales: 'macro', site: 'macro',
+  courses: 'sub', ecommerce: 'sub', vip: 'sub', bundles: 'sub',
+  events: 'sub', reservations: 'sub',
+  blog: 'sub', forms: 'sub', affiliates: 'sub'
+};
+
+export const MODULE_META: Record<ModuleKey, { label: string; description: string; sidebarGroup: string; emoji?: string }> = {
+  // ── MACRO ────────────────────────────────────────────────
   catalog: {
     label: 'Catálogo',
-    description: 'Publicaciones, Contenido VIP, Bundles, Categorías, Cupones y Checkout.',
+    description: 'Todo lo que vendés + cómo se compra (publicaciones, tienda, VIP, cupones, checkout).',
     sidebarGroup: 'Catálogo'
   },
   calendar: {
     label: 'Agenda',
-    description: 'Calendario, Reservas, Eventos con tickets, Sedes.',
+    description: 'Todo lo que tiene fecha/hora: eventos con tickets, reservas, sedes.',
     sidebarGroup: 'Agenda'
   },
   crm: {
     label: 'CRM & Marketing',
-    description: 'Leads, Clientes, Formularios, Mensajes, Afiliados.',
+    description: 'Leads, clientes, formularios, mensajes, afiliados, blog.',
     sidebarGroup: 'CRM & Marketing'
   },
   team: {
     label: 'Personas',
-    description: 'Equipo interno e Instructores.',
+    description: 'Equipo interno e instructores.',
     sidebarGroup: 'Personas'
   },
   sales: {
     label: 'Ventas',
-    description: 'Ventas, Suscripciones, Saldos, Finanzas.',
+    description: 'Ventas, órdenes, suscripciones, saldos, finanzas.',
     sidebarGroup: 'Ventas'
   },
   site: {
     label: 'Mi sitio',
-    description: 'Editor de páginas, Templates, Identidad, Dominio.',
+    description: 'Editor de páginas, templates, identidad, dominio.',
     sidebarGroup: 'Mi sitio'
+  },
+  // ── SUB de Catálogo ──────────────────────────────────────
+  courses: {
+    label: 'Cursos & publicaciones',
+    description: 'Cursos online, mentorías, eventos, servicios — todo lo que se crea desde "Crear oferta".',
+    sidebarGroup: 'Catálogo',
+    emoji: '🎓'
+  },
+  ecommerce: {
+    label: 'Ecommerce (productos físicos)',
+    description: 'Productos físicos con variantes, stock, zonas de envío y carrito.',
+    sidebarGroup: 'Catálogo',
+    emoji: '🛒'
+  },
+  vip: {
+    label: 'Contenido VIP',
+    description: 'Packs de contenido premium con suscripción o compra única.',
+    sidebarGroup: 'Catálogo',
+    emoji: '💎'
+  },
+  bundles: {
+    label: 'Bundles',
+    description: 'Combos de productos con descuento (ej: 3 cursos por el precio de 2).',
+    sidebarGroup: 'Catálogo',
+    emoji: '🎁'
+  },
+  // ── SUB de Agenda ────────────────────────────────────────
+  events: {
+    label: 'Eventos con tickets',
+    description: 'Eventos con entradas numeradas, zonas, escaneo QR.',
+    sidebarGroup: 'Agenda',
+    emoji: '🎫'
+  },
+  reservations: {
+    label: 'Reservas',
+    description: 'Turnos y reservas (mentorías, restaurantes, sedes múltiples).',
+    sidebarGroup: 'Agenda',
+    emoji: '📅'
+  },
+  // ── SUB de CRM ───────────────────────────────────────────
+  blog: {
+    label: 'Blog / Artículos',
+    description: 'CMS de artículos editoriales con categorías y RSS.',
+    sidebarGroup: 'CRM & Marketing',
+    emoji: '📝'
+  },
+  forms: {
+    label: 'Formularios',
+    description: 'Builder de formularios con submissions y conexión a CRM.',
+    sidebarGroup: 'CRM & Marketing',
+    emoji: '📋'
+  },
+  affiliates: {
+    label: 'Afiliados',
+    description: 'Programa de afiliados con links de referido, comisiones y multi-nivel.',
+    sidebarGroup: 'CRM & Marketing',
+    emoji: '🤝'
   }
 };
 
@@ -64,27 +170,43 @@ export const MODULE_META: Record<ModuleKey, { label: string; description: string
  * estos. Actualmente se aplican solo si el user los elige en /owner/modulos;
  * F2.2 los meterá en onboarding.
  */
+/** Helper: parte de todo apagado y prende solo lo listado. */
+function preset(...on: ModuleKey[]): Modules {
+  const m: Modules = { ...ALL_MODULES_ON };
+  for (const k of MODULE_KEYS) m[k] = false;
+  for (const k of on) m[k] = true;
+  return m;
+}
+
 export const MODULE_PRESETS = {
   academia: {
     label: 'Academia / Formación',
     description: 'Cursos, membresías VIP, instructores, eventos con inscripción.',
-    modules: {
-      catalog: true, calendar: true, crm: true, team: true, sales: true, site: true
-    } as Modules
+    modules: preset('catalog', 'courses', 'vip', 'bundles',
+      'calendar', 'events',
+      'crm', 'forms', 'affiliates',
+      'team', 'sales', 'site')
+  },
+  ecommerce: {
+    label: 'Ecommerce / Tienda online',
+    description: 'Solo productos físicos con stock, variantes y envíos. Sin cursos ni eventos.',
+    modules: preset('catalog', 'ecommerce', 'bundles',
+      'crm', 'forms', 'affiliates',
+      'sales', 'site')
   },
   servicios: {
     label: 'Servicios profesionales',
     description: 'Estudio jurídico, consultora, contadores. Turnos y CRM sin ventas online.',
-    modules: {
-      catalog: false, calendar: true, crm: true, team: true, sales: false, site: true
-    } as Modules
+    modules: preset('calendar', 'reservations',
+      'crm', 'forms', 'blog',
+      'team', 'site')
   },
   comercio: {
     label: 'Comercio / Concesionaria',
     description: 'Productos, leads que un vendedor cierra, afiliados que traen clientes.',
-    modules: {
-      catalog: true, calendar: false, crm: true, team: true, sales: true, site: true
-    } as Modules
+    modules: preset('catalog', 'ecommerce',
+      'crm', 'forms', 'affiliates',
+      'team', 'sales', 'site')
   },
   personalizado: {
     label: 'Personalizado (todo prendido)',

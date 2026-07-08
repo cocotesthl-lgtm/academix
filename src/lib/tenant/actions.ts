@@ -8,6 +8,7 @@ import { DEFAULT_SITE_CONFIG } from '@/lib/site/types';
 import { SITE_TEMPLATES } from '@/lib/site/templates/catalog';
 import { seedEcommerceDemoData } from '@/lib/site/templates/seed-ecommerce';
 import { defaultsForTemplate } from '@/lib/courses/landing';
+import { MODULE_PRESETS, ALL_MODULES_ON, type Modules } from '@/lib/modules/types';
 
 export type OnboardingResult =
   | { ok: true; tenantId: string; slug: string; redirectTo: string }
@@ -55,13 +56,22 @@ export async function createTenantAction(
     ? chosenTemplate.suggestedPrimary
     : primaryColor;
   const isEcommerce = chosenTemplate?.id === 'ecommerce';
+  // Módulos iniciales del tenant según template elegido.
+  // Ecommerce template → preset ecommerce (solo tienda + crm + sales + site).
+  // Academia y otros → todos prendidos (retrocompat / owner puede apagar
+  // desde /owner/modulos después). Un tenant con TODO prendido no molesta,
+  // apagarlos es fácil; empezar sin nada es frustrante.
+  const initialModules: Modules = isEcommerce
+    ? { ...MODULE_PRESETS.ecommerce.modules }
+    : { ...ALL_MODULES_ON };
   const tenantPayload: Record<string, unknown> = {
     slug,
     name,
     owner_user_id: user.id,
     brand: { primary_color: effectivePrimary },
     status: 'active',
-    site_config: siteConfig
+    site_config: siteConfig,
+    modules: initialModules
   };
   // Ecommerce → habilitar carrito automáticamente en el registro también
   // (no solo desde /owner/templates). Sin carrito no hay tienda.
@@ -76,17 +86,27 @@ export async function createTenantAction(
     .insert(tenantPayload as any)
     .select('id, slug')
     .single<{ id: string; slug: string }>();
-  if (insertErr && isEcommerce) {
-    // Reintento sin columnas de carrito por si la migration 0034 está pendiente.
+  if (insertErr) {
+    // Reintento defensivo por migrations pendientes: primero sin cart_*
+    // (migration 0034), después sin modules (migration 0045).
     delete tenantPayload.cart_enabled;
     delete tenantPayload.cart_position;
     delete tenantPayload.cart_display;
-    const retry = await svc
+    let retry = await svc
       .from('tenants')
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .insert(tenantPayload as any)
       .select('id, slug')
       .single<{ id: string; slug: string }>();
+    if (retry.error) {
+      delete tenantPayload.modules;
+      retry = await svc
+        .from('tenants')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .insert(tenantPayload as any)
+        .select('id, slug')
+        .single<{ id: string; slug: string }>();
+    }
     tenant = retry.data;
     insertErr = retry.error;
   }

@@ -3,6 +3,8 @@
  * Reduce fricción: el owner elige qué vende, la plataforma configura el resto.
  */
 
+import type { ModuleKey } from '@/lib/modules/types';
+
 export type ProductType =
   | 'course'
   | 'event'
@@ -35,6 +37,19 @@ export type ProductTypeSpec = {
   showContentSection: boolean;
   /** Texto del CTA en la landing (e.g. "Comprar curso", "Reservar lugar") */
   ctaText: string;
+  /**
+   * Submódulo al que pertenece este tipo. El wizard "Crear oferta" solo
+   * muestra tipos cuyo submódulo esté activo. Ej: si el owner apagó
+   * 'ecommerce', desaparece 'physical' del wizard.
+   */
+  moduleKey: ModuleKey;
+  /**
+   * Si al elegir este tipo el flujo tiene que ir a OTRA ruta (no crear un
+   * course), ponemos acá el href. Se usa para 'physical' que va a
+   * /owner/products/new (physical_products table) en vez de crear un
+   * row en courses.
+   */
+  createHref?: string;
 };
 
 export const PRODUCT_TYPES: ProductTypeSpec[] = [
@@ -51,7 +66,8 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     moduleLabel: 'módulos',
     lessonLabel: 'lecciones',
     showContentSection: true,
-    ctaText: 'Comprar curso'
+    ctaText: 'Comprar curso',
+    moduleKey: 'courses'
   },
   {
     id: 'event',
@@ -66,7 +82,8 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     moduleLabel: 'jornadas',
     lessonLabel: 'actividades',
     showContentSection: false,
-    ctaText: 'Comprar entrada'
+    ctaText: 'Comprar entrada',
+    moduleKey: 'events'
   },
   {
     id: 'mentorship',
@@ -81,7 +98,8 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     moduleLabel: 'encuentros',
     lessonLabel: 'sesiones',
     showContentSection: true,
-    ctaText: 'Reservar mentoría'
+    ctaText: 'Reservar mentoría',
+    moduleKey: 'reservations'
   },
   {
     id: 'vip_pack',
@@ -96,7 +114,8 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     moduleLabel: 'álbumes',
     lessonLabel: 'archivos',
     showContentSection: false,
-    ctaText: 'Suscribirme'
+    ctaText: 'Suscribirme',
+    moduleKey: 'vip'
   },
   {
     id: 'digital',
@@ -111,7 +130,8 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     moduleLabel: 'archivos',
     lessonLabel: 'items',
     showContentSection: true,
-    ctaText: 'Comprar ahora'
+    ctaText: 'Comprar ahora',
+    moduleKey: 'courses'
   },
   {
     id: 'physical',
@@ -126,7 +146,12 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     moduleLabel: 'variantes',
     lessonLabel: 'opciones',
     showContentSection: false,
-    ctaText: 'Comprar'
+    ctaText: 'Comprar',
+    // Físico va al form de /owner/products (physical_products, con
+    // variantes/stock/envíos). El wizard, al seleccionar physical, redirige
+    // acá en vez de insertar en la tabla courses.
+    moduleKey: 'ecommerce',
+    createHref: '/products/new'
   },
   {
     id: 'service',
@@ -141,7 +166,8 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     moduleLabel: 'entregables',
     lessonLabel: 'items',
     showContentSection: true,
-    ctaText: 'Contratar'
+    ctaText: 'Contratar',
+    moduleKey: 'courses'
   },
   {
     id: 'multi_venue',
@@ -156,7 +182,8 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     moduleLabel: 'actividades',
     lessonLabel: 'items',
     showContentSection: true,
-    ctaText: 'Reservar lugar'
+    ctaText: 'Reservar lugar',
+    moduleKey: 'reservations'
   },
   {
     id: 'restaurant',
@@ -171,7 +198,8 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     moduleLabel: 'secciones',
     lessonLabel: 'platos',
     showContentSection: false,
-    ctaText: 'Reservar mesa'
+    ctaText: 'Reservar mesa',
+    moduleKey: 'reservations'
   },
   {
     id: 'topup',
@@ -186,7 +214,8 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     moduleLabel: 'items',
     lessonLabel: 'pasos',
     showContentSection: false,
-    ctaText: 'Cargar saldo'
+    ctaText: 'Cargar saldo',
+    moduleKey: 'courses'
   }
 ];
 

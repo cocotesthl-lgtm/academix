@@ -6,6 +6,7 @@ import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { SITE_TEMPLATES } from './catalog';
 import { seedEcommerceDemoData } from './seed-ecommerce';
+import { normalizeModules } from '@/lib/modules/types';
 
 /** Aplica un template completo al sitio del tenant. Pisa todo el site_config. */
 export async function applySiteTemplateAction(formData: FormData): Promise<void> {
@@ -40,6 +41,12 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
     patch.cart_enabled = true;
     patch.cart_position = 'header';
     patch.cart_display = 'dropdown';
+    // También activar el módulo 'ecommerce' + su macro 'catalog' para que
+    // aparezca en el sidebar. Preservamos lo que el owner tenía prendido
+    // en el resto de módulos. Sin esto, aplicar el template deja 'Productos
+    // físicos' escondido del sidebar si el tenant tenía ese sub apagado.
+    const currentModules = normalizeModules((tRow as { modules?: unknown } | null)?.modules);
+    patch.modules = { ...currentModules, catalog: true, ecommerce: true };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,7 +58,13 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
     delete patch.cart_position;
     delete patch.cart_display;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (svc.from('tenants') as any).update(patch).eq('id', tenant.id);
+    const retry2 = await (svc.from('tenants') as any).update(patch).eq('id', tenant.id);
+    if (retry2.error) {
+      // Segundo reintento sin modules por si la migration 0045 está pendiente.
+      delete patch.modules;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('tenants') as any).update(patch).eq('id', tenant.id);
+    }
   }
 
   // Ecommerce → sembrar categorías y productos reales en la DB si el tenant

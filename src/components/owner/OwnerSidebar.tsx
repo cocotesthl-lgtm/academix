@@ -49,7 +49,7 @@ function Icon({ name, className = 'w-4 h-4' }: { name: IconName; className?: str
  *   raro).
  */
 
-type NavItem = { label: string; href: string; badge?: string };
+type NavItem = { label: string; href: string; badge?: string; moduleKey?: ModuleKey };
 type NavGroup = { label: string; icon: IconName; items: NavItem[]; moduleKey?: ModuleKey };
 type NavEntry = { kind: 'item'; item: NavItem; icon: IconName } | { kind: 'group'; group: NavGroup };
 
@@ -65,15 +65,18 @@ const NAV: NavEntry[] = [
     group: {
       label: 'Catálogo', icon: 'shopping-bag', moduleKey: 'catalog',
       items: [
-        { label: 'Publicaciones', href: '/courses' },      // era "Ofertas"
-        { label: 'Productos físicos', href: '/products' }, // ecommerce físico
-        { label: 'Contenido VIP', href: '/vip' },
-        { label: 'Bundles', href: '/bundles' },
+        // Cada item con moduleKey: si ese submódulo está apagado, el item
+        // desaparece del sidebar. Items sin moduleKey siempre visibles
+        // mientras el macro (catalog) esté prendido.
+        { label: 'Publicaciones', href: '/courses', moduleKey: 'courses' },
+        { label: 'Productos físicos', href: '/products', moduleKey: 'ecommerce' },
+        { label: 'Contenido VIP', href: '/vip', moduleKey: 'vip' },
+        { label: 'Bundles', href: '/bundles', moduleKey: 'bundles' },
         { label: 'Categorías', href: '/categories' },
-        { label: 'Envíos', href: '/shipping' },            // zonas + tarifas
-        { label: 'Cupones', href: '/coupons' },            // movido desde "Mi sitio"
-        { label: 'Gift cards', href: '/giftcards' },       // regalos con QR
-        { label: 'Checkout', href: '/checkout' }           // movido desde "Mi sitio"
+        { label: 'Envíos', href: '/shipping', moduleKey: 'ecommerce' },
+        { label: 'Cupones', href: '/coupons' },
+        { label: 'Gift cards', href: '/giftcards' },
+        { label: 'Checkout', href: '/checkout' }
       ]
     }
   },
@@ -85,9 +88,9 @@ const NAV: NavEntry[] = [
       label: 'Agenda', icon: 'calendar', moduleKey: 'calendar',
       items: [
         { label: 'Calendario', href: '/eventos/calendario' },
-        { label: 'Reservas', href: '/reservas' },
-        { label: 'Validar entradas', href: '/eventos/validar' },
-        { label: 'Asistencia', href: '/eventos/asistencia' },
+        { label: 'Reservas', href: '/reservas', moduleKey: 'reservations' },
+        { label: 'Validar entradas', href: '/eventos/validar', moduleKey: 'events' },
+        { label: 'Asistencia', href: '/eventos/asistencia', moduleKey: 'events' },
         { label: 'Sedes', href: '/venues' }
       ]
     }
@@ -100,12 +103,12 @@ const NAV: NavEntry[] = [
     group: {
       label: 'CRM & Marketing', icon: 'megaphone', moduleKey: 'crm',
       items: [
-        { label: 'Leads', href: '/crm' },                  // era "CRM (leads)"
+        { label: 'Leads', href: '/crm' },
         { label: 'Clientes', href: '/clientes' },
-        { label: 'Blog', href: '/blog' },                  // Módulo nuevo — artículos editoriales
-        { label: 'Formularios', href: '/forms' },
+        { label: 'Blog', href: '/blog', moduleKey: 'blog' },
+        { label: 'Formularios', href: '/forms', moduleKey: 'forms' },
         { label: 'Mensajes', href: '/mensajes' },
-        { label: 'Afiliados', href: '/affiliates' }        // movido desde "Personas"
+        { label: 'Afiliados', href: '/affiliates', moduleKey: 'affiliates' }
       ]
     }
   },
@@ -129,11 +132,11 @@ const NAV: NavEntry[] = [
       label: 'Ventas', icon: 'dollar', moduleKey: 'sales',
       items: [
         { label: 'Ventas', href: '/ventas' },
-        { label: 'Órdenes (tienda)', href: '/orders' },     // ecommerce físico
-        { label: 'Analytics', href: '/analytics' },         // funnel de conversión
+        { label: 'Órdenes (tienda)', href: '/orders', moduleKey: 'ecommerce' },
+        { label: 'Analytics', href: '/analytics' },
         { label: 'Suscripciones', href: '/suscripciones' },
-        { label: 'Saldos', href: '/wallets' },              // movido desde "Mis ventas"
-        { label: 'Finanzas', href: '/finance' }             // movido desde "Configuración"
+        { label: 'Saldos', href: '/wallets' },
+        { label: 'Finanzas', href: '/finance' }
       ]
     }
   },
@@ -200,14 +203,29 @@ export function OwnerSidebar({
   const treatAsOwner = permissions === null;
 
   const visibleNav = useMemo(() => {
-    return NAV.filter((entry) => {
-      if (entry.kind === 'item') return true;
-      const key = entry.group.moduleKey;
-      if (!key) return true;
-      if (modules[key] === false) return false;
-      if (treatAsOwner) return true;
-      return viewable.has(key);
-    });
+    return NAV
+      // 1) Filtro por grupo (macro-módulos)
+      .filter((entry) => {
+        if (entry.kind === 'item') return true;
+        const key = entry.group.moduleKey;
+        if (!key) return true;
+        if (modules[key] === false) return false;
+        if (treatAsOwner) return true;
+        return viewable.has(key);
+      })
+      // 2) Filtro por item (sub-módulos): dentro del grupo, escondemos
+      //    items cuyo submódulo esté apagado. Si al filtrar quedan cero
+      //    items visibles, escondemos el grupo entero (evita mostrar
+      //    "Catálogo" vacío cuando el owner apagó todos los sub).
+      .map((entry) => {
+        if (entry.kind !== 'group') return entry;
+        const items = entry.group.items.filter((it) => {
+          if (!it.moduleKey) return true;
+          return modules[it.moduleKey] !== false;
+        });
+        return { ...entry, group: { ...entry.group, items } };
+      })
+      .filter((entry) => entry.kind !== 'group' || entry.group.items.length > 0);
   }, [modules, viewable, treatAsOwner]);
   // Highlight optimista — el item se marca activo APENAS se clickea,
   // sin esperar que la page nueva termine de cargar.
