@@ -46,7 +46,7 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
     // en el resto de módulos. Sin esto, aplicar el template deja 'Productos
     // físicos' escondido del sidebar si el tenant tenía ese sub apagado.
     const currentModules = normalizeModules((tRow as { modules?: unknown } | null)?.modules);
-    patch.modules = { ...currentModules, catalog: true, ecommerce: true };
+    patch.modules = { ...currentModules, catalog: true, ecommerce: true, promotions: true, bundles: true };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

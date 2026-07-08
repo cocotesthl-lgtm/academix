@@ -3,6 +3,8 @@ import { headers } from 'next/headers';
 import { getServiceClient } from '@/lib/supabase/service';
 import { createPreference } from '@/lib/payments/mercadopago';
 import { randomUUID } from 'node:crypto';
+import { computePromotions } from '@/lib/promotions/engine';
+import type { Promotion, CartItem as PromoCartItem } from '@/lib/promotions/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -73,12 +75,12 @@ export async function POST(
   const productIds = Array.from(new Set(body.items.map((i) => i.product_id))).slice(0, 30);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: productsRaw } = await (svc.from('physical_products') as any)
-    .select('id, title, price_cents, currency, stock_qty, track_stock, requires_shipping, weight_g, status')
+    .select('id, title, price_cents, currency, stock_qty, track_stock, requires_shipping, weight_g, status, category_id')
     .eq('tenant_id', tenantId).in('id', productIds);
   const products = ((productsRaw ?? []) as Array<{
     id: string; title: string; price_cents: number; currency: string;
     stock_qty: number; track_stock: boolean; requires_shipping: boolean;
-    weight_g: number | null; status: string;
+    weight_g: number | null; status: string; category_id: string | null;
   }>).filter((p) => p.status === 'published');
   const productById = new Map(products.map((p) => [p.id, p]));
 
@@ -138,6 +140,39 @@ export async function POST(
   }
   if (orderItems.length === 0) return NextResponse.json({ error: 'no_valid_items' }, { status: 400 });
 
+  // ── Promociones automáticas ──────────────────────────────────────
+  // Antes de calcular shipping, aplicamos las promociones activas del
+  // tenant al carrito. Nunca confiamos en el cliente: computamos server-side.
+  // Si la migration 0057 no corrió todavía, el catch deja todo en 0.
+  let promoDiscount = 0;
+  let promoFreeShipping = false;
+  let appliedPromos: Array<{ promotion_id: string; title: string; type: string; discount_cents: number; detail?: string | null; free_shipping?: boolean }> = [];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: promosRaw } = await (svc.from('promotions') as any)
+      .select('id, tenant_id, title, type, buy_qty, pay_qty, min_qty, min_amount_cents, discount_percent, scope, target_ids, starts_at, ends_at, enabled, priority')
+      .eq('tenant_id', tenantId).eq('enabled', true);
+    const promos = (promosRaw ?? []) as Promotion[];
+    if (promos.length > 0) {
+      const cartForPromo: PromoCartItem[] = orderItems.map((oi) => {
+        const prod = productById.get(oi.product_id);
+        return {
+          product_id: oi.product_id,
+          variant_id: oi.variant_id,
+          qty: oi.qty,
+          unit_price_cents: oi.unit_price_cents,
+          category_id: prod?.category_id ?? null
+        };
+      });
+      const result = computePromotions(cartForPromo, promos);
+      promoDiscount = result.discount_cents;
+      promoFreeShipping = result.free_shipping;
+      appliedPromos = result.applied;
+    }
+  } catch (e) {
+    console.warn('[checkout] promos skipped (migration pendiente?):', e);
+  }
+
   // Shipping
   let shippingCost = 0;
   let shippingLabel: string | null = null;
@@ -171,7 +206,9 @@ export async function POST(
       const extraG = Math.max(0, totalWeightG - included);
       ratePrice += Math.round(extraG * rate.per_kg_cents / 1000);
     }
-    const isFree = rate.free_from_cents != null && itemsTotal >= rate.free_from_cents;
+    const isFreeByRate = rate.free_from_cents != null && itemsTotal >= rate.free_from_cents;
+    // promoFreeShipping = alguna promo activa dio "envío gratis por monto"
+    const isFree = isFreeByRate || promoFreeShipping;
     shippingCost = isFree ? 0 : ratePrice;
     shippingLabel = rate.name;
     shippingZoneId = rate.zone_id;
@@ -219,13 +256,12 @@ export async function POST(
     }
   }
 
-  const total = Math.max(0, itemsTotal + shippingCost - giftCardDiscount);
+  const total = Math.max(0, itemsTotal + shippingCost - giftCardDiscount - promoDiscount);
   const currency = products[0]?.currency || 'ARS';
 
   // Create order
   const orderId = randomUUID();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: ordErr } = await (svc.from('physical_orders') as any).insert({
+  const orderPayload: Record<string, unknown> = {
     id: orderId, tenant_id: tenantId,
     buyer_email: body.buyer_email,
     buyer_name: body.buyer_name ?? null,
@@ -236,14 +272,26 @@ export async function POST(
     shipping_method_label: shippingLabel,
     items_total_cents: itemsTotal,
     shipping_cost_cents: shippingCost,
-    discount_cents: giftCardDiscount,
+    discount_cents: giftCardDiscount + promoDiscount,
     total_cents: total,
     currency,
     status: 'pending',
     buyer_notes: body.buyer_notes?.slice(0, 500) ?? null,
-    // Guardamos en JSON de notas el código para el webhook
-    notes: giftCardCode ? `gift_card:${giftCardCode}:${giftCardId}` : null
-  });
+    notes: giftCardCode ? `gift_card:${giftCardCode}:${giftCardId}` : null,
+    // Promociones aplicadas (migration 0057). Si la col no existe, reintento sin.
+    applied_promotions: appliedPromos,
+    promo_discount_cents: promoDiscount
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let { error: ordErr } = await (svc.from('physical_orders') as any).insert(orderPayload);
+  if (ordErr && (ordErr.message ?? '').includes('applied_promotions')) {
+    // Migration 0057 no corrió — reintento sin las cols nuevas.
+    delete orderPayload.applied_promotions;
+    delete orderPayload.promo_discount_cents;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('physical_orders') as any).insert(orderPayload);
+    ordErr = retry.error;
+  }
   if (ordErr) return NextResponse.json({ error: 'order_create_failed', detail: ordErr.message }, { status: 500 });
 
   // Insert order items

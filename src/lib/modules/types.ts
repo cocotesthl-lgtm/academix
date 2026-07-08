@@ -35,7 +35,7 @@ export const MODULE_KEYS = [
   // Macro (F2)
   'catalog', 'calendar', 'crm', 'team', 'sales', 'site',
   // Submódulos de Catálogo (F2.b)
-  'courses', 'ecommerce', 'vip', 'bundles',
+  'courses', 'ecommerce', 'vip', 'bundles', 'promotions',
   // Submódulos de Agenda (F2.b)
   'events', 'reservations',
   // Submódulos de CRM (F2.b)
@@ -47,7 +47,7 @@ export type Modules = Record<ModuleKey, boolean>;
 /** Todo prendido — default para tenants existentes (retrocompat). */
 export const ALL_MODULES_ON: Modules = {
   catalog: true, calendar: true, crm: true, team: true, sales: true, site: true,
-  courses: true, ecommerce: true, vip: true, bundles: true,
+  courses: true, ecommerce: true, vip: true, bundles: true, promotions: true,
   events: true, reservations: true,
   blog: true, forms: true, affiliates: true
 };
@@ -58,7 +58,7 @@ export const ALL_MODULES_ON: Modules = {
  * está prendido; apagar el macro esconde toda la sección.
  */
 export const MODULE_TREE: Partial<Record<ModuleKey, ModuleKey[]>> = {
-  catalog:  ['courses', 'ecommerce', 'vip', 'bundles'],
+  catalog:  ['courses', 'ecommerce', 'vip', 'bundles', 'promotions'],
   calendar: ['events', 'reservations'],
   crm:      ['blog', 'forms', 'affiliates']
 };
@@ -69,7 +69,7 @@ export const MODULE_TREE: Partial<Record<ModuleKey, ModuleKey[]>> = {
  */
 export const MODULE_LEVEL: Record<ModuleKey, 'macro' | 'sub'> = {
   catalog: 'macro', calendar: 'macro', crm: 'macro', team: 'macro', sales: 'macro', site: 'macro',
-  courses: 'sub', ecommerce: 'sub', vip: 'sub', bundles: 'sub',
+  courses: 'sub', ecommerce: 'sub', vip: 'sub', bundles: 'sub', promotions: 'sub',
   events: 'sub', reservations: 'sub',
   blog: 'sub', forms: 'sub', affiliates: 'sub'
 };
@@ -126,10 +126,16 @@ export const MODULE_META: Record<ModuleKey, { label: string; description: string
     emoji: '💎'
   },
   bundles: {
-    label: 'Bundles',
-    description: 'Combos de productos con descuento (ej: 3 cursos por el precio de 2).',
+    label: 'Bundles / Kits',
+    description: 'Combos armados por vos, vendidos como un producto único ("Kit skincare", "Pack asado").',
     sidebarGroup: 'Catálogo',
     emoji: '🎁'
+  },
+  promotions: {
+    label: 'Promociones automáticas',
+    description: 'Reglas del carrito estilo Shopify (3x2, % off por cantidad, envío gratis desde monto).',
+    sidebarGroup: 'Catálogo',
+    emoji: '🏷️'
   },
   // ── SUB de Agenda ────────────────────────────────────────
   events: {
@@ -182,15 +188,15 @@ export const MODULE_PRESETS = {
   academia: {
     label: 'Academia / Formación',
     description: 'Cursos, membresías VIP, instructores, eventos con inscripción.',
-    modules: preset('catalog', 'courses', 'vip', 'bundles',
+    modules: preset('catalog', 'courses', 'vip', 'bundles', 'promotions',
       'calendar', 'events',
       'crm', 'forms', 'affiliates',
       'team', 'sales', 'site')
   },
   ecommerce: {
     label: 'Ecommerce / Tienda online',
-    description: 'Solo productos físicos con stock, variantes y envíos. Sin cursos ni eventos.',
-    modules: preset('catalog', 'ecommerce', 'bundles',
+    description: 'Solo productos físicos con stock, variantes, envíos y promos (3x2, envío gratis).',
+    modules: preset('catalog', 'ecommerce', 'bundles', 'promotions',
       'crm', 'forms', 'affiliates',
       'sales', 'site')
   },
@@ -204,7 +210,7 @@ export const MODULE_PRESETS = {
   comercio: {
     label: 'Comercio / Concesionaria',
     description: 'Productos, leads que un vendedor cierra, afiliados que traen clientes.',
-    modules: preset('catalog', 'ecommerce',
+    modules: preset('catalog', 'ecommerce', 'promotions',
       'crm', 'forms', 'affiliates',
       'team', 'sales', 'site')
   },

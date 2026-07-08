@@ -89,3 +89,38 @@ export async function removeBundleItemAction(formData: FormData): Promise<void> 
     .eq('bundle_id', bundleId).eq('course_id', courseId);
   revalidatePath(`/owner/bundles/${bundleId}`);
 }
+
+/**
+ * Agregar un producto físico al bundle. Distinto de addBundleItemAction:
+ * ese usa course_id (cursos), este usa physical_product_id (ecommerce).
+ * Un bundle puede mezclar los dos tipos ("Kit skincare" = 3 productos
+ * físicos + curso "Rutina diaria"). Requiere migration 0056.
+ */
+export async function addBundleItemPhysicalAction(formData: FormData): Promise<void> {
+  await requireOwner();
+  const bundleId = String(formData.get('bundle_id') ?? '');
+  const productId = String(formData.get('product_id') ?? '');
+  if (!bundleId || !productId) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: existing } = await (svc.from('bundle_items') as any)
+    .select('position').eq('bundle_id', bundleId).order('position', { ascending: false }).limit(1);
+  const nextPos = ((existing?.[0]?.position as number | undefined) ?? -1) + 1;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('bundle_items') as any).insert({
+    bundle_id: bundleId, physical_product_id: productId, position: nextPos
+  });
+  revalidatePath(`/owner/bundles/${bundleId}`);
+}
+
+export async function removeBundleItemPhysicalAction(formData: FormData): Promise<void> {
+  await requireOwner();
+  const bundleId = String(formData.get('bundle_id') ?? '');
+  const productId = String(formData.get('product_id') ?? '');
+  if (!bundleId || !productId) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('bundle_items') as any).delete()
+    .eq('bundle_id', bundleId).eq('physical_product_id', productId);
+  revalidatePath(`/owner/bundles/${bundleId}`);
+}

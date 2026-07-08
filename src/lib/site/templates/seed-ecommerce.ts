@@ -254,5 +254,39 @@ export async function seedEcommerceDemoData(tenantId: string): Promise<void> {
     console.error('[seedEcommerce] insert productos falló:', prodErr);
     throw prodErr;
   }
+
+  // Promo de muestra: 3x2 en toda la tienda + envío gratis desde $80k.
+  // Sirve como plantilla para que el owner vea cómo se ve una promo activa.
+  // Defensivo: si migration 0057 no corrió, catch silencioso.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('promotions') as any).insert([
+      {
+        tenant_id: tenantId,
+        title: '3x2 en toda la tienda',
+        description: 'El más barato queda gratis en cada trío. Editá o apagá desde /owner/promotions.',
+        type: 'nx_pay_m',
+        buy_qty: 3, pay_qty: 2,
+        scope: 'all',
+        target_ids: [],
+        enabled: true,
+        priority: 10
+      },
+      {
+        tenant_id: tenantId,
+        title: 'Envío gratis desde $80.000',
+        description: 'Se aplica automáticamente al carrito.',
+        type: 'min_amount_free_shipping',
+        min_amount_cents: 8000000,
+        scope: 'all',
+        target_ids: [],
+        enabled: true,
+        priority: 5
+      }
+    ]);
+  } catch (e) {
+    console.warn('[seedEcommerce] promos skipped (migration 0057 pendiente?):', e);
+  }
+
   console.log(`[seedEcommerce] OK tenant=${tenantId}: ${CATEGORIES.length} cats, ${productRows.length} productos`);
 }
