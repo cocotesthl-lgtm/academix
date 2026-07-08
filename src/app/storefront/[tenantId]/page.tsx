@@ -223,37 +223,10 @@ export default async function StorefrontHome({
     } catch { /* migration 0051 pendiente */ }
   }
 
-  /* ─── Fallback demo products ───────────────────────────────────────
-   * Si el owner activó las secciones ecommerce (products / products_strip)
-   * pero todavía no cargó productos, mostramos productos demo con imágenes
-   * de Unsplash para que el sitio se vea armado desde el día 1 (como
-   * Shopify o Tienda Nube que traen productos de muestra). El owner
-   * después crea sus productos reales y estos desaparecen automáticamente.
-   * Los "demo-" links apuntan a /tienda para no romper el click.
-   */
-  const DEMO_PRODUCTS: ProductPreview[] = [
-    { id: 'demo-p1', slug: 'demo', title: 'Zapatillas urbanas premium — nueva temporada', price_cents: 4599900, compare_at_price_cents: 6999900, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80', stock_qty: 12, track_stock: true },
-    { id: 'demo-p2', slug: 'demo', title: 'Auriculares inalámbricos con cancelación activa', price_cents: 8999900, compare_at_price_cents: 12999900, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80', stock_qty: 8, track_stock: true },
-    { id: 'demo-p3', slug: 'demo', title: 'Reloj deportivo digital resistente al agua', price_cents: 3200000, compare_at_price_cents: null, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80', stock_qty: 20, track_stock: true },
-    { id: 'demo-p4', slug: 'demo', title: 'Cámara instantánea vintage rosa · Edición limitada', price_cents: 5499900, compare_at_price_cents: 6999900, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=80', stock_qty: 5, track_stock: true },
-    { id: 'demo-p5', slug: 'demo', title: 'Mochila urbana impermeable para notebook', price_cents: 2799900, compare_at_price_cents: 3899900, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80', stock_qty: 15, track_stock: true },
-    { id: 'demo-p6', slug: 'demo', title: 'Lentes de sol polarizados aviator dorados', price_cents: 1899900, compare_at_price_cents: null, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&auto=format&fit=crop&q=80', stock_qty: 30, track_stock: true },
-    { id: 'demo-p7', slug: 'demo', title: 'Smartphone gama alta 256GB · Cámara de 108MP', price_cents: 24999900, compare_at_price_cents: 32999900, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=600&auto=format&fit=crop&q=80', stock_qty: 6, track_stock: true },
-    { id: 'demo-p8', slug: 'demo', title: 'Sneakers running técnicas ultralivianas', price_cents: 6299900, compare_at_price_cents: 8499900, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=600&auto=format&fit=crop&q=80', stock_qty: 10, track_stock: true },
-    { id: 'demo-p9', slug: 'demo', title: 'Perfume Eau de Parfum 100ml amaderado', price_cents: 3999900, compare_at_price_cents: 5299900, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&auto=format&fit=crop&q=80', stock_qty: 18, track_stock: true },
-    { id: 'demo-p10', slug: 'demo', title: 'Cafetera espresso automática con molinillo', price_cents: 15999900, compare_at_price_cents: 19999900, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&auto=format&fit=crop&q=80', stock_qty: 4, track_stock: true },
-    { id: 'demo-p11', slug: 'demo', title: 'Notebook 14" ultraliviana 16GB RAM SSD 512GB', price_cents: 78999900, compare_at_price_cents: 94999900, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&auto=format&fit=crop&q=80', stock_qty: 3, track_stock: true },
-    { id: 'demo-p12', slug: 'demo', title: 'Buzo hoodie oversize algodón premium', price_cents: 2499900, compare_at_price_cents: 3299900, currency: 'ARS', cover_url: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=600&auto=format&fit=crop&q=80', stock_qty: 22, track_stock: true }
-  ];
-  if (stripCfg?.enabled && stripProducts.length === 0) {
-    const n = Math.max(4, Math.min(12, stripCfg.count || 12));
-    stripProducts = DEMO_PRODUCTS.slice(0, n);
-  }
-  if (productsCfg?.enabled && previewProducts.length === 0) {
-    const n = Math.max(4, Math.min(12, productsCfg.count || 8));
-    // Empezamos del 4 así el grid no repite los mismos que el strip.
-    previewProducts = [...DEMO_PRODUCTS.slice(4, 4 + n), ...DEMO_PRODUCTS.slice(0, Math.max(0, n - 8))];
-  }
+  // Nota: cuando se aplica el template ecommerce, seedEcommerceDemoData crea
+  // 6 categorías y 12 productos reales en la DB — aparecen tanto en el
+  // storefront como en /owner/products para editar. No hace falta fallback
+  // inline en el renderer.
   const catById = new Map(categories.map((c) => [c.id, c]));
   const selectedCat = selectedCatSlug ? categories.find((c) => c.slug === selectedCatSlug) ?? null : null;
 
@@ -1304,10 +1277,9 @@ export default async function StorefrontHome({
                             style: 'currency', currency: p.currency, maximumFractionDigits: 0
                           }).format(p.compare_at_price_cents / 100)
                         : null;
-                      const isDemo = p.id.startsWith('demo-');
-                      const cardClassName = "group block rounded-xl border border-black/10 overflow-hidden bg-white hover:shadow-lg transition";
-                      const inner = (
-                        <>
+                      return (
+                        <Link key={p.id} href={`/p/${p.slug}`}
+                          className="group block rounded-xl border border-black/10 overflow-hidden bg-white hover:shadow-lg transition">
                           <div className="aspect-square bg-zinc-100 overflow-hidden relative">
                             {p.cover_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
@@ -1319,11 +1291,6 @@ export default async function StorefrontHome({
                             {discount !== null && (
                               <div className="absolute top-2 left-2 bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded">
                                 -{discount}%
-                              </div>
-                            )}
-                            {isDemo && (
-                              <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded">
-                                Muestra
                               </div>
                             )}
                             {outOfStock && (
@@ -1341,12 +1308,7 @@ export default async function StorefrontHome({
                               )}
                             </div>
                           </div>
-                        </>
-                      );
-                      return isDemo ? (
-                        <div key={p.id} className={cardClassName}>{inner}</div>
-                      ) : (
-                        <Link key={p.id} href={`/p/${p.slug}`} className={cardClassName}>{inner}</Link>
+                        </Link>
                       );
                     })}
                   </div>

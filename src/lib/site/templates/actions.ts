@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { SITE_TEMPLATES } from './catalog';
+import { seedEcommerceDemoData } from './seed-ecommerce';
 
 /** Aplica un template completo al sitio del tenant. Pisa todo el site_config. */
 export async function applySiteTemplateAction(formData: FormData): Promise<void> {
@@ -52,7 +53,24 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('tenants') as any).update(patch).eq('id', tenant.id);
   }
+
+  // Ecommerce → sembrar categorías y productos reales en la DB si el tenant
+  // está limpio. Aparecen en /owner/products y /owner/categorias listos para
+  // que el owner solo cambie textos/precios/fotos (no arrancar de cero).
+  // Si el tenant ya tiene productos o categorías, no tocamos nada.
+  if (tpl.id === 'ecommerce') {
+    try {
+      await seedEcommerceDemoData(tenant.id);
+    } catch (e) {
+      // migration 0051 pendiente o error de RLS — no queremos que se rompa el
+      // apply del template por eso. El owner puede crear los productos manual.
+      console.error('[applySiteTemplate] seed ecommerce fallo (no critico):', e);
+    }
+  }
+
   revalidatePath('/owner/site');
   revalidatePath('/owner/templates');
+  revalidatePath('/owner/products');
+  revalidatePath('/owner/categories');
   redirect('/owner/site?templateApplied=' + encodeURIComponent(tpl.name));
 }
