@@ -231,11 +231,13 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       {
         id: 'cc2',
         span: 1,
-        eyebrow: 'ELECTROBEAUTY',
+        eyebrow: 'TECNO',
         label: 'LLEVÁ TU CUIDADO AL MÁXIMO',
         subtitle: 'Planchitas, secadores y más',
         cta_label: 'Ver ofertas',
-        cta_href: '/tienda?cat=tech',
+        // Alineado con el slug del seed (categoría 'tecnologia'). Antes
+        // linkeaba a 'tech' que no existía → 404 al hacer click.
+        cta_href: '/tienda?cat=tecnologia',
         image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1000&auto=format&fit=crop&q=80',
         text_color: '#111827',
         overlay: 0.05
