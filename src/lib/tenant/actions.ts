@@ -6,6 +6,7 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { env, RESERVED_SLUGS } from '@/lib/env';
 import { DEFAULT_SITE_CONFIG } from '@/lib/site/types';
 import { SITE_TEMPLATES } from '@/lib/site/templates/catalog';
+import { seedEcommerceDemoData } from '@/lib/site/templates/seed-ecommerce';
 import { defaultsForTemplate } from '@/lib/courses/landing';
 
 export type OnboardingResult =
@@ -53,7 +54,8 @@ export async function createTenantAction(
   const effectivePrimary = (primaryColor === '#0a0a0a' && chosenTemplate?.suggestedPrimary)
     ? chosenTemplate.suggestedPrimary
     : primaryColor;
-  const tenantPayload = {
+  const isEcommerce = chosenTemplate?.id === 'ecommerce';
+  const tenantPayload: Record<string, unknown> = {
     slug,
     name,
     owner_user_id: user.id,
@@ -61,12 +63,33 @@ export async function createTenantAction(
     status: 'active',
     site_config: siteConfig
   };
-  const { data: tenant, error: insertErr } = await svc
+  // Ecommerce → habilitar carrito automáticamente en el registro también
+  // (no solo desde /owner/templates). Sin carrito no hay tienda.
+  if (isEcommerce) {
+    tenantPayload.cart_enabled = true;
+    tenantPayload.cart_position = 'header';
+    tenantPayload.cart_display = 'dropdown';
+  }
+  let { data: tenant, error: insertErr } = await svc
     .from('tenants')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .insert(tenantPayload as any)
     .select('id, slug')
     .single<{ id: string; slug: string }>();
+  if (insertErr && isEcommerce) {
+    // Reintento sin columnas de carrito por si la migration 0034 está pendiente.
+    delete tenantPayload.cart_enabled;
+    delete tenantPayload.cart_position;
+    delete tenantPayload.cart_display;
+    const retry = await svc
+      .from('tenants')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert(tenantPayload as any)
+      .select('id, slug')
+      .single<{ id: string; slug: string }>();
+    tenant = retry.data;
+    insertErr = retry.error;
+  }
 
   if (insertErr || !tenant) {
     return { ok: false, error: insertErr?.message ?? 'No pudimos crear la academia.' };
@@ -175,6 +198,18 @@ export async function createTenantAction(
   ];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('courses') as any).insert(sampleCourses);
+
+  // Ecommerce → sembrar 6 categorías + 12 productos físicos reales en la DB
+  // así el owner ve el catálogo cargado en /owner/products y /owner/categories
+  // (solo tiene que editar título/precio/foto de cada uno).
+  // Wrapped en try/catch para no romper el onboarding si algo falla.
+  if (isEcommerce) {
+    try {
+      await seedEcommerceDemoData(tenant.id);
+    } catch (e) {
+      console.error('[createTenant] seed ecommerce fallo (no critico):', e);
+    }
+  }
 
   // Redirect target: owner subdomain. In dev (localhost) use app.localhost; in prod use app.{rootDomain}.
   const appUrl = new URL(env.appUrl);

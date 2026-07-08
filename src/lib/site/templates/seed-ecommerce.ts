@@ -190,7 +190,9 @@ export async function seedEcommerceDemoData(tenantId: string): Promise<void> {
   // Insertar categorías (solo si no tenía) y armar map slug → id
   const categoryIdBySlug: Record<string, string> = {};
   if ((catCount ?? 0) === 0) {
-    const rows = CATEGORIES.map((c, i) => ({
+    // Intento con is_featured (migration 0054). Si la columna no existe,
+    // reintento sin ella para que el seed no falle en tenants con schema viejo.
+    const rowsWithFeatured = CATEGORIES.map((c, i) => ({
       tenant_id: tenantId,
       slug: c.slug,
       name: c.name,
@@ -198,9 +200,22 @@ export async function seedEcommerceDemoData(tenantId: string): Promise<void> {
       is_featured: c.is_featured ?? false
     }));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: inserted, error } = await (svc.from('course_categories') as any)
-      .insert(rows).select('id, slug');
-    if (error) throw error;
+    let { data: inserted, error } = await (svc.from('course_categories') as any)
+      .insert(rowsWithFeatured).select('id, slug');
+    if (error) {
+      console.warn('[seedEcommerce] cats con is_featured fallo, reintento sin:', error.message);
+      const rowsBasic = CATEGORIES.map((c, i) => ({
+        tenant_id: tenantId, slug: c.slug, name: c.name, position: i
+      }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const retry = await (svc.from('course_categories') as any)
+        .insert(rowsBasic).select('id, slug');
+      if (retry.error) {
+        console.error('[seedEcommerce] insert categorías falló definitivo:', retry.error);
+        throw retry.error;
+      }
+      inserted = retry.data;
+    }
     for (const r of (inserted ?? []) as Array<{ id: string; slug: string }>) {
       categoryIdBySlug[r.slug] = r.id;
     }
@@ -215,7 +230,7 @@ export async function seedEcommerceDemoData(tenantId: string): Promise<void> {
     }
   }
 
-  // Insertar productos
+  // Insertar productos. gallery es jsonb — supabase-js lo serializa solo.
   const productRows = PRODUCTS.map((p) => ({
     tenant_id: tenantId,
     slug: p.slug,
@@ -235,5 +250,9 @@ export async function seedEcommerceDemoData(tenantId: string): Promise<void> {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: prodErr } = await (svc.from('physical_products') as any).insert(productRows);
-  if (prodErr) throw prodErr;
+  if (prodErr) {
+    console.error('[seedEcommerce] insert productos falló:', prodErr);
+    throw prodErr;
+  }
+  console.log(`[seedEcommerce] OK tenant=${tenantId}: ${CATEGORIES.length} cats, ${productRows.length} productos`);
 }
