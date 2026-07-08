@@ -1509,6 +1509,11 @@ export default async function StorefrontHome({
           case 'products_strip': {
             const c = cfg.sections.products_strip;
             if (stripProducts.length === 0) return null;
+            // Los dots + los links del título del producto usan el color de
+            // acento de la sección (con fallback al primary del tenant).
+            // El owner lo cambia desde el editor → sección "Cinta de productos"
+            // → picker "Color de acento".
+            const accent = c.accent_color || primary;
             return (
               <div key={key} {...dt} id={key} style={bg ? { background: bg } : undefined}>
                 <ProductsStrip
@@ -1517,6 +1522,7 @@ export default async function StorefrontHome({
                   subtitle={c.subtitle}
                   ctaLabel={c.cta_label}
                   ctaHref={c.cta_href}
+                  accent={accent}
                 />
               </div>
             );

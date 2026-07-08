@@ -208,10 +208,39 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     // Cinta debajo del hero — envíos + cuotas + transferencia
     c.sections.benefits_bar.enabled = true;
     c.sections.benefits_bar.variant = 'dark';
-    // Grid de categorías
+    // Grid de categorías: layout 'banners' (2 tarjetas horizontales estilo
+    // Tienda Nube — texto e imagen partidos 50/50 dentro de un card blanco).
+    // El owner puede cambiarlo a 'mixed' o 'squares' desde el editor.
     c.sections.category_cards.enabled = true;
     c.sections.category_cards.title = 'Comprá por categoría';
     c.sections.category_cards.subtitle = '';
+    c.sections.category_cards.layout = 'banners';
+    c.sections.category_cards.items = [
+      {
+        id: 'cc1',
+        span: 1,
+        eyebrow: 'FASHION',
+        label: 'TUS SWEATERS FAVORITOS',
+        subtitle: 'Nueva colección otoño-invierno',
+        cta_label: 'Ver ofertas',
+        cta_href: '/tienda?cat=ropa-hombre',
+        image_url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=1000&auto=format&fit=crop&q=80',
+        text_color: '#111827',
+        overlay: 0.05
+      },
+      {
+        id: 'cc2',
+        span: 1,
+        eyebrow: 'ELECTROBEAUTY',
+        label: 'LLEVÁ TU CUIDADO AL MÁXIMO',
+        subtitle: 'Planchitas, secadores y más',
+        cta_label: 'Ver ofertas',
+        cta_href: '/tienda?cat=tech',
+        image_url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1000&auto=format&fit=crop&q=80',
+        text_color: '#111827',
+        overlay: 0.05
+      }
+    ];
     // Cinta de productos horizontal
     c.sections.products_strip.enabled = true;
     c.sections.products_strip.title = 'Destacados de la semana';
@@ -225,10 +254,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     c.sections.contact.title = 'Atención al cliente';
     c.sections.contact.subtitle = 'Consultas sobre envíos, cambios y devoluciones.';
     // Nav ecommerce: reemplaza "Cursos / Testimonios / FAQ" (nav académica)
-    // por labels reales de tienda. El grid de categorías y la cinta
-    // scrollean con anclas #category_cards / #products_strip.
+    // por labels reales de tienda. Sin "Categorías" acá porque el mega-menú
+    // (show_categories_mega abajo) ya provee esa entrada al principio de la nav.
     c.nav.links = [
-      { id: '00000000-0000-0000-0000-000000000e01', label: 'Categorías', href: '#category_cards' },
       { id: '00000000-0000-0000-0000-000000000e02', label: 'Ofertas', href: '/tienda?cat=promo' },
       { id: '00000000-0000-0000-0000-000000000e03', label: 'Novedades', href: '#products_strip' }
     ];

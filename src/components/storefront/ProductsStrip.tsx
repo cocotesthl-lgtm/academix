@@ -30,13 +30,17 @@ export function ProductsStrip({
   title,
   subtitle,
   ctaLabel,
-  ctaHref
+  ctaHref,
+  accent = '#2563eb'  // fallback: blue-600 (legacy)
 }: {
   products: Product[];
   title: string;
   subtitle?: string;
   ctaLabel?: string;
   ctaHref?: string;
+  /** Color de dots + títulos de producto + CTA. Default = accent_color de la
+   *  sección o primary del tenant. El owner lo edita desde el builder. */
+  accent?: string;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState(1);
@@ -113,9 +117,12 @@ export function ProductsStrip({
                       key={i}
                       type="button"
                       onClick={() => scrollToPage(i)}
-                      className={`h-2 rounded-full transition-all ${
-                        i === activePage ? 'w-2 bg-blue-600' : 'w-2 bg-black/25 hover:bg-black/40'
-                      }`}
+                      className="h-2 w-2 rounded-full transition-all"
+                      style={
+                        i === activePage
+                          ? { background: accent }
+                          : { background: 'rgba(0,0,0,0.25)' }
+                      }
                       aria-label={`Página ${i + 1}`}
                     />
                   ))}
@@ -124,7 +131,8 @@ export function ProductsStrip({
               {ctaLabel && ctaHref && (
                 <Link
                   href={ctaHref}
-                  className="hidden md:inline-block text-sm text-blue-600 font-semibold hover:underline mt-0.5"
+                  className="hidden md:inline-block text-sm font-semibold hover:underline mt-0.5"
+                  style={{ color: accent }}
                 >
                   {ctaLabel} →
                 </Link>
@@ -203,7 +211,10 @@ export function ProductsStrip({
                       )}
                     </div>
                     <div className="pt-2.5 pr-1">
-                      <div className="text-sm text-blue-600 group-hover:underline line-clamp-2 min-h-[2.5rem] leading-tight">
+                      <div
+                        className="text-sm group-hover:underline line-clamp-2 min-h-[2.5rem] leading-tight"
+                        style={{ color: accent }}
+                      >
                         {p.title}
                       </div>
                       <div className="flex items-baseline gap-2 mt-1.5">
@@ -234,16 +245,19 @@ export function ProductsStrip({
                       key={i}
                       type="button"
                       onClick={() => scrollToPage(i)}
-                      className={`h-2 rounded-full transition-all ${
-                        i === activePage ? 'w-2 bg-blue-600' : 'w-2 bg-black/25'
-                      }`}
+                      className="h-2 w-2 rounded-full transition-all"
+                      style={
+                        i === activePage
+                          ? { background: accent }
+                          : { background: 'rgba(0,0,0,0.25)' }
+                      }
                       aria-label={`Página ${i + 1}`}
                     />
                   ))}
                 </div>
               ) : <div />}
               {ctaLabel && ctaHref && (
-                <Link href={ctaHref} className="text-sm text-blue-600 font-semibold hover:underline">
+                <Link href={ctaHref} className="text-sm font-semibold hover:underline" style={{ color: accent }}>
                   {ctaLabel} →
                 </Link>
               )}
