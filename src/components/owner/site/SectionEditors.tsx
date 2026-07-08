@@ -3139,10 +3139,12 @@ export function CustomEditor({ initial, imageUrl, primary }: {
 export function NavEditor({
   links, showLogin, primary, tenantName,
   showMyCourses = true, showAffiliates = true,
+  showCategoriesMega = false, categoriesMegaLabel = '',
   myCoursesLabel = '', affiliatesLabel = ''
 }: {
   links: NavLink[]; showLogin: boolean; primary: string; tenantName: string;
   showMyCourses?: boolean; showAffiliates?: boolean;
+  showCategoriesMega?: boolean; categoriesMegaLabel?: string;
   myCoursesLabel?: string; affiliatesLabel?: string;
 }) {
   const [addPending, startAdd] = useTransition();
@@ -3223,6 +3225,38 @@ export function NavEditor({
             Si tu sitio no vende publicaciones (ej. e-commerce), podés ocultar ambos.
             El label es libre: &quot;Mis compras&quot;, &quot;Mi cuenta&quot;, &quot;Ser embajador&quot;, etc.
           </p>
+
+          {/* Mega-menú de categorías (tipo MercadoLibre) */}
+          <div className="mt-3 pt-3 border-t border-white/5">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={showCategoriesMega} disabled={togglePending}
+                onChange={() => startToggle(() => withSaveStatus(async () => {
+                  const fd = new FormData(); fd.set('flag', 'show_categories_mega');
+                  await toggleNavFlagAction(fd);
+                }))} />
+              🗂️ Mostrar mega-menú &quot;{categoriesMegaLabel || 'Categorías'}&quot;
+            </label>
+            {showCategoriesMega && (
+              <input
+                defaultValue={categoriesMegaLabel}
+                placeholder="Categorías"
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (v === (categoriesMegaLabel ?? '').trim()) return;
+                  startToggle(() => withSaveStatus(async () => {
+                    const fd = new FormData();
+                    fd.set('key', 'categories_mega_label'); fd.set('value', v);
+                    await setNavLabelAction(fd);
+                  }));
+                }}
+                className="w-full mt-2 rounded bg-white/5 border border-white/15 px-3 py-1.5 text-xs"
+              />
+            )}
+            <p className="text-[10px] text-white/35 mt-1">
+              Estilo MercadoLibre: hover expande un panel con las categorías destacadas y sus hijos.
+              Necesita categorías con la estrella ⭐ prendida en <a href="/categories" className="underline">/owner/categories</a>.
+            </p>
+          </div>
         </div>
 
         <div className="pt-3 mt-3 border-t border-white/5 space-y-2">

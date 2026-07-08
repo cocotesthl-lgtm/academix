@@ -10,6 +10,7 @@ import { AffiliateBar } from "@/components/storefront/AffiliateBar";
 import { StorefrontUserMenu } from "@/components/storefront/StorefrontUserMenu";
 import { CartWidget } from "@/components/storefront/cart/CartWidget";
 import { WhatsAppFloat } from "@/components/storefront/WhatsAppFloat";
+import { CategoriesMegaMenu, type MegaCategory } from "@/components/storefront/CategoriesMegaMenu";
 
 /**
  * Metadata default para TODO el storefront. Cada page individual puede
@@ -169,6 +170,28 @@ export default async function StorefrontLayout({
   const showHeaderCart = cartEnabled && (cartPosition === 'header' || cartPosition === 'both');
   const showFloatingCart = cartEnabled && (cartPosition === 'floating' || cartPosition === 'both');
 
+  // Categorías para el mega-menú (si el owner lo prendió en cfg.nav)
+  let megaCategories: MegaCategory[] = [];
+  if (cfg.nav.show_categories_mega === true) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: catsRaw } = await (svc.from('course_categories') as any)
+        .select('id, slug, name, parent_id, is_featured')
+        .eq('tenant_id', tenantId).order('position', { ascending: true });
+      megaCategories = (catsRaw ?? []) as MegaCategory[];
+    } catch {
+      // migration 0054 (parent_id/is_featured) pendiente — retry con schema
+      // viejo (categorías planas).
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: catsRaw } = await (svc.from('course_categories') as any)
+          .select('id, slug, name').eq('tenant_id', tenantId).order('position', { ascending: true });
+        megaCategories = ((catsRaw ?? []) as Array<{ id: string; slug: string; name: string }>)
+          .map((c) => ({ ...c, parent_id: null, is_featured: true }));
+      } catch { /* migration base pendiente */ }
+    }
+  }
+
   // Cookie de "barra de afiliado oculta" (defensivo: cookies() puede fallar
   // en algunos contextos de edge / preview, no queremos voltear la página
   // entera por eso).
@@ -214,7 +237,14 @@ export default async function StorefrontLayout({
               </>
             )}
           </a>
-          <nav className="hidden md:flex gap-6 text-sm text-black/70">
+          <nav className="hidden md:flex items-center gap-6 text-sm text-black/70">
+            {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
+              <CategoriesMegaMenu
+                label={cfg.nav.categories_mega_label || 'Categorías'}
+                categories={megaCategories}
+                primary={primary}
+              />
+            )}
             {cfg.nav.links.map((l) => (
               <a key={l.id} href={l.href} className="hover:text-black">{l.label}</a>
             ))}

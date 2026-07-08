@@ -235,6 +235,10 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     c.nav.show_my_courses = true;
     c.nav.my_courses_label = 'Mis compras';
     c.nav.show_affiliates = false;
+    // Mega-menú de categorías tipo MercadoLibre prendido por default.
+    // Requiere categorías con is_featured=true (el seed las crea así).
+    c.nav.show_categories_mega = true;
+    c.nav.categories_mega_label = 'Categorías';
     // Footer en tono ecommerce
     c.footer.text = 'Envíos a todo el país · Cambios y devoluciones sin vueltas · Pagos seguros';
     return {

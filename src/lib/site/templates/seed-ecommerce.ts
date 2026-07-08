@@ -24,13 +24,53 @@ type SeedProduct = {
   category_slug: string;   // referencia por slug, se resuelve al insertar
 };
 
-const CATEGORIES: SeedCategory[] = [
+/**
+ * Categorías con jerarquía. `parent_slug` referencia una root para armar
+ * el mega-menú tipo MercadoLibre. Sin parent_slug = root (aparece en la
+ * columna izquierda del mega-menú si is_featured=true).
+ */
+type SeedCategoryHier = SeedCategory & { parent_slug?: string };
+
+const CATEGORIES: SeedCategoryHier[] = [
+  // Roots (aparecen en el sidebar del mega-menú)
+  { slug: 'tecnologia', name: 'Tecnología', is_featured: true },
   { slug: 'ropa-hombre', name: 'Ropa hombre', is_featured: true },
   { slug: 'ropa-mujer', name: 'Ropa mujer', is_featured: true },
-  { slug: 'tecnologia', name: 'Tecnología', is_featured: true },
   { slug: 'calzado', name: 'Calzado', is_featured: true },
   { slug: 'accesorios', name: 'Accesorios', is_featured: true },
-  { slug: 'ofertas', name: 'Ofertas', is_featured: true }
+  { slug: 'hogar-muebles', name: 'Hogar y Muebles', is_featured: true },
+  { slug: 'deportes', name: 'Deportes y Fitness', is_featured: true },
+  { slug: 'ofertas', name: 'Ofertas', is_featured: true },
+
+  // Hijos de Tecnología (nivel 2 — aparecen a la derecha al hover)
+  { slug: 'celulares', name: 'Celulares y Teléfonos', is_featured: false, parent_slug: 'tecnologia' },
+  { slug: 'computacion', name: 'Computación', is_featured: false, parent_slug: 'tecnologia' },
+  { slug: 'audio-video', name: 'Electrónica, Audio y Video', is_featured: false, parent_slug: 'tecnologia' },
+  { slug: 'consolas', name: 'Consolas y Videojuegos', is_featured: false, parent_slug: 'tecnologia' },
+  { slug: 'camaras', name: 'Cámaras y Accesorios', is_featured: false, parent_slug: 'tecnologia' },
+  { slug: 'televisores', name: 'Televisores', is_featured: false, parent_slug: 'tecnologia' },
+
+  // Hijos de Ropa hombre
+  { slug: 'remeras-hombre', name: 'Remeras', is_featured: false, parent_slug: 'ropa-hombre' },
+  { slug: 'buzos-hombre', name: 'Buzos y hoodies', is_featured: false, parent_slug: 'ropa-hombre' },
+  { slug: 'pantalones-hombre', name: 'Pantalones y jeans', is_featured: false, parent_slug: 'ropa-hombre' },
+  { slug: 'camisas', name: 'Camisas', is_featured: false, parent_slug: 'ropa-hombre' },
+
+  // Hijos de Ropa mujer
+  { slug: 'remeras-mujer', name: 'Remeras y tops', is_featured: false, parent_slug: 'ropa-mujer' },
+  { slug: 'vestidos', name: 'Vestidos', is_featured: false, parent_slug: 'ropa-mujer' },
+  { slug: 'jeans-mujer', name: 'Jeans y pantalones', is_featured: false, parent_slug: 'ropa-mujer' },
+
+  // Hijos de Calzado
+  { slug: 'zapatillas', name: 'Zapatillas urbanas', is_featured: false, parent_slug: 'calzado' },
+  { slug: 'running', name: 'Running', is_featured: false, parent_slug: 'calzado' },
+  { slug: 'botas', name: 'Botas', is_featured: false, parent_slug: 'calzado' },
+
+  // Hijos de Accesorios
+  { slug: 'mochilas', name: 'Mochilas y bolsos', is_featured: false, parent_slug: 'accesorios' },
+  { slug: 'relojes', name: 'Relojes', is_featured: false, parent_slug: 'accesorios' },
+  { slug: 'lentes', name: 'Lentes de sol', is_featured: false, parent_slug: 'accesorios' },
+  { slug: 'perfumes', name: 'Perfumes', is_featured: false, parent_slug: 'accesorios' }
 ];
 
 const PRODUCTS: SeedProduct[] = [
@@ -190,34 +230,48 @@ export async function seedEcommerceDemoData(tenantId: string): Promise<void> {
   // Insertar categorías (solo si no tenía) y armar map slug → id
   const categoryIdBySlug: Record<string, string> = {};
   if ((catCount ?? 0) === 0) {
-    // Intento con is_featured (migration 0054). Si la columna no existe,
-    // reintento sin ella para que el seed no falle en tenants con schema viejo.
-    const rowsWithFeatured = CATEGORIES.map((c, i) => ({
-      tenant_id: tenantId,
-      slug: c.slug,
-      name: c.name,
-      position: i,
+    // Paso 1: insertar SOLO roots (sin parent_slug) para tener sus IDs.
+    // Paso 2: insertar hijos con parent_id resuelto por slug.
+    // Esto respeta el FK parent_id → course_categories(id) de la migration 0054.
+    // Si migration 0054 no corrió, reintentamos sin is_featured/parent_id.
+    const roots = CATEGORIES.filter((c) => !c.parent_slug);
+    const children = CATEGORIES.filter((c) => !!c.parent_slug);
+
+    async function insertBatch(rows: Record<string, unknown>[]): Promise<Array<{ id: string; slug: string }>> {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (svc.from('course_categories') as any)
+        .insert(rows).select('id, slug');
+      if (error) {
+        console.warn('[seedEcommerce] insert con cols nuevas falló, reintento básico:', error.message);
+        const basic = rows.map((r) => ({
+          tenant_id: r.tenant_id, slug: r.slug, name: r.name, position: r.position
+        }));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const retry = await (svc.from('course_categories') as any).insert(basic).select('id, slug');
+        if (retry.error) {
+          console.error('[seedEcommerce] insert categorías falló definitivo:', retry.error);
+          throw retry.error;
+        }
+        return (retry.data ?? []) as Array<{ id: string; slug: string }>;
+      }
+      return (data ?? []) as Array<{ id: string; slug: string }>;
+    }
+
+    const rootRows = roots.map((c, i) => ({
+      tenant_id: tenantId, slug: c.slug, name: c.name, position: i,
       is_featured: c.is_featured ?? false
     }));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let { data: inserted, error } = await (svc.from('course_categories') as any)
-      .insert(rowsWithFeatured).select('id, slug');
-    if (error) {
-      console.warn('[seedEcommerce] cats con is_featured fallo, reintento sin:', error.message);
-      const rowsBasic = CATEGORIES.map((c, i) => ({
-        tenant_id: tenantId, slug: c.slug, name: c.name, position: i
+    const rootIds = await insertBatch(rootRows);
+    for (const r of rootIds) categoryIdBySlug[r.slug] = r.id;
+
+    if (children.length > 0) {
+      const childRows = children.map((c, i) => ({
+        tenant_id: tenantId, slug: c.slug, name: c.name, position: roots.length + i,
+        is_featured: c.is_featured ?? false,
+        parent_id: c.parent_slug ? categoryIdBySlug[c.parent_slug] : null
       }));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const retry = await (svc.from('course_categories') as any)
-        .insert(rowsBasic).select('id, slug');
-      if (retry.error) {
-        console.error('[seedEcommerce] insert categorías falló definitivo:', retry.error);
-        throw retry.error;
-      }
-      inserted = retry.data;
-    }
-    for (const r of (inserted ?? []) as Array<{ id: string; slug: string }>) {
-      categoryIdBySlug[r.slug] = r.id;
+      const childIds = await insertBatch(childRows);
+      for (const r of childIds) categoryIdBySlug[r.slug] = r.id;
     }
   } else {
     // Ya había categorías: usamos las existentes que matcheen por slug (o

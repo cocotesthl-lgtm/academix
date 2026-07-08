@@ -297,10 +297,18 @@ export type SiteConfig = {
   nav: {
     links: NavLink[];
     show_login: boolean;
-    show_my_courses?: boolean;        // default false — owner lo prende en /owner/site
-    show_affiliates?: boolean;        // default false — owner lo prende en /owner/site
-    my_courses_label?: string;        // ej. "Mis cursos" o "Mi cuenta" o "Mis compras"
-    affiliates_label?: string;        // ej. "Afiliados" o "Ser embajador"
+    show_my_courses?: boolean;
+    show_affiliates?: boolean;
+    my_courses_label?: string;
+    affiliates_label?: string;
+    /**
+     * Mega-menú de categorías tipo MercadoLibre. Al prenderlo, aparece un
+     * botón "Categorías ▾" en la nav que despliega un panel grande con
+     * las categorías featured (roots) a la izquierda y sus hijos a la
+     * derecha. Requiere categorías con is_featured=true (migration 0054).
+     */
+    show_categories_mega?: boolean;
+    categories_mega_label?: string;   // "Categorías" por default
   };
   footer: { text: string; socials: SocialLink[]; links: NavLink[] };
 };

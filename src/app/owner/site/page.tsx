@@ -593,6 +593,8 @@ export default async function SiteBuilderPage() {
             showLogin={cfg.nav.show_login}
             showMyCourses={cfg.nav.show_my_courses === true}
             showAffiliates={cfg.nav.show_affiliates === true}
+            showCategoriesMega={cfg.nav.show_categories_mega === true}
+            categoriesMegaLabel={cfg.nav.categories_mega_label ?? ''}
             myCoursesLabel={cfg.nav.my_courses_label ?? ''}
             affiliatesLabel={cfg.nav.affiliates_label ?? ''}
             primary={primary}
