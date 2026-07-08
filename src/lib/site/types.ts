@@ -211,8 +211,18 @@ export type SiteConfig = {
       title: string;
       subtitle: string;
       items: CategoryCardItem[];
-      /** Aspecto de las cards. 'wide' (16:9 tipo banners) | 'square' (1:1 tipo Yamamoto) */
+      /** Aspecto de las cards. 'wide' (16:9 tipo banners) | 'square' (1:1 tipo Yamamoto).
+       *  Legacy: se sigue respetando pero `layout` tiene precedencia si está seteado. */
       aspect?: 'wide' | 'square';
+      /**
+       * Layout del grid. Determina cómo se distribuyen las tarjetas:
+       *  · 'mixed'   — grid 4 col con span 1/2 (default, tipo el hero de ML)
+       *  · 'squares' — 4 cards cuadradas en fila (tipo Yamamoto)
+       *  · 'banners' — 2 banners horizontales lado a lado con imagen a la
+       *                derecha de un card blanco + textos + CTA a la izquierda
+       *                (tipo Tienda Nube "TUS SWEATERS FAVORITOS")
+       */
+      layout?: 'mixed' | 'squares' | 'banners';
     };
     products_strip: SectionBase & {
       title: string;

@@ -1360,38 +1360,116 @@ export default async function StorefrontHome({
           case 'category_cards': {
             const c = cfg.sections.category_cards;
             if (!c.items || c.items.length === 0) return null;
-            const isSquare = c.aspect === 'square';
+            // Layout tiene precedencia sobre aspect. Legacy: si aspect='square'
+            // y no hay layout, tratamos como 'squares'.
+            const layout: 'mixed' | 'squares' | 'banners' =
+              c.layout ?? (c.aspect === 'square' ? 'squares' : 'mixed');
+
+            const header = c.title && (
+              <div className="text-center mb-8 md:mb-10">
+                <h2 className="text-2xl md:text-3xl font-bold" dangerouslySetInnerHTML={richHtml(c.title)} />
+                {c.subtitle && <p className="text-black/55 mt-2">{c.subtitle}</p>}
+              </div>
+            );
+
+            // ── Layout 'squares' — 4 cards cuadradas en fila (tipo Yamamoto)
+            if (layout === 'squares') {
+              return (
+                <section key={key} {...dt} id={key} className="px-6 py-12 md:py-16"
+                  style={{ background: bg ?? '#f4f5f7' }}>
+                  <div className="max-w-7xl mx-auto">
+                    {header}
+                    <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
+                      {c.items.slice(0, 8).map((it) => {
+                        const overlay = it.overlay ?? 0.25;
+                        const textColor = it.text_color ?? '#ffffff';
+                        return (
+                          <Link key={it.id} href={it.cta_href || '#'}
+                            className="relative overflow-hidden rounded-lg group aspect-square">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={it.image_url} alt={it.label}
+                              className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500" />
+                            <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlay})` }} />
+                            <div className="absolute inset-0 p-4 flex items-end justify-center text-center" style={{ color: textColor }}>
+                              <div className="text-sm md:text-lg font-black tracking-wider uppercase drop-shadow-lg">
+                                {it.label}
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+              );
+            }
+
+            // ── Layout 'banners' — 2 banners horizontales lado a lado
+            //    Card blanco: texto/CTA a la izquierda, imagen a la derecha
+            if (layout === 'banners') {
+              return (
+                <section key={key} {...dt} id={key} className="px-6 py-12 md:py-16"
+                  style={{ background: bg ?? '#f4f5f7' }}>
+                  <div className="max-w-7xl mx-auto">
+                    {header}
+                    <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
+                      {c.items.slice(0, 4).map((it) => (
+                        <Link key={it.id} href={it.cta_href || '#'}
+                          className="group rounded-xl bg-white overflow-hidden shadow-sm hover:shadow-lg transition flex flex-row min-h-[180px] md:min-h-[220px]">
+                          {/* Texto a la izquierda */}
+                          <div className="flex-1 p-5 md:p-7 flex flex-col justify-center">
+                            {it.eyebrow && (
+                              <div className="text-[10px] md:text-xs uppercase tracking-[0.2em] text-neutral-500 font-semibold mb-2">
+                                {it.eyebrow}
+                              </div>
+                            )}
+                            <div className="text-lg md:text-2xl font-bold leading-tight tracking-tight text-neutral-900">
+                              {it.label}
+                            </div>
+                            {it.subtitle && (
+                              <div className="text-xs md:text-sm mt-1.5 text-neutral-600 leading-snug">
+                                {it.subtitle}
+                              </div>
+                            )}
+                            {it.cta_label && (
+                              <div className="mt-4">
+                                <span className="inline-block rounded-md text-xs md:text-sm font-semibold px-5 py-2.5"
+                                  style={{ background: primary, color: '#fff' }}>
+                                  {it.cta_label}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Imagen a la derecha */}
+                          <div className="relative w-[44%] shrink-0 overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={it.image_url} alt={it.label}
+                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500" />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              );
+            }
+
+            // ── Layout 'mixed' (default) — grid 4-col con span 1/2, imagen full con overlay
             return (
               <section key={key} {...dt} id={key} className="px-6 py-12 md:py-16"
                 style={{ background: bg ?? '#f4f5f7' }}>
                 <div className="max-w-7xl mx-auto">
-                  {c.title && (
-                    <div className="text-center mb-8 md:mb-10">
-                      <h2 className="text-2xl md:text-3xl font-bold" dangerouslySetInnerHTML={richHtml(c.title)} />
-                      {c.subtitle && <p className="text-black/55 mt-2">{c.subtitle}</p>}
-                    </div>
-                  )}
+                  {header}
                   <div
-                    className={`grid gap-4 md:gap-5 ${isSquare ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 md:grid-cols-4'}`}
-                    style={{
-                      // Altura de fila FIJA en desktop → span 2 solo cambia el
-                      // ancho, no el alto (evita que la card grande quede el
-                      // doble de alta). Se ignora en mobile (1 col, altura
-                      // controlada por aspect-square del item).
-                      gridAutoRows: isSquare ? undefined : 'minmax(240px, 1fr)'
-                    }}>
+                    className="grid gap-4 md:gap-5 grid-cols-1 md:grid-cols-4"
+                    style={{ gridAutoRows: 'minmax(240px, 1fr)' }}>
                     {c.items.map((it) => {
                       const overlay = it.overlay ?? 0.25;
                       const textColor = it.text_color ?? '#ffffff';
                       const span = it.span === 2 ? 'md:col-span-2' : '';
-                      // Aspect solo se aplica en mobile (o siempre en square).
-                      // En desktop wide, la altura la fija gridAutoRows así
-                      // span 1 y span 2 tienen la misma altura y solo cambia el
-                      // ancho (que es lo que se espera de un grid tipo Amazon).
-                      const aspect = isSquare ? 'aspect-square' : 'aspect-[16/10] md:aspect-auto md:h-full';
                       return (
                         <Link key={it.id} href={it.cta_href || '#'}
-                          className={`relative overflow-hidden rounded-xl group ${aspect} ${span}`}>
+                          className={`relative overflow-hidden rounded-xl group aspect-[16/10] md:aspect-auto md:h-full ${span}`}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={it.image_url} alt={it.label}
                             className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />

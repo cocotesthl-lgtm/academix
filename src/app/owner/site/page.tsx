@@ -542,6 +542,7 @@ export default async function SiteBuilderPage() {
               <CategoryCardsEditor
                 initial={cfg.sections.category_cards.items}
                 aspect={cfg.sections.category_cards.aspect}
+                layout={cfg.sections.category_cards.layout}
               />
             )}
             {key === 'products_strip' && (

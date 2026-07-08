@@ -77,6 +77,7 @@ import {
   updateCategoryCardAction,
   removeCategoryCardAction,
   setCategoryCardsAspectAction,
+  setCategoryCardsLayoutAction,
   addHeroSlideAction,
   updateHeroSlideAction,
   removeHeroSlideAction,
@@ -3560,32 +3561,55 @@ export function BenefitsBarEditor({ initial, variant }: {
   );
 }
 
-export function CategoryCardsEditor({ initial, aspect }: {
+export function CategoryCardsEditor({ initial, aspect, layout }: {
   initial: CategoryCardItem[];
   aspect?: 'wide' | 'square';
+  layout?: 'mixed' | 'squares' | 'banners';
 }) {
   const [pending, start] = useTransition();
+  // Legacy fallback: si no hay layout seteado, derivamos de aspect.
+  const effectiveLayout: 'mixed' | 'squares' | 'banners' =
+    layout ?? (aspect === 'square' ? 'squares' : 'mixed');
+  const LAYOUTS: Array<{ id: 'mixed' | 'squares' | 'banners'; emoji: string; label: string; desc: string }> = [
+    { id: 'mixed',   emoji: '🟦🟪', label: 'Mixto (grande + chicas)', desc: '3 cards con span 1/2. Estilo Amazon.' },
+    { id: 'squares', emoji: '🟪🟪🟪🟪', label: '4 cuadradas en fila', desc: 'Tejidos / Buzos / Polos / Remeras. Estilo Yamamoto.' },
+    { id: 'banners', emoji: '🖼️ 🖼️', label: '2 banners horizontales', desc: 'Texto a la izquierda, foto a la derecha. Estilo Tienda Nube.' }
+  ];
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-        <label className="text-xs text-white/60 block mb-2">Aspecto de las cards</label>
-        <div className="flex gap-2">
-          {['wide', 'square'].map((v) => (
-            <button key={v} type="button"
-              onClick={() => start(() => withSaveStatus(async () => {
-                const fd = new FormData(); fd.set('aspect', v);
-                await setCategoryCardsAspectAction(fd);
-              }))}
-              disabled={pending}
-              className={`text-xs px-3 py-1.5 rounded border ${
-                (aspect ?? 'wide') === v
-                  ? 'bg-white text-black border-white font-semibold'
-                  : 'bg-white/5 border-white/15 text-white/70 hover:bg-white/10'
-              }`}>
-              {v === 'wide' ? '📱 Wide (16:10 tipo banners)' : '🟪 Square (1:1 tipo Yamamoto)'}
-            </button>
-          ))}
+        <label className="text-xs text-white/60 block mb-2">Layout del grid</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          {LAYOUTS.map((L) => {
+            const active = effectiveLayout === L.id;
+            return (
+              <button key={L.id} type="button"
+                onClick={() => start(() => withSaveStatus(async () => {
+                  const fd = new FormData(); fd.set('layout', L.id);
+                  await setCategoryCardsLayoutAction(fd);
+                }))}
+                disabled={pending}
+                className={`text-left rounded-lg border p-3 transition ${
+                  active
+                    ? 'bg-white text-black border-white'
+                    : 'bg-white/5 border-white/15 text-white/80 hover:bg-white/10 hover:border-white/25'
+                }`}>
+                <div className="text-sm font-semibold flex items-center gap-2">
+                  <span>{L.emoji}</span>
+                </div>
+                <div className={`text-xs font-semibold mt-1 ${active ? 'text-black' : 'text-white'}`}>
+                  {L.label}
+                </div>
+                <div className={`text-[10px] mt-1 leading-snug ${active ? 'text-black/60' : 'text-white/45'}`}>
+                  {L.desc}
+                </div>
+              </button>
+            );
+          })}
         </div>
+        <p className="text-[10px] text-white/35 mt-2">
+          El layout controla cómo se distribuyen las tarjetas. Las opciones (imagen/texto/CTA) por tarjeta las setea el owner abajo.
+        </p>
       </div>
 
       <div className="space-y-3">

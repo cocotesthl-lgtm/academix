@@ -1222,6 +1222,18 @@ export async function setCategoryCardsAspectAction(formData: FormData): Promise<
   revalidatePath('/site');
 }
 
+/** Cambiar el layout del grid de categorías (mixed | squares | banners) */
+export async function setCategoryCardsLayoutAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const raw = String(formData.get('layout') ?? '');
+  const v: 'mixed' | 'squares' | 'banners' =
+    raw === 'squares' ? 'squares' : raw === 'banners' ? 'banners' : 'mixed';
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.category_cards.layout = v;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/site');
+}
+
 // ── Hero slides ──
 export async function addHeroSlideAction(): Promise<void> {
   const { tenant } = await requireOwner();
