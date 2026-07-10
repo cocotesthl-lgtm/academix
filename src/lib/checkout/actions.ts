@@ -371,3 +371,44 @@ export async function moveCourseExtraFieldAction(formData: FormData): Promise<vo
     cfg.extra_fields.forEach((f, i) => { f.position = i; });
   });
 }
+
+/* ─────────────────────────────────────────────────────────────
+ * Diseño visual del checkout (colores + estilo de tarjetas).
+ * Sin cambios los defaults heredan primary del tenant. Cada
+ * setter modifica solo un campo del sub-object `design`.
+ * ───────────────────────────────────────────────────────────── */
+
+const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
+
+export async function setCheckoutDesignColorAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const which = String(formData.get('which') ?? '');
+  const raw = String(formData.get('value') ?? '').trim();
+  if (which !== 'cta_color' && which !== 'accent_color') return;
+  const cfg = await loadTenantConfig(tenant.id);
+  if (!cfg.design) cfg.design = {};
+  // Vacío = borrar override (cae a default). Valor hex válido = setear.
+  if (!raw) cfg.design[which] = null;
+  else if (HEX_RE.test(raw)) cfg.design[which] = raw;
+  await saveTenantConfig(tenant.id, cfg);
+  revalidatePath('/owner/checkout');
+}
+
+export async function setCheckoutDesignCardStyleAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const raw = String(formData.get('style') ?? '');
+  const v: 'rounded' | 'square' | null = raw === 'square' ? 'square' : raw === 'rounded' ? 'rounded' : null;
+  const cfg = await loadTenantConfig(tenant.id);
+  if (!cfg.design) cfg.design = {};
+  cfg.design.card_style = v;
+  await saveTenantConfig(tenant.id, cfg);
+  revalidatePath('/owner/checkout');
+}
+
+export async function resetCheckoutDesignAction(): Promise<void> {
+  const { tenant } = await requireOwner();
+  const cfg = await loadTenantConfig(tenant.id);
+  cfg.design = {};
+  await saveTenantConfig(tenant.id, cfg);
+  revalidatePath('/owner/checkout');
+}

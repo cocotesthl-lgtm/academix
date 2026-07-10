@@ -76,9 +76,23 @@ export type BaseFieldConfig = {
   required: boolean;
 };
 
+/**
+ * Diseño visual del checkout. Todos opcionales — si el owner no los seteó,
+ * el component cae al color primary del tenant y a estilos default.
+ */
+export type CheckoutDesign = {
+  /** Color de CTA principal ("Confirmar compra"). Default: tenant primary. */
+  cta_color?: string | null;
+  /** Color de acento (radios seleccionados, badges, links). Default: cta_color. */
+  accent_color?: string | null;
+  /** Estilo de tarjetas contenedoras. */
+  card_style?: 'rounded' | 'square' | null;
+};
+
 export type CheckoutConfig = {
   base_fields: Record<BaseFieldKey, BaseFieldConfig>;
   extra_fields: CheckoutField[];
+  design?: CheckoutDesign;
 };
 
 export const DEFAULT_CHECKOUT_CONFIG: CheckoutConfig = {
@@ -88,7 +102,8 @@ export const DEFAULT_CHECKOUT_CONFIG: CheckoutConfig = {
     phone:    { enabled: true,  required: true  },
     location: { enabled: true,  required: true  }
   },
-  extra_fields: []
+  extra_fields: [],
+  design: {}
 };
 
 /**
@@ -125,6 +140,16 @@ export function mergeCheckoutConfig(stored: unknown): CheckoutConfig {
         options: Array.isArray(f.options) ? f.options.filter((o) => typeof o === 'string') : undefined
       }))
       .sort((a, b) => a.position - b.position);
+  }
+
+  // Diseño (opcional). Valido hex/color-safe para evitar inyección de CSS.
+  if (s.design && typeof s.design === 'object') {
+    const d = s.design;
+    const HEX = /^#[0-9a-fA-F]{3,8}$/;
+    const cta = typeof d.cta_color === 'string' && HEX.test(d.cta_color) ? d.cta_color : null;
+    const accent = typeof d.accent_color === 'string' && HEX.test(d.accent_color) ? d.accent_color : null;
+    const card = d.card_style === 'square' || d.card_style === 'rounded' ? d.card_style : null;
+    base.design = { cta_color: cta, accent_color: accent, card_style: card };
   }
 
   return base;

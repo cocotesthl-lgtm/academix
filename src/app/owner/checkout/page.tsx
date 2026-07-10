@@ -9,7 +9,10 @@ import {
   moveTenantExtraFieldAction,
   setCartEnabledAction,
   setCartUiAction,
-  applyTenantCheckoutPresetAction
+  applyTenantCheckoutPresetAction,
+  setCheckoutDesignColorAction,
+  setCheckoutDesignCardStyleAction,
+  resetCheckoutDesignAction
 } from "@/lib/checkout/actions";
 import { CHECKOUT_PRESETS } from "@/lib/checkout/presets";
 import { CheckoutFieldsEditor } from "@/components/owner/checkout/CheckoutFieldsEditor";
@@ -160,6 +163,93 @@ export default async function CheckoutDefaultPage() {
         <p className="text-[10px] text-white/35 mt-3">
           ⚠️ Al aplicar un preset, sobreescribís la configuración actual de campos (los campos extra personalizados se pierden).
         </p>
+      </div>
+
+      {/* ───── Diseño visual del checkout (colores + tarjetas) ───── */}
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">🎨 Diseño del checkout</h2>
+          <p className="text-sm text-white/55 mt-1">
+            Por default toma el color principal del tenant. Podés overridear
+            desde acá el CTA "Pagar", el color de acento (radios seleccionados)
+            y el estilo de tarjetas.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-white/50 font-semibold mb-2">
+              Color del botón "Pagar"
+            </label>
+            <form action={setCheckoutDesignColorAction} className="flex items-center gap-2">
+              <input type="hidden" name="which" value="cta_color" />
+              <input type="color" name="value"
+                defaultValue={cfg.design?.cta_color ?? '#111827'}
+                className="w-14 h-11 rounded-md bg-transparent border border-white/15 cursor-pointer" />
+              <button type="submit"
+                className="text-xs px-3 py-2 rounded bg-white text-black font-semibold hover:bg-white/90">
+                Aplicar
+              </button>
+              {cfg.design?.cta_color && (
+                <span className="text-[10px] text-white/40 ml-2">
+                  Override: <code className="font-mono">{cfg.design.cta_color}</code>
+                </span>
+              )}
+            </form>
+          </div>
+
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-white/50 font-semibold mb-2">
+              Color de acento (radios seleccionados)
+            </label>
+            <form action={setCheckoutDesignColorAction} className="flex items-center gap-2">
+              <input type="hidden" name="which" value="accent_color" />
+              <input type="color" name="value"
+                defaultValue={cfg.design?.accent_color ?? cfg.design?.cta_color ?? '#111827'}
+                className="w-14 h-11 rounded-md bg-transparent border border-white/15 cursor-pointer" />
+              <button type="submit"
+                className="text-xs px-3 py-2 rounded bg-white text-black font-semibold hover:bg-white/90">
+                Aplicar
+              </button>
+              {cfg.design?.accent_color && (
+                <span className="text-[10px] text-white/40 ml-2">
+                  Override: <code className="font-mono">{cfg.design.accent_color}</code>
+                </span>
+              )}
+            </form>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <label className="block text-xs uppercase tracking-wider text-white/50 font-semibold mb-2">
+            Estilo de tarjetas
+          </label>
+          <div className="flex gap-2 flex-wrap">
+            {(['rounded', 'square'] as const).map((s) => {
+              const active = (cfg.design?.card_style ?? 'rounded') === s;
+              return (
+                <form key={s} action={setCheckoutDesignCardStyleAction}>
+                  <input type="hidden" name="style" value={s} />
+                  <button type="submit"
+                    className={`text-xs px-3 py-1.5 rounded border transition ${
+                      active
+                        ? 'bg-white text-black border-white font-semibold'
+                        : 'bg-white/5 border-white/15 text-white/70 hover:bg-white/10'
+                    }`}>
+                    {s === 'rounded' ? '🔵 Redondeadas (default)' : '⬜ Cuadradas (minimal)'}
+                  </button>
+                </form>
+              );
+            })}
+          </div>
+        </div>
+
+        <form action={resetCheckoutDesignAction} className="mt-4">
+          <button type="submit"
+            className="text-[11px] text-white/40 hover:text-white underline underline-offset-2">
+            Volver a defaults (usar color del tenant)
+          </button>
+        </form>
       </div>
 
       <CheckoutFieldsEditor

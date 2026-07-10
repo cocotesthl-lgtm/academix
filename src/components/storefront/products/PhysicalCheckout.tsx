@@ -57,7 +57,27 @@ function formatMoney(cents: number, currency: string): string {
   }).format(cents / 100);
 }
 
-export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
+export type CheckoutDesignInput = {
+  cta_color?: string | null;
+  accent_color?: string | null;
+  card_style?: 'rounded' | 'square' | null;
+};
+
+export function PhysicalCheckout({
+  tenantId,
+  tenantPrimary = '#111827',
+  design
+}: {
+  tenantId: string;
+  /** Color primary del tenant (fallback si no hay overrides en design). */
+  tenantPrimary?: string;
+  /** Overrides del owner para colores y estilo. Todos opcionales. */
+  design?: CheckoutDesignInput;
+}) {
+  // Colores efectivos: override > tenant primary > fallback negro.
+  const ctaColor = design?.cta_color || tenantPrimary || '#111827';
+  const accentColor = design?.accent_color || ctaColor;
+  const cardRadius = design?.card_style === 'square' ? '0.25rem' : '1rem';
   const [items, setItems] = useState<CartItem[]>([]);
   const [giftCard, setGiftCard] = useState<SavedGiftCard | null>(null);
   const [buyerEmail, setBuyerEmail] = useState('');
@@ -257,13 +277,17 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
             {rateOptions.length > 0 && (
               <div className="mt-4 space-y-2">
                 <label className="block text-xs text-black/60 mb-1">Método de envío</label>
-                {rateOptions.map((o) => (
+                {rateOptions.map((o) => {
+                  const sel = selectedRate === o.rate_id;
+                  return (
                   <label key={o.rate_id}
-                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
-                      selectedRate === o.rate_id ? 'border-black bg-black/[0.03]' : 'border-black/15 hover:border-black/30'
-                    }`}>
-                    <input type="radio" name="rate" checked={selectedRate === o.rate_id}
-                      onChange={() => setSelectedRate(o.rate_id)} className="mt-1" />
+                    className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition hover:border-black/30"
+                    style={sel
+                      ? { borderColor: accentColor, background: `${accentColor}0F` }
+                      : undefined}>
+                    <input type="radio" name="rate" checked={sel}
+                      onChange={() => setSelectedRate(o.rate_id)} className="mt-1"
+                      style={sel ? { accentColor } : undefined} />
                     <div className="flex-1">
                       <div className="font-medium text-sm">{o.zone_name} · {o.name}</div>
                       <div className="text-xs text-black/55 mt-0.5">
@@ -274,7 +298,8 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
                       {o.is_free ? 'Gratis' : formatMoney(o.price_cents, currency)}
                     </div>
                   </label>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -396,7 +421,8 @@ export function PhysicalCheckout({ tenantId }: { tenantId: string }) {
             type="button"
             onClick={handleCheckout}
             disabled={submitting || (requiresShipping && !selectedRate)}
-            className="w-full py-3 rounded-lg bg-black text-white font-semibold hover:bg-black/85 transition disabled:opacity-50"
+            className="w-full py-3 text-white font-semibold shadow hover:shadow-lg transition disabled:opacity-50"
+            style={{ background: ctaColor, borderRadius: cardRadius }}
           >
             {submitting ? 'Redirigiendo…' : `Pagar ${formatMoney(total, currency)}`}
           </button>
