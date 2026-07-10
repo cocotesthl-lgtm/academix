@@ -122,14 +122,16 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   // con el color del tenant para que la barra de progreso, el spinner de
   // navegación y cualquier otro elemento que use estas vars combinen con
   // el brand del owner que está usando el panel.
+  // Como TopProgressBar y PendingNavOverlay viven en el ROOT layout
+  // (fuera de este componente), las vars solo cascadean con un override
+  // a nivel :root vía <style dangerouslySetInnerHTML>.
   const brandPrimaryHex = currentBrand?.primary_color ?? '#f97316';
-  const brandVars = {
-    ['--cp-brand-primary' as string]: brandPrimaryHex,
-    ['--cp-brand-secondary' as string]: brandPrimaryHex
-  };
 
   return (
-    <div style={brandVars}>
+    <>
+      <style dangerouslySetInnerHTML={{
+        __html: `:root{--cp-brand-primary:${brandPrimaryHex};--cp-brand-secondary:${brandPrimaryHex};}`
+      }} />
     <OwnerShell brandName={tenant.name} storefrontUrl={storefrontUrl} sidebar={sidebar}>
       {impersonating && (
         <div className="mb-4 rounded-lg bg-amber-500 text-amber-950 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-sm font-medium">
@@ -159,6 +161,6 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
       )}
       {children}
     </OwnerShell>
-    </div>
+    </>
   );
 }

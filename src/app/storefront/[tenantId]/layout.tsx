@@ -202,14 +202,19 @@ export default async function StorefrontLayout({
   } catch { /* no-op */ }
 
   return (
+    <>
+      {/* Override las vars a nivel :root porque la TopProgressBar y el
+          spinner de nav global viven en el root layout (fuera de este
+          div), y CSS vars solo cascadean hacia ABAJO. Sin este style
+          tag el bar y el spinner quedaban naranjas fijos. */}
+      <style dangerouslySetInnerHTML={{
+        __html: `:root{--cp-brand-primary:${primary};--cp-brand-secondary:${accent};}`
+      }} />
     <div
       className="min-h-screen bg-white text-black"
       style={{
         ['--brand-primary' as string]: primary,
         ['--brand-accent' as string]: accent,
-        // Override de las vars usadas por la TopProgressBar y el spinner
-        // de nav global. Antes eran orange hardcoded en globals.css y no
-        // combinaban con el brand del tenant.
         ['--cp-brand-primary' as string]: primary,
         ['--cp-brand-secondary' as string]: accent
       }}
@@ -323,5 +328,6 @@ export default async function StorefrontLayout({
         </div>
       </footer>
     </div>
+    </>
   );
 }
