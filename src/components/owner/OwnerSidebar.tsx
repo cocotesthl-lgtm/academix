@@ -73,6 +73,7 @@ const NAV: NavEntry[] = [
         { label: 'Contenido VIP', href: '/vip', moduleKey: 'vip' },
         { label: 'Bundles', href: '/bundles', moduleKey: 'bundles' },
         { label: 'Promociones', href: '/promotions', moduleKey: 'promotions' },
+        { label: 'Dropshipping', href: '/dropship', moduleKey: 'dropshipping' },
         { label: 'Categorías', href: '/categories' },
         { label: 'Envíos', href: '/shipping', moduleKey: 'ecommerce' },
         { label: 'Cupones', href: '/coupons' },
