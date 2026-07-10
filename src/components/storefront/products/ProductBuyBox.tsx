@@ -36,7 +36,7 @@ export function ProductBuyBox({
     ? Math.round((1 - displayPrice / product.compare_at_price_cents) * 100)
     : null;
 
-  function handleAdd() {
+  function pushToCart() {
     if (outOfStock) return;
     const cartId = hasVariants
       ? `phys:${product.id}:${selectedId}`
@@ -62,8 +62,21 @@ export function ProductBuyBox({
       product_id: product.id,
       amount_cents: displayPrice
     });
+  }
+
+  function handleAdd() {
+    pushToCart();
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+  }
+
+  function handleBuyNow() {
+    if (outOfStock) return;
+    pushToCart();
+    // Salteo el "Agregado" y voy directo al checkout (comportamiento Amazon/ML).
+    if (typeof window !== 'undefined') {
+      window.location.href = '/tienda/checkout';
+    }
   }
 
   return (
@@ -121,25 +134,40 @@ export function ProductBuyBox({
         </div>
       )}
 
-      <div className="flex gap-2">
+      {/* Stack de CTAs estilo ML: Comprar ahora arriba (primary), Agregar al
+          carrito debajo (secondary con outline). Amazon los muestra al revés
+          pero ML es la referencia local — voy con ese orden. */}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={handleBuyNow}
+          disabled={outOfStock}
+          className={`w-full py-3.5 rounded-lg text-base font-semibold transition ${
+            outOfStock
+              ? 'bg-black/10 text-black/40 cursor-not-allowed'
+              : 'bg-black text-white hover:bg-black/85'
+          }`}
+        >
+          {outOfStock ? 'Sin stock' : 'Comprar ahora'}
+        </button>
         <button
           type="button"
           onClick={handleAdd}
           disabled={outOfStock}
-          className={`flex-1 py-3.5 rounded-lg text-base font-semibold transition ${
+          className={`w-full py-3.5 rounded-lg text-base font-semibold transition border ${
             outOfStock
-              ? 'bg-black/10 text-black/40 cursor-not-allowed'
+              ? 'border-black/10 text-black/30 cursor-not-allowed'
               : added
-                ? 'bg-emerald-600 text-white'
-                : 'bg-black text-white hover:bg-black/85'
+                ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                : 'border-black/25 text-black hover:bg-black/[0.03]'
           }`}
         >
-          {outOfStock ? 'Sin stock' : added ? '✓ Agregado' : 'Agregar al carrito'}
+          {added ? '✓ Agregado al carrito' : '🛒 Agregar al carrito'}
         </button>
         {added && (
           <a
             href="/tienda/checkout"
-            className="py-3.5 px-5 rounded-lg text-base font-semibold border border-black text-black hover:bg-black/[0.03] transition"
+            className="block text-center text-sm text-blue-600 font-semibold hover:underline pt-1"
           >
             Ir al checkout →
           </a>

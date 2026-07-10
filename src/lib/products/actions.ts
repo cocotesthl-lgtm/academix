@@ -25,6 +25,10 @@ export type PhysicalProduct = {
   category_id: string | null;
   seo_title: string | null;
   seo_description: string | null;
+  /** Rating manual editable por el owner (0-5). null = no mostrar estrellas. */
+  rating: number | null;
+  /** Cantidad de reseñas para mostrar al lado del rating ("(5.592 opiniones)"). */
+  reviews_count: number;
   created_at: string;
   updated_at: string;
 };
@@ -125,19 +129,36 @@ export async function updateProductAction(id: string, formData: FormData): Promi
   const categoryId = String(formData.get('category_id') ?? '').trim() || null;
   const seoTitle = String(formData.get('seo_title') ?? '').trim().slice(0, 60) || null;
   const seoDescription = String(formData.get('seo_description') ?? '').trim().slice(0, 160) || null;
+  // Rating manual (0-5 con 1 decimal). Vacío o 0 → null (no mostrar estrellas).
+  const ratingRaw = String(formData.get('rating') ?? '').trim();
+  const ratingNum = ratingRaw ? Number(ratingRaw) : NaN;
+  const rating = Number.isFinite(ratingNum) && ratingNum > 0
+    ? Math.max(0, Math.min(5, Math.round(ratingNum * 10) / 10))
+    : null;
+  const reviewsCount = Math.max(0, Math.round(Number(formData.get('reviews_count') ?? 0)));
 
   const desired = rawSlug ? slugify(rawSlug) : slugify(title);
   const finalSlug = await uniqueSlug(tenant.id, desired || 'producto', id);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (svc.from('physical_products') as any).update({
+  // Defensivo: si migration 0058 no corrió, reintento sin rating/reviews_count.
+  const basePayload: Record<string, unknown> = {
     title, slug: finalSlug, description, price_cents: priceCents,
     compare_at_price_cents: compareAt, sku, stock_qty: stockQty,
     track_stock: trackStock, requires_shipping: requiresShipping,
     weight_g: weightG, cover_url: coverUrl, gallery,
     category_id: categoryId, seo_title: seoTitle, seo_description: seoDescription,
     updated_at: new Date().toISOString()
-  }).eq('id', id).eq('tenant_id', tenant.id);
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let { error } = await (svc.from('physical_products') as any)
+    .update({ ...basePayload, rating, reviews_count: reviewsCount })
+    .eq('id', id).eq('tenant_id', tenant.id);
+  if (error && /rating|reviews_count/.test(error.message ?? '')) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('physical_products') as any)
+      .update(basePayload).eq('id', id).eq('tenant_id', tenant.id);
+    error = retry.error;
+  }
   if (error) throw new Error(error.message);
   revalidatePath('/products');
   revalidatePath(`/products/${id}`);

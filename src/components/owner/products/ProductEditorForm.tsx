@@ -212,6 +212,44 @@ export function ProductEditorForm({
           </div>
         )}
 
+        {/* Rating / Reseñas (manual — no hay reviews reales) */}
+        <div className="rounded-lg border border-white/10 p-4 space-y-3">
+          <h3 className="text-sm font-semibold">⭐ Rating y reseñas</h3>
+          <p className="text-xs text-white/45">
+            Prueba social manual estilo Amazon / MercadoLibre. Dejalo vacío o en 0 si no querés mostrar estrellas.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm mb-1.5 text-white/70">
+                Puntuación <span className="text-white/40">(0 a 5, ej. 4.3)</span>
+              </label>
+              <input
+                type="number"
+                name="rating"
+                step="0.1"
+                min="0"
+                max="5"
+                defaultValue={product.rating ?? ''}
+                placeholder="4.3"
+                className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1.5 text-white/70">
+                Cantidad de reseñas
+              </label>
+              <input
+                type="number"
+                name="reviews_count"
+                min="0"
+                defaultValue={product.reviews_count ?? 0}
+                placeholder="5592"
+                className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* SEO */}
         <div className="rounded-lg border border-white/10 p-4 space-y-3">
           <h3 className="text-sm font-semibold">SEO</h3>

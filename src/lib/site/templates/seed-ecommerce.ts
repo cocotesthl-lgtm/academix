@@ -285,7 +285,9 @@ export async function seedEcommerceDemoData(tenantId: string): Promise<void> {
   }
 
   // Insertar productos. gallery es jsonb — supabase-js lo serializa solo.
-  const productRows = PRODUCTS.map((p) => ({
+  // Rating y reviews_count seeded a mano (variados 4.0-4.9) para dar prueba
+  // social desde el día 1 estilo Amazon/ML.
+  const productRows = PRODUCTS.map((p, i) => ({
     tenant_id: tenantId,
     slug: p.slug,
     title: p.title,
@@ -299,11 +301,25 @@ export async function seedEcommerceDemoData(tenantId: string): Promise<void> {
     track_stock: true,
     requires_shipping: true,
     status: 'published',
-    category_id: categoryIdBySlug[p.category_slug] ?? null
+    category_id: categoryIdBySlug[p.category_slug] ?? null,
+    rating: [4.5, 4.3, 4.8, 4.2, 4.6, 4.1, 4.7, 4.4, 4.9, 4.5, 4.6, 4.3][i] ?? 4.5,
+    reviews_count: [5592, 1284, 342, 89, 2103, 654, 891, 4210, 178, 45, 12, 2891][i] ?? 100
   }));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: prodErr } = await (svc.from('physical_products') as any).insert(productRows);
+  let { error: prodErr } = await (svc.from('physical_products') as any).insert(productRows);
+  if (prodErr && /rating|reviews_count/.test(prodErr.message ?? '')) {
+    // Migration 0058 pendiente — reintento sin las cols nuevas.
+    const stripped = productRows.map((r) => {
+      const clone: Record<string, unknown> = { ...r };
+      delete clone.rating;
+      delete clone.reviews_count;
+      return clone;
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('physical_products') as any).insert(stripped);
+    prodErr = retry.error;
+  }
   if (prodErr) {
     console.error('[seedEcommerce] insert productos falló:', prodErr);
     throw prodErr;

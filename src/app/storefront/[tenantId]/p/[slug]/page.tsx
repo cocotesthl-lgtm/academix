@@ -5,8 +5,20 @@ import { getTenantById } from '@/lib/tenant/resolve';
 import { getServiceClient } from '@/lib/supabase/service';
 import { storefrontOrigin, truncate } from '@/lib/seo/meta';
 import { ProductBuyBox } from '@/components/storefront/products/ProductBuyBox';
+import { ProductGallery } from '@/components/storefront/products/ProductGallery';
 import { TrackPageView } from '@/components/storefront/TrackPageView';
 import type { PhysicalProduct, ProductVariant } from '@/lib/products/actions';
+
+/** Devuelve un array de 5 slots con full/half/empty según rating (0..5). */
+function starGlyphs(rating: number): Array<'full' | 'half' | 'empty'> {
+  const out: Array<'full' | 'half' | 'empty'> = [];
+  for (let i = 1; i <= 5; i++) {
+    if (rating >= i) out.push('full');
+    else if (rating >= i - 0.5) out.push('half');
+    else out.push('empty');
+  }
+  return out;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -86,32 +98,51 @@ export default async function ProductPublicPage({
       <Link href="/" className="text-sm text-black/55 hover:text-black">← Volver al inicio</Link>
 
       <div className="mt-6 grid md:grid-cols-2 gap-10">
-        {/* Galería izquierda */}
-        <div className="space-y-3">
-          <div className="aspect-square rounded-2xl bg-zinc-100 overflow-hidden">
-            {product.cover_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={product.cover_url} alt={product.title}
-                className="w-full h-full object-cover" />
-            ) : (
-              <div className="flex items-center justify-center h-full text-black/25 text-6xl">📦</div>
-            )}
-          </div>
-          {product.gallery.length > 0 && (
-            <div className="grid grid-cols-4 gap-2">
-              {product.gallery.slice(0, 8).map((url, i) => (
-                <div key={i} className="aspect-square rounded-lg bg-zinc-100 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Galería (client): mini vertical + zoom en hover */}
+        <ProductGallery
+          cover={product.cover_url}
+          gallery={product.gallery ?? []}
+          title={product.title}
+        />
 
         {/* Buy box derecha */}
         <div>
           <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-2">{product.title}</h1>
+
+          {/* Rating manual (si el owner lo cargó desde el editor). Estilo ML:
+              estrellas amarillas + puntuación numérica + (cantidad reseñas). */}
+          {typeof product.rating === 'number' && product.rating > 0 && (
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-0.5" aria-label={`Rating ${product.rating} de 5`}>
+                {starGlyphs(product.rating).map((g, i) => (
+                  <svg key={i} width="16" height="16" viewBox="0 0 24 24"
+                    className={g === 'empty' ? 'text-black/15' : 'text-amber-400'}
+                    fill="currentColor" aria-hidden="true">
+                    {g === 'half' ? (
+                      <>
+                        <defs>
+                          <linearGradient id={`half-${i}`}>
+                            <stop offset="50%" stopColor="currentColor" />
+                            <stop offset="50%" stopColor="rgba(0,0,0,0.15)" />
+                          </linearGradient>
+                        </defs>
+                        <polygon fill={`url(#half-${i})`}
+                          points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </>
+                    ) : (
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    )}
+                  </svg>
+                ))}
+              </div>
+              <span className="text-sm font-semibold text-black">{product.rating.toFixed(1)}</span>
+              {product.reviews_count > 0 && (
+                <span className="text-sm text-black/50">
+                  ({product.reviews_count.toLocaleString('es-AR')})
+                </span>
+              )}
+            </div>
+          )}
 
           {!inStock && (
             <div className="inline-block bg-rose-100 text-rose-700 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded mb-3">
