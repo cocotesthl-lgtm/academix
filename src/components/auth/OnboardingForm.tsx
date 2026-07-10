@@ -32,10 +32,13 @@ function slugify(input: string): string {
  */
 export function OnboardingForm({
   rootDomain,
-  onTemplateChange
+  onTemplateChange,
+  onColorChange
 }: {
   rootDomain: string;
   onTemplateChange?: (templateId: string) => void;
+  /** Emite el color primario elegido para que el parent lo pinte en el preview. */
+  onColorChange?: (color: string) => void;
 }) {
   const [state, formAction, pending] = useActionState<OnboardingResult | null, FormData>(createTenantAction, null);
   const [name, setName] = useState('');
@@ -54,6 +57,12 @@ export function OnboardingForm({
   useEffect(() => {
     onTemplateChange?.(templateId);
   }, [templateId, onTemplateChange]);
+
+  // Idem con el color primario. El parent debounce-a los updates antes de
+  // recargar el iframe para evitar flicker cuando arrastrás el picker.
+  useEffect(() => {
+    onColorChange?.(primaryColor);
+  }, [primaryColor, onColorChange]);
 
   // Cuando elegís template, sugerimos su color primario si no lo cambiaste manualmente
   function selectTemplate(id: string) {

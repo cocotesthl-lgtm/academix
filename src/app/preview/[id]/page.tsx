@@ -26,15 +26,21 @@ export default async function TemplatePreviewPage({
   searchParams
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ embedded?: string }>;
+  searchParams: Promise<{ embedded?: string; primary?: string }>;
 }) {
   const { id } = await params;
-  const { embedded } = await searchParams;
+  const { embedded, primary: primaryOverride } = await searchParams;
   const t = SITE_TEMPLATES.find((x) => x.id === id);
   if (!t) notFound();
 
   const cfg = t.config;
-  const primary = t.suggestedPrimary;
+  // ?primary=%23f97316 → sobrescribe el color del template. El onboarding
+  // manda el color que el user picó para que el preview se pinte en vivo.
+  // Validamos que sea un hex válido antes de aceptar (evita XSS via style).
+  const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
+  const primary = primaryOverride && HEX_RE.test(primaryOverride)
+    ? primaryOverride
+    : t.suggestedPrimary;
   const key = contentKey(t.id);
   const content = key ? DEMO_CONTENT[key] : null;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { OnboardingForm } from './OnboardingForm';
 import { SITE_TEMPLATES } from '@/lib/site/templates/catalog';
 
@@ -17,7 +17,26 @@ import { SITE_TEMPLATES } from '@/lib/site/templates/catalog';
  */
 export function OnboardingWithPreview({ rootDomain }: { rootDomain: string }) {
   const [templateId, setTemplateId] = useState<string>('');
+  const [color, setColor] = useState<string>('');
+  const [debouncedColor, setDebouncedColor] = useState<string>('');
   const chosen = SITE_TEMPLATES.find((t) => t.id === templateId);
+
+  // Debounce del color: recargar el iframe en cada onChange del color picker
+  // haría flicker feo al arrastrar. Esperamos 400ms sin cambios antes de
+  // propagar el color a la src del iframe.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedColor(color), 400);
+    return () => clearTimeout(t);
+  }, [color]);
+
+  // Armamos la src del iframe con el color como query param. El componente
+  // de preview lo lee y overridea el suggestedPrimary del template.
+  // Encode con encodeURIComponent porque el color trae # (ej. #f97316).
+  function previewSrc(id: string): string {
+    const base = `/preview/${id}?embedded=1`;
+    if (!debouncedColor) return base;
+    return `${base}&primary=${encodeURIComponent(debouncedColor)}`;
+  }
 
   return (
     <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,520px)_1fr] gap-8">
@@ -31,7 +50,11 @@ export function OnboardingWithPreview({ rootDomain }: { rootDomain: string }) {
           <p className="mt-2 text-neutral-600">Estos datos los podés cambiar después.</p>
         </div>
         <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <OnboardingForm rootDomain={rootDomain} onTemplateChange={setTemplateId} />
+          <OnboardingForm
+            rootDomain={rootDomain}
+            onTemplateChange={setTemplateId}
+            onColorChange={setColor}
+          />
         </div>
       </div>
 
@@ -70,7 +93,7 @@ export function OnboardingWithPreview({ rootDomain }: { rootDomain: string }) {
             {chosen ? (
               <iframe
                 key={chosen.id}
-                src={`/preview/${chosen.id}?embedded=1`}
+                src={previewSrc(chosen.id)}
                 title={`Preview de ${chosen.name}`}
                 className="absolute inset-0 w-full h-full"
               />
