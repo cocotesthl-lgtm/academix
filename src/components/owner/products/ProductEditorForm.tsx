@@ -4,15 +4,21 @@ import { useEffect, useRef, useState } from 'react';
 import { updateProductAction, type PhysicalProduct, type ProductVariant } from '@/lib/products/actions';
 import { VariantsBlock } from './VariantsBlock';
 import { StockAdjustBlock } from './StockAdjustBlock';
+import { VideoUploader } from './VideoUploader';
 
 export function ProductEditorForm({
   product,
   variants,
-  categories
+  categories,
+  uploadsEnabled = false,
+  planName = null
 }: {
   product: PhysicalProduct;
   variants: ProductVariant[];
   categories: Array<{ id: string; name: string }>;
+  /** true si el plan del tenant incluye features.uploads_enabled */
+  uploadsEnabled?: boolean;
+  planName?: string | null;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [gallery, setGallery] = useState<string>(product.gallery.join('\n'));
@@ -84,6 +90,20 @@ export function ProductEditorForm({
               aparecen con ▶ en la galería. El buyer los ve inline o en fullscreen
               al clickear.
             </p>
+
+            {/* Uploader premium — solo aparece si el plan lo permite.
+                Sino muestra un card explicando la limitación + CTA upgrade. */}
+            <VideoUploader
+              uploadsEnabled={uploadsEnabled}
+              planName={planName}
+              onUploaded={(url) => {
+                // Append URL al textarea de galería (new-line safe)
+                setGallery((prev) => {
+                  const clean = prev.trim();
+                  return clean ? `${clean}\n${url}` : url;
+                });
+              }}
+            />
           </div>
         </div>
 

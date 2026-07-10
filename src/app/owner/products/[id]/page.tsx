@@ -5,6 +5,7 @@ import { env } from '@/lib/env';
 import { ProductToolbar } from '@/components/owner/products/ProductToolbar';
 import { ProductEditorForm } from '@/components/owner/products/ProductEditorForm';
 import type { PhysicalProduct, ProductVariant } from '@/lib/products/actions';
+import { getTenantPlan } from '@/lib/plans/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,12 @@ export default async function ProductEditPage({
     .select('id, name').eq('tenant_id', tenant.id).order('position', { ascending: true });
   const categories = (catsRaw ?? []) as Array<{ id: string; name: string }>;
 
+  // Plan del tenant: si features.uploads_enabled=true, el editor muestra
+  // el uploader de videos MP4. Sino muestra card "🔒 feature premium".
+  const tenantPlan = await getTenantPlan(tenant.id);
+  const uploadsEnabled = tenantPlan.plan?.features?.uploads_enabled === true;
+  const planName = tenantPlan.plan?.name ?? null;
+
   const u = new URL(env.appUrl);
   const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
   const host = isLocal
@@ -55,7 +62,13 @@ export default async function ProductEditPage({
       )}
 
       <div className="max-w-4xl">
-        <ProductEditorForm product={product} variants={variants} categories={categories} />
+        <ProductEditorForm
+          product={product}
+          variants={variants}
+          categories={categories}
+          uploadsEnabled={uploadsEnabled}
+          planName={planName}
+        />
       </div>
     </div>
   );
