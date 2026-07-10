@@ -16,7 +16,11 @@ function subdomainUrl(sub: 'admin' | 'app', path: string): string {
   return `${appUrl.protocol}//${host}${path}`;
 }
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams
+}: {
+  searchParams: Promise<{ new?: string }>;
+}) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/onboarding");
@@ -33,18 +37,26 @@ export default async function OnboardingPage() {
     redirect(subdomainUrl('admin', '/dashboard'));
   }
 
-  // If user already owns a tenant, send them straight to the owner dashboard.
-  const { data: existing } = await svc
-    .from("memberships")
-    .select("tenant_id, tenants ( slug )")
-    .eq("user_id", user.id)
-    .eq("role", "owner")
-    .eq("status", "active")
-    .limit(1)
-    .maybeSingle<{ tenant_id: string; tenants: { slug: string } | null }>();
+  // Un user puede tener MÚLTIPLES tenants como owner (workspace switcher).
+  // Si aterrizó acá SIN el flag ?new=1 y ya tiene tenants → asumimos que se
+  // equivocó de ruta y lo mandamos a su dashboard. Si vino con ?new=1 desde
+  // el WorkspaceSwitcher ("+ Crear nuevo sitio"), le dejamos crear otro.
+  const { new: isNew } = await searchParams;
+  const wantsNew = isNew === '1' || isNew === 'true';
 
-  if (existing) {
-    redirect(subdomainUrl('app', '/dashboard'));
+  if (!wantsNew) {
+    const { data: existing } = await svc
+      .from("memberships")
+      .select("tenant_id, tenants ( slug )")
+      .eq("user_id", user.id)
+      .eq("role", "owner")
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle<{ tenant_id: string; tenants: { slug: string } | null }>();
+
+    if (existing) {
+      redirect(subdomainUrl('app', '/dashboard'));
+    }
   }
 
   return (

@@ -74,7 +74,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
           email={email}
           workspaces={workspaces}
           currentTenantId={tenant.id}
-          onboardingUrl={subdomainUrl('app', '/onboarding')}
+          onboardingUrl={subdomainUrl('app', '/onboarding?new=1')}
         />
       </div>
       <div className="mb-3 cp-collapse-hide">

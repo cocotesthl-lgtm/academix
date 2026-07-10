@@ -184,9 +184,10 @@ export default async function WorkspacesPage() {
           })}
         </div>
 
-        {/* CTA crear nuevo */}
+        {/* CTA crear nuevo — flag ?new=1 evita el auto-redirect al dashboard
+             cuando el user ya tiene tenants. */}
         <Link
-          href="/onboarding"
+          href="/onboarding?new=1"
           className="block rounded-xl border border-dashed border-neutral-300 hover:border-neutral-900 bg-white p-4 text-center text-neutral-600 hover:text-neutral-900 transition"
         >
           + Crear un nuevo sitio
