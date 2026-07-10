@@ -90,7 +90,7 @@ export function OnboardingWithPreview({ rootDomain }: { rootDomain: string }) {
                 <iframe
                   ref={iframeRef}
                   key={chosen.id}
-                  src={`/preview/${chosen.id}`}
+                  src={`/preview/${chosen.id}?embedded=1`}
                   title={`Preview de ${chosen.name}`}
                   className="absolute inset-0 w-full h-full"
                 />

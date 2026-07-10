@@ -22,11 +22,14 @@ export async function generateMetadata({
 }
 
 export default async function TemplatePreviewPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ embedded?: string }>;
 }) {
   const { id } = await params;
+  const { embedded } = await searchParams;
   const t = SITE_TEMPLATES.find((x) => x.id === id);
   if (!t) notFound();
 
@@ -34,6 +37,12 @@ export default async function TemplatePreviewPage({
   const primary = t.suggestedPrimary;
   const key = contentKey(t.id);
   const content = key ? DEMO_CONTENT[key] : null;
+
+  // ?embedded=1 → preview embebido en el iframe del onboarding.
+  // Ocultamos la barra superior y el CTA "Usar este template →" que
+  // llevan a /signup (el user ya está en el onboarding, no tiene sentido
+  // sacarlo de nuevo). El template se elige desde la columna izquierda.
+  const isEmbedded = embedded === '1' || embedded === 'true';
 
   return (
     <PreviewInteractive
@@ -43,6 +52,7 @@ export default async function TemplatePreviewPage({
       primary={primary}
       config={cfg}
       content={content}
+      embedded={isEmbedded}
     />
   );
 }

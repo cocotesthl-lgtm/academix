@@ -12,7 +12,8 @@ import type { DemoContent, DemoItem } from '@/lib/site/templates/demo-content';
  * mensaje de éxito en modo demo).
  */
 export function PreviewInteractive({
-  templateId, templateName, templateEmoji, primary, config, content
+  templateId, templateName, templateEmoji, primary, config, content,
+  embedded = false
 }: {
   templateId: string;
   templateName: string;
@@ -20,6 +21,13 @@ export function PreviewInteractive({
   primary: string;
   config: SiteConfig;
   content: DemoContent | null;
+  /**
+   * true = preview embebido en el iframe del onboarding.
+   * Oculta la barra "Demo" con el CTA "Usar este template" (que va a
+   * /signup) porque el user YA está en el onboarding y elige el template
+   * desde la columna izquierda. También oculta el CTA repetido más abajo.
+   */
+  embedded?: boolean;
 }) {
   const [selected, setSelected] = useState<DemoItem | null>(null);
   const [cat, setCat] = useState<string>('Todos');
@@ -67,27 +75,32 @@ export function PreviewInteractive({
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">
-      {/* Barra superior — banner "En modo demo" */}
-      <div className="sticky top-0 z-[100] bg-neutral-900 text-white px-4 py-2.5 flex items-center justify-between text-xs gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link href="/" className="text-white/70 hover:text-white shrink-0 flex items-center gap-1">
-            ← OfferNow
+      {/* Barra superior — banner "En modo demo". Se oculta cuando el
+          preview está embebido en el iframe del onboarding (el user ya
+          está creando su sitio, no necesita el CTA "Usar este template"
+          que lo saca a /signup). */}
+      {!embedded && (
+        <div className="sticky top-0 z-[100] bg-neutral-900 text-white px-4 py-2.5 flex items-center justify-between text-xs gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href="/" className="text-white/70 hover:text-white shrink-0 flex items-center gap-1">
+              ← OfferNow
+            </Link>
+            <span className="text-white/30">|</span>
+            <span className="truncate">
+              Demo · <strong className="text-white">{templateEmoji} {templateName}</strong>
+            </span>
+          </div>
+          <Link
+            href={`/signup?type=owner&template=${templateId}`}
+            className="rounded-full bg-orange-500 text-white px-4 py-1.5 font-semibold hover:bg-orange-600 transition shrink-0"
+          >
+            Usar este template →
           </Link>
-          <span className="text-white/30">|</span>
-          <span className="truncate">
-            Demo · <strong className="text-white">{templateEmoji} {templateName}</strong>
-          </span>
         </div>
-        <Link
-          href={`/signup?type=owner&template=${templateId}`}
-          className="rounded-full bg-orange-500 text-white px-4 py-1.5 font-semibold hover:bg-orange-600 transition shrink-0"
-        >
-          Usar este template →
-        </Link>
-      </div>
+      )}
 
-      {/* Nav del sitio demo */}
-      <nav className="sticky top-[38px] z-40 bg-white/95 backdrop-blur border-b border-neutral-200">
+      {/* Nav del sitio demo. Sticky offset ajustado según haya o no barra superior. */}
+      <nav className={`sticky ${embedded ? 'top-0' : 'top-[38px]'} z-40 bg-white/95 backdrop-blur border-b border-neutral-200`}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-lg shrink-0"
@@ -327,19 +340,23 @@ export function PreviewInteractive({
         </div>
       </footer>
 
-      {/* Sticky CTA final */}
-      <div className="sticky bottom-0 z-40 bg-white border-t border-neutral-200 px-6 py-3 flex items-center justify-between gap-4">
-        <div className="text-sm truncate">
-          <strong className="text-neutral-900">Te gusta lo que ves?</strong>
-          <span className="text-neutral-500 hidden md:inline"> · Creá tu sitio con este template en 5 minutos.</span>
+      {/* Sticky CTA final — solo cuando NO está embebido (mismo motivo
+          que la barra superior: adentro del onboarding sobra el CTA
+          a /signup). */}
+      {!embedded && (
+        <div className="sticky bottom-0 z-40 bg-white border-t border-neutral-200 px-6 py-3 flex items-center justify-between gap-4">
+          <div className="text-sm truncate">
+            <strong className="text-neutral-900">Te gusta lo que ves?</strong>
+            <span className="text-neutral-500 hidden md:inline"> · Creá tu sitio con este template en 5 minutos.</span>
+          </div>
+          <Link
+            href={`/signup?type=owner&template=${templateId}`}
+            className="shrink-0 rounded-full bg-neutral-900 text-white px-5 py-2 font-semibold hover:bg-neutral-800 transition text-sm whitespace-nowrap"
+          >
+            Usar este template →
+          </Link>
         </div>
-        <Link
-          href={`/signup?type=owner&template=${templateId}`}
-          className="shrink-0 rounded-full bg-neutral-900 text-white px-5 py-2 font-semibold hover:bg-neutral-800 transition text-sm whitespace-nowrap"
-        >
-          Usar este template →
-        </Link>
-      </div>
+      )}
 
       {/* Modal detalle */}
       {selected && (
