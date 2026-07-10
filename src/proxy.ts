@@ -108,6 +108,12 @@ function buildResponse(req: NextRequest): { response: NextResponse; portal: stri
     if (pathname.startsWith('/v/')) {
       return { response: NextResponse.next({ request: req }), portal: 'app-public' };
     }
+    // /preview/[id] = preview de template del onboarding. Se embebe en
+    // iframe dentro de /onboarding — hay que dejarla pasar SIN prefijo
+    // /owner (sino queda /owner/preview/[id] → 404).
+    if (pathname.startsWith('/preview/') || pathname === '/preview') {
+      return { response: NextResponse.next({ request: req }), portal: 'app-public' };
+    }
     // Si el user navegó a app.X/owner/algo (link viejo, bookmark, redirect mal
     // formado), strippeamos el /owner duplicado antes de prefijar — sino el
     // rewrite quedaría /owner/owner/algo y devolvería 404.
