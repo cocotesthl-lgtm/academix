@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { OnboardingForm } from "@/components/auth/OnboardingForm";
+import { OnboardingWithPreview } from "@/components/auth/OnboardingWithPreview";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
@@ -60,19 +59,11 @@ export default async function OnboardingPage({
   }
 
   return (
-    <main className="min-h-screen bg-[#fafafa] text-neutral-900 flex items-center justify-center p-6">
-      <div className="w-full max-w-lg space-y-8">
-        <div className="text-center">
-          <Link href="/" className="text-2xl font-bold tracking-tight">
-            <span className="text-neutral-900">Offer</span><span className="text-orange-500">Now</span>
-          </Link>
-          <h1 className="mt-6 text-3xl font-bold">Configurá tu sitio</h1>
-          <p className="mt-2 text-neutral-600">Estos datos los podés cambiar después.</p>
-        </div>
-        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <OnboardingForm rootDomain={env.rootDomain} />
-        </div>
-      </div>
+    <main className="min-h-screen bg-[#fafafa] text-neutral-900 p-6">
+      {/* Layout 2 columnas en desktop (form + preview iframe a la derecha).
+          En mobile queda 1 columna centrada. Header + branding se renderean
+          dentro del wrapper client para mantener el layout coherente. */}
+      <OnboardingWithPreview rootDomain={env.rootDomain} />
     </main>
   );
 }

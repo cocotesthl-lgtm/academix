@@ -18,7 +18,25 @@ function slugify(input: string): string {
     .slice(0, 32);
 }
 
-export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
+/**
+ * OnboardingForm — form del wizard de creación de sitio.
+ *
+ * En desktop se renderea en un layout 2-col con el preview iframe a la
+ * derecha (ver /(auth)/onboarding/page.tsx). En mobile queda columna
+ * única y el preview se abre en pestaña nueva desde el link "Ver preview".
+ *
+ * Props:
+ *  · rootDomain — dominio raíz para armar el slug preview
+ *  · onTemplateChange — callback opcional para que el parent muestre el
+ *    preview del template elegido. Emitimos '' para "empezar en blanco".
+ */
+export function OnboardingForm({
+  rootDomain,
+  onTemplateChange
+}: {
+  rootDomain: string;
+  onTemplateChange?: (templateId: string) => void;
+}) {
   const [state, formAction, pending] = useActionState<OnboardingResult | null, FormData>(createTenantAction, null);
   const [name, setName] = useState('');
   const [templateId, setTemplateId] = useState<string>('');
@@ -31,6 +49,11 @@ export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
       window.location.href = state.redirectTo;
     }
   }, [state]);
+
+  // Notificar al parent cada vez que cambia el template para actualizar el preview.
+  useEffect(() => {
+    onTemplateChange?.(templateId);
+  }, [templateId, onTemplateChange]);
 
   // Cuando elegís template, sugerimos su color primario si no lo cambiaste manualmente
   function selectTemplate(id: string) {
@@ -116,12 +139,14 @@ export function OnboardingForm({ rootDomain }: { rootDomain: string }) {
                 </div>
                 <div className="font-semibold text-sm">{t.name}</div>
                 <div className="text-xs text-neutral-500 mt-1 line-clamp-2">{t.shortDesc}</div>
+                {/* Solo mobile: link a preview en nueva pestaña. En desktop
+                    la preview vive en el panel a la derecha (ver page.tsx). */}
                 <a
                   href={`/preview/${t.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-block mt-3 text-xs text-orange-600 font-semibold hover:underline"
+                  className="lg:hidden inline-block mt-3 text-xs text-orange-600 font-semibold hover:underline"
                 >
                   Ver preview →
                 </a>
