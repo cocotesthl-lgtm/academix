@@ -6,17 +6,13 @@ import { useState, useEffect, useCallback } from 'react';
  * Carrito del storefront persistido en localStorage.
  * Solo se monta cuando el tenant tiene cart_enabled=true.
  *
- * Las API públicas para que otros componentes interactúen con el carrito:
- *   - addToOfferNowCart(item) → fuerza re-render del widget via 'storage' event
- *   - dispatcha custom event 'curplat-cart-changed' que el widget escucha
+ * UI: DRAWER lateral (slide-in desde la derecha) tipo Amazon / MercadoLibre.
+ * Antes era un dropdown adosado al botón; ocupaba poco y el email input se
+ * mezclaba con el checkout. Ahora el checkout vive en /tienda/checkout
+ * donde el buyer entra email + dirección + shipping tranquilo.
  */
 
 export type CartItem = {
-  /**
-   * ID único dentro del carrito. Para cursos = course_id.
-   * Para productos físicos = `phys:${product_id}:${variant_id | 'default'}`
-   * — así múltiples variantes del mismo producto se contabilizan aparte.
-   */
   id: string;
   slug: string;
   title: string;
@@ -24,17 +20,12 @@ export type CartItem = {
   currency: string;
   cover_url?: string | null;
   qty: number;
-  /** kind default 'course' (retrocompat). Físicos = 'physical'. */
   kind?: 'course' | 'physical';
-  /** Solo para físicos: referencias reales que necesita el checkout. */
   product_id?: string;
   variant_id?: string | null;
   variant_label?: string | null;
-  /** Stock máximo permitido (para bloquear +qty en cart). */
   max_stock?: number;
-  /** True si el producto necesita dirección de envío. */
   requires_shipping?: boolean;
-  /** Peso unitario en gramos — usado para tarifas de envío por peso. */
   weight_g?: number;
 };
 
@@ -76,6 +67,18 @@ export function removeFromCart(tenantId: string, itemId: string) {
   writeCart(tenantId, next);
 }
 
+/** Cambiar cantidad de un item (clamp a max_stock si aplica). */
+export function setItemQty(tenantId: string, itemId: string, qty: number) {
+  const current = readCart(tenantId);
+  const idx = current.findIndex((c) => c.id === itemId);
+  if (idx < 0) return;
+  const item = current[idx];
+  const max = item.max_stock ?? 99;
+  const next = Math.max(1, Math.min(max, Math.floor(qty)));
+  current[idx] = { ...item, qty: next };
+  writeCart(tenantId, current);
+}
+
 export function clearCart(tenantId: string) {
   writeCart(tenantId, []);
 }
@@ -88,15 +91,12 @@ export function CartWidget({
 }: {
   tenantId: string;
   primary: string;
-  /** Dónde se renderiza este botón: inline en el header, o flotante abajo-derecha. */
   variant?: 'header' | 'floating';
-  /** Qué hace el click: abrir dropdown inline o navegar a /carrito. */
+  /** 'dropdown' abre el drawer lateral. 'page' navega a /carrito directo. */
   display?: 'dropdown' | 'page';
 }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [open, setOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [buyerEmail, setBuyerEmail] = useState('');
 
   const refresh = useCallback(() => setItems(readCart(tenantId)), [tenantId]);
 
@@ -114,40 +114,27 @@ export function CartWidget({
     };
   }, [tenantId, refresh]);
 
+  // Escape cierra el drawer + bloquea scroll del body mientras está abierto.
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   const total = items.reduce((s, i) => s + i.price_cents * i.qty, 0);
   const count = items.reduce((s, i) => s + i.qty, 0);
+  const currency = items[0]?.currency || 'ARS';
 
-  async function checkout() {
-    if (items.length === 0 || submitting) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch(`/api/cart/${tenantId}/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: items.map((i) => ({ id: i.id, qty: i.qty })),
-          buyer_email: buyerEmail.trim() || undefined
-        })
-      });
-      const data = await res.json() as { init_point?: string; error?: string };
-      if (data.init_point) {
-        window.location.href = data.init_point;
-      } else {
-        alert(`No se pudo procesar: ${data.error ?? 'error desconocido'}`);
-        setSubmitting(false);
-      }
-    } catch {
-      alert('Error de red. Intentá de nuevo.');
-      setSubmitting(false);
-    }
-  }
-
-  // Si el modo es 'page', el botón navega a /carrito en vez de abrir dropdown.
   function handleClick(e: React.MouseEvent) {
-    if (display === 'page') {
-      // Dejar que el <a> haga su trabajo (no preventDefault)
-      return;
-    }
+    if (display === 'page') return;
     e.preventDefault();
     setOpen((o) => !o);
   }
@@ -191,91 +178,147 @@ export function CartWidget({
         </button>
       )}
 
-      {/* Dropdown SOLO si display='dropdown' (en modo page no aparece) */}
-      {display === 'dropdown' && open && (
-        <div
-          className={`absolute z-50 w-96 max-w-[calc(100vw-2rem)] bg-white text-black rounded-2xl shadow-2xl border border-black/10 overflow-hidden flex flex-col ${
-            isFloating ? 'bottom-full right-0 mb-2' : 'right-0 top-full mt-2'
-          }`}
-          style={{ maxHeight: 'min(640px, calc(100vh - 8rem))' }}>
-          <div className="px-4 py-3 border-b border-black/10 flex items-center justify-between"
-            style={{ background: primary, color: 'white' }}>
-            <div>
-              <div className="font-bold text-sm">🛒 Tu carrito</div>
-              <div className="text-[10px] opacity-80">{count} {count === 1 ? 'producto' : 'productos'}</div>
-            </div>
-            <button onClick={() => setOpen(false)} className="text-xl leading-none opacity-80 hover:opacity-100">✕</button>
-          </div>
+      {/* Drawer lateral + backdrop — solo si display='dropdown' */}
+      {display === 'dropdown' && (
+        <>
+          {/* Backdrop oscuro */}
+          <div
+            className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-200 ${
+              open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
 
-          <div className="flex-1 overflow-y-auto">
-            {items.length === 0 ? (
-              <div className="p-8 text-center text-black/45 text-sm">
-                Tu carrito está vacío.
-                <br />
-                Agregá productos desde el catálogo.
+          {/* Drawer que entra desde la derecha */}
+          <aside
+            className={`fixed top-0 right-0 bottom-0 z-[100] w-full sm:w-[420px] max-w-full bg-white text-black flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${
+              open ? 'translate-x-0' : 'translate-x-full'
+            }`}
+            role="dialog"
+            aria-label="Carrito"
+            aria-hidden={!open}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-black/10 flex items-center justify-between shrink-0"
+              style={{ background: primary, color: 'white' }}>
+              <div>
+                <div className="font-bold text-base flex items-center gap-2">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="9" cy="21" r="1"/>
+                    <circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                  </svg>
+                  Tu carrito
+                </div>
+                <div className="text-xs opacity-80 mt-0.5">
+                  {count === 0 ? 'vacío' : `${count} ${count === 1 ? 'producto' : 'productos'}`}
+                </div>
               </div>
-            ) : (
-              <ul className="divide-y divide-black/5">
-                {items.map((item) => (
-                  <li key={item.id} className="p-3 flex gap-3">
-                    <div className="w-14 h-14 rounded bg-zinc-100 overflow-hidden flex-shrink-0">
-                      {item.cover_url && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.cover_url} alt="" className="w-full h-full object-cover" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{item.title}</div>
-                      <div className="text-xs text-black/55">
-                        ${(item.price_cents / 100).toLocaleString('es-AR')} {item.currency}
-                        {item.qty > 1 && <span className="ml-1 text-black/40">× {item.qty}</span>}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="w-9 h-9 rounded-full hover:bg-white/15 flex items-center justify-center text-xl leading-none"
+                aria-label="Cerrar carrito"
+              >×</button>
+            </div>
+
+            {/* Lista de items */}
+            <div className="flex-1 overflow-y-auto">
+              {items.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8 text-black/45">
+                  <div className="w-16 h-16 rounded-full bg-black/[0.04] flex items-center justify-center mb-3 text-3xl">🛒</div>
+                  <div className="text-sm font-semibold text-black/70">Tu carrito está vacío</div>
+                  <p className="text-xs mt-1">Agregá productos desde la tienda para verlos acá.</p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-black/5">
+                  {items.map((item) => (
+                    <li key={item.id} className="p-4 flex gap-3">
+                      <div className="w-16 h-16 rounded-lg bg-zinc-100 overflow-hidden shrink-0">
+                        {item.cover_url && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.cover_url} alt="" className="w-full h-full object-cover" />
+                        )}
                       </div>
-                    </div>
-                    <button
-                      onClick={() => removeFromCart(tenantId, item.id)}
-                      className="text-xs text-rose-500 hover:text-rose-700 flex-shrink-0"
-                      title="Quitar"
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {items.length > 0 && (
-            <div className="p-4 border-t border-black/10 space-y-3 bg-zinc-50">
-              <div className="flex items-baseline justify-between">
-                <span className="text-sm text-black/65">Total</span>
-                <span className="text-2xl font-bold">
-                  ${(total / 100).toLocaleString('es-AR')}
-                </span>
-              </div>
-              <input
-                type="email"
-                value={buyerEmail}
-                onChange={(e) => setBuyerEmail(e.target.value)}
-                placeholder="Tu email (para recibir el acceso)"
-                className="w-full rounded border border-black/15 bg-white px-3 py-2 text-sm"
-              />
-              <button
-                onClick={checkout}
-                disabled={submitting}
-                className="w-full rounded-md py-3 font-bold text-white shadow hover:shadow-lg transition disabled:opacity-60"
-                style={{ background: primary }}
-              >
-                {submitting ? 'Procesando…' : '💳 Pagar todo'}
-              </button>
-              <button
-                onClick={() => { if (confirm('¿Vaciar el carrito?')) clearCart(tenantId); }}
-                className="w-full text-xs text-black/55 hover:text-black"
-              >
-                Vaciar carrito
-              </button>
+                      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                        <div className="text-sm font-medium leading-snug line-clamp-2">{item.title}</div>
+                        {item.variant_label && (
+                          <div className="text-[11px] text-black/50">{item.variant_label}</div>
+                        )}
+                        <div className="flex items-center justify-between gap-2">
+                          {/* Qty stepper */}
+                          <div className="flex items-center border border-black/15 rounded-md overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => setItemQty(tenantId, item.id, item.qty - 1)}
+                              disabled={item.qty <= 1}
+                              className="w-7 h-7 flex items-center justify-center text-sm hover:bg-black/5 disabled:opacity-30"
+                              aria-label="Menos"
+                            >−</button>
+                            <span className="w-8 text-center text-sm tabular-nums">{item.qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => setItemQty(tenantId, item.id, item.qty + 1)}
+                              disabled={item.max_stock !== undefined && item.qty >= item.max_stock}
+                              className="w-7 h-7 flex items-center justify-center text-sm hover:bg-black/5 disabled:opacity-30"
+                              aria-label="Más"
+                            >+</button>
+                          </div>
+                          <div className="text-sm font-bold tabular-nums">
+                            ${((item.price_cents * item.qty) / 100).toLocaleString('es-AR')}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeFromCart(tenantId, item.id)}
+                        className="text-black/40 hover:text-rose-600 shrink-0 self-start"
+                        title="Quitar del carrito"
+                        aria-label="Quitar"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                          <path d="M10 11v6M14 11v6"/>
+                        </svg>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* Footer sticky con total + CTA */}
+            {items.length > 0 && (
+              <div className="border-t border-black/10 px-5 py-4 space-y-3 bg-white shrink-0">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm text-black/65">Total</span>
+                  <span className="text-2xl font-bold tabular-nums">
+                    ${(total / 100).toLocaleString('es-AR')}
+                    <span className="text-xs font-normal text-black/40 ml-1">{currency}</span>
+                  </span>
+                </div>
+                <p className="text-[11px] text-black/45 leading-snug">
+                  Envío y datos de contacto se completan en el próximo paso.
+                </p>
+                <a
+                  href="/tienda/checkout"
+                  className="w-full rounded-lg py-3.5 font-bold text-white shadow hover:shadow-lg transition flex items-center justify-center gap-2"
+                  style={{ background: primary }}
+                >
+                  Iniciar compra →
+                </a>
+                <button
+                  type="button"
+                  onClick={() => { if (confirm('¿Vaciar el carrito?')) clearCart(tenantId); }}
+                  className="w-full text-xs text-black/55 hover:text-black underline underline-offset-2"
+                >
+                  Vaciar carrito
+                </button>
+              </div>
+            )}
+          </aside>
+        </>
       )}
     </div>
   );
