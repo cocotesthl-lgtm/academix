@@ -87,11 +87,31 @@ export function OnboardingForm({
         )}
       </div>
 
-      {/* Paso 2: Template picker */}
+      {/* Paso 2: Color principal de marca (subido de posición) */}
+      <div>
+        <label className="block text-sm mb-1.5 text-neutral-700 font-semibold" htmlFor="primary_color">
+          2. Color principal de marca
+        </label>
+        <div className="flex gap-3 items-center">
+          <input
+            id="primary_color"
+            name="primary_color"
+            type="color"
+            value={primaryColor}
+            onChange={(e) => setPrimaryColor(e.target.value)}
+            className="w-14 h-11 rounded-md bg-transparent border border-neutral-300 cursor-pointer"
+          />
+          <span className="text-sm text-neutral-500">
+            {chosenTemplate ? 'Sugerido por el template — cambialo si querés.' : 'Lo podés cambiar después en Identidad.'}
+          </span>
+        </div>
+      </div>
+
+      {/* Paso 3: Template picker */}
       <div>
         <div className="flex items-baseline justify-between mb-3">
           <label className="block text-sm text-neutral-700 font-semibold">
-            2. Elegí un template para arrancar
+            3. Elegí un template para arrancar
           </label>
           <span className="text-xs text-neutral-500">Podés cambiar todo después.</span>
         </div>
@@ -164,36 +184,34 @@ export function OnboardingForm({
         )}
       </div>
 
-      {/* Paso 3: Color */}
-      <div>
-        <label className="block text-sm mb-1.5 text-neutral-700 font-semibold" htmlFor="primary_color">
-          3. Color principal de marca
-        </label>
-        <div className="flex gap-3 items-center">
-          <input
-            id="primary_color"
-            name="primary_color"
-            type="color"
-            value={primaryColor}
-            onChange={(e) => setPrimaryColor(e.target.value)}
-            className="w-14 h-11 rounded-md bg-transparent border border-neutral-300 cursor-pointer"
-          />
-          <span className="text-sm text-neutral-500">
-            {chosenTemplate ? 'Sugerido por el template — cambialo si querés.' : 'Lo podés cambiar después en Identidad.'}
-          </span>
-        </div>
-      </div>
-
       {state?.ok === false && (
         <div className="rounded-md bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
           {state.error}
         </div>
       )}
 
+      {/*
+        Botón submit fijado abajo-derecha en desktop (FAB style).
+        En mobile queda en su lugar habitual bajo el form. Padding extra
+        en el bottom del form para que el contenido no quede tapado.
+      */}
+      <div className="h-6" aria-hidden="true" />
+
+      <div className="fixed bottom-6 right-6 z-50 hidden sm:block">
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-full bg-neutral-900 text-white px-7 py-3.5 font-semibold hover:bg-neutral-800 transition shadow-2xl disabled:opacity-50 whitespace-nowrap"
+        >
+          {pending ? 'Creando tu sitio…' : 'Crear mi sitio →'}
+        </button>
+      </div>
+
+      {/* Mobile: submit inline (el fixed en pantallas chicas tapa contenido) */}
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-neutral-900 text-white py-3 font-semibold hover:bg-neutral-800 transition disabled:opacity-50"
+        className="sm:hidden w-full rounded-md bg-neutral-900 text-white py-3 font-semibold hover:bg-neutral-800 transition disabled:opacity-50"
       >
         {pending ? 'Creando tu sitio…' : 'Crear mi sitio →'}
       </button>
