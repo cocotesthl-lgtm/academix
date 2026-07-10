@@ -232,11 +232,15 @@ export async function createTenantAction(
   }
 
   // Redirect target: owner subdomain. In dev (localhost) use app.localhost; in prod use app.{rootDomain}.
+  // Pasamos por /api/workspace/switch para que la cookie 'owner_tenant_id'
+  // apunte al tenant recién creado. Sin esto, requireOwner() podría
+  // devolver el tenant VIEJO (el primero encontrado) y el user aterrizaría
+  // en el dashboard equivocado.
   const appUrl = new URL(env.appUrl);
   const isLocal = appUrl.hostname === 'localhost' || appUrl.hostname.endsWith('.localhost');
   const ownerHost = isLocal ? `app.localhost${appUrl.port ? ':' + appUrl.port : ''}` : `app.${env.rootDomain}`;
   const ownerProto = appUrl.protocol;
-  const redirectTo = `${ownerProto}//${ownerHost}/dashboard`;
+  const redirectTo = `${ownerProto}//${ownerHost}/api/workspace/switch?tenant=${tenant.id}&to=/dashboard`;
 
   return { ok: true, tenantId: tenant.id, slug: tenant.slug, redirectTo };
 }

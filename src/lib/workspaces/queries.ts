@@ -69,13 +69,16 @@ export async function getUserWorkspaces(userId: string): Promise<Workspace[]> {
         role: m.role,
         brand_primary: m.tenants!.brand?.primary_color ?? null,
         logo_url: m.tenants!.brand?.logo_url ?? null,
+        // Para owner: pasar por /api/workspace/switch que setea la cookie
+        // 'owner_tenant_id' antes de redirigir. Sin esto el switch entre
+        // tenants no funcionaba — requireOwner() siempre agarraba el mismo.
         href: m.role === 'student'
           ? tenantSubdomainUrl(m.tenants!.slug, '/learn')
           : m.role === 'affiliate'
             ? tenantSubdomainUrl(m.tenants!.slug, '/affiliate')
             : m.role === 'instructor'
               ? subdomainUrl('app', '/instructor')
-              : subdomainUrl('app', '/dashboard')
+              : subdomainUrl('app', `/api/workspace/switch?tenant=${m.tenant_id}&to=/dashboard`)
       };
       const existing = byTenant.get(m.tenant_id);
       if (!existing || PRIORITY[m.role] > PRIORITY[existing.role]) byTenant.set(m.tenant_id, ws);

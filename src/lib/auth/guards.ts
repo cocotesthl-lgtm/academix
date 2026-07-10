@@ -91,6 +91,28 @@ export async function requireOwner(): Promise<OwnerContext> {
     }
   }
 
+  // Cookie 'owner_tenant_id' setea el workspace activo cuando el user
+  // clickea otro sitio en el WorkspaceSwitcher. Sin esta cookie, siempre
+  // usábamos el primer tenant que devolvía la query — ignorando el switch.
+  const cookieStore = await cookies();
+  const preferredTenantId = cookieStore.get('owner_tenant_id')?.value;
+
+  if (preferredTenantId) {
+    const { data: preferred } = await svc
+      .from('memberships')
+      .select('tenant_id, tenants ( id, slug, name )')
+      .eq('user_id', user.id)
+      .eq('tenant_id', preferredTenantId)
+      .eq('role', 'owner')
+      .eq('status', 'active')
+      .maybeSingle<{ tenant_id: string; tenants: { id: string; slug: string; name: string } | null }>();
+    if (preferred?.tenants) {
+      return { userId: user.id, tenant: preferred.tenants };
+    }
+    // Cookie apuntaba a un tenant sin membership válida — la ignoramos y
+    // caemos al primer tenant "de default" abajo.
+  }
+
   const { data } = await svc
     .from('memberships')
     .select('tenant_id, tenants ( id, slug, name )')
