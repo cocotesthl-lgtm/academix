@@ -206,7 +206,12 @@ export default async function StorefrontLayout({
       className="min-h-screen bg-white text-black"
       style={{
         ['--brand-primary' as string]: primary,
-        ['--brand-accent' as string]: accent
+        ['--brand-accent' as string]: accent,
+        // Override de las vars usadas por la TopProgressBar y el spinner
+        // de nav global. Antes eran orange hardcoded en globals.css y no
+        // combinaban con el brand del tenant.
+        ['--cp-brand-primary' as string]: primary,
+        ['--cp-brand-secondary' as string]: accent
       }}
     >
       {isAffiliate && !affBarHidden && (

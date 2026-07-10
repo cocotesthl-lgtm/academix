@@ -46,7 +46,10 @@ html, body {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, var(--cp-brand-primary) 0%, var(--cp-brand-secondary) 100%);
-  box-shadow: 0 0 8px rgba(249, 115, 22, 0.55);
+  /* Shadow deriva del color con color-mix — antes era rgba(249,115,22,0.55)
+     hardcoded (naranja), no combinaba cuando el tenant tenía otro color.
+     color-mix es soportado por todos los browsers evergreen desde 2023. */
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cp-brand-primary) 55%, transparent);
   animation: cp-progress 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   border-radius: 0 2px 2px 0;
 }

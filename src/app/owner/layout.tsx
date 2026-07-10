@@ -118,7 +118,18 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
     </>
   );
 
+  // Tinting global: overrideamos --cp-brand-primary / --cp-brand-secondary
+  // con el color del tenant para que la barra de progreso, el spinner de
+  // navegación y cualquier otro elemento que use estas vars combinen con
+  // el brand del owner que está usando el panel.
+  const brandPrimaryHex = currentBrand?.primary_color ?? '#f97316';
+  const brandVars = {
+    ['--cp-brand-primary' as string]: brandPrimaryHex,
+    ['--cp-brand-secondary' as string]: brandPrimaryHex
+  };
+
   return (
+    <div style={brandVars}>
     <OwnerShell brandName={tenant.name} storefrontUrl={storefrontUrl} sidebar={sidebar}>
       {impersonating && (
         <div className="mb-4 rounded-lg bg-amber-500 text-amber-950 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-sm font-medium">
@@ -148,5 +159,6 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
       )}
       {children}
     </OwnerShell>
+    </div>
   );
 }
