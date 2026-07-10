@@ -75,9 +75,15 @@ export function ProductEditorForm({
               value={gallery}
               onChange={(e) => setGallery(e.target.value)}
               rows={4}
-              placeholder="https://…&#10;https://…"
+              placeholder="https://…imagen.jpg&#10;https://youtube.com/watch?v=…&#10;https://…video.mp4"
               className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono focus:outline-none focus:border-white/40"
             />
+            <p className="text-[10px] text-white/40 mt-1.5 leading-snug">
+              🎬 <strong>Soporta videos</strong>: pegá links de YouTube, Vimeo o
+              archivos <code>.mp4</code>/<code>.webm</code> — se detectan solos y
+              aparecen con ▶ en la galería. El buyer los ve inline o en fullscreen
+              al clickear.
+            </p>
           </div>
         </div>
 
