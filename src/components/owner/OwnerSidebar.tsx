@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
-import { ALL_MODULES_ON, MODULE_META, MODULE_TREE, type ModuleKey, type Modules } from '@/lib/modules/types';
+import { ALL_MODULES_ON, MODULE_TREE, type ModuleKey, type Modules } from '@/lib/modules/types';
 import { viewableModules, type Permissions } from '@/lib/permissions/types';
 
 /**
@@ -365,32 +365,20 @@ export function OwnerSidebar({
               // para saber si mostrar el "🧩 Descubrir apps" al final.
               const hasInactiveSubs = subKeys.some((k) => modules[k] === false);
 
+              // Lista plana: items base + items de sub-módulos ACTIVOS.
+              // Sin mini-headers de sub-módulos (feedback usuario: rompe la
+              // lectura, no se entiende qué es un título y qué un ítem).
+              // Los items apagados no aparecen — se descubren desde /modulos.
+              const flatItems: NavItem[] = [
+                ...baseItems,
+                ...subKeys.flatMap((k) =>
+                  modules[k] === false ? [] : (bySubKey.get(k) ?? [])
+                )
+              ];
+
               return (
                 <div className="ml-6 mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-white/10 pl-2">
-                  {/* Items base (sin sub-módulo) */}
-                  {baseItems.map(renderItem)}
-
-                  {/* Sub-módulos: SOLO los activos. Los apagados no aparecen
-                      en el sidebar — se descubren desde /modulos (App Market).
-                      Esto evita la confusión Wix-style de items que aparecen
-                      y desaparecen sin contexto. */}
-                  {subKeys.map((subKey) => {
-                    if (modules[subKey] === false) return null;
-                    const items = bySubKey.get(subKey);
-                    if (!items || items.length === 0) return null;
-                    const meta = MODULE_META[subKey];
-
-                    return (
-                      <div key={subKey} className="mt-1.5">
-                        {/* Mini-header del sub-módulo */}
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] uppercase tracking-widest font-semibold text-white/45">
-                          {meta.emoji && <span className="text-[11px]">{meta.emoji}</span>}
-                          <span className="truncate">{meta.label}</span>
-                        </div>
-                        {items.map(renderItem)}
-                      </div>
-                    );
-                  })}
+                  {flatItems.map(renderItem)}
 
                   {/* Discovery link: si hay apps de esta categoría sin
                       instalar, empujar a la App Market. */}
