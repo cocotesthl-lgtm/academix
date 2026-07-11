@@ -1,7 +1,6 @@
 import { requireOwner } from '@/lib/auth/guards';
 import { getTenantModules } from '@/lib/modules/queries';
-import { applyPresetAction } from '@/lib/modules/actions';
-import { MODULE_KEYS, MODULE_META, MODULE_PRESETS, MODULE_LEVEL, type ModuleKey } from '@/lib/modules/types';
+import { MODULE_KEYS, MODULE_META, MODULE_LEVEL, type ModuleKey } from '@/lib/modules/types';
 import { PageHeader } from '@/components/owner/PageHeader';
 import { AppMarket, type AppCard } from '@/components/owner/apps/AppMarket';
 
@@ -61,34 +60,6 @@ export default async function ModulosPage() {
         title="App Market"
         description="Descubrí y activá funcionalidades para tu negocio. Cada app suma features a tu panel sin tener que configurar nada."
       />
-
-      {/* Presets rápidos */}
-      <section className="rounded-xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">⚡</span>
-          <h2 className="text-sm font-semibold">Packs recomendados</h2>
-        </div>
-        <p className="text-xs text-white/55">
-          Instalá varias apps de una vez según el tipo de negocio. Podés ajustar app por app después.
-        </p>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {(Object.keys(MODULE_PRESETS) as Array<keyof typeof MODULE_PRESETS>).map((key) => {
-            const p = MODULE_PRESETS[key];
-            return (
-              <form key={key} action={applyPresetAction}>
-                <input type="hidden" name="preset" value={key} />
-                <button
-                  type="submit"
-                  className="w-full text-left rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/25 p-3 transition"
-                >
-                  <div className="font-medium text-sm">{p.label}</div>
-                  <div className="text-[11px] text-white/50 mt-0.5 leading-snug">{p.description}</div>
-                </button>
-              </form>
-            );
-          })}
-        </div>
-      </section>
 
       {/* Marketplace */}
       <AppMarket apps={apps} categories={categories} />

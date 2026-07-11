@@ -215,7 +215,7 @@ export const PRODUCT_TYPES: ProductTypeSpec[] = [
     lessonLabel: 'pasos',
     showContentSection: false,
     ctaText: 'Cargar saldo',
-    moduleKey: 'courses'
+    moduleKey: 'wallets'
   }
 ];
 

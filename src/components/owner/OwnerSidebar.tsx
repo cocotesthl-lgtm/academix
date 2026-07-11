@@ -88,7 +88,6 @@ const NAV: NavEntry[] = [
         { label: 'Órdenes (tienda)', href: '/orders', moduleKey: 'ecommerce' },
         { label: 'Analytics', href: '/analytics' },
         { label: 'Suscripciones', href: '/suscripciones' },
-        { label: 'Saldos', href: '/wallets' },
         { label: 'Finanzas', href: '/finance' }
       ]
     }
@@ -128,6 +127,7 @@ const NAV: NavEntry[] = [
         { label: 'Promociones', href: '/promotions', moduleKey: 'promotions' },
         { label: 'Dropshipping', href: '/dropship', moduleKey: 'dropshipping' },
         { label: 'Planes / Cuentas', href: '/cuentas', moduleKey: 'plans' },
+        { label: 'Saldos', href: '/wallets', moduleKey: 'wallets' },
         { label: 'Categorías', href: '/categories' },
         { label: 'Envíos', href: '/shipping', moduleKey: 'ecommerce' },
         { label: 'Gift cards', href: '/giftcards' },

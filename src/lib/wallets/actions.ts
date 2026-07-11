@@ -32,6 +32,32 @@ export async function adminAdjustWalletAction(formData: FormData): Promise<void>
   revalidatePath('/owner/wallets');
 }
 
+/* ───── Owner: config de currency ───── */
+
+/**
+ * Guarda el nombre + símbolo de la moneda de la wallet del tenant.
+ * Ej: label='BTC' symbol='₿'. Se muestra en la UI de saldos y en la
+ * página pública /saldo del cliente.
+ */
+export async function setWalletCurrencyAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const rawLabel = String(formData.get('label') ?? '').trim();
+  const rawSymbol = String(formData.get('symbol') ?? '').trim();
+  // Sanitize: label max 12 chars, symbol max 4 chars (₿, US$, etc.)
+  const label = rawLabel.slice(0, 12) || 'ARS';
+  const symbol = rawSymbol.slice(0, 4) || '$';
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('tenants') as any)
+    .update({
+      wallet_currency_label: label,
+      wallet_currency_symbol: symbol,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', tenant.id);
+  revalidatePath('/owner/wallets');
+}
+
 /* ───── Owner: toggles de features wallet ───── */
 
 export async function setWalletTransfersEnabledAction(formData: FormData): Promise<void> {

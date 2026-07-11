@@ -35,7 +35,7 @@ export const MODULE_KEYS = [
   // Macro (F2)
   'catalog', 'calendar', 'crm', 'team', 'sales', 'site',
   // Submódulos de Catálogo (F2.b)
-  'courses', 'ecommerce', 'vip', 'bundles', 'promotions', 'dropshipping', 'plans',
+  'courses', 'ecommerce', 'vip', 'bundles', 'promotions', 'dropshipping', 'plans', 'wallets',
   // Submódulos de Agenda (F2.b)
   'events', 'reservations',
   // Submódulos de CRM (F2.b)
@@ -47,7 +47,7 @@ export type Modules = Record<ModuleKey, boolean>;
 /** Todo prendido — default para tenants existentes (retrocompat). */
 export const ALL_MODULES_ON: Modules = {
   catalog: true, calendar: true, crm: true, team: true, sales: true, site: true,
-  courses: true, ecommerce: true, vip: true, bundles: true, promotions: true, dropshipping: true, plans: true,
+  courses: true, ecommerce: true, vip: true, bundles: true, promotions: true, dropshipping: true, plans: true, wallets: true,
   events: true, reservations: true,
   blog: true, forms: true, affiliates: true
 };
@@ -58,7 +58,7 @@ export const ALL_MODULES_ON: Modules = {
  * está prendido; apagar el macro esconde toda la sección.
  */
 export const MODULE_TREE: Partial<Record<ModuleKey, ModuleKey[]>> = {
-  catalog:  ['courses', 'ecommerce', 'vip', 'bundles', 'promotions', 'dropshipping', 'plans'],
+  catalog:  ['courses', 'ecommerce', 'vip', 'bundles', 'promotions', 'dropshipping', 'plans', 'wallets'],
   calendar: ['events', 'reservations'],
   crm:      ['blog', 'forms', 'affiliates']
 };
@@ -69,7 +69,7 @@ export const MODULE_TREE: Partial<Record<ModuleKey, ModuleKey[]>> = {
  */
 export const MODULE_LEVEL: Record<ModuleKey, 'macro' | 'sub'> = {
   catalog: 'macro', calendar: 'macro', crm: 'macro', team: 'macro', sales: 'macro', site: 'macro',
-  courses: 'sub', ecommerce: 'sub', vip: 'sub', bundles: 'sub', promotions: 'sub', dropshipping: 'sub', plans: 'sub',
+  courses: 'sub', ecommerce: 'sub', vip: 'sub', bundles: 'sub', promotions: 'sub', dropshipping: 'sub', plans: 'sub', wallets: 'sub',
   events: 'sub', reservations: 'sub',
   blog: 'sub', forms: 'sub', affiliates: 'sub'
 };
@@ -210,6 +210,21 @@ export const MODULE_META: Record<ModuleKey, {
       'Cliente puede ver historial y renovar solo',
       'Facturación recurrente automática via MP',
       'Estados: activo, suspendido, cancelado, moroso'
+    ]
+  },
+  wallets: {
+    label: 'Saldos (wallet interna)',
+    description: 'Wallet estilo MercadoPago/PayPal dentro de tu sitio. Vendé "carga de saldo", regalá saldo con cualquier compra, y tu cliente lo gasta como quiera.',
+    longDescription: 'Cada cliente tiene una billetera en tu tienda con moneda personalizable (ARS, USD, BTC, "Créditos"…). Podés venderla como producto tipo "Carga de saldo", regalar saldo bonus en cualquier compra o suscripción, y hasta permitir transferencias entre clientes o retiros.',
+    sidebarGroup: 'Catálogo',
+    emoji: '💰',
+    features: [
+      'Nombre y símbolo de la moneda personalizables (BTC, USD, ARS, Créditos, etc.)',
+      'Producto tipo "Carga de saldo" — el cliente paga y se le acredita',
+      'Bonus configurable por producto: regalá saldo al comprar cualquier cosa',
+      'Transferencias entre clientes (opcional)',
+      'Solicitudes de retiro con aprobación manual',
+      'Historial de movimientos + ajustes admin'
     ]
   },
   // ── SUB de Agenda ────────────────────────────────────────

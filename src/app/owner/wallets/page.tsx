@@ -4,9 +4,11 @@ import {
   adminAdjustWalletAction,
   setWalletTransfersEnabledAction,
   setWalletWithdrawalsEnabledAction,
+  setWalletCurrencyAction,
   approveWithdrawalAction,
   rejectWithdrawalAction
 } from '@/lib/wallets/actions';
+import Link from 'next/link';
 import { PageHeader } from '@/components/owner/PageHeader';
 import { SegmentedTabs, SALES_TABS } from '@/components/owner/SegmentedTabs';
 
@@ -40,6 +42,8 @@ export default async function WalletsPage() {
   let profiles = new Map<string, { display_name: string | null; email: string | null }>();
   let transfersEnabled = false;
   let withdrawalsEnabled = false;
+  let currencyLabel = 'ARS';
+  let currencySymbol = '$';
   let pendingWithdrawals: Array<{
     id: string; user_id: string; amount_cents: number; currency: string;
     method: string | null; destination: string | null; note: string | null;
@@ -49,10 +53,13 @@ export default async function WalletsPage() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: t } = await (svc.from('tenants') as any)
-      .select('wallet_transfers_enabled, wallet_withdrawals_enabled').eq('id', tenant.id).maybeSingle();
+      .select('wallet_transfers_enabled, wallet_withdrawals_enabled, wallet_currency_label, wallet_currency_symbol')
+      .eq('id', tenant.id).maybeSingle();
     transfersEnabled = !!t?.wallet_transfers_enabled;
     withdrawalsEnabled = !!t?.wallet_withdrawals_enabled;
-  } catch { /* migration 0042 pendiente */ }
+    if (t?.wallet_currency_label) currencyLabel = t.wallet_currency_label;
+    if (t?.wallet_currency_symbol) currencySymbol = t.wallet_currency_symbol;
+  } catch { /* migration 0042/0061 pendiente */ }
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: pw } = await (svc.from('wallet_withdrawal_requests') as any)
@@ -100,6 +107,55 @@ export default async function WalletsPage() {
 
       {!migrationMissing && (
         <>
+          {/* ── Configuración de la moneda ── */}
+          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-emerald-500/[0.06] to-transparent p-5 space-y-3">
+            <div className="flex items-baseline justify-between gap-3 flex-wrap">
+              <h2 className="font-semibold text-sm">🪙 Moneda de la wallet</h2>
+              <span className="text-[11px] text-white/50">
+                Preview: <strong className="font-mono text-emerald-300">{currencySymbol} 1.500,00 {currencyLabel}</strong>
+              </span>
+            </div>
+            <p className="text-xs text-white/60 leading-snug">
+              Podés usar la moneda oficial (ARS, USD) o algo propio: <em>Créditos</em>, <em>Puntos</em>,
+              <em>Coins</em>, o incluso una cripto como BTC. Se muestra en el panel del owner y en
+              la página pública <code className="text-[10px] bg-black/40 px-1 rounded">/saldo</code> del cliente.
+            </p>
+            <form action={setWalletCurrencyAction} className="grid sm:grid-cols-[1fr_1fr_auto] gap-2 items-end pt-1">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/45">Nombre corto</label>
+                <input name="label" defaultValue={currencyLabel} maxLength={12}
+                  placeholder="ARS / BTC / Créditos"
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/45">Símbolo</label>
+                <input name="symbol" defaultValue={currencySymbol} maxLength={4}
+                  placeholder="$ / ₿ / ★"
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm font-mono" />
+              </div>
+              <button type="submit"
+                className="rounded bg-white text-black text-sm font-semibold px-4 py-1.5 hover:bg-white/90 h-fit">
+                Guardar
+              </button>
+            </form>
+          </div>
+
+          {/* ── Cross-link: "Carga de saldo" como producto vendible ── */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex items-start gap-3 flex-wrap">
+            <div className="text-2xl leading-none">🛒</div>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-sm">Vendé "Carga de saldo" como producto</div>
+              <p className="text-xs text-white/60 mt-0.5 leading-snug">
+                Creá una publicación tipo "Carga de saldo": el cliente paga, se le acredita en su wallet.
+                También podés regalar bonus en cualquier compra (curso, físico, etc.) desde el editor del producto.
+              </p>
+            </div>
+            <Link href="/crear-oferta?type=topup"
+              className="text-xs px-3 py-2 rounded bg-white text-black font-semibold hover:bg-white/90 whitespace-nowrap">
+              + Nueva carga de saldo
+            </Link>
+          </div>
+
           {/* ── Feature flags: transferencias + retiros ── */}
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5 space-y-3">
             <h2 className="font-semibold text-sm">Habilitar acciones para tus clientes</h2>
@@ -188,7 +244,8 @@ export default async function WalletsPage() {
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
               <div className="text-xs text-white/55 uppercase tracking-wide">Saldo total acumulado</div>
               <div className="text-2xl font-bold mt-1 font-mono">
-                $ {(totalBalance / 100).toLocaleString('es-AR')}
+                {currencySymbol} {(totalBalance / 100).toLocaleString('es-AR')}
+                <span className="text-xs text-white/45 ml-1.5 font-sans font-normal">{currencyLabel}</span>
               </div>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">

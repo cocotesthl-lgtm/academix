@@ -1576,4 +1576,17 @@ drop policy if exists giftcards_public_read_by_code on public.gift_cards;
 create policy giftcards_public_read_by_code on public.gift_cards
   for select to anon, authenticated using (true);
 
+-- ── 0061_wallet_app ──────────────────────────────────────────────
+-- App "Saldos" formalizada: currency personalizable por tenant + bonus
+-- wallet en cualquier producto.
+alter table public.tenants
+  add column if not exists wallet_currency_label text default 'ARS',
+  add column if not exists wallet_currency_symbol text default '$';
+
+alter table public.courses
+  add column if not exists wallet_bonus_cents integer not null default 0;
+
+alter table public.physical_products
+  add column if not exists wallet_bonus_cents integer not null default 0;
+
 -- ✓ Listo. Recargá la app.

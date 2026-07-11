@@ -480,7 +480,7 @@ export async function processMpPayment(opts: {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: pt } = await (svc.from('courses') as any)
-        .select('product_type, topup_amount_cents, price_cents, currency')
+        .select('product_type, topup_amount_cents, price_cents, currency, wallet_bonus_cents')
         .eq('id', resolvedCourse.id).maybeSingle();
       if (pt?.product_type === 'topup') {
         // Anti-doble-acreditación: si ya hay tx con este sale_id, skip
@@ -508,7 +508,31 @@ export async function processMpPayment(opts: {
         // Saltea la creación de enrollment estándar — topups no son cursos.
         return { ok: true, saleId, reused };
       }
-    } catch { /* migration 0041 pendiente — caemos al flujo normal */ }
+
+      // ─── Bonus wallet: cualquier producto puede regalar saldo al comprar.
+      //  Se corre además del enrollment normal (no reemplaza nada). Idempotente
+      //  con el mismo mecanismo que topup: check por sale_id en wallet_transactions.
+      const bonus = Number(pt?.wallet_bonus_cents ?? 0);
+      if (bonus > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: existingBonusTx } = await (svc.from('wallet_transactions') as any)
+          .select('id').eq('sale_id', saleId).eq('kind', 'topup').maybeSingle();
+        if (!existingBonusTx) {
+          const { creditWallet } = await import('@/lib/wallets/credit');
+          await creditWallet({
+            tenantId: opts.tenantId,
+            userId: buyerUserId,
+            amountCents: bonus,
+            kind: 'topup',
+            courseId: resolvedCourse.id,
+            saleId,
+            note: `Bonus por compra: ${resolvedCourse.title}`,
+            currency: pt?.currency || 'ARS'
+          });
+        }
+        // fall through al enrollment — el bonus es adicional al producto
+      }
+    } catch { /* migration 0041/0061 pendiente — caemos al flujo normal */ }
   }
 
   // Auto-enroll on approved payment (idempotente: ignoramos si ya existe)
