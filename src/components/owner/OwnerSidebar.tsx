@@ -62,67 +62,9 @@ type NavEntry =
 const NAV: NavEntry[] = [
   { kind: 'item', icon: 'home', item: { label: 'Inicio', href: '/dashboard' } },
 
-  // Sección "APPS" — todo lo que es del negocio (features instalables +
-  // grupos que dependen de ellas). Separador visual gris con borde.
-  { kind: 'section', label: 'Apps' },
-
-  // Todo lo que ofrecés + cómo se compra
-  {
-    kind: 'group',
-    group: {
-      label: 'Catálogo', icon: 'shopping-bag', moduleKey: 'catalog',
-      items: [
-        // Cada item con moduleKey: si ese submódulo está apagado, el item
-        // desaparece del sidebar. Items sin moduleKey siempre visibles
-        // mientras el macro (catalog) esté prendido.
-        { label: 'Publicaciones', href: '/courses', moduleKey: 'courses' },
-        { label: 'Productos físicos', href: '/products', moduleKey: 'ecommerce' },
-        { label: 'Contenido VIP', href: '/vip', moduleKey: 'vip' },
-        { label: 'Bundles', href: '/bundles', moduleKey: 'bundles' },
-        // Cupones y códigos promo viven ahora dentro de /promotions
-        // (unificado — todo tipo de descuento se maneja desde ahí)
-        { label: 'Promociones', href: '/promotions', moduleKey: 'promotions' },
-        { label: 'Dropshipping', href: '/dropship', moduleKey: 'dropshipping' },
-        { label: 'Planes / Cuentas', href: '/cuentas', moduleKey: 'plans' },
-        { label: 'Categorías', href: '/categories' },
-        { label: 'Envíos', href: '/shipping', moduleKey: 'ecommerce' },
-        { label: 'Gift cards', href: '/giftcards' },
-        { label: 'Checkout', href: '/checkout' }
-      ]
-    }
-  },
-
-  // Todo lo que tiene fecha/hora (renombré "Eventos" → "Agenda")
-  {
-    kind: 'group',
-    group: {
-      label: 'Agenda', icon: 'calendar', moduleKey: 'calendar',
-      items: [
-        { label: 'Calendario', href: '/eventos/calendario' },
-        { label: 'Reservas', href: '/reservas', moduleKey: 'reservations' },
-        { label: 'Validar entradas', href: '/eventos/validar', moduleKey: 'events' },
-        { label: 'Asistencia', href: '/eventos/asistencia', moduleKey: 'events' },
-        { label: 'Sedes', href: '/venues' }
-      ]
-    }
-  },
-
-  // Captación + conversión + comunicación (afiliados va acá porque su
-  // función funcional es traer leads)
-  {
-    kind: 'group',
-    group: {
-      label: 'CRM & Marketing', icon: 'megaphone', moduleKey: 'crm',
-      items: [
-        { label: 'Leads', href: '/crm' },
-        { label: 'Clientes', href: '/clientes' },
-        { label: 'Blog', href: '/blog', moduleKey: 'blog' },
-        { label: 'Formularios', href: '/forms', moduleKey: 'forms' },
-        { label: 'Mensajes', href: '/mensajes' },
-        { label: 'Afiliados', href: '/affiliates', moduleKey: 'affiliates' }
-      ]
-    }
-  },
+  // ── BASELINE (siempre visibles cuando su macro está prendido) ────
+  // Estos grupos no tienen apps instalables — son features estructurales
+  // del panel. No van bajo la sección "APPS".
 
   // Solo gente que trabaja con vos (staff / instructores)
   {
@@ -152,7 +94,7 @@ const NAV: NavEntry[] = [
     }
   },
 
-  // Solo lo visual + su dirección web
+  // Solo lo visual + su dirección web + link al App Market
   {
     kind: 'group',
     group: {
@@ -167,10 +109,68 @@ const NAV: NavEntry[] = [
     }
   },
 
-  // Sección "CUENTA" — todo lo que es de la plataforma OfferNow, no del negocio
+  // ── SECCIÓN "APPS" ───────────────────────────────────────────────
+  // Grupos que dependen de apps instalables. Si ningún sub-módulo del
+  // grupo está activo, el grupo desaparece por completo. Y si TODOS
+  // los grupos de esta sección desaparecen, el header "APPS" también.
+  { kind: 'section', label: 'Apps' },
+
+  // Todo lo que ofrecés + cómo se compra
+  {
+    kind: 'group',
+    group: {
+      label: 'Catálogo', icon: 'shopping-bag', moduleKey: 'catalog',
+      items: [
+        { label: 'Publicaciones', href: '/courses', moduleKey: 'courses' },
+        { label: 'Productos físicos', href: '/products', moduleKey: 'ecommerce' },
+        { label: 'Contenido VIP', href: '/vip', moduleKey: 'vip' },
+        { label: 'Bundles', href: '/bundles', moduleKey: 'bundles' },
+        { label: 'Promociones', href: '/promotions', moduleKey: 'promotions' },
+        { label: 'Dropshipping', href: '/dropship', moduleKey: 'dropshipping' },
+        { label: 'Planes / Cuentas', href: '/cuentas', moduleKey: 'plans' },
+        { label: 'Categorías', href: '/categories' },
+        { label: 'Envíos', href: '/shipping', moduleKey: 'ecommerce' },
+        { label: 'Gift cards', href: '/giftcards' },
+        { label: 'Checkout', href: '/checkout' }
+      ]
+    }
+  },
+
+  // Todo lo que tiene fecha/hora
+  {
+    kind: 'group',
+    group: {
+      label: 'Agenda', icon: 'calendar', moduleKey: 'calendar',
+      items: [
+        { label: 'Calendario', href: '/eventos/calendario' },
+        { label: 'Reservas', href: '/reservas', moduleKey: 'reservations' },
+        { label: 'Validar entradas', href: '/eventos/validar', moduleKey: 'events' },
+        { label: 'Asistencia', href: '/eventos/asistencia', moduleKey: 'events' },
+        { label: 'Sedes', href: '/venues' }
+      ]
+    }
+  },
+
+  // Captación + conversión + comunicación
+  {
+    kind: 'group',
+    group: {
+      label: 'CRM & Marketing', icon: 'megaphone', moduleKey: 'crm',
+      items: [
+        { label: 'Leads', href: '/crm' },
+        { label: 'Clientes', href: '/clientes' },
+        { label: 'Blog', href: '/blog', moduleKey: 'blog' },
+        { label: 'Formularios', href: '/forms', moduleKey: 'forms' },
+        { label: 'Mensajes', href: '/mensajes' },
+        { label: 'Afiliados', href: '/affiliates', moduleKey: 'affiliates' }
+      ]
+    }
+  },
+
+  // ── SECCIÓN "CUENTA" ─────────────────────────────────────────────
   { kind: 'section', label: 'Cuenta' },
 
-  // Solo lo de la plataforma OfferNow, no del negocio
+  // Plataforma OfferNow, no del negocio
   {
     kind: 'group',
     group: {
@@ -183,6 +183,13 @@ const NAV: NavEntry[] = [
     }
   }
 ];
+
+/**
+ * Módulos macro que son "categorías de apps" — sus grupos solo se
+ * muestran si tienen algún sub-módulo activo. Si el macro está prendido
+ * pero ninguno de sus sub-apps lo está, el grupo entero desaparece.
+ */
+const APP_MACRO_KEYS: ModuleKey[] = ['catalog', 'calendar', 'crm'];
 
 function pathMatches(itemHref: string, pathname: string): boolean {
   if (itemHref === pathname) return true;
@@ -220,15 +227,24 @@ export function OwnerSidebar({
   // "Activar {módulo}" cuando el sub está off. Esto evita la confusión
   // Wix-style: items apareciendo/desapareciendo sin contexto.
   const visibleNav = useMemo(() => {
-    // 1) filtro por permisos/modulos
+    // 1) filtro por permisos/módulos + grupos APPS sin sub-apps activas
     const filtered = NAV.filter((entry) => {
       if (entry.kind === 'item') return true;
       if (entry.kind === 'section') return true;
       const key = entry.group.moduleKey;
       if (!key) return true;
       if (modules[key] === false) return false;
-      if (treatAsOwner) return true;
-      return viewable.has(key);
+      if (!treatAsOwner && !viewable.has(key)) return false;
+
+      // Grupo APPS: exigir al menos un sub-módulo activo. Si ninguno lo
+      // está, el grupo entero desaparece (el user activa apps desde
+      // Mi sitio → Apps).
+      if (APP_MACRO_KEYS.includes(key)) {
+        const subs = MODULE_TREE[key] ?? [];
+        const anyActive = subs.some((s) => modules[s] !== false);
+        if (!anyActive) return false;
+      }
+      return true;
     });
     // 2) eliminar section headers huérfanos: si una sección no tiene
     //    ningún grupo/item detrás (hasta la próxima sección), se saca.
