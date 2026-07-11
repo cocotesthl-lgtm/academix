@@ -153,8 +153,9 @@ const NAV: NavEntry[] = [
       items: [
         { label: 'Editor de páginas', href: '/site' },
         { label: 'Templates', href: '/templates' },
+        { label: 'Apps', href: '/modulos' },                // App Market — instalar features
         { label: 'Identidad', href: '/branding' },
-        { label: 'Dominio', href: '/dominio' }              // movido desde "Configuración"
+        { label: 'Dominio', href: '/dominio' }
       ]
     }
   },
@@ -166,7 +167,6 @@ const NAV: NavEntry[] = [
       label: 'Configuración', icon: 'settings',
       items: [
         { label: 'Mi plan', href: '/mi-plan' },
-        { label: 'Apps', href: '/modulos' },                 // App Market — instalar/desinstalar features
         { label: 'Integraciones', href: '/integrations' },
         { label: 'Soporte', href: '/soporte' }
       ]
@@ -361,14 +361,9 @@ export function OwnerSidebar({
                 );
               }
 
-              // ¿Hay al menos un sub-módulo instalable pero apagado? Sirve
-              // para saber si mostrar el "🧩 Descubrir apps" al final.
-              const hasInactiveSubs = subKeys.some((k) => modules[k] === false);
-
               // Lista plana: items base + items de sub-módulos ACTIVOS.
-              // Sin mini-headers de sub-módulos (feedback usuario: rompe la
-              // lectura, no se entiende qué es un título y qué un ítem).
-              // Los items apagados no aparecen — se descubren desde /modulos.
+              // Sin mini-headers de sub-módulos ni discovery link — la
+              // exploración de apps se hace desde "Mi sitio → Apps".
               const flatItems: NavItem[] = [
                 ...baseItems,
                 ...subKeys.flatMap((k) =>
@@ -379,24 +374,6 @@ export function OwnerSidebar({
               return (
                 <div className="ml-6 mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-white/10 pl-2">
                   {flatItems.map(renderItem)}
-
-                  {/* Discovery link: si hay apps de esta categoría sin
-                      instalar, empujar a la App Market. */}
-                  {hasInactiveSubs && (
-                    <a
-                      href="/modulos"
-                      onClick={(e) => {
-                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                        e.preventDefault();
-                        navigate('/modulos');
-                      }}
-                      className="mt-2 mx-1 flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] text-white/40 hover:text-white/80 hover:bg-white/[0.03] transition"
-                    >
-                      <span>🧩</span>
-                      <span>Descubrir más apps</span>
-                      <span className="ml-auto opacity-60">→</span>
-                    </a>
-                  )}
                 </div>
               );
             })()}
