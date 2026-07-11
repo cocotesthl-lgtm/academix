@@ -168,10 +168,16 @@ export default async function DropshipPage() {
                   className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90">
                   Guardar perfil
                 </button>
-                <Link href="/supplier/products"
-                  className="text-xs text-emerald-300 hover:underline">
-                  Ir a mi catálogo mayorista →
-                </Link>
+                <div className="flex items-center gap-3">
+                  <Link href="/supplier/orders"
+                    className="text-xs text-emerald-300 hover:underline">
+                    Ver mis órdenes a enviar →
+                  </Link>
+                  <Link href="/supplier/products"
+                    className="text-xs text-emerald-300 hover:underline">
+                    Mi catálogo mayorista →
+                  </Link>
+                </div>
               </div>
             </form>
           </>

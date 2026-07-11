@@ -293,6 +293,53 @@ export async function addListingAction(formData: FormData): Promise<void> {
   }
 }
 
+/* ─────────────────────────────────────────────────────────────
+ * Supplier order fulfillment: marcar como enviada + tracking.
+ * ───────────────────────────────────────────────────────────── */
+
+export async function markSupplierOrderShippedAction(formData: FormData): Promise<void> {
+  const { tenantId } = await requireSupplier();
+  const svc = getServiceClient();
+  const orderId = String(formData.get('order_id') ?? '');
+  const tracking = String(formData.get('tracking_number') ?? '').trim().slice(0, 60) || null;
+  const carrier = String(formData.get('carrier') ?? '').trim().slice(0, 40) || null;
+  const notes = String(formData.get('supplier_notes') ?? '').trim().slice(0, 500) || null;
+  if (!orderId) return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('supplier_orders') as any).update({
+      status: 'shipped',
+      shipped_at: new Date().toISOString(),
+      tracking_number: tracking,
+      carrier,
+      supplier_notes: notes,
+      updated_at: new Date().toISOString()
+    }).eq('id', orderId).eq('supplier_tenant_id', tenantId);
+    revalidatePath('/owner/supplier/orders');
+    revalidatePath(`/owner/supplier/orders/${orderId}`);
+  } catch (e) {
+    console.error('[markSupplierOrderShipped]', e);
+  }
+}
+
+export async function markSupplierOrderDeliveredAction(formData: FormData): Promise<void> {
+  const { tenantId } = await requireSupplier();
+  const svc = getServiceClient();
+  const orderId = String(formData.get('order_id') ?? '');
+  if (!orderId) return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('supplier_orders') as any).update({
+      status: 'delivered',
+      delivered_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }).eq('id', orderId).eq('supplier_tenant_id', tenantId);
+    revalidatePath('/owner/supplier/orders');
+  } catch (e) {
+    console.error('[markSupplierOrderDelivered]', e);
+  }
+}
+
 export async function removeListingAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const listingId = String(formData.get('listing_id') ?? '');

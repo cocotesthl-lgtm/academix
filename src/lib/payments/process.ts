@@ -215,6 +215,105 @@ export async function processMpPayment(opts: {
             note: `MP payment ${payment.id}`
           });
         }
+
+        // ── Dropshipping: rutear items al supplier ─────────────────
+        // Para cada item del pedido chequeamos si su physical_product_id
+        // tiene un catalog_listings asociado (o sea es shadow product de
+        // un supplier). Agrupamos por supplier_tenant_id y creamos 1
+        // supplier_orders row por supplier con sus items.
+        // Wrapped en try/catch para no romper el flujo de pago si algo
+        // falla (siempre gana la finalización de la orden del reseller).
+        try {
+          const productIds = orderItems.map((i) => i.product_id).filter((v): v is string => !!v);
+          if (productIds.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: listings } = await (svc.from('catalog_listings') as any)
+              .select('id, supplier_product_id, physical_product_id, supplier_products!inner(supplier_tenant_id, title, wholesale_price_cents, currency)')
+              .eq('reseller_tenant_id', opts.tenantId)
+              .in('physical_product_id', productIds);
+            type ListingRow = {
+              id: string;
+              supplier_product_id: string;
+              physical_product_id: string;
+              supplier_products: {
+                supplier_tenant_id: string;
+                title: string;
+                wholesale_price_cents: number;
+                currency: string;
+              };
+            };
+            const listingRows = (listings ?? []) as ListingRow[];
+            if (listingRows.length > 0) {
+              // Traer info del buyer + shipping para snapshot
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: ord } = await (svc.from('physical_orders') as any)
+                .select('buyer_email, buyer_name, buyer_phone, shipping_address, buyer_notes, currency')
+                .eq('id', orderId).maybeSingle();
+              const order = ord as {
+                buyer_email: string; buyer_name: string | null; buyer_phone: string | null;
+                shipping_address: Record<string, unknown> | null; buyer_notes: string | null;
+                currency: string;
+              } | null;
+              // Map physical_product_id → listing
+              const byPhysical = new Map(listingRows.map((l) => [l.physical_product_id, l]));
+              // Agrupar items por supplier_tenant_id
+              const bySupplier = new Map<string, {
+                items: Array<{ supplier_product_id: string; qty: number; wholesale_price_cents: number; title: string }>;
+                total_cents: number;
+              }>();
+              for (const item of orderItems) {
+                if (!item.product_id) continue;
+                const l = byPhysical.get(item.product_id);
+                if (!l) continue;
+                const supplierTid = l.supplier_products.supplier_tenant_id;
+                const existing = bySupplier.get(supplierTid) ?? { items: [], total_cents: 0 };
+                existing.items.push({
+                  supplier_product_id: l.supplier_product_id,
+                  qty: item.qty,
+                  wholesale_price_cents: l.supplier_products.wholesale_price_cents,
+                  title: l.supplier_products.title
+                });
+                existing.total_cents += l.supplier_products.wholesale_price_cents * item.qty;
+                bySupplier.set(supplierTid, existing);
+              }
+              // Crear 1 supplier_orders por supplier
+              for (const [supplierTid, group] of bySupplier) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await (svc.from('supplier_orders') as any).insert({
+                  supplier_tenant_id: supplierTid,
+                  reseller_tenant_id: opts.tenantId,
+                  reseller_order_id: orderId,
+                  buyer_email: order?.buyer_email ?? buyerEmail ?? 'unknown@offernow',
+                  buyer_name: order?.buyer_name ?? null,
+                  buyer_phone: order?.buyer_phone ?? null,
+                  shipping_address: order?.shipping_address ?? null,
+                  items: group.items,
+                  wholesale_total_cents: group.total_cents,
+                  currency: order?.currency ?? 'ARS',
+                  reseller_notes: order?.buyer_notes ?? null,
+                  status: 'confirmed',
+                  confirmed_at: new Date().toISOString()
+                });
+                // Decrementar stock del supplier también (track_stock=true)
+                for (const it of group.items) {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const { data: sp } = await (svc.from('supplier_products') as any)
+                    .select('stock_qty, track_stock')
+                    .eq('id', it.supplier_product_id).maybeSingle();
+                  if (sp?.track_stock) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    await (svc.from('supplier_products') as any)
+                      .update({ stock_qty: Math.max(0, (sp.stock_qty ?? 0) - it.qty) })
+                      .eq('id', it.supplier_product_id);
+                  }
+                }
+              }
+              console.log(`[process] dropship fanout: ${bySupplier.size} supplier_orders creados`);
+            }
+          }
+        } catch (e) {
+          console.error('[process] dropship fanout falló (no bloqueante):', e);
+        }
         // Si la orden tenía gift card aplicada, marcarla como redeemed.
         // El código está en la columna notes: "gift_card:<code>:<id>"
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
