@@ -51,13 +51,20 @@ function Icon({ name, className = 'w-4 h-4' }: { name: IconName; className?: str
 
 type NavItem = { label: string; href: string; badge?: string; moduleKey?: ModuleKey };
 type NavGroup = { label: string; icon: IconName; items: NavItem[]; moduleKey?: ModuleKey };
-type NavEntry = { kind: 'item'; item: NavItem; icon: IconName } | { kind: 'group'; group: NavGroup };
+type NavEntry =
+  | { kind: 'item'; item: NavItem; icon: IconName }
+  | { kind: 'group'; group: NavGroup }
+  | { kind: 'section'; label: string };
 
 // F1 (evolución nav): mismos ítems que antes, mejor agrupados.
 // Nada de rutas cambia — /courses sigue siendo /courses, etc. Solo se mueve
 // el árbol para que grupos tengan coherencia semántica.
 const NAV: NavEntry[] = [
   { kind: 'item', icon: 'home', item: { label: 'Inicio', href: '/dashboard' } },
+
+  // Sección "APPS" — todo lo que es del negocio (features instalables +
+  // grupos que dependen de ellas). Separador visual gris con borde.
+  { kind: 'section', label: 'Apps' },
 
   // Todo lo que ofrecés + cómo se compra
   {
@@ -160,6 +167,9 @@ const NAV: NavEntry[] = [
     }
   },
 
+  // Sección "CUENTA" — todo lo que es de la plataforma OfferNow, no del negocio
+  { kind: 'section', label: 'Cuenta' },
+
   // Solo lo de la plataforma OfferNow, no del negocio
   {
     kind: 'group',
@@ -210,13 +220,26 @@ export function OwnerSidebar({
   // "Activar {módulo}" cuando el sub está off. Esto evita la confusión
   // Wix-style: items apareciendo/desapareciendo sin contexto.
   const visibleNav = useMemo(() => {
-    return NAV.filter((entry) => {
+    // 1) filtro por permisos/modulos
+    const filtered = NAV.filter((entry) => {
       if (entry.kind === 'item') return true;
+      if (entry.kind === 'section') return true;
       const key = entry.group.moduleKey;
       if (!key) return true;
       if (modules[key] === false) return false;
       if (treatAsOwner) return true;
       return viewable.has(key);
+    });
+    // 2) eliminar section headers huérfanos: si una sección no tiene
+    //    ningún grupo/item detrás (hasta la próxima sección), se saca.
+    return filtered.filter((entry, i) => {
+      if (entry.kind !== 'section') return true;
+      for (let j = i + 1; j < filtered.length; j++) {
+        const next = filtered[j];
+        if (next.kind === 'section') return false; // sección vacía
+        return true; // hay contenido
+      }
+      return false; // última sección sin nada abajo
     });
   }, [modules, viewable, treatAsOwner]);
   // Highlight optimista — el item se marca activo APENAS se clickea,
@@ -278,7 +301,19 @@ export function OwnerSidebar({
 
   return (
     <nav className="flex flex-col gap-0.5 text-sm">
-      {visibleNav.map((entry) => {
+      {visibleNav.map((entry, i) => {
+        if (entry.kind === 'section') {
+          return (
+            <div
+              key={`section-${entry.label}-${i}`}
+              className="mt-4 mb-1 px-2.5 pt-2 border-t border-white/10 cp-collapse-hide"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-white/40">
+                {entry.label}
+              </span>
+            </div>
+          );
+        }
         if (entry.kind === 'item') {
           const active = isActive(entry.item.href);
           return (
