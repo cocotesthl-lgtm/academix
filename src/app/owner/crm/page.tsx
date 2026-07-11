@@ -150,7 +150,14 @@ export default async function CrmPage({ searchParams }: {
               <summary className="text-xs cursor-pointer text-white/50 hover:text-white px-3 py-1.5 rounded border border-dashed border-white/15 list-none">
                 + Nuevo pipeline
               </summary>
-              <div className="absolute mt-2 right-0 z-20 w-72 rounded-xl border border-white/15 bg-[#111] p-3 shadow-xl">
+              {/*
+                Popup posicionado abajo-izquierda del trigger, con ancho fijo
+                que no desborda el sidebar (max-w-[calc(100vw-1rem)]).
+                Antes usaba right-0 que en pantallas chicas y con el
+                sidebar del owner cortaba el modal.
+              */}
+              <div className="absolute mt-2 left-0 top-full z-30 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-white/15 bg-[#111] p-4 shadow-2xl">
+                <div className="text-sm font-semibold mb-2">Crear pipeline</div>
                 <form action={createPipelineAction} className="space-y-2">
                   <input name="name" required placeholder="Nombre del pipeline" autoFocus
                     className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />

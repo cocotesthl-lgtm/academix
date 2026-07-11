@@ -72,11 +72,13 @@ const NAV: NavEntry[] = [
         { label: 'Productos físicos', href: '/products', moduleKey: 'ecommerce' },
         { label: 'Contenido VIP', href: '/vip', moduleKey: 'vip' },
         { label: 'Bundles', href: '/bundles', moduleKey: 'bundles' },
+        // Cupones y códigos promo viven ahora dentro de /promotions
+        // (unificado — todo tipo de descuento se maneja desde ahí)
         { label: 'Promociones', href: '/promotions', moduleKey: 'promotions' },
         { label: 'Dropshipping', href: '/dropship', moduleKey: 'dropshipping' },
+        { label: 'Planes / Cuentas', href: '/cuentas', moduleKey: 'plans' },
         { label: 'Categorías', href: '/categories' },
         { label: 'Envíos', href: '/shipping', moduleKey: 'ecommerce' },
-        { label: 'Cupones', href: '/coupons' },
         { label: 'Gift cards', href: '/giftcards' },
         { label: 'Checkout', href: '/checkout' }
       ]
@@ -165,7 +167,6 @@ const NAV: NavEntry[] = [
       items: [
         { label: 'Mi plan', href: '/mi-plan' },
         { label: 'Módulos', href: '/modulos' },              // F2: qué módulos usa este workspace
-        { label: 'Cuentas / Planes', href: '/cuentas' },    // movido desde "Mis ventas"
         { label: 'Integraciones', href: '/integrations' },
         { label: 'Soporte', href: '/soporte' }
       ]

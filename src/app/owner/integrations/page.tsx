@@ -224,21 +224,26 @@ export default async function IntegrationsPage({
           y el alumno los ve en su panel sin poder descargarlos.
         </p>
 
-        <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-3 text-xs text-amber-100 space-y-2">
-          <div className="font-semibold text-amber-200">⚠️ Importante: cómo compartir el archivo</div>
-          <p className="text-amber-100/80">
-            Para que el embed funcione, el archivo en Drive tiene que ser <strong>público con el link</strong>.
+        {/* Card de instrucciones. Antes usaba amber-100 sobre bg amber-500/[0.04]
+            que no contrastaba bien. Ahora usa fondo neutral oscuro + texto
+            blanco con jerarquía por opacity (mismo patrón que el resto del panel). */}
+        <div className="mt-4 rounded-lg border border-amber-500/30 bg-black/40 p-4 text-sm space-y-2.5">
+          <div className="font-semibold text-amber-300 flex items-center gap-2">
+            <span>⚠️</span> Importante: cómo compartir el archivo
+          </div>
+          <p className="text-white/80">
+            Para que el embed funcione, el archivo en Drive tiene que ser <strong className="text-white">público con el link</strong>.
             Si no, el alumno ve &quot;sin permisos&quot;.
           </p>
-          <ol className="list-decimal list-inside space-y-0.5 text-amber-100/70">
+          <ol className="list-decimal list-inside space-y-1 text-white/75">
             <li>Abrí el archivo en Drive (video, PDF, imagen).</li>
-            <li>Click derecho → <strong>Compartir</strong>.</li>
-            <li>En &quot;Acceso general&quot;, elegí <strong>&quot;Cualquier persona con el enlace&quot;</strong>.</li>
-            <li>Rol: <strong>Lector</strong>.</li>
+            <li>Click derecho → <strong className="text-white">Compartir</strong>.</li>
+            <li>En &quot;Acceso general&quot;, elegí <strong className="text-white">&quot;Cualquier persona con el enlace&quot;</strong>.</li>
+            <li>Rol: <strong className="text-white">Lector</strong>.</li>
             <li>Copiá el link y pegalo en la lección. Listo.</li>
           </ol>
-          <p className="text-amber-100/70 pt-1">
-            💡 Tip: podés crear una <strong>carpeta entera</strong> con permisos público-con-link y cualquier
+          <p className="text-white/70 pt-1 text-xs">
+            💡 Tip: podés crear una <strong className="text-white">carpeta entera</strong> con permisos público-con-link y cualquier
             archivo adentro hereda el permiso.
           </p>
         </div>

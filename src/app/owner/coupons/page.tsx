@@ -5,6 +5,7 @@ import {
   setCouponStatusAction,
   deleteCouponAction
 } from "@/lib/coupons/actions";
+import Link from "next/link";
 import { PageHeader } from "@/components/owner/PageHeader";
 
 export const dynamic = "force-dynamic";
@@ -44,9 +45,21 @@ export default async function CouponsPage() {
   return (
     <div className="space-y-8 max-w-5xl">
       <PageHeader
-        title="Cupones de descuento"
-        description="Códigos promocionales con % o monto fijo, límite de usos y expiración. Aplicables a una publicación o a todos."
+        title="Cupones con código"
+        description="Códigos promocionales con % o monto fijo, límite de usos y expiración. El buyer los aplica manualmente en el checkout."
+        back={{ label: '← Promociones', href: '/promotions' }}
       />
+
+      {/* Tabs — coherente con /promotions */}
+      <div className="flex items-center gap-2 border-b border-white/10">
+        <Link href="/promotions"
+          className="px-4 py-2 text-sm text-white/55 hover:text-white transition">
+          🏷️ Promociones automáticas
+        </Link>
+        <div className="px-4 py-2 border-b-2 border-white text-sm font-semibold">
+          🎟️ Cupones con código
+        </div>
+      </div>
 
       {/* Create form */}
       <form

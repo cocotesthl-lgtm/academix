@@ -35,7 +35,7 @@ export const MODULE_KEYS = [
   // Macro (F2)
   'catalog', 'calendar', 'crm', 'team', 'sales', 'site',
   // Submódulos de Catálogo (F2.b)
-  'courses', 'ecommerce', 'vip', 'bundles', 'promotions', 'dropshipping',
+  'courses', 'ecommerce', 'vip', 'bundles', 'promotions', 'dropshipping', 'plans',
   // Submódulos de Agenda (F2.b)
   'events', 'reservations',
   // Submódulos de CRM (F2.b)
@@ -47,7 +47,7 @@ export type Modules = Record<ModuleKey, boolean>;
 /** Todo prendido — default para tenants existentes (retrocompat). */
 export const ALL_MODULES_ON: Modules = {
   catalog: true, calendar: true, crm: true, team: true, sales: true, site: true,
-  courses: true, ecommerce: true, vip: true, bundles: true, promotions: true, dropshipping: true,
+  courses: true, ecommerce: true, vip: true, bundles: true, promotions: true, dropshipping: true, plans: true,
   events: true, reservations: true,
   blog: true, forms: true, affiliates: true
 };
@@ -58,7 +58,7 @@ export const ALL_MODULES_ON: Modules = {
  * está prendido; apagar el macro esconde toda la sección.
  */
 export const MODULE_TREE: Partial<Record<ModuleKey, ModuleKey[]>> = {
-  catalog:  ['courses', 'ecommerce', 'vip', 'bundles', 'promotions', 'dropshipping'],
+  catalog:  ['courses', 'ecommerce', 'vip', 'bundles', 'promotions', 'dropshipping', 'plans'],
   calendar: ['events', 'reservations'],
   crm:      ['blog', 'forms', 'affiliates']
 };
@@ -69,7 +69,7 @@ export const MODULE_TREE: Partial<Record<ModuleKey, ModuleKey[]>> = {
  */
 export const MODULE_LEVEL: Record<ModuleKey, 'macro' | 'sub'> = {
   catalog: 'macro', calendar: 'macro', crm: 'macro', team: 'macro', sales: 'macro', site: 'macro',
-  courses: 'sub', ecommerce: 'sub', vip: 'sub', bundles: 'sub', promotions: 'sub', dropshipping: 'sub',
+  courses: 'sub', ecommerce: 'sub', vip: 'sub', bundles: 'sub', promotions: 'sub', dropshipping: 'sub', plans: 'sub',
   events: 'sub', reservations: 'sub',
   blog: 'sub', forms: 'sub', affiliates: 'sub'
 };
@@ -142,6 +142,12 @@ export const MODULE_META: Record<ModuleKey, { label: string; description: string
     description: 'Vendé productos de otros suppliers de OfferNow con tu markup. O suscribite como supplier y dejá que otros los vendan por vos.',
     sidebarGroup: 'Catálogo',
     emoji: '🔁'
+  },
+  plans: {
+    label: 'Planes / Suscripciones',
+    description: 'Vendé planes de suscripción a tus clientes (ej: gimnasio con membresía mensual, coaching con cuota fija).',
+    sidebarGroup: 'Catálogo',
+    emoji: '💳'
   },
   // ── SUB de Agenda ────────────────────────────────────────
   events: {

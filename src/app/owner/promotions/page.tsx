@@ -26,10 +26,21 @@ export default async function PromotionsPage() {
   return (
     <div className="space-y-6 max-w-5xl">
       <PageHeader
-        title="Promociones"
-        description="Reglas automáticas que se aplican al carrito. Distintas de los cupones (con código) y bundles (productos combinados). Ej: 3x2, 10% off por cantidad, envío gratis desde monto."
+        title="Promociones y cupones"
+        description="Todos los descuentos en un solo lugar: promociones automáticas del carrito (3x2, envío gratis, % por cantidad) y cupones con código."
         actions={<HeaderPrimary href="/promotions/new">+ Nueva promoción</HeaderPrimary>}
       />
+
+      {/* Tabs — Promociones automáticas vs Cupones con código */}
+      <div className="flex items-center gap-2 border-b border-white/10">
+        <div className="px-4 py-2 border-b-2 border-white text-sm font-semibold">
+          🏷️ Promociones automáticas
+        </div>
+        <Link href="/coupons"
+          className="px-4 py-2 text-sm text-white/55 hover:text-white transition">
+          🎟️ Cupones con código →
+        </Link>
+      </div>
 
       {migrationMissing && (
         <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm px-4 py-3">

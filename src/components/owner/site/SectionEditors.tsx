@@ -3733,60 +3733,76 @@ export function HeroSlidesEditor({ initial, interval }: {
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {initial.map((s, i) => (
-          <form key={s.id} action={updateHeroSlideAction}
-            className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
-            <input type="hidden" name="id" value={s.id} />
-            <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold">
-              Slide {i + 1}
-            </div>
-            <div className="grid grid-cols-[100px_1fr] gap-3">
-              <div className="aspect-video rounded-md overflow-hidden bg-black/40 border border-white/10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {s.image_url && <img src={s.image_url} alt="" className="w-full h-full object-cover" />}
+          // Slide colapsable: por default abierto solo el primero.
+          // Header con thumb + título como resumen para escanear rápido.
+          <details key={s.id} open={i === 0}
+            className="rounded-lg border border-white/10 bg-white/[0.02] group">
+            <summary className="cursor-pointer list-none px-3 py-2 flex items-center gap-3 hover:bg-white/[0.02] rounded-lg">
+              <div className="w-12 h-8 rounded overflow-hidden bg-black/40 border border-white/10 shrink-0">
+                {s.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={s.image_url} alt="" className="w-full h-full object-cover" />
+                )}
               </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold">
+                  Slide {i + 1}
+                </div>
+                <div className="text-sm font-semibold text-white truncate">
+                  {s.title || '(sin título)'}
+                </div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                className="text-white/40 transition-transform group-open:rotate-180 shrink-0">
+                <polyline points="6 9 12 15 18 9" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </summary>
+
+            <form action={updateHeroSlideAction} className="p-3 pt-1 space-y-2">
+              <input type="hidden" name="id" value={s.id} />
               <div className="space-y-2">
                 <input name="title" defaultValue={s.title} placeholder="Título grande"
                   className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm font-semibold focus:outline-none focus:border-white/40" />
                 <input name="subtitle" defaultValue={s.subtitle ?? ''} placeholder="Subtítulo"
                   className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
               </div>
-            </div>
-            <input name="image_url" defaultValue={s.image_url} placeholder="URL de imagen (1800x600 recomendado)"
-              className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
-            <div className="grid grid-cols-2 gap-2">
-              <input name="cta_label" defaultValue={s.cta_label ?? ''} placeholder="Botón CTA"
-                className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
-              <input name="cta_href" defaultValue={s.cta_href ?? ''} placeholder="/tienda"
-                className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
-            </div>
-            <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 items-center">
-              <label className="text-[10px] text-white/50">Color texto:</label>
-              <input type="color" name="text_color" defaultValue={s.text_color ?? '#ffffff'}
-                className="w-full h-7 rounded bg-transparent border border-white/15 cursor-pointer" />
-              <label className="text-[10px] text-white/50 whitespace-nowrap">Overlay:</label>
-              <input type="number" name="overlay" min={0} max={1} step={0.05}
-                defaultValue={s.overlay ?? 0.35}
-                className="w-16 rounded bg-white/5 border border-white/15 px-2 py-1 text-xs" />
-            </div>
-            <div className="flex gap-2">
-              <button type="submit" disabled={pending}
-                className="flex-1 text-xs px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 font-semibold">
-                Guardar slide
-              </button>
-              <button type="button"
-                onClick={() => start(() => withSaveStatus(async () => {
-                  if (!confirm('¿Eliminar este slide?')) return;
-                  const fd = new FormData(); fd.set('id', s.id);
-                  await removeHeroSlideAction(fd);
-                }))}
-                disabled={pending}
-                className="text-xs px-3 py-1.5 rounded bg-red-500/15 text-red-300 hover:bg-red-500/25">
-                Eliminar
-              </button>
-            </div>
-          </form>
+              <input name="image_url" defaultValue={s.image_url} placeholder="URL de imagen (1800x600 recomendado)"
+                className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+              <div className="grid grid-cols-2 gap-2">
+                <input name="cta_label" defaultValue={s.cta_label ?? ''} placeholder="Botón CTA"
+                  className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+                <input name="cta_href" defaultValue={s.cta_href ?? ''} placeholder="/tienda"
+                  className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-white/40" />
+              </div>
+              <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 items-center">
+                <label className="text-[10px] text-white/50">Color texto:</label>
+                <input type="color" name="text_color" defaultValue={s.text_color ?? '#ffffff'}
+                  className="w-full h-7 rounded bg-transparent border border-white/15 cursor-pointer" />
+                <label className="text-[10px] text-white/50 whitespace-nowrap">Overlay:</label>
+                <input type="number" name="overlay" min={0} max={1} step={0.05}
+                  defaultValue={s.overlay ?? 0.35}
+                  className="w-16 rounded bg-white/5 border border-white/15 px-2 py-1 text-xs" />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="submit" disabled={pending}
+                  className="flex-1 text-xs px-3 py-1.5 rounded bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 font-semibold">
+                  Guardar slide
+                </button>
+                <button type="button"
+                  onClick={() => start(() => withSaveStatus(async () => {
+                    if (!confirm('¿Eliminar este slide?')) return;
+                    const fd = new FormData(); fd.set('id', s.id);
+                    await removeHeroSlideAction(fd);
+                  }))}
+                  disabled={pending}
+                  className="text-xs px-3 py-1.5 rounded bg-red-500/15 text-red-300 hover:bg-red-500/25">
+                  Eliminar
+                </button>
+              </div>
+            </form>
+          </details>
         ))}
       </div>
 
