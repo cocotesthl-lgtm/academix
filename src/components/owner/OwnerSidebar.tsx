@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
-import { ALL_MODULES_ON, type ModuleKey, type Modules } from '@/lib/modules/types';
+import { ALL_MODULES_ON, MODULE_META, MODULE_TREE, type ModuleKey, type Modules } from '@/lib/modules/types';
 import { viewableModules, type Permissions } from '@/lib/permissions/types';
 
 /**
@@ -205,30 +205,19 @@ export function OwnerSidebar({
   const viewable = useMemo(() => viewableModules(permissions), [permissions]);
   const treatAsOwner = permissions === null;
 
+  // Filtro por MACRO solamente. Los items de sub-módulos apagados NO se
+  // borran acá — el renderer los agrupa por sub-módulo y muestra un chip
+  // "Activar {módulo}" cuando el sub está off. Esto evita la confusión
+  // Wix-style: items apareciendo/desapareciendo sin contexto.
   const visibleNav = useMemo(() => {
-    return NAV
-      // 1) Filtro por grupo (macro-módulos)
-      .filter((entry) => {
-        if (entry.kind === 'item') return true;
-        const key = entry.group.moduleKey;
-        if (!key) return true;
-        if (modules[key] === false) return false;
-        if (treatAsOwner) return true;
-        return viewable.has(key);
-      })
-      // 2) Filtro por item (sub-módulos): dentro del grupo, escondemos
-      //    items cuyo submódulo esté apagado. Si al filtrar quedan cero
-      //    items visibles, escondemos el grupo entero (evita mostrar
-      //    "Catálogo" vacío cuando el owner apagó todos los sub).
-      .map((entry) => {
-        if (entry.kind !== 'group') return entry;
-        const items = entry.group.items.filter((it) => {
-          if (!it.moduleKey) return true;
-          return modules[it.moduleKey] !== false;
-        });
-        return { ...entry, group: { ...entry.group, items } };
-      })
-      .filter((entry) => entry.kind !== 'group' || entry.group.items.length > 0);
+    return NAV.filter((entry) => {
+      if (entry.kind === 'item') return true;
+      const key = entry.group.moduleKey;
+      if (!key) return true;
+      if (modules[key] === false) return false;
+      if (treatAsOwner) return true;
+      return viewable.has(key);
+    });
   }, [modules, viewable, treatAsOwner]);
   // Highlight optimista — el item se marca activo APENAS se clickea,
   // sin esperar que la page nueva termine de cargar.
@@ -330,35 +319,92 @@ export function OwnerSidebar({
                 ›
               </span>
             </button>
-            {isOpen && (
-              <div className="ml-6 mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-white/10 pl-2">
-                {entry.group.items.map((item) => {
-                  const active = isActive(item.href);
-                  const isPending = pendingHref === item.href;
-                  return (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      onClick={(e) => {
-                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                        e.preventDefault();
-                        navigate(item.href);
-                      }}
-                      className={`flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 transition text-[13px] ${
-                        active
-                          ? 'bg-white/10 text-white font-medium'
-                          : 'text-white/70 hover:bg-white/5 hover:text-white'
-                      }`}
-                    >
-                      <span>{item.label}</span>
-                      {isPending && (
-                        <span className="inline-block w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                      )}
-                    </a>
-                  );
-                })}
-              </div>
-            )}
+            {isOpen && (() => {
+              // ── Agrupamiento por sub-módulo (Wix-style) ──
+              // Items sin moduleKey → "Base" (siempre visibles arriba).
+              // Items con moduleKey → agrupados por su sub-módulo, mostrados
+              // en el orden de MODULE_TREE del macro.
+              const macroKey = entry.group.moduleKey;
+              const subKeys: ModuleKey[] = macroKey ? (MODULE_TREE[macroKey] ?? []) : [];
+              const baseItems = entry.group.items.filter((it) => !it.moduleKey);
+              const bySubKey = new Map<ModuleKey, typeof entry.group.items>();
+              for (const it of entry.group.items) {
+                if (!it.moduleKey) continue;
+                const arr = bySubKey.get(it.moduleKey) ?? [];
+                arr.push(it);
+                bySubKey.set(it.moduleKey, arr);
+              }
+
+              function renderItem(item: NavItem) {
+                const active = isActive(item.href);
+                const isPending = pendingHref === item.href;
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                      e.preventDefault();
+                      navigate(item.href);
+                    }}
+                    className={`flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 transition text-[13px] ${
+                      active
+                        ? 'bg-white/10 text-white font-medium'
+                        : 'text-white/70 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    {isPending && (
+                      <span className="inline-block w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    )}
+                  </a>
+                );
+              }
+
+              return (
+                <div className="ml-6 mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-white/10 pl-2">
+                  {/* Items base (sin sub-módulo) */}
+                  {baseItems.map(renderItem)}
+
+                  {/* Sub-módulos en orden del árbol */}
+                  {subKeys.map((subKey) => {
+                    const items = bySubKey.get(subKey);
+                    if (!items || items.length === 0) return null;
+                    const meta = MODULE_META[subKey];
+                    const active = modules[subKey] !== false;
+
+                    return (
+                      <div key={subKey} className="mt-1.5">
+                        {/* Mini-header del sub-módulo */}
+                        <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] uppercase tracking-widest font-semibold ${
+                          active ? 'text-white/45' : 'text-white/25'
+                        }`}>
+                          {meta.emoji && <span className="text-[11px]">{meta.emoji}</span>}
+                          <span className="truncate">{meta.label}</span>
+                        </div>
+                        {active ? (
+                          items.map(renderItem)
+                        ) : (
+                          <a
+                            href="/modulos"
+                            onClick={(e) => {
+                              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                              e.preventDefault();
+                              navigate('/modulos');
+                            }}
+                            className="mx-1 flex items-center gap-1.5 rounded-md border border-dashed border-white/15 px-2 py-1 text-[11px] text-white/45 hover:text-white hover:border-white/30 hover:bg-white/[0.02] transition"
+                            title={meta.description}
+                          >
+                            <span>+</span>
+                            <span>Activar</span>
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         );
       })}
