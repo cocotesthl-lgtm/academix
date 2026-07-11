@@ -166,7 +166,7 @@ const NAV: NavEntry[] = [
       label: 'Configuración', icon: 'settings',
       items: [
         { label: 'Mi plan', href: '/mi-plan' },
-        { label: 'Módulos', href: '/modulos' },              // F2: qué módulos usa este workspace
+        { label: 'Apps', href: '/modulos' },                 // App Market — instalar/desinstalar features
         { label: 'Integraciones', href: '/integrations' },
         { label: 'Soporte', href: '/soporte' }
       ]
@@ -361,47 +361,54 @@ export function OwnerSidebar({
                 );
               }
 
+              // ¿Hay al menos un sub-módulo instalable pero apagado? Sirve
+              // para saber si mostrar el "🧩 Descubrir apps" al final.
+              const hasInactiveSubs = subKeys.some((k) => modules[k] === false);
+
               return (
                 <div className="ml-6 mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-white/10 pl-2">
                   {/* Items base (sin sub-módulo) */}
                   {baseItems.map(renderItem)}
 
-                  {/* Sub-módulos en orden del árbol */}
+                  {/* Sub-módulos: SOLO los activos. Los apagados no aparecen
+                      en el sidebar — se descubren desde /modulos (App Market).
+                      Esto evita la confusión Wix-style de items que aparecen
+                      y desaparecen sin contexto. */}
                   {subKeys.map((subKey) => {
+                    if (modules[subKey] === false) return null;
                     const items = bySubKey.get(subKey);
                     if (!items || items.length === 0) return null;
                     const meta = MODULE_META[subKey];
-                    const active = modules[subKey] !== false;
 
                     return (
                       <div key={subKey} className="mt-1.5">
                         {/* Mini-header del sub-módulo */}
-                        <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] uppercase tracking-widest font-semibold ${
-                          active ? 'text-white/45' : 'text-white/25'
-                        }`}>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] uppercase tracking-widest font-semibold text-white/45">
                           {meta.emoji && <span className="text-[11px]">{meta.emoji}</span>}
                           <span className="truncate">{meta.label}</span>
                         </div>
-                        {active ? (
-                          items.map(renderItem)
-                        ) : (
-                          <a
-                            href="/modulos"
-                            onClick={(e) => {
-                              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                              e.preventDefault();
-                              navigate('/modulos');
-                            }}
-                            className="mx-1 flex items-center gap-1.5 rounded-md border border-dashed border-white/15 px-2 py-1 text-[11px] text-white/45 hover:text-white hover:border-white/30 hover:bg-white/[0.02] transition"
-                            title={meta.description}
-                          >
-                            <span>+</span>
-                            <span>Activar</span>
-                          </a>
-                        )}
+                        {items.map(renderItem)}
                       </div>
                     );
                   })}
+
+                  {/* Discovery link: si hay apps de esta categoría sin
+                      instalar, empujar a la App Market. */}
+                  {hasInactiveSubs && (
+                    <a
+                      href="/modulos"
+                      onClick={(e) => {
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                        e.preventDefault();
+                        navigate('/modulos');
+                      }}
+                      className="mt-2 mx-1 flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] text-white/40 hover:text-white/80 hover:bg-white/[0.03] transition"
+                    >
+                      <span>🧩</span>
+                      <span>Descubrir más apps</span>
+                      <span className="ml-auto opacity-60">→</span>
+                    </a>
+                  )}
                 </div>
               );
             })()}

@@ -74,7 +74,16 @@ export const MODULE_LEVEL: Record<ModuleKey, 'macro' | 'sub'> = {
   blog: 'sub', forms: 'sub', affiliates: 'sub'
 };
 
-export const MODULE_META: Record<ModuleKey, { label: string; description: string; sidebarGroup: string; emoji?: string }> = {
+export const MODULE_META: Record<ModuleKey, {
+  label: string;
+  description: string;
+  sidebarGroup: string;
+  emoji?: string;
+  /** Descripción larga para la card de detalle del App Store. */
+  longDescription?: string;
+  /** Features que se muestran como bullets en la card de detalle. */
+  features?: string[];
+}> = {
   // ── MACRO ────────────────────────────────────────────────
   catalog: {
     label: 'Catálogo',
@@ -110,76 +119,170 @@ export const MODULE_META: Record<ModuleKey, { label: string; description: string
   courses: {
     label: 'Cursos & publicaciones',
     description: 'Cursos online, mentorías, eventos, servicios — todo lo que se crea desde "Crear oferta".',
+    longDescription: 'Vendé conocimiento, servicios y productos digitales con landing pages profesionales. Ideal para academias, coaches, consultores y creators.',
     sidebarGroup: 'Catálogo',
-    emoji: '🎓'
+    emoji: '🎓',
+    features: [
+      'Cursos online con módulos y lecciones (video, PDF, imagen)',
+      'Templates de landing (Hotmart, VSL, Funnel, Clásica)',
+      'Precios únicos o suscripción mensual/anual',
+      'Certificados descargables al terminar',
+      'Progreso y calendario para el alumno'
+    ]
   },
   ecommerce: {
-    label: 'Ecommerce (productos físicos)',
-    description: 'Productos físicos con variantes, stock, zonas de envío y carrito.',
+    label: 'Tienda online (productos físicos)',
+    description: 'Productos físicos con variantes, stock, zonas de envío y carrito completo.',
+    longDescription: 'Vendé productos físicos como Tienda Nube o Shopify. Variantes por talle/color, stock real, calculadora de envíos por provincia, y carrito multi-producto.',
     sidebarGroup: 'Catálogo',
-    emoji: '🛒'
+    emoji: '🛒',
+    features: [
+      'Productos con variantes (talle, color, etc.)',
+      'Stock por variante con historial de movimientos',
+      'Zonas de envío por provincia + tarifas por peso',
+      'Carrito lateral estilo ML/Amazon',
+      'Checkout con dirección y MP integrado'
+    ]
   },
   vip: {
     label: 'Contenido VIP',
-    description: 'Packs de contenido premium con suscripción o compra única.',
+    description: 'Packs de contenido premium bloqueado, con suscripción o compra única.',
+    longDescription: 'Cerrá contenido exclusivo detrás de un paywall. Ideal para creators con galería premium, community managers o consultores con material privado.',
     sidebarGroup: 'Catálogo',
-    emoji: '💎'
+    emoji: '💎',
+    features: [
+      'Galería bloqueada estilo OnlyFans / Patreon',
+      'Preview público + acceso pago',
+      'Suscripción mensual/anual o compra única',
+      'Comentarios y likes por post',
+      'Notificaciones a suscriptos al subir contenido'
+    ]
   },
   bundles: {
     label: 'Bundles / Kits',
     description: 'Combos armados por vos, vendidos como un producto único ("Kit skincare", "Pack asado").',
+    longDescription: 'Vendé packs curados por vos que combinan varios productos y cursos con un descuento por comprarlo junto.',
     sidebarGroup: 'Catálogo',
-    emoji: '🎁'
+    emoji: '🎁',
+    features: [
+      'Mezclá cursos y productos físicos en el mismo bundle',
+      'Precio del bundle + precio "lista" para mostrar el ahorro',
+      'Página propia con galería y descripción',
+      'El buyer recibe todos los items al comprar'
+    ]
   },
   promotions: {
     label: 'Promociones automáticas',
     description: 'Reglas del carrito estilo Shopify (3x2, % off por cantidad, envío gratis desde monto).',
+    longDescription: 'Descuentos que se aplican automáticamente al carrito cuando el buyer cumple la condición. Sin códigos ni interacción — solo agregar productos y el descuento aparece.',
     sidebarGroup: 'Catálogo',
-    emoji: '🏷️'
+    emoji: '🏷️',
+    features: [
+      '3x2, 4x3 y variantes (Nx1, Nx2)',
+      '% off por cantidad ("10% off comprando 3+")',
+      'Envío gratis desde monto ("$80.000+")',
+      'Cupones con código (se aplican en el checkout)',
+      'Vigencia por fecha + scope por categoría o producto'
+    ]
   },
   dropshipping: {
     label: 'Dropshipping (marketplace interno)',
-    description: 'Vendé productos de otros suppliers de OfferNow con tu markup. O suscribite como supplier y dejá que otros los vendan por vos.',
+    description: 'Vendé productos de otros suppliers de OfferNow con tu markup. O sé supplier y que otros los vendan.',
+    longDescription: 'Marketplace interno tipo AliExpress. Como reseller no tenés stock — cuando alguien te compra, el supplier envía. Como supplier ampliás distribución sin buscar clientes.',
     sidebarGroup: 'Catálogo',
-    emoji: '🔁'
+    emoji: '🔁',
+    features: [
+      'Explorá catálogo mayorista con filtros por categoría',
+      'Añadí a tu tienda con markup en % o $ fijo',
+      'White-label: el buyer no sabe que es dropshipping',
+      'Órdenes ruteadas automáticamente al supplier',
+      'Tracking y estado sincronizado ambas puntas'
+    ]
   },
   plans: {
-    label: 'Planes / Suscripciones',
-    description: 'Vendé planes de suscripción a tus clientes (ej: gimnasio con membresía mensual, coaching con cuota fija).',
+    label: 'Planes / Suscripciones a clientes',
+    description: 'Vendé planes recurrentes: membresías, cuotas, cobros por servicio.',
+    longDescription: 'Ideal para gimnasios, coaches, consultores y agencias. Cargá el plan una vez, tus clientes se suscriben y facturás sin intervención.',
     sidebarGroup: 'Catálogo',
-    emoji: '💳'
+    emoji: '💳',
+    features: [
+      'Planes con cuota mensual/anual/personalizada',
+      'Cliente puede ver historial y renovar solo',
+      'Facturación recurrente automática via MP',
+      'Estados: activo, suspendido, cancelado, moroso'
+    ]
   },
   // ── SUB de Agenda ────────────────────────────────────────
   events: {
     label: 'Eventos con tickets',
     description: 'Eventos con entradas numeradas, zonas, escaneo QR.',
+    longDescription: 'Vendé entradas a eventos presenciales u online. Cada ticket con QR único que se valida en la puerta. Ideal para conferencias, workshops y shows.',
     sidebarGroup: 'Agenda',
-    emoji: '🎫'
+    emoji: '🎫',
+    features: [
+      'Multiples tipos de tickets (VIP, general, early-bird)',
+      'QR único por ticket con validación en puerta',
+      'Zonas y sectores (con o sin numeración)',
+      'Cupo por tipo con corte automático al llenar',
+      'Fecha y sede — o link Zoom si es online'
+    ]
   },
   reservations: {
-    label: 'Reservas',
+    label: 'Reservas y turnos',
     description: 'Turnos y reservas (mentorías, restaurantes, sedes múltiples).',
+    longDescription: 'Calendario de turnos con reserva self-service. El cliente elige día/hora entre los disponibles y paga en el momento. Multi-sede y multi-recurso.',
     sidebarGroup: 'Agenda',
-    emoji: '📅'
+    emoji: '📅',
+    features: [
+      'Grilla horaria por recurso o profesional',
+      'Multi-sede con horarios distintos',
+      'Recordatorios automáticos al cliente',
+      'Reserva gratuita o con seña',
+      'Bloqueos por vacaciones o feriados'
+    ]
   },
   // ── SUB de CRM ───────────────────────────────────────────
   blog: {
     label: 'Blog / Artículos',
     description: 'CMS de artículos editoriales con categorías y RSS.',
+    longDescription: 'Publicá contenido editorial para SEO y newsletter. Editor visual, categorías, tags y RSS listo para Feedly / Google News.',
     sidebarGroup: 'CRM & Marketing',
-    emoji: '📝'
+    emoji: '📝',
+    features: [
+      'Editor visual con imágenes, videos y bloques',
+      'Categorías y tags para organización',
+      'SEO por post (title, description, OG image)',
+      'Feed RSS público en /rss.xml',
+      'Posts destacados y programación por fecha'
+    ]
   },
   forms: {
     label: 'Formularios',
     description: 'Builder de formularios con submissions y conexión a CRM.',
+    longDescription: 'Creá formularios de contacto, encuestas, o formularios de captación de leads. Cada submission entra automáticamente al CRM como un nuevo lead.',
     sidebarGroup: 'CRM & Marketing',
-    emoji: '📋'
+    emoji: '📋',
+    features: [
+      'Builder con drag & drop de campos',
+      'Campos condicionales (mostrar/ocultar según respuesta)',
+      'Submissions guardadas + notificación por email',
+      'Auto-crea leads en el CRM al recibir',
+      'Embeds en cualquier página de tu sitio'
+    ]
   },
   affiliates: {
     label: 'Afiliados',
     description: 'Programa de afiliados con links de referido, comisiones y multi-nivel.',
+    longDescription: 'Convertí a tus clientes en vendedores. Cada afiliado tiene su link único, y cuando alguien compra por ese link se le paga una comisión configurable.',
     sidebarGroup: 'CRM & Marketing',
-    emoji: '🤝'
+    emoji: '🤝',
+    features: [
+      'Links de referido únicos por afiliado',
+      'Comisión en % o $ fija por venta',
+      'Multi-nivel (afiliado que trae afiliados)',
+      'Dashboard del afiliado con ventas y saldo',
+      'Payout via MP o transferencia manual'
+    ]
   }
 };
 
