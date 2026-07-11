@@ -193,3 +193,130 @@ export async function deleteSupplierProductAction(formData: FormData): Promise<v
     console.error('[deleteSupplierProduct]', e);
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+ * Reseller side: agregar producto mayorista a mi tienda.
+ * Crea:
+ *   1. Un row en catalog_listings con el markup
+ *   2. Un shadow physical_products row en el catálogo del reseller,
+ *      con el precio final (wholesale × markup) y snapshot de los
+ *      datos del supplier product (título, cover, gallery, stock).
+ * El buyer nunca ve la conexión — es white-label.
+ * ───────────────────────────────────────────────────────────── */
+
+export async function addListingAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const svc = getServiceClient();
+  const supplierProductId = String(formData.get('supplier_product_id') ?? '');
+  const markupType = String(formData.get('markup_type') ?? 'percent') === 'fixed' ? 'fixed' : 'percent';
+  const markupValueRaw = Number(formData.get('markup_value') ?? 40);
+  const markupValue = Math.max(0, Math.min(1000000, markupValueRaw));
+  if (!supplierProductId) return;
+
+  try {
+    // 1. Cargar supplier product para armar el shadow
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: sp } = await (svc.from('supplier_products') as any)
+      .select('*').eq('id', supplierProductId).eq('status', 'published').maybeSingle();
+    if (!sp) return;
+
+    // Enforce min_markup del supplier (si lo tiene y estamos en percent)
+    let effectiveMarkup = markupValue;
+    if (sp.min_markup_percent && markupType === 'percent' && effectiveMarkup < sp.min_markup_percent) {
+      effectiveMarkup = sp.min_markup_percent;
+    }
+
+    // 2. Calcular precio final
+    const finalPriceCents = markupType === 'percent'
+      ? Math.round(sp.wholesale_price_cents * (1 + effectiveMarkup / 100))
+      : sp.wholesale_price_cents + Math.round(effectiveMarkup);
+
+    // 3. Slug único en physical_products del reseller (append suffix si colisiona)
+    let slug = String(sp.slug || 'producto');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (svc.from('physical_products') as any)
+      .select('slug').eq('tenant_id', tenant.id).ilike('slug', `${slug}%`);
+    const existingSlugs = new Set(((existing ?? []) as Array<{ slug: string }>).map((r) => r.slug));
+    if (existingSlugs.has(slug)) {
+      let i = 2;
+      while (existingSlugs.has(`${slug}-${i}`)) i++;
+      slug = `${slug}-${i}`;
+    }
+
+    // 4. Crear shadow physical_products
+    const physicalId = randomUUID();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: pErr } = await (svc.from('physical_products') as any).insert({
+      id: physicalId,
+      tenant_id: tenant.id,
+      slug,
+      title: sp.title,
+      description: sp.description,
+      cover_url: sp.cover_url,
+      gallery: sp.gallery ?? [],
+      price_cents: finalPriceCents,
+      currency: sp.currency ?? 'ARS',
+      stock_qty: sp.stock_qty,
+      track_stock: !!sp.track_stock,
+      weight_g: sp.weight_g,
+      requires_shipping: true,
+      status: 'draft'   // reseller publica manualmente después
+    });
+    if (pErr) {
+      console.error('[addListing] insert physical_products fallo:', pErr);
+      return;
+    }
+
+    // 5. Crear catalog_listings
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: lErr } = await (svc.from('catalog_listings') as any).insert({
+      reseller_tenant_id: tenant.id,
+      supplier_product_id: supplierProductId,
+      physical_product_id: physicalId,
+      markup_type: markupType,
+      markup_value: effectiveMarkup
+    });
+    if (lErr) {
+      // Rollback del shadow product
+      await svc.from('physical_products').delete().eq('id', physicalId);
+      console.error('[addListing] insert catalog_listings fallo:', lErr);
+      return;
+    }
+
+    revalidatePath('/owner/dropship/browse');
+    revalidatePath('/owner/dropship');
+    revalidatePath('/owner/products');
+    redirect(`/products/${physicalId}`);
+  } catch (e) {
+    if (e instanceof Error && e.message === 'NEXT_REDIRECT') throw e;
+    console.error('[addListing]', e);
+  }
+}
+
+export async function removeListingAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const listingId = String(formData.get('listing_id') ?? '');
+  if (!listingId) return;
+  const svc = getServiceClient();
+
+  try {
+    // Cargar el listing para conocer el shadow physical_product a borrar
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: l } = await (svc.from('catalog_listings') as any)
+      .select('id, physical_product_id')
+      .eq('id', listingId).eq('reseller_tenant_id', tenant.id).maybeSingle();
+    if (!l) return;
+
+    await svc.from('catalog_listings').delete()
+      .eq('id', listingId).eq('reseller_tenant_id', tenant.id);
+    if (l.physical_product_id) {
+      await svc.from('physical_products').delete()
+        .eq('id', l.physical_product_id).eq('tenant_id', tenant.id);
+    }
+    revalidatePath('/owner/dropship/browse');
+    revalidatePath('/owner/dropship');
+    revalidatePath('/owner/products');
+  } catch (e) {
+    console.error('[removeListing]', e);
+  }
+}
