@@ -16,6 +16,7 @@ import { generateSlots, type AvailabilityRule, type BookingSlot, type CalendarMo
 import { TicketPicker } from "@/components/storefront/TicketPicker";
 import { VipPackLanding, type VipMediaItem } from "@/components/storefront/VipPackLanding";
 import { ReservationWidget } from "@/components/storefront/ReservationWidget";
+import { PayPalCheckoutButton } from "@/components/storefront/PayPalCheckoutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -216,6 +217,20 @@ export default async function CourseDetailPage({
     tenantConfig: tenantCheckoutCfg,
     courseConfig: courseExtras?.checkout_config ?? null
   });
+
+  // PayPal integration (opcional). Si el tenant lo conectó, exponemos el
+  // clientId y modo al client component para renderizar Smart Buttons
+  // como método alternativo al MP form.
+  let paypalConfig: { clientId: string; sandbox: boolean } | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: pp } = await (svc.from('integrations') as any)
+      .select('metadata').eq('tenant_id', tenantId)
+      .eq('provider', 'paypal').eq('status', 'connected').maybeSingle();
+    const clientId = (pp?.metadata as { client_id?: string })?.client_id;
+    const sandbox = !!(pp?.metadata as { sandbox?: boolean })?.sandbox;
+    if (clientId) paypalConfig = { clientId, sandbox };
+  } catch { /* migration 0064 pendiente */ }
 
   // ─── Calendario: si la publicación tiene mentorship_slot, calculamos los slots
   // disponibles desde las reglas del tenant menos los ya tomados ───
@@ -766,8 +781,27 @@ export default async function CourseDetailPage({
                 isReservation={isReservationProduct}
               />
             )}
+            {/* Método alternativo: PayPal — solo si el owner lo conectó y
+                el curso tiene precio > 0. No usa buyer info form ni cupones
+                (Fase B); flujo directo curso → PayPal → enroll. */}
+            {paypalConfig && course.price_cents > 0 && (
+              <div className="pt-2">
+                <div className="flex items-center gap-2 text-[11px] text-black/40 uppercase tracking-wider mb-2">
+                  <div className="flex-1 h-px bg-black/10" />
+                  <span>o pagar con</span>
+                  <div className="flex-1 h-px bg-black/10" />
+                </div>
+                <PayPalCheckoutButton
+                  tenantId={tenantId}
+                  courseId={course.id}
+                  clientId={paypalConfig.clientId}
+                  sandbox={paypalConfig.sandbox}
+                  currency={course.currency}
+                />
+              </div>
+            )}
             <p className="text-xs text-center text-black/40">
-              Pago seguro vía MercadoPago
+              Pago seguro vía MercadoPago{paypalConfig ? ' o PayPal' : ''}
             </p>
           </div>
         </aside>
