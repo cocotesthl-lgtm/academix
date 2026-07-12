@@ -4,11 +4,14 @@ import {
   adminAdjustWalletAction,
   setWalletTransfersEnabledAction,
   setWalletWithdrawalsEnabledAction,
-  setWalletCurrencyAction,
   setWalletInvestmentEnabledAction,
   applyWalletYieldAction,
   approveWithdrawalAction,
-  rejectWithdrawalAction
+  rejectWithdrawalAction,
+  createWalletCurrencyAction,
+  updateWalletCurrencyAction,
+  setDefaultWalletCurrencyAction,
+  deleteWalletCurrencyAction
 } from '@/lib/wallets/actions';
 import Link from 'next/link';
 import { PageHeader } from '@/components/owner/PageHeader';
@@ -35,6 +38,16 @@ type TxRow = {
   created_at: string;
 };
 
+type CurrencyRow = {
+  id: string;
+  code: string;
+  label: string;
+  symbol: string;
+  logo_url: string | null;
+  is_default: boolean;
+  position: number;
+};
+
 export default async function WalletsPage() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
@@ -45,10 +58,9 @@ export default async function WalletsPage() {
   let profiles = new Map<string, { display_name: string | null; email: string | null }>();
   let transfersEnabled = false;
   let withdrawalsEnabled = false;
-  let currencyLabel = 'ARS';
-  let currencySymbol = '$';
   let investmentEnabled = false;
   let defaultYieldRateBps = 0;
+  let currencies: CurrencyRow[] = [];
   let pendingWithdrawals: Array<{
     id: string; user_id: string; amount_cents: number; currency: string;
     method: string | null; destination: string | null; note: string | null;
@@ -58,15 +70,20 @@ export default async function WalletsPage() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: t } = await (svc.from('tenants') as any)
-      .select('wallet_transfers_enabled, wallet_withdrawals_enabled, wallet_currency_label, wallet_currency_symbol, wallet_investment_enabled, wallet_default_yield_rate_bps')
+      .select('wallet_transfers_enabled, wallet_withdrawals_enabled, wallet_investment_enabled, wallet_default_yield_rate_bps')
       .eq('id', tenant.id).maybeSingle();
     transfersEnabled = !!t?.wallet_transfers_enabled;
     withdrawalsEnabled = !!t?.wallet_withdrawals_enabled;
-    if (t?.wallet_currency_label) currencyLabel = t.wallet_currency_label;
-    if (t?.wallet_currency_symbol) currencySymbol = t.wallet_currency_symbol;
     investmentEnabled = !!t?.wallet_investment_enabled;
     if (typeof t?.wallet_default_yield_rate_bps === 'number') defaultYieldRateBps = t.wallet_default_yield_rate_bps;
-  } catch { /* migration 0042/0061/0062 pendiente */ }
+  } catch { /* migration pendiente */ }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: cs } = await (svc.from('wallet_currencies') as any)
+      .select('id, code, label, symbol, logo_url, is_default, position')
+      .eq('tenant_id', tenant.id).order('position');
+    currencies = (cs ?? []) as CurrencyRow[];
+  } catch { /* migration 0063 pendiente */ }
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: pw } = await (svc.from('wallet_withdrawal_requests') as any)
@@ -96,7 +113,23 @@ export default async function WalletsPage() {
     }
   } catch { migrationMissing = true; }
 
-  const totalBalance = wallets.reduce((s, w) => s + w.balance_cents, 0);
+  // Lookup por code (case-insensitive). Fallback si la wallet apunta a
+  // una currency que ya no existe en la config.
+  const currencyByCode = new Map<string, CurrencyRow>();
+  for (const c of currencies) currencyByCode.set(c.code.toLowerCase(), c);
+  function currencyOf(code: string): { symbol: string; label: string; logo_url: string | null } {
+    const c = currencyByCode.get((code || '').toLowerCase());
+    return c ? { symbol: c.symbol, label: c.label, logo_url: c.logo_url } : { symbol: '$', label: code || 'ARS', logo_url: null };
+  }
+  const defaultCurrency = currencies.find((c) => c.is_default) ?? currencies[0];
+  const defaultCode = defaultCurrency?.code ?? 'ars';
+
+  // Totales por moneda
+  const totalsByCurrency = new Map<string, number>();
+  for (const w of wallets) {
+    const key = (w.currency || 'ARS').toLowerCase();
+    totalsByCurrency.set(key, (totalsByCurrency.get(key) ?? 0) + w.balance_cents);
+  }
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -114,35 +147,119 @@ export default async function WalletsPage() {
 
       {!migrationMissing && (
         <>
-          {/* ── Configuración de la moneda ── */}
+          {/* ── Monedas (multi-currency) ── */}
           <div className="rounded-xl border border-white/10 bg-gradient-to-br from-emerald-500/[0.06] to-transparent p-5 space-y-3">
             <div className="flex items-baseline justify-between gap-3 flex-wrap">
-              <h2 className="font-semibold text-sm">🪙 Moneda de la wallet</h2>
+              <h2 className="font-semibold text-sm">🪙 Monedas de la wallet</h2>
               <span className="text-[11px] text-white/50">
-                Preview: <strong className="font-mono text-emerald-300">{currencySymbol} 1.500,00 {currencyLabel}</strong>
+                Cada cliente tiene un saldo POR moneda.
               </span>
             </div>
             <p className="text-xs text-white/60 leading-snug">
-              Podés usar la moneda oficial (ARS, USD) o algo propio: <em>Créditos</em>, <em>Puntos</em>,
-              <em>Coins</em>, o incluso una cripto como BTC. Se muestra en el panel del owner y en
-              la página pública <code className="text-[10px] bg-black/40 px-1 rounded">/saldo</code> del cliente.
+              Podés tener varias monedas activas: la oficial (ARS, USD), cripto (BTC, LTC), o algo custom
+              (Robux, Puntos, Créditos). Cada una con su símbolo y logo opcional.
             </p>
-            <form action={setWalletCurrencyAction} className="grid sm:grid-cols-[1fr_1fr_auto] gap-2 items-end pt-1">
+
+            {/* Lista actual */}
+            {currencies.length > 0 && (
+              <div className="space-y-1.5">
+                {currencies.map((c) => (
+                  <details key={c.id} className="rounded-lg border border-white/10 bg-black/20">
+                    <summary className="flex items-center gap-3 px-3 py-2 cursor-pointer list-none">
+                      {c.logo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.logo_url} alt={c.label}
+                          className="w-6 h-6 rounded object-cover bg-white/10 shrink-0" />
+                      ) : (
+                        <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center text-xs font-mono shrink-0">
+                          {c.symbol}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm truncate">{c.label}</div>
+                        <div className="text-[10px] text-white/40 font-mono">{c.code} · {c.symbol}</div>
+                      </div>
+                      {c.is_default && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300">
+                          Default
+                        </span>
+                      )}
+                      <span className="text-white/30 text-xs">▾</span>
+                    </summary>
+                    <div className="px-3 pb-3 pt-2 border-t border-white/5 space-y-2">
+                      <form action={updateWalletCurrencyAction} className="grid sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
+                        <input type="hidden" name="id" value={c.id} />
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wider text-white/45">Nombre</label>
+                          <input name="label" defaultValue={c.label} maxLength={40}
+                            className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2 py-1 text-xs" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wider text-white/45">Símbolo</label>
+                          <input name="symbol" defaultValue={c.symbol} maxLength={6}
+                            className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2 py-1 text-xs font-mono" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wider text-white/45">Logo URL (opcional)</label>
+                          <input name="logo_url" defaultValue={c.logo_url ?? ''} maxLength={500}
+                            placeholder="https://…" type="url"
+                            className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2 py-1 text-xs" />
+                        </div>
+                        <button type="submit"
+                          className="rounded bg-white text-black text-xs font-semibold px-3 py-1.5 hover:bg-white/90 h-fit">
+                          Guardar
+                        </button>
+                      </form>
+                      <div className="flex items-center gap-1.5 pt-1">
+                        {!c.is_default && (
+                          <>
+                            <form action={setDefaultWalletCurrencyAction}>
+                              <input type="hidden" name="id" value={c.id} />
+                              <button className="text-[11px] px-2 py-1 rounded border border-white/15 hover:bg-white/5">
+                                Marcar como default
+                              </button>
+                            </form>
+                            {currencies.length > 1 && (
+                              <form action={deleteWalletCurrencyAction}>
+                                <input type="hidden" name="id" value={c.id} />
+                                <button className="text-[11px] px-2 py-1 rounded border border-rose-500/30 text-rose-300 hover:bg-rose-500/10">
+                                  Eliminar
+                                </button>
+                              </form>
+                            )}
+                          </>
+                        )}
+                        <span className="text-[10px] text-white/40 ml-auto">
+                          code: <code className="font-mono bg-black/40 px-1 rounded">{c.code}</code>
+                        </span>
+                      </div>
+                    </div>
+                  </details>
+                ))}
+              </div>
+            )}
+
+            {/* Form agregar */}
+            <form action={createWalletCurrencyAction} className="grid sm:grid-cols-[1fr_auto_1fr_auto] gap-2 items-end pt-2 border-t border-white/5">
               <div>
-                <label className="text-[10px] uppercase tracking-wider text-white/45">Nombre corto</label>
-                <input name="label" defaultValue={currencyLabel} maxLength={12}
-                  placeholder="ARS / BTC / Créditos"
+                <label className="text-[10px] uppercase tracking-wider text-white/45">Nueva moneda</label>
+                <input name="label" required maxLength={40}
+                  placeholder="Robux / Litecoin / Créditos…"
                   className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm" />
               </div>
               <div>
                 <label className="text-[10px] uppercase tracking-wider text-white/45">Símbolo</label>
-                <input name="symbol" defaultValue={currencySymbol} maxLength={4}
-                  placeholder="$ / ₿ / ★"
-                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm font-mono" />
+                <input name="symbol" maxLength={6} defaultValue="$"
+                  className="mt-1 w-20 rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm font-mono" />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/45">Logo URL (opcional)</label>
+                <input name="logo_url" maxLength={500} type="url" placeholder="https://…"
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm" />
               </div>
               <button type="submit"
                 className="rounded bg-white text-black text-sm font-semibold px-4 py-1.5 hover:bg-white/90 h-fit">
-                Guardar
+                + Agregar
               </button>
             </form>
           </div>
@@ -244,7 +361,7 @@ export default async function WalletsPage() {
                 Aplica un % al saldo actual y lo suma a cada wallet. Ej: 5% sobre $10.000 → +$500 al saldo.
                 Podés hacerlo para todos los clientes de una o para uno puntual.
               </p>
-              <form action={applyWalletYieldAction} className="grid sm:grid-cols-[auto_1fr_1fr_auto] gap-2 items-end">
+              <form action={applyWalletYieldAction} className="grid sm:grid-cols-[auto_auto_1fr_1fr_auto] gap-2 items-end">
                 <div>
                   <label className="text-[10px] uppercase tracking-wider text-white/45">Tasa (%)</label>
                   <input name="rate_pct" type="number" step="0.01" min="0" required
@@ -252,16 +369,26 @@ export default async function WalletsPage() {
                     className="mt-1 w-24 rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm font-mono" />
                 </div>
                 <div>
+                  <label className="text-[10px] uppercase tracking-wider text-white/45">Moneda</label>
+                  <select name="currency" defaultValue={defaultCode}
+                    className="mt-1 rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm">
+                    {currencies.map((c) => (
+                      <option key={c.id} value={c.code}>{c.symbol} {c.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="text-[10px] uppercase tracking-wider text-white/45">Cliente</label>
                   <select name="target"
                     className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm">
-                    <option value="all">Todos los clientes con saldo</option>
+                    <option value="all">Todos los clientes con saldo (de la moneda elegida)</option>
                     {wallets.filter((w) => w.balance_cents > 0).map((w) => {
                       const p = profiles.get(w.user_id);
+                      const cur = currencyOf(w.currency);
                       return (
-                        <option key={w.user_id} value={w.user_id}>
+                        <option key={`${w.user_id}-${w.currency}`} value={w.user_id}>
                           {p?.display_name || p?.email || w.user_id.slice(0, 8)}
-                          {' — '}{currencySymbol} {(w.balance_cents / 100).toLocaleString('es-AR')}
+                          {' — '}{cur.symbol} {(w.balance_cents / 100).toLocaleString('es-AR')} {cur.label}
                         </option>
                       );
                     })}
@@ -329,24 +456,46 @@ export default async function WalletsPage() {
             </div>
           )}
 
-          <div className="grid sm:grid-cols-3 gap-3">
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-              <div className="text-xs text-white/55 uppercase tracking-wide">Saldo total acumulado</div>
-              <div className="text-2xl font-bold mt-1 font-mono">
-                {currencySymbol} {(totalBalance / 100).toLocaleString('es-AR')}
-                <span className="text-xs text-white/45 ml-1.5 font-sans font-normal">{currencyLabel}</span>
+          <div className="space-y-3">
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                <div className="text-xs text-white/55 uppercase tracking-wide">Clientes con saldo</div>
+                <div className="text-2xl font-bold mt-1">
+                  {new Set(wallets.filter((w) => w.balance_cents > 0).map((w) => w.user_id)).size}
+                </div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                <div className="text-xs text-white/55 uppercase tracking-wide">Wallets totales</div>
+                <div className="text-2xl font-bold mt-1">{wallets.length}</div>
               </div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-              <div className="text-xs text-white/55 uppercase tracking-wide">Clientes con saldo</div>
-              <div className="text-2xl font-bold mt-1">
-                {wallets.filter((w) => w.balance_cents > 0).length}
+            {/* Totales por moneda */}
+            {totalsByCurrency.size > 0 && (
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                <div className="text-xs text-white/55 uppercase tracking-wide mb-2">Saldo acumulado por moneda</div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {Array.from(totalsByCurrency.entries()).map(([code, total]) => {
+                    const cur = currencyOf(code);
+                    return (
+                      <div key={code} className="flex items-center gap-2 rounded border border-white/5 bg-black/20 px-3 py-2">
+                        {cur.logo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={cur.logo_url} alt={cur.label} className="w-7 h-7 rounded object-cover shrink-0" />
+                        ) : (
+                          <div className="w-7 h-7 rounded bg-white/10 flex items-center justify-center text-xs font-mono shrink-0">{cur.symbol}</div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="text-lg font-bold font-mono leading-tight">
+                            {cur.symbol} {(total / 100).toLocaleString('es-AR')}
+                          </div>
+                          <div className="text-[10px] text-white/45 uppercase tracking-wider">{cur.label}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-              <div className="text-xs text-white/55 uppercase tracking-wide">Wallets totales</div>
-              <div className="text-2xl font-bold mt-1">{wallets.length}</div>
-            </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-white/10 overflow-hidden">
@@ -364,14 +513,24 @@ export default async function WalletsPage() {
                   <tr><td colSpan={4} className="px-3 py-6 text-center text-white/40">Sin wallets aún. Vendé un producto tipo "Carga de saldo" o ajustá manualmente.</td></tr>
                 ) : wallets.map((w) => {
                   const p = profiles.get(w.user_id);
+                  const cur = currencyOf(w.currency);
                   return (
                     <tr key={w.id} className="border-t border-white/5">
                       <td className="px-3 py-2.5">
                         <div className="font-medium">{p?.display_name || '(sin nombre)'}</div>
                         <div className="text-xs text-white/45 font-mono">{p?.email}</div>
                       </td>
-                      <td className="px-3 py-2.5 text-right font-mono font-bold text-emerald-300">
-                        {w.currency} {(w.balance_cents / 100).toLocaleString('es-AR')}
+                      <td className="px-3 py-2.5 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          {cur.logo_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={cur.logo_url} alt={cur.label} className="w-4 h-4 rounded object-cover" />
+                          ) : null}
+                          <span className="font-mono font-bold text-emerald-300">
+                            {cur.symbol} {(w.balance_cents / 100).toLocaleString('es-AR')}
+                          </span>
+                          <span className="text-[10px] text-white/45">{cur.label}</span>
+                        </div>
                       </td>
                       <td className="px-3 py-2.5 text-xs text-white/55">
                         {new Date(w.updated_at).toLocaleString('es-AR')}
@@ -379,6 +538,7 @@ export default async function WalletsPage() {
                       <td className="px-3 py-2.5">
                         <form action={adminAdjustWalletAction} className="flex items-center gap-1.5 flex-wrap">
                           <input type="hidden" name="user_id" value={w.user_id} />
+                          <input type="hidden" name="currency" value={w.currency} />
                           <input type="number" name="amount" step="1" placeholder="+/- monto"
                             className="w-24 rounded bg-white/5 border border-white/15 px-2 py-1 text-xs font-mono"
                             title="Positivo = acredita. Negativo = debita." />

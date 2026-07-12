@@ -24,10 +24,14 @@ export async function creditWallet(opts: {
   const svc = getServiceClient();
   const currency = opts.currency || 'ARS';
 
-  // 1. upsert wallet (sin colisión via unique tenant_id+user_id)
+  // 1. upsert wallet — scopeado por currency (multi-currency, 0063).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existing } = await (svc.from('wallets') as any)
-    .select('id, balance_cents').eq('tenant_id', opts.tenantId).eq('user_id', opts.userId).maybeSingle();
+    .select('id, balance_cents')
+    .eq('tenant_id', opts.tenantId)
+    .eq('user_id', opts.userId)
+    .eq('currency', currency)
+    .maybeSingle();
   let walletId: string;
   let currentBalance = 0;
   if (existing) {

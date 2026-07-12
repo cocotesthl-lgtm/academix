@@ -20,6 +20,8 @@ export async function adminAdjustWalletAction(formData: FormData): Promise<void>
   if (!Number.isFinite(amountPesos) || amountPesos === 0) return;
   const concept = String(formData.get('concept') ?? '').trim().slice(0, 60) || null;
   const note = String(formData.get('note') ?? '').trim().slice(0, 500) || null;
+  // Currency: viene del select o del row (currency de la wallet existente).
+  const currency = String(formData.get('currency') ?? '').trim() || 'ARS';
   const cents = Math.round(amountPesos * 100);
 
   await creditWallet({
@@ -29,8 +31,92 @@ export async function adminAdjustWalletAction(formData: FormData): Promise<void>
     kind: 'admin_adjust',
     concept,
     note,
-    actorUserId: actor
+    actorUserId: actor,
+    currency
   });
+  revalidatePath('/owner/wallets');
+}
+
+/* ───── Owner: gestión de monedas (multi-currency) ───── */
+
+/**
+ * Crea una nueva moneda para el tenant. El `code` se autogenera del label
+ * si no vino. Si el tenant no tenía ninguna, esta queda como default.
+ */
+export async function createWalletCurrencyAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const label = String(formData.get('label') ?? '').trim().slice(0, 40);
+  if (!label) return;
+  const symbol = String(formData.get('symbol') ?? '').trim().slice(0, 6) || '$';
+  const logoUrl = String(formData.get('logo_url') ?? '').trim().slice(0, 500) || null;
+  const rawCode = String(formData.get('code') ?? '').trim().toLowerCase();
+  const code = (rawCode || label.toLowerCase().replace(/[^a-z0-9]+/g, '')).slice(0, 20);
+
+  const svc = getServiceClient();
+  // ¿Es la primera moneda? → default automático
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count } = await (svc.from('wallet_currencies') as any)
+    .select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id);
+  const isDefault = !count || count === 0;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('wallet_currencies') as any).insert({
+    tenant_id: tenant.id,
+    code, label, symbol, logo_url: logoUrl,
+    is_default: isDefault,
+    position: count ?? 0
+  });
+  revalidatePath('/owner/wallets');
+}
+
+export async function updateWalletCurrencyAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const label = String(formData.get('label') ?? '').trim().slice(0, 40);
+  const symbol = String(formData.get('symbol') ?? '').trim().slice(0, 6);
+  const logoUrl = String(formData.get('logo_url') ?? '').trim().slice(0, 500);
+
+  const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (label) payload.label = label;
+  if (symbol) payload.symbol = symbol;
+  payload.logo_url = logoUrl || null; // permite limpiar el logo con vacío
+
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('wallet_currencies') as any).update(payload).eq('id', id).eq('tenant_id', tenant.id);
+  revalidatePath('/owner/wallets');
+}
+
+export async function setDefaultWalletCurrencyAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const svc = getServiceClient();
+  // Bajamos default a todas y subimos solo a esta. Dos updates en vez de
+  // uno para evitar conflicto si hay unique parcial (no lo hay pero
+  // defensivo por si sumamos uno después).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('wallet_currencies') as any)
+    .update({ is_default: false }).eq('tenant_id', tenant.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('wallet_currencies') as any)
+    .update({ is_default: true }).eq('id', id).eq('tenant_id', tenant.id);
+  revalidatePath('/owner/wallets');
+}
+
+export async function deleteWalletCurrencyAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const svc = getServiceClient();
+  // No permitimos borrar si es la única moneda del tenant
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count } = await (svc.from('wallet_currencies') as any)
+    .select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id);
+  if (!count || count <= 1) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('wallet_currencies') as any).delete().eq('id', id).eq('tenant_id', tenant.id);
   revalidatePath('/owner/wallets');
 }
 
@@ -298,6 +384,7 @@ export async function applyWalletYieldAction(formData: FormData): Promise<void> 
   const ratePct = parseFloat(String(formData.get('rate_pct') ?? '0').replace(',', '.'));
   if (!Number.isFinite(ratePct) || ratePct === 0) return;
   const target = String(formData.get('target') ?? 'all');
+  const currency = String(formData.get('currency') ?? '').trim() || 'ARS';
   const concept = String(formData.get('concept') ?? '').trim().slice(0, 60) || 'Rendimiento';
   const note = String(formData.get('note') ?? '').trim().slice(0, 500) || null;
 
@@ -309,14 +396,16 @@ export async function applyWalletYieldAction(formData: FormData): Promise<void> 
     .select('wallet_investment_enabled').eq('id', tenant.id).maybeSingle();
   if (!t?.wallet_investment_enabled) return;
 
-  // Cargar wallets afectados
-  let query = svc.from('wallets').select('user_id, balance_cents').eq('tenant_id', tenant.id).gt('balance_cents', 0);
+  // Cargar wallets afectados — SOLO de la moneda seleccionada
+  let query = svc.from('wallets')
+    .select('user_id, balance_cents, currency')
+    .eq('tenant_id', tenant.id)
+    .eq('currency', currency)
+    .gt('balance_cents', 0);
   if (target !== 'all') query = query.eq('user_id', target);
   const { data: wallets } = await query;
-  const rows = (wallets ?? []) as Array<{ user_id: string; balance_cents: number }>;
+  const rows = (wallets ?? []) as Array<{ user_id: string; balance_cents: number; currency: string }>;
 
-  // Aplicar yield uno por uno (secuencial es OK para MVP; cada tenant suele
-  // tener pocos wallets. Escalar con RPC si hace falta).
   for (const w of rows) {
     const yieldCents = Math.floor((w.balance_cents * ratePct) / 100);
     if (yieldCents <= 0) continue;
@@ -327,7 +416,8 @@ export async function applyWalletYieldAction(formData: FormData): Promise<void> 
       kind: 'yield',
       concept,
       note: note ?? `${ratePct}% sobre saldo`,
-      actorUserId: actor
+      actorUserId: actor,
+      currency: w.currency
     });
   }
   revalidatePath('/owner/wallets');

@@ -1598,4 +1598,66 @@ alter table public.tenants
 alter table public.wallet_transactions
   add column if not exists concept text;
 
+-- ── 0063_multi_currency_wallets ──────────────────────────────────
+-- Multi-currency: cada tenant puede tener varias monedas (ARS, Robux, LTC…)
+create table if not exists public.wallet_currencies (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  code text not null,
+  label text not null,
+  symbol text not null default '$',
+  logo_url text,
+  is_default boolean not null default false,
+  position integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (tenant_id, code)
+);
+create index if not exists idx_wallet_currencies_tenant on public.wallet_currencies(tenant_id, position);
+alter table public.wallet_currencies enable row level security;
+
+drop policy if exists wallet_currencies_owner on public.wallet_currencies;
+create policy wallet_currencies_owner on public.wallet_currencies
+  for all to authenticated
+  using (
+    exists (select 1 from public.memberships m
+      where m.tenant_id = wallet_currencies.tenant_id
+      and m.user_id = auth.uid() and m.role = 'owner' and m.status = 'active')
+  );
+
+drop policy if exists wallet_currencies_public_read on public.wallet_currencies;
+create policy wallet_currencies_public_read on public.wallet_currencies
+  for select to anon, authenticated using (true);
+
+-- Cambiar unique de wallets a (tenant_id, user_id, currency)
+do $$ begin
+  alter table public.wallets drop constraint wallets_tenant_id_user_id_key;
+exception when undefined_object then null; end $$;
+do $$ begin
+  alter table public.wallets drop constraint wallets_tenant_user_unique;
+exception when undefined_object then null; end $$;
+create unique index if not exists wallets_tenant_user_currency_uidx
+  on public.wallets(tenant_id, user_id, currency);
+
+-- Ampliar kind check para 'yield'
+do $$ begin
+  alter table public.wallet_transactions drop constraint if exists wallet_tx_kind_check;
+exception when undefined_object then null; end $$;
+alter table public.wallet_transactions add constraint wallet_tx_kind_check
+  check (kind in ('topup','spend','refund','admin_adjust','transfer_out','transfer_in','withdrawal','yield'));
+
+-- Seed default currency por tenant
+insert into public.wallet_currencies (tenant_id, code, label, symbol, is_default, position)
+select
+  t.id,
+  lower(coalesce(t.wallet_currency_label, 'ARS')),
+  coalesce(t.wallet_currency_label, 'ARS'),
+  coalesce(t.wallet_currency_symbol, '$'),
+  true,
+  0
+from public.tenants t
+where not exists (
+  select 1 from public.wallet_currencies wc where wc.tenant_id = t.id and wc.is_default = true
+);
+
 -- ✓ Listo. Recargá la app.
