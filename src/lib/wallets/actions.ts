@@ -18,6 +18,7 @@ export async function adminAdjustWalletAction(formData: FormData): Promise<void>
   if (!targetUserId) return;
   const amountPesos = parseFloat(String(formData.get('amount') ?? '0').replace(/[^0-9.-]/g, '') || '0');
   if (!Number.isFinite(amountPesos) || amountPesos === 0) return;
+  const concept = String(formData.get('concept') ?? '').trim().slice(0, 60) || null;
   const note = String(formData.get('note') ?? '').trim().slice(0, 500) || null;
   const cents = Math.round(amountPesos * 100);
 
@@ -26,6 +27,7 @@ export async function adminAdjustWalletAction(formData: FormData): Promise<void>
     userId: targetUserId,
     amountCents: cents,
     kind: 'admin_adjust',
+    concept,
     note,
     actorUserId: actor
   });
@@ -254,5 +256,80 @@ export async function requestWithdrawalAction(formData: FormData): Promise<Actio
 
   revalidatePath('/saldo');
   return { ok: true, message: `Solicitud de retiro por $ ${(cents / 100).toLocaleString('es-AR')} enviada. El sitio la procesará pronto.` };
+}
+
+/* ───── Owner: Modo Inversiones + rendimientos ───── */
+
+/**
+ * Prende/apaga el "Modo Inversiones" del tenant. Cuando está prendido,
+ * el owner ve el bloque "Otorgar rendimientos" en /owner/wallets.
+ * Además guarda una tasa default sugerida (basis points) para pre-cargar
+ * el formulario.
+ */
+export async function setWalletInvestmentEnabledAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const enabled = formData.get('enabled') === 'true' || formData.get('enabled') === 'on';
+  const rawRate = String(formData.get('default_rate_pct') ?? '').trim();
+  const rateBps = rawRate ? Math.max(0, Math.round(parseFloat(rawRate) * 100)) : null;
+  const svc = getServiceClient();
+  const payload: Record<string, unknown> = {
+    wallet_investment_enabled: enabled,
+    updated_at: new Date().toISOString()
+  };
+  if (rateBps != null && Number.isFinite(rateBps)) payload.wallet_default_yield_rate_bps = rateBps;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('tenants') as any).update(payload).eq('id', tenant.id);
+  revalidatePath('/owner/wallets');
+}
+
+/**
+ * Aplica rendimiento (yield %) al saldo actual de un cliente puntual
+ * o a TODOS los clientes con saldo > 0. La suma se calcula como
+ * `balance_actual * rate_pct/100`.
+ *
+ * FormData:
+ *   - rate_pct: number (ej: 5 = 5%)
+ *   - target: 'all' | user_id
+ *   - concept: label libre (default "Rendimiento")
+ *   - note: nota opcional
+ */
+export async function applyWalletYieldAction(formData: FormData): Promise<void> {
+  const { tenant, userId: actor } = await requireOwner();
+  const ratePct = parseFloat(String(formData.get('rate_pct') ?? '0').replace(',', '.'));
+  if (!Number.isFinite(ratePct) || ratePct === 0) return;
+  const target = String(formData.get('target') ?? 'all');
+  const concept = String(formData.get('concept') ?? '').trim().slice(0, 60) || 'Rendimiento';
+  const note = String(formData.get('note') ?? '').trim().slice(0, 500) || null;
+
+  const svc = getServiceClient();
+
+  // Confirmar que Modo Inversiones esté prendido (defensivo)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: t } = await (svc.from('tenants') as any)
+    .select('wallet_investment_enabled').eq('id', tenant.id).maybeSingle();
+  if (!t?.wallet_investment_enabled) return;
+
+  // Cargar wallets afectados
+  let query = svc.from('wallets').select('user_id, balance_cents').eq('tenant_id', tenant.id).gt('balance_cents', 0);
+  if (target !== 'all') query = query.eq('user_id', target);
+  const { data: wallets } = await query;
+  const rows = (wallets ?? []) as Array<{ user_id: string; balance_cents: number }>;
+
+  // Aplicar yield uno por uno (secuencial es OK para MVP; cada tenant suele
+  // tener pocos wallets. Escalar con RPC si hace falta).
+  for (const w of rows) {
+    const yieldCents = Math.floor((w.balance_cents * ratePct) / 100);
+    if (yieldCents <= 0) continue;
+    await creditWallet({
+      tenantId: tenant.id,
+      userId: w.user_id,
+      amountCents: yieldCents,
+      kind: 'yield',
+      concept,
+      note: note ?? `${ratePct}% sobre saldo`,
+      actorUserId: actor
+    });
+  }
+  revalidatePath('/owner/wallets');
 }
 

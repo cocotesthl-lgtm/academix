@@ -1589,4 +1589,13 @@ alter table public.courses
 alter table public.physical_products
   add column if not exists wallet_bonus_cents integer not null default 0;
 
+-- ── 0062_wallet_investment ───────────────────────────────────────
+-- Modo Inversiones + concepto libre en movimientos.
+alter table public.tenants
+  add column if not exists wallet_investment_enabled boolean not null default false,
+  add column if not exists wallet_default_yield_rate_bps integer not null default 0;
+
+alter table public.wallet_transactions
+  add column if not exists concept text;
+
 -- ✓ Listo. Recargá la app.

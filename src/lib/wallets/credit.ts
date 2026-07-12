@@ -12,12 +12,14 @@ export async function creditWallet(opts: {
   tenantId: string;
   userId: string;
   amountCents: number;     // positivo = acredita, negativo = debita
-  kind: 'topup' | 'spend' | 'refund' | 'admin_adjust' | 'transfer_out' | 'transfer_in' | 'withdrawal';
+  kind: 'topup' | 'spend' | 'refund' | 'admin_adjust' | 'transfer_out' | 'transfer_in' | 'withdrawal' | 'yield';
   courseId?: string | null;
   saleId?: string | null;
   note?: string | null;
   actorUserId?: string | null;
   currency?: string;
+  /** Etiqueta libre visible en el historial (Depósito / Reembolso / Rendimiento…). */
+  concept?: string | null;
 }): Promise<{ ok: true; balance_cents: number } | { ok: false; error: string }> {
   const svc = getServiceClient();
   const currency = opts.currency || 'ARS';
@@ -52,7 +54,7 @@ export async function creditWallet(opts: {
 
   // 3. insert transaction (append-only)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: tErr } = await (svc.from('wallet_transactions') as any).insert({
+  const txPayload: Record<string, unknown> = {
     wallet_id: walletId,
     tenant_id: opts.tenantId,
     user_id: opts.userId,
@@ -63,7 +65,11 @@ export async function creditWallet(opts: {
     sale_id: opts.saleId ?? null,
     note: opts.note ?? null,
     actor_user_id: opts.actorUserId ?? null
-  });
+  };
+  // Sólo incluir concept si vino — evita fallo si migration 0062 no corrió.
+  if (opts.concept != null) txPayload.concept = opts.concept;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: tErr } = await (svc.from('wallet_transactions') as any).insert(txPayload);
   if (tErr) return { ok: false, error: tErr.message };
 
   return { ok: true, balance_cents: newBalance };

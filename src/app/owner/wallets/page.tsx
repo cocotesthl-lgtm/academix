@@ -5,6 +5,8 @@ import {
   setWalletTransfersEnabledAction,
   setWalletWithdrawalsEnabledAction,
   setWalletCurrencyAction,
+  setWalletInvestmentEnabledAction,
+  applyWalletYieldAction,
   approveWithdrawalAction,
   rejectWithdrawalAction
 } from '@/lib/wallets/actions';
@@ -28,6 +30,7 @@ type TxRow = {
   amount_cents: number;
   balance_after_cents: number;
   kind: string;
+  concept: string | null;
   note: string | null;
   created_at: string;
 };
@@ -44,6 +47,8 @@ export default async function WalletsPage() {
   let withdrawalsEnabled = false;
   let currencyLabel = 'ARS';
   let currencySymbol = '$';
+  let investmentEnabled = false;
+  let defaultYieldRateBps = 0;
   let pendingWithdrawals: Array<{
     id: string; user_id: string; amount_cents: number; currency: string;
     method: string | null; destination: string | null; note: string | null;
@@ -53,13 +58,15 @@ export default async function WalletsPage() {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: t } = await (svc.from('tenants') as any)
-      .select('wallet_transfers_enabled, wallet_withdrawals_enabled, wallet_currency_label, wallet_currency_symbol')
+      .select('wallet_transfers_enabled, wallet_withdrawals_enabled, wallet_currency_label, wallet_currency_symbol, wallet_investment_enabled, wallet_default_yield_rate_bps')
       .eq('id', tenant.id).maybeSingle();
     transfersEnabled = !!t?.wallet_transfers_enabled;
     withdrawalsEnabled = !!t?.wallet_withdrawals_enabled;
     if (t?.wallet_currency_label) currencyLabel = t.wallet_currency_label;
     if (t?.wallet_currency_symbol) currencySymbol = t.wallet_currency_symbol;
-  } catch { /* migration 0042/0061 pendiente */ }
+    investmentEnabled = !!t?.wallet_investment_enabled;
+    if (typeof t?.wallet_default_yield_rate_bps === 'number') defaultYieldRateBps = t.wallet_default_yield_rate_bps;
+  } catch { /* migration 0042/0061/0062 pendiente */ }
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: pw } = await (svc.from('wallet_withdrawal_requests') as any)
@@ -78,7 +85,7 @@ export default async function WalletsPage() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: t } = await (svc.from('wallet_transactions') as any)
-      .select('id, user_id, amount_cents, balance_after_cents, kind, note, created_at')
+      .select('id, user_id, amount_cents, balance_after_cents, kind, concept, note, created_at')
       .eq('tenant_id', tenant.id).order('created_at', { ascending: false }).limit(50);
     txs = (t ?? []) as TxRow[];
 
@@ -191,6 +198,88 @@ export default async function WalletsPage() {
             </form>
           </div>
 
+          {/* ── Modo Inversiones ── */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5 space-y-3">
+            <div className="flex items-baseline justify-between gap-3 flex-wrap">
+              <h2 className="font-semibold text-sm">📈 Modo Inversiones</h2>
+              <span className={`text-[10px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded ${
+                investmentEnabled ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/10 text-white/50'
+              }`}>
+                {investmentEnabled ? 'ON' : 'OFF'}
+              </span>
+            </div>
+            <p className="text-xs text-white/60 leading-snug">
+              Cuando está prendido, podés aplicar rendimientos periódicos al saldo de tus clientes.
+              Ideal para simular plazos fijos, cuentas remuneradas o cashback recurrente.
+            </p>
+            <form action={setWalletInvestmentEnabledAction} className="grid sm:grid-cols-[1fr_auto_auto] gap-2 items-end pt-1">
+              <input type="hidden" name="enabled" value={investmentEnabled ? 'false' : 'true'} />
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-white/45">Tasa sugerida por default (%)</label>
+                <input name="default_rate_pct" type="number" step="0.01" min="0"
+                  defaultValue={(defaultYieldRateBps / 100).toString()}
+                  placeholder="5.00"
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm font-mono" />
+              </div>
+              <button type="submit"
+                className={`text-xs px-3 py-2 rounded font-semibold whitespace-nowrap h-fit ${
+                  investmentEnabled
+                    ? 'border border-rose-500/30 text-rose-300 hover:bg-rose-500/10'
+                    : 'bg-emerald-500 text-emerald-950 hover:bg-emerald-400'
+                }`}>
+                {investmentEnabled ? 'Apagar' : 'Prender'}
+              </button>
+              <button type="submit"
+                className="text-xs px-3 py-2 rounded border border-white/15 hover:bg-white/5 whitespace-nowrap h-fit">
+                Guardar tasa
+              </button>
+            </form>
+          </div>
+
+          {/* ── Otorgar rendimientos (solo si Modo Inversiones ON) ── */}
+          {investmentEnabled && (
+            <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] p-5 space-y-3">
+              <h2 className="font-semibold text-sm text-emerald-100">💵 Otorgar rendimientos</h2>
+              <p className="text-xs text-white/60 leading-snug">
+                Aplica un % al saldo actual y lo suma a cada wallet. Ej: 5% sobre $10.000 → +$500 al saldo.
+                Podés hacerlo para todos los clientes de una o para uno puntual.
+              </p>
+              <form action={applyWalletYieldAction} className="grid sm:grid-cols-[auto_1fr_1fr_auto] gap-2 items-end">
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-white/45">Tasa (%)</label>
+                  <input name="rate_pct" type="number" step="0.01" min="0" required
+                    defaultValue={(defaultYieldRateBps / 100).toString()}
+                    className="mt-1 w-24 rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm font-mono" />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-white/45">Cliente</label>
+                  <select name="target"
+                    className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm">
+                    <option value="all">Todos los clientes con saldo</option>
+                    {wallets.filter((w) => w.balance_cents > 0).map((w) => {
+                      const p = profiles.get(w.user_id);
+                      return (
+                        <option key={w.user_id} value={w.user_id}>
+                          {p?.display_name || p?.email || w.user_id.slice(0, 8)}
+                          {' — '}{currencySymbol} {(w.balance_cents / 100).toLocaleString('es-AR')}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-white/45">Concepto</label>
+                  <input name="concept" defaultValue="Rendimiento" maxLength={60}
+                    className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm" />
+                </div>
+                <button type="submit"
+                  className="text-xs px-4 py-2 rounded bg-emerald-500 text-emerald-950 font-bold hover:bg-emerald-400 whitespace-nowrap h-fit">
+                  Aplicar
+                </button>
+              </form>
+            </div>
+          )}
+
           {/* ── Solicitudes de retiro pendientes ── */}
           {pendingWithdrawals.length > 0 && (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-3">
@@ -267,7 +356,7 @@ export default async function WalletsPage() {
                   <th className="px-3 py-2 text-left">Cliente</th>
                   <th className="px-3 py-2 text-right">Saldo</th>
                   <th className="px-3 py-2 text-left">Última actividad</th>
-                  <th className="px-3 py-2 text-left">Ajustar manual</th>
+                  <th className="px-3 py-2 text-left">Depósito · Débito · Reembolso</th>
                 </tr>
               </thead>
               <tbody>
@@ -288,12 +377,22 @@ export default async function WalletsPage() {
                         {new Date(w.updated_at).toLocaleString('es-AR')}
                       </td>
                       <td className="px-3 py-2.5">
-                        <form action={adminAdjustWalletAction} className="flex items-center gap-1.5">
+                        <form action={adminAdjustWalletAction} className="flex items-center gap-1.5 flex-wrap">
                           <input type="hidden" name="user_id" value={w.user_id} />
-                          <input type="number" name="amount" step="1" placeholder="$ +/-"
-                            className="w-20 rounded bg-white/5 border border-white/15 px-2 py-1 text-xs font-mono" />
-                          <input type="text" name="note" maxLength={100} placeholder="Motivo"
-                            className="flex-1 rounded bg-white/5 border border-white/15 px-2 py-1 text-xs" />
+                          <input type="number" name="amount" step="1" placeholder="+/- monto"
+                            className="w-24 rounded bg-white/5 border border-white/15 px-2 py-1 text-xs font-mono"
+                            title="Positivo = acredita. Negativo = debita." />
+                          <select name="concept" defaultValue="Depósito"
+                            className="rounded bg-white/5 border border-white/15 px-2 py-1 text-xs">
+                            <option>Depósito</option>
+                            <option>Débito</option>
+                            <option>Pago</option>
+                            <option>Reembolso</option>
+                            <option>Ajuste</option>
+                            <option>Bonificación</option>
+                          </select>
+                          <input type="text" name="note" maxLength={100} placeholder="Nota (opcional)"
+                            className="flex-1 min-w-[100px] rounded bg-white/5 border border-white/15 px-2 py-1 text-xs" />
                           <button type="submit" className="text-xs px-2 py-1 rounded bg-white text-black font-semibold">
                             Aplicar
                           </button>
@@ -321,7 +420,10 @@ export default async function WalletsPage() {
                         </td>
                         <td className="px-3 py-2">{p?.display_name || p?.email || '—'}</td>
                         <td className="px-3 py-2">
-                          <span className="text-[10px] uppercase tracking-wider bg-white/10 px-1.5 py-0.5 rounded">{tx.kind}</span>
+                          <div className="flex flex-col gap-0.5">
+                            {tx.concept && <span className="text-white/85 font-medium">{tx.concept}</span>}
+                            <span className="text-[10px] uppercase tracking-wider text-white/45">{tx.kind}</span>
+                          </div>
                         </td>
                         <td className={`px-3 py-2 text-right font-mono ${positive ? 'text-emerald-300' : 'text-rose-300'}`}>
                           {positive ? '+' : ''}{(tx.amount_cents / 100).toLocaleString('es-AR')}
