@@ -1660,4 +1660,12 @@ where not exists (
   select 1 from public.wallet_currencies wc where wc.tenant_id = t.id and wc.is_default = true
 );
 
+-- ── 0064_paypal_provider ─────────────────────────────────────────
+-- Habilitar 'paypal' como provider de integraciones
+do $$ begin
+  alter table public.integrations drop constraint integrations_provider_check;
+exception when undefined_object then null; end $$;
+alter table public.integrations add constraint integrations_provider_check
+  check (provider in ('mercadopago','shopify','google_drive','paypal'));
+
 -- ✓ Listo. Recargá la app.

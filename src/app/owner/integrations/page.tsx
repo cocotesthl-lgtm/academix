@@ -3,6 +3,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { disconnectIntegrationAction } from "@/lib/integrations/actions";
 import { env } from "@/lib/env";
 import { CopyButton } from "@/components/owner/CopyButton";
+import { PaypalConnectForm } from "@/components/owner/integrations/PaypalConnectForm";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,16 @@ export default async function IntegrationsPage({
   const mp = byProvider.get('mercadopago');
   const shopify = byProvider.get('shopify');
   const drive = byProvider.get('google_drive');
+  const paypal = byProvider.get('paypal');
+
+  // PayPal metadata parsing
+  const paypalSandbox = paypal?.metadata && typeof (paypal.metadata as { sandbox?: unknown }).sandbox === 'boolean'
+    ? (paypal.metadata as { sandbox: boolean }).sandbox
+    : null;
+  const paypalClientId = paypal?.metadata && typeof (paypal.metadata as { client_id?: unknown }).client_id === 'string'
+    ? (paypal.metadata as { client_id: string }).client_id
+    : null;
+  const paypalWebhookUrl = `${platformOrigin}/api/webhooks/paypal/${tenant.id}`;
 
   // ¿La plataforma está configurada para hacer OAuth con MP? Sin estas env
   // vars el botón "Conectar" sólo lleva al error_handler, así que mejor
@@ -198,6 +209,99 @@ export default async function IntegrationsPage({
               <li>Tus alumnos pagan con MP y el dinero entra a tu cuenta. La plataforma factura comisión aparte.</li>
             </ol>
           </div>
+        )}
+      </div>
+
+      {/* PayPal */}
+      <div className="rounded-xl border border-white/10 p-6 space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <span>🅿️</span> PayPal
+              {paypal && (
+                <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                  conectado
+                </span>
+              )}
+              {paypal && paypalSandbox === true && (
+                <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-200 border border-amber-500/30">
+                  sandbox
+                </span>
+              )}
+              {paypal && paypalSandbox === false && (
+                <span className="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-200 border border-blue-500/30">
+                  LIVE
+                </span>
+              )}
+            </h2>
+            <p className="text-sm text-white/60 mt-1">
+              Cobrá internacional en USD (o cualquier moneda que soporte PayPal). El dinero entra directo a
+              tu cuenta business.
+            </p>
+          </div>
+          {paypal && (
+            <form action={disconnectIntegrationAction}>
+              <input type="hidden" name="provider" value="paypal" />
+              <button className="rounded-md border border-red-500/30 bg-red-500/10 text-red-300 px-4 py-2 text-sm hover:bg-red-500/20 whitespace-nowrap">
+                Desconectar
+              </button>
+            </form>
+          )}
+        </div>
+
+        {paypal ? (
+          <div className="space-y-3 pt-4 border-t border-white/10">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <div className="text-xs text-white/50 uppercase tracking-wider mb-1">Cuenta business</div>
+                <div className="font-mono text-white text-xs break-all">{paypal.external_account_id ?? '—'}</div>
+              </div>
+              {paypalClientId && (
+                <div>
+                  <div className="text-xs text-white/50 uppercase tracking-wider mb-1">Client ID</div>
+                  <div className="font-mono text-white/70 text-xs break-all">{paypalClientId.slice(0, 24)}…</div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs text-white/50 uppercase tracking-wider">URL de webhook (Fase B — checkout)</p>
+                <CopyButton value={paypalWebhookUrl} />
+              </div>
+              <code className="block rounded bg-white/5 border border-white/10 px-3 py-2 text-xs break-all text-white/80">
+                {paypalWebhookUrl}
+              </code>
+              <p className="text-xs text-white/50 mt-1.5 leading-snug">
+                Cuando activemos el botón PayPal en el checkout, pegá esta URL en <strong>PayPal Developer → tu app → Webhooks</strong>.
+                Sin esto, los pagos igual se confirman al momento del checkout — el webhook es solo para reconciliación de refunds/disputes.
+              </p>
+            </div>
+
+            {paypalSandbox === true && (
+              <div className="rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-100/90">
+                Estás en <strong>modo sandbox</strong>. Sólo se procesan cuentas de PayPal Sandbox (developer.paypal.com/dashboard/accounts).
+                Para cobrar real: Desconectar → Conectar con credenciales de Live.
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="rounded border border-white/10 bg-white/[0.02] p-4 text-xs text-white/70 leading-relaxed">
+              <strong className="text-white/90 block mb-2">Cómo obtener tus credenciales (60 segundos):</strong>
+              <ol className="list-decimal pl-4 space-y-1.5">
+                <li>Andá a <a href="https://developer.paypal.com/dashboard/applications" target="_blank" rel="noreferrer" className="underline text-blue-300">developer.paypal.com/dashboard/applications</a> y logueá con tu PayPal Business</li>
+                <li>Click en <strong>Create App</strong> (arriba a la derecha). Nombre libre. Type: <strong>Merchant</strong></li>
+                <li>Copiá el <strong>Client ID</strong> y <strong>Secret</strong> que aparecen</li>
+                <li>Pegalos abajo con el email de tu cuenta business y click en <strong>Conectar PayPal</strong></li>
+              </ol>
+              <p className="mt-3 text-white/55">
+                💡 Al principio dejá <strong>Sandbox</strong> prendido para probar sin plata real. Cuando esté todo OK,
+                creá otra app en modo Live y reconectá con esas credenciales.
+              </p>
+            </div>
+            <PaypalConnectForm />
+          </>
         )}
       </div>
 

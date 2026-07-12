@@ -7,7 +7,7 @@ import { getServiceClient } from '@/lib/supabase/service';
 export async function disconnectIntegrationAction(formData: FormData): Promise<void> {
   const { tenant, userId } = await requireOwner();
   const provider = String(formData.get('provider') ?? '');
-  if (!['mercadopago', 'shopify', 'google_drive'].includes(provider)) return;
+  if (!['mercadopago', 'shopify', 'google_drive', 'paypal'].includes(provider)) return;
 
   const svc = getServiceClient();
   await svc.from('integrations').delete().eq('tenant_id', tenant.id).eq('provider', provider);
