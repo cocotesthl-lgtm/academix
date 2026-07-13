@@ -3,12 +3,19 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { PageHeader } from '@/components/owner/PageHeader';
 import { ShippingManager } from '@/components/owner/products/ShippingManager';
 import type { ShippingZone, ShippingRate } from '@/lib/shipping/types';
+import { ensureDefaultShippingZones } from '@/lib/shipping/defaults';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ShippingPage() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
+
+  // Seed defensivo: si el tenant no tiene zonas configuradas, creamos las
+  // 3 zonas default (CABA+GBA / Interior / Retiro). Idempotente — nunca
+  // pisa lo que el owner ya configuró. Evita que los buyers vean "no
+  // tenemos envío" apenas se instala la app ecommerce.
+  await ensureDefaultShippingZones(tenant.id);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: zonesRaw } = await (svc.from('shipping_zones') as any)

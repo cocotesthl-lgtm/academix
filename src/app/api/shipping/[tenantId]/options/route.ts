@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { calculateShippingOptions } from '@/lib/shipping/actions';
+import { ensureDefaultShippingZones } from '@/lib/shipping/defaults';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -21,6 +22,13 @@ export async function GET(
 
   if (!province) return NextResponse.json({ options: [] });
 
-  const options = await calculateShippingOptions(tenantId, province, subtotal, weight);
+  let options = await calculateShippingOptions(tenantId, province, subtotal, weight);
+  // Si el tenant nunca configuró shipping, la primera consulta del checkout
+  // seedea las zonas default y reintenta. Nunca dejamos al buyer sin envío
+  // disponible por olvido de configuración inicial del owner.
+  if (options.length === 0) {
+    await ensureDefaultShippingZones(tenantId);
+    options = await calculateShippingOptions(tenantId, province, subtotal, weight);
+  }
   return NextResponse.json({ options });
 }
