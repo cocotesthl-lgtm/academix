@@ -1,6 +1,7 @@
 import { CouponInput } from '@/components/storefront/CouponInput';
 import type { LandingConfig } from '@/lib/courses/landing';
 import { LandingChrome } from '@/components/storefront/landings/LandingChrome';
+import { PayPalCheckoutButton } from '@/components/storefront/PayPalCheckoutButton';
 
 type CourseInfo = {
   id: string;
@@ -54,7 +55,10 @@ export function HotmartLanding({
   calendarMode,
   calendarLabel,
   calendarRequired,
-  calendarSlots
+  calendarSlots,
+  tenantId,
+  mpConnected = true,
+  paypalConfig = null
 }: {
   course: CourseInfo;
   modules: ModuleWithLessons[];
@@ -69,6 +73,12 @@ export function HotmartLanding({
   calendarLabel?: string | null;
   calendarRequired?: boolean;
   calendarSlots?: import('@/lib/calendar/types').BookingSlot[];
+  /** Necesario para el botón PayPal. Default: pasado desde la page.tsx. */
+  tenantId?: string;
+  /** Si MP no está conectado, ocultamos el CouponInput y mostramos solo PayPal. */
+  mpConnected?: boolean;
+  /** Si el tenant conectó PayPal, renderizamos Smart Buttons como alternativa. */
+  paypalConfig?: { clientId: string; sandbox: boolean } | null;
 }) {
   const headline = config.headline?.trim() || course.title;
   const subtitle = config.subtitle?.trim();
@@ -303,20 +313,51 @@ export function HotmartLanding({
               </div>
               <p className="text-xs text-black/50 mt-1">Pago único · Acceso de por vida</p>
             </div>
-            <CouponInput
-              courseId={course.id}
-              priceCents={course.price_cents}
-              currency={course.currency}
-              primary={primary}
-              defaultEmail={buyerEmail}
-              buyLabel={config.cta_label || 'Continuar al pago'}
-              ctaText={config.cta_label || 'Comprar publicación'}
-              checkoutConfig={checkoutConfig}
-              calendarMode={calendarMode}
-              calendarLabel={calendarLabel}
-              calendarRequired={calendarRequired}
-              calendarSlots={calendarSlots}
-            />
+            {/* Buy box adaptativo:
+                - MP conectado          → CouponInput (form MP) + PayPal debajo si está
+                - Solo PayPal conectado → Solo el botón PayPal
+                - Ninguno               → Aviso "sitio sin método de pago"                    */}
+            {mpConnected ? (
+              <CouponInput
+                courseId={course.id}
+                priceCents={course.price_cents}
+                currency={course.currency}
+                primary={primary}
+                defaultEmail={buyerEmail}
+                buyLabel={config.cta_label || 'Continuar al pago'}
+                ctaText={config.cta_label || 'Comprar publicación'}
+                checkoutConfig={checkoutConfig}
+                calendarMode={calendarMode}
+                calendarLabel={calendarLabel}
+                calendarRequired={calendarRequired}
+                calendarSlots={calendarSlots}
+              />
+            ) : !paypalConfig ? (
+              <div className="rounded-md border border-amber-400 bg-amber-50 text-amber-900 text-sm p-3">
+                Este sitio todavía no tiene un método de pago configurado.
+                Contactá al vendedor para completar tu compra.
+              </div>
+            ) : null}
+
+            {paypalConfig && course.price_cents > 0 && tenantId && (
+              <div className={mpConnected ? 'pt-1' : ''}>
+                {mpConnected && (
+                  <div className="flex items-center gap-2 text-[11px] text-black/40 uppercase tracking-wider mb-2">
+                    <div className="flex-1 h-px bg-black/10" />
+                    <span>o pagar con</span>
+                    <div className="flex-1 h-px bg-black/10" />
+                  </div>
+                )}
+                <PayPalCheckoutButton
+                  tenantId={tenantId}
+                  courseId={course.id}
+                  clientId={paypalConfig.clientId}
+                  sandbox={paypalConfig.sandbox}
+                  currency={course.currency}
+                />
+              </div>
+            )}
+
             {ctaCaption && (
               <p className="text-xs text-center text-black/60">{ctaCaption}</p>
             )}

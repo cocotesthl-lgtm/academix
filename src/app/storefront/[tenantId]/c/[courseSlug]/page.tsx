@@ -666,6 +666,9 @@ export default async function CourseDetailPage({
         calendarLabel={courseExtras?.calendar_label ?? null}
         calendarRequired={courseExtras?.calendar_required ?? true}
         calendarSlots={calendarSlots}
+        tenantId={tenantId}
+        mpConnected={mpConnected}
+        paypalConfig={paypalConfig}
       />
     );
   }
