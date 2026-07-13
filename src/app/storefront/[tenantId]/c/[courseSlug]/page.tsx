@@ -254,9 +254,14 @@ export default async function CourseDetailPage({
   } catch { /* tabla no existe → mpConnected queda false */ }
 
   // PayPal integration (opcional). Si el tenant lo conectó, exponemos el
-  // clientId y modo al client component para renderizar Smart Buttons
-  // como método alternativo al MP form.
-  let paypalConfig: { clientId: string; sandbox: boolean } | null = null;
+  // clientId, modo y currency al client component para renderizar Smart
+  // Buttons como método alternativo al MP form.
+  //
+  // ⚠️ El `currency` DEBE ser la del tenant (no la del curso). PayPal
+  //    rechaza la orden si el SDK cargó con una currency y la orden se
+  //    creó con otra. El create-order endpoint usa metadata.currency,
+  //    así que el SDK debe cargar con esa misma moneda.
+  let paypalConfig: { clientId: string; sandbox: boolean; currency: string } | null = null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: pp } = await (svc.from('integrations') as any)
@@ -264,7 +269,8 @@ export default async function CourseDetailPage({
       .eq('provider', 'paypal').eq('status', 'connected').maybeSingle();
     const clientId = (pp?.metadata as { client_id?: string })?.client_id;
     const sandbox = !!(pp?.metadata as { sandbox?: boolean })?.sandbox;
-    if (clientId) paypalConfig = { clientId, sandbox };
+    const currency = ((pp?.metadata as { currency?: string })?.currency || 'USD').toUpperCase();
+    if (clientId) paypalConfig = { clientId, sandbox, currency };
   } catch { /* migration 0064 pendiente */ }
 
   // ─── Calendario: si la publicación tiene mentorship_slot, calculamos los slots
@@ -859,7 +865,7 @@ export default async function CourseDetailPage({
                   courseId={course.id}
                   clientId={paypalConfig.clientId}
                   sandbox={paypalConfig.sandbox}
-                  currency={course.currency}
+                  currency={paypalConfig.currency}
                 />
               </div>
             )}

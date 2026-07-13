@@ -57,7 +57,9 @@ export function VslLanding({
   calendarSlots?: import('@/lib/calendar/types').BookingSlot[];
   tenantId?: string;
   mpConnected?: boolean;
-  paypalConfig?: { clientId: string; sandbox: boolean } | null;
+  /** currency: la moneda que el owner eligió en el connect. El SDK y el
+   *  create-order tienen que coincidir o PayPal rechaza la orden. */
+  paypalConfig?: { clientId: string; sandbox: boolean; currency: string } | null;
 }) {
   const headline = config.headline?.trim() || course.title;
   const subtitle = config.subtitle?.trim();
@@ -347,7 +349,7 @@ export function VslLanding({
                     courseId={course.id}
                     clientId={paypalConfig.clientId}
                     sandbox={paypalConfig.sandbox}
-                    currency={course.currency}
+                    currency={paypalConfig.currency}
                   />
                 </div>
               )}

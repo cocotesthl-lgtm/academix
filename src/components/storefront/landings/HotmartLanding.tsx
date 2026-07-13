@@ -77,8 +77,11 @@ export function HotmartLanding({
   tenantId?: string;
   /** Si MP no está conectado, ocultamos el CouponInput y mostramos solo PayPal. */
   mpConnected?: boolean;
-  /** Si el tenant conectó PayPal, renderizamos Smart Buttons como alternativa. */
-  paypalConfig?: { clientId: string; sandbox: boolean } | null;
+  /** Si el tenant conectó PayPal, renderizamos Smart Buttons como alternativa.
+   *  `currency` es la moneda que el owner eligió en el connect — DEBE
+   *  coincidir con la que el create-order endpoint pone en la orden, sino
+   *  PayPal rechaza el pago con "expected currency X, got Y". */
+  paypalConfig?: { clientId: string; sandbox: boolean; currency: string } | null;
 }) {
   const headline = config.headline?.trim() || course.title;
   const subtitle = config.subtitle?.trim();
@@ -353,7 +356,7 @@ export function HotmartLanding({
                   courseId={course.id}
                   clientId={paypalConfig.clientId}
                   sandbox={paypalConfig.sandbox}
-                  currency={course.currency}
+                  currency={paypalConfig.currency}
                 />
               </div>
             )}

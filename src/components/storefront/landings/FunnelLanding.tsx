@@ -77,8 +77,10 @@ export function FunnelLanding({
   tenantId?: string;
   /** Si MP no está conectado, ocultamos el form MP en TODOS los CTAs de la landing. */
   mpConnected?: boolean;
-  /** Si el owner conectó PayPal, renderizamos Smart Buttons como alternativa. */
-  paypalConfig?: { clientId: string; sandbox: boolean } | null;
+  /** Si el owner conectó PayPal, renderizamos Smart Buttons como alternativa.
+   *  `currency` DEBE ser la que eligió el owner al conectar — el SDK y el
+   *  create-order tienen que coincidir o PayPal rechaza la orden. */
+  paypalConfig?: { clientId: string; sandbox: boolean; currency: string } | null;
 }) {
   const headline = config.headline?.trim() || course.title;
   const subtitle = config.subtitle?.trim();
@@ -145,7 +147,7 @@ export function FunnelLanding({
             courseId={course.id}
             clientId={paypalConfig.clientId}
             sandbox={paypalConfig.sandbox}
-            currency={course.currency}
+            currency={paypalConfig.currency}
           />
         </div>
       )}
