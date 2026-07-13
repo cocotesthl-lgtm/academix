@@ -33,7 +33,8 @@ export function CouponInput({
   depositPercent = 30,
   ctaText = 'Comprar publicación',
   venues = [],
-  isReservation = false
+  isReservation = false,
+  walletBonus = null
 }: {
   courseId: string;
   priceCents: number;
@@ -55,6 +56,8 @@ export function CouponInput({
   venues?: Array<{ id: string; name: string; address: string | null }>;
   /** Si el producto es multi_venue/restaurant, pedimos fecha + hora + personas. */
   isReservation?: boolean;
+  /** Bonus de saldo que gana el buyer al comprar (App Saldos). */
+  walletBonus?: { cents: number; symbol: string; label: string; logoUrl?: string | null } | null;
 }) {
   const cfg = checkoutConfig ?? DEFAULT_CHECKOUT_CONFIG;
   const [showCoupon, setShowCoupon] = useState(false);
@@ -160,6 +163,26 @@ export function CouponInput({
         }
       }}
     >
+      {/* Bonus wallet: al comprar este producto, el buyer gana saldo en su
+          wallet del sitio. Sirve como incentivo de conversión — ML/Amazon
+          hacen algo parecido con "puntos". Solo se muestra si el owner
+          configuró wallet_bonus_cents > 0 y la app Saldos está activa. */}
+      {walletBonus && walletBonus.cents > 0 && (
+        <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm">
+          {walletBonus.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={walletBonus.logoUrl} alt={walletBonus.label} className="w-5 h-5 rounded object-cover shrink-0" />
+          ) : (
+            <span className="text-lg leading-none">🎁</span>
+          )}
+          <div className="min-w-0 text-emerald-900 dark:text-emerald-100">
+            Ganás <strong className="font-mono">
+              {walletBonus.symbol} {(walletBonus.cents / 100).toLocaleString('es-AR')} {walletBonus.label}
+            </strong> en tu saldo al comprar
+          </div>
+        </div>
+      )}
+
       {/* Publicación gratis: botón directo (no se piden datos extra; se asume user_id) */}
       {isFree && (
         <button

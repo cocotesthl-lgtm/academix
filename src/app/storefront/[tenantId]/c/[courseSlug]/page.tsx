@@ -218,6 +218,29 @@ export default async function CourseDetailPage({
     courseConfig: courseExtras?.checkout_config ?? null
   });
 
+  // Wallet bonus del curso + moneda default del tenant para mostrarle al
+  // buyer "ganás $X en saldo al comprar". Solo se renderiza si el bonus
+  // está seteado y > 0. Todo defensivo por migrations pendientes.
+  let walletBonus: { cents: number; symbol: string; label: string; logoUrl?: string | null } | null = null;
+  try {
+    const { data: courseWb } = await svc.from('courses')
+      .select('wallet_bonus_cents').eq('id', course.id)
+      .maybeSingle<{ wallet_bonus_cents: number | null }>();
+    const bonusCents = courseWb?.wallet_bonus_cents ?? 0;
+    if (bonusCents > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cur } = await (svc.from('wallet_currencies') as any)
+        .select('label, symbol, logo_url')
+        .eq('tenant_id', tenantId).eq('is_default', true).maybeSingle();
+      walletBonus = {
+        cents: bonusCents,
+        symbol: cur?.symbol ?? '$',
+        label: cur?.label ?? 'ARS',
+        logoUrl: cur?.logo_url ?? null
+      };
+    }
+  } catch { /* migration 0061/0063 pendiente */ }
+
   // PayPal integration (opcional). Si el tenant lo conectó, exponemos el
   // clientId y modo al client component para renderizar Smart Buttons
   // como método alternativo al MP form.
@@ -779,6 +802,7 @@ export default async function CourseDetailPage({
                 ctaText={ctaTextForType(productType)}
                 venues={linkedVenues}
                 isReservation={isReservationProduct}
+                walletBonus={walletBonus}
               />
             )}
             {/* Método alternativo: PayPal — solo si el owner lo conectó y
