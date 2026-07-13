@@ -186,11 +186,34 @@ export async function updateCourseAction(
     }
   }
 
+  // Wallet bonus: cuántos centavos de saldo se acreditan al buyer al
+  // comprar este producto. Solo lo persistimos si el form lo mandó —
+  // así saves parciales no lo pisan.
+  if (formData.has('wallet_bonus')) {
+    const bonusRaw = String(formData.get('wallet_bonus') ?? '0').replace(/[^0-9.]/g, '');
+    const bonusCents = Math.max(0, Math.round(parseFloat(bonusRaw || '0') * 100));
+    payload.wallet_bonus_cents = bonusCents;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (svc.from('courses') as any)
     .update(payload)
     .eq('id', id)
     .eq('tenant_id', tenant.id);
+
+  // Retry sin wallet_bonus_cents si la migration 0061 no corrió.
+  if (error && error.message?.toLowerCase().includes('wallet_bonus_cents')) {
+    delete payload.wallet_bonus_cents;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: retryErr } = await (svc.from('courses') as any)
+      .update(payload)
+      .eq('id', id)
+      .eq('tenant_id', tenant.id);
+    if (retryErr) return { ok: false, error: retryErr.message };
+    revalidatePath(`/courses/${id}`);
+    revalidatePath('/courses');
+    return { ok: true };
+  }
 
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/courses/${id}`);

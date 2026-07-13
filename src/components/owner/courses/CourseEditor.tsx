@@ -29,6 +29,13 @@ export type Course = {
   landing_template?: 'classic' | 'hotmart' | 'funnel' | 'vsl';
   landing_config?: Record<string, unknown> | null;
   landing_variants?: Record<string, { template: 'classic' | 'hotmart' | 'funnel' | 'vsl'; config: Record<string, unknown> }> | null;
+  /** Centavos a acreditar al buyer en su wallet al comprar (App Saldos). */
+  wallet_bonus_cents?: number;
+};
+
+export type WalletCurrencyInfo = {
+  label: string;
+  symbol: string;
 };
 
 export type Category = { id: string; name: string };
@@ -49,7 +56,20 @@ export type Module = {
   lessons: Lesson[];
 };
 
-export function CourseEditor({ course, modules, categories, primaryColor = '#0a0a0a', storefrontOrigin = '' }: { course: Course; modules: Module[]; categories: Category[]; primaryColor?: string; storefrontOrigin?: string }) {
+export function CourseEditor({
+  course, modules, categories, primaryColor = '#0a0a0a', storefrontOrigin = '',
+  walletsEnabled = false, walletCurrency = null
+}: {
+  course: Course;
+  modules: Module[];
+  categories: Category[];
+  primaryColor?: string;
+  storefrontOrigin?: string;
+  /** App Saldos instalada — si false, no mostramos el input de bonus. */
+  walletsEnabled?: boolean;
+  /** Moneda default de la wallet del tenant para mostrar preview del bonus. */
+  walletCurrency?: WalletCurrencyInfo | null;
+}) {
   const [updateState, updateAction, updatePending] = useActionState<Result | null, FormData>(
     updateCourseAction,
     null
@@ -129,6 +149,39 @@ export function CourseEditor({ course, modules, categories, primaryColor = '#0a0
               <span className="text-sm">Publicación destacado (aparece arriba en el storefront)</span>
             </label>
           </div>
+
+          {/* Bonus wallet: solo visible si la app Saldos está instalada.
+              Backend en migration 0061 + webhook MP/PayPal ya lo aplican. */}
+          {walletsEnabled && (
+            <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/[0.04] p-4 space-y-2">
+              <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                <label className="text-sm font-semibold text-emerald-100 flex items-center gap-1.5">
+                  💰 Bonus de saldo al comprar
+                </label>
+                <span className="text-[10px] text-white/45 uppercase tracking-wider">Opcional</span>
+              </div>
+              <p className="text-xs text-white/60 leading-snug">
+                Al comprar este producto, se le acredita este monto al buyer en su wallet
+                {walletCurrency ? <> en <strong>{walletCurrency.symbol} {walletCurrency.label}</strong></> : null}.
+                Ideal para cashback, promos, o convertir clientes en usuarios recurrentes de tu tienda.
+                Dejalo en <code className="bg-black/40 px-1 rounded">0</code> para no dar bonus.
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-white/50 text-sm">{walletCurrency?.symbol ?? '$'}</span>
+                <input
+                  name="wallet_bonus"
+                  type="number"
+                  min="0"
+                  step="1"
+                  defaultValue={((course.wallet_bonus_cents ?? 0) / 100).toString()}
+                  className="flex-1 max-w-[200px] rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono focus:outline-none focus:border-white/40"
+                />
+                {walletCurrency && (
+                  <span className="text-[11px] text-white/45">{walletCurrency.label}</span>
+                )}
+              </div>
+            </div>
+          )}
 
           {updateState?.ok === false && (
             <div className="rounded-md bg-red-500/10 border border-red-500/30 text-red-200 text-sm px-3 py-2">

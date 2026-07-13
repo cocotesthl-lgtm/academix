@@ -3,6 +3,7 @@ import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { CourseEditor, type Course, type Module, type Lesson, type Category } from "@/components/owner/courses/CourseEditor";
+import { getTenantModules } from "@/lib/modules/queries";
 import { CourseBuilderToolbar } from "@/components/owner/courses/CourseBuilderToolbar";
 import { GrantEnrollmentForm } from "@/components/owner/courses/GrantEnrollmentForm";
 import { ContentLabelsForm } from "@/components/owner/courses/ContentLabelsForm";
@@ -51,6 +52,27 @@ export default async function CourseEditPage({
       ribbonTone = data.ribbon_tone;
     }
   } catch { /* migration 0029 falta */ }
+
+  // Wallet bonus (migration 0061) + info de moneda default del tenant
+  // para preview en el input. Todo defensivo — si la app Saldos no está
+  // instalada o las migrations faltan, el input no se renderiza.
+  let walletBonusCents = 0;
+  try {
+    const { data } = await svc.from('courses')
+      .select('wallet_bonus_cents').eq('id', id).maybeSingle<{ wallet_bonus_cents: number | null }>();
+    if (data?.wallet_bonus_cents != null) walletBonusCents = data.wallet_bonus_cents;
+  } catch { /* migration 0061 falta */ }
+  const tenantModules = await getTenantModules(tenant.id);
+  const walletsEnabled = tenantModules.wallets !== false;
+  let walletCurrency: { label: string; symbol: string } | null = null;
+  if (walletsEnabled) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (svc.from('wallet_currencies') as any)
+        .select('label, symbol').eq('tenant_id', tenant.id).eq('is_default', true).maybeSingle();
+      if (data) walletCurrency = { label: data.label, symbol: data.symbol };
+    } catch { /* migration 0063 falta */ }
+  }
 
   if (!course) notFound();
 
@@ -174,10 +196,12 @@ export default async function CourseEditPage({
       )}
 
       <CourseEditor
-        course={course}
+        course={{ ...course, wallet_bonus_cents: walletBonusCents }}
         modules={modules}
         categories={categories}
         primaryColor={primaryColor}
+        walletsEnabled={walletsEnabled}
+        walletCurrency={walletCurrency}
         storefrontOrigin={(() => {
           const u = new URL(env.appUrl);
           const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
