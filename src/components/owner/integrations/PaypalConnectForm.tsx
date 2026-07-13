@@ -42,13 +42,25 @@ export function PaypalConnectForm() {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  // Estado controlado por cada input. Sin esto, React 19 resetea todos
+  // los inputs a "" cuando el <form action={fn}> vuelve, aunque el
+  // action haya devuelto error. El owner perdería los datos y no vería
+  // el mensaje (o lo vería un frame y desaparece con el reset).
+  const [businessEmail, setBusinessEmail] = useState('');
+  const [currency, setCurrency] = useState('USD');
+  const [clientId, setClientId] = useState('');
+  const [clientSecret, setClientSecret] = useState('');
+  const [webhookId, setWebhookId] = useState('');
+
   function handleSubmit(formData: FormData) {
     setError(null);
     if (sandbox) formData.set('sandbox', 'true');
     startTransition(async () => {
       const res = await connectPaypalAction(formData);
       if (!res.ok) setError(res.error);
-      // si ok=true, revalidatePath en el server re-renderiza y muestra el estado conectado
+      // si ok=true, revalidatePath en el server re-renderiza y muestra el estado conectado.
+      // No limpiamos los inputs en caso de error — el owner los mantiene y edita lo que
+      // haya que corregir.
     });
   }
 
@@ -58,6 +70,7 @@ export function PaypalConnectForm() {
         <div>
           <label className="text-[10px] uppercase tracking-wider text-white/45">Email cuenta business</label>
           <input name="business_email" type="email" required maxLength={200}
+            value={businessEmail} onChange={(e) => setBusinessEmail(e.target.value)}
             placeholder="tu-cuenta@paypal.com"
             className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm" />
         </div>
@@ -78,7 +91,7 @@ export function PaypalConnectForm() {
 
       <div>
         <label className="text-[10px] uppercase tracking-wider text-white/45">Moneda de cobro en PayPal</label>
-        <select name="currency" defaultValue="USD"
+        <select name="currency" value={currency} onChange={(e) => setCurrency(e.target.value)}
           className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm">
           {PAYPAL_CURRENCIES.map((c) => (
             <option key={c.code} value={c.code}>{c.label}</option>
@@ -93,6 +106,7 @@ export function PaypalConnectForm() {
       <div>
         <label className="text-[10px] uppercase tracking-wider text-white/45">Client ID</label>
         <input name="client_id" required maxLength={200}
+          value={clientId} onChange={(e) => setClientId(e.target.value.trim())}
           placeholder="AaBbCc123…"
           className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm font-mono" />
       </div>
@@ -100,6 +114,7 @@ export function PaypalConnectForm() {
       <div>
         <label className="text-[10px] uppercase tracking-wider text-white/45">Client Secret</label>
         <input name="client_secret" required type="password" maxLength={200}
+          value={clientSecret} onChange={(e) => setClientSecret(e.target.value.trim())}
           placeholder="EJk…"
           className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm font-mono" />
         <p className="text-[10px] text-white/40 mt-1">
@@ -111,6 +126,7 @@ export function PaypalConnectForm() {
         <summary className="cursor-pointer text-white/50 hover:text-white">Webhook ID (opcional — para confirmación automática)</summary>
         <div className="mt-2">
           <input name="webhook_id" maxLength={100}
+            value={webhookId} onChange={(e) => setWebhookId(e.target.value.trim())}
             placeholder="8P37..."
             className="w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm font-mono" />
           <p className="text-[10px] text-white/40 mt-1">
