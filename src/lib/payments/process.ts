@@ -216,6 +216,55 @@ export async function processMpPayment(opts: {
           });
         }
 
+        // ── Wallet bonus por items físicos ─────────────────────────
+        // Cada producto puede tener wallet_bonus_cents > 0. Sumamos
+        // el bonus de todos los items comprados y lo acreditamos como
+        // una sola tx en la wallet del buyer. Idempotente: check por
+        // sale/order tag en note (no hay sale_id 1:1 con physical_orders).
+        try {
+          if (buyerId && orderItems.length > 0) {
+            const uniqueProductIds = Array.from(new Set(orderItems.map((i) => i.product_id).filter((v): v is string => !!v)));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: bonusRows } = await (svc.from('physical_products') as any)
+              .select('id, wallet_bonus_cents, currency, title')
+              .in('id', uniqueProductIds);
+            type BonusRow = { id: string; wallet_bonus_cents: number | null; currency: string | null; title: string | null };
+            const bonusByProduct = new Map<string, BonusRow>();
+            for (const r of ((bonusRows ?? []) as BonusRow[])) bonusByProduct.set(r.id, r);
+            let totalBonus = 0;
+            let currency = 'ARS';
+            const productTitles: string[] = [];
+            for (const it of orderItems) {
+              if (!it.product_id) continue;
+              const p = bonusByProduct.get(it.product_id);
+              const perUnit = Number(p?.wallet_bonus_cents ?? 0);
+              if (perUnit > 0) {
+                totalBonus += perUnit * it.qty;
+                if (p?.currency) currency = p.currency;
+                if (p?.title) productTitles.push(p.title);
+              }
+            }
+            if (totalBonus > 0) {
+              // Idempotencia: tag único en la note por orderId+kind='topup'.
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: existingBonusTx } = await (svc.from('wallet_transactions') as any)
+                .select('id').eq('tenant_id', opts.tenantId).eq('user_id', buyerId)
+                .eq('kind', 'topup').like('note', `%[order:${orderId}]%`).maybeSingle();
+              if (!existingBonusTx) {
+                const { creditWallet } = await import('@/lib/wallets/credit');
+                await creditWallet({
+                  tenantId: opts.tenantId,
+                  userId: buyerId,
+                  amountCents: totalBonus,
+                  kind: 'topup',
+                  note: `Bonus por compra: ${productTitles.slice(0, 3).join(', ')} [order:${orderId}]`,
+                  currency
+                });
+              }
+            }
+          }
+        } catch { /* migration 0061/0041 pendiente — la venta se completó ok */ }
+
         // ── Dropshipping: rutear items al supplier ─────────────────
         // Para cada item del pedido chequeamos si su physical_product_id
         // tiene un catalog_listings asociado (o sea es shadow product de

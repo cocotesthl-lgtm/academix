@@ -140,7 +140,16 @@ export async function updateProductAction(id: string, formData: FormData): Promi
   const desired = rawSlug ? slugify(rawSlug) : slugify(title);
   const finalSlug = await uniqueSlug(tenant.id, desired || 'producto', id);
 
+  // Wallet bonus (App Saldos) — solo se persiste si el form lo mandó.
+  const walletBonusRaw = formData.has('wallet_bonus')
+    ? String(formData.get('wallet_bonus') ?? '0').replace(/[^0-9.]/g, '')
+    : null;
+  const walletBonusCents = walletBonusRaw != null
+    ? Math.max(0, Math.round(parseFloat(walletBonusRaw || '0') * 100))
+    : null;
+
   // Defensivo: si migration 0058 no corrió, reintento sin rating/reviews_count.
+  // Idem 0061 para wallet_bonus_cents.
   const basePayload: Record<string, unknown> = {
     title, slug: finalSlug, description, price_cents: priceCents,
     compare_at_price_cents: compareAt, sku, stock_qty: stockQty,
@@ -149,10 +158,24 @@ export async function updateProductAction(id: string, formData: FormData): Promi
     category_id: categoryId, seo_title: seoTitle, seo_description: seoDescription,
     updated_at: new Date().toISOString()
   };
+  const fullPayload = {
+    ...basePayload,
+    rating,
+    reviews_count: reviewsCount,
+    ...(walletBonusCents != null ? { wallet_bonus_cents: walletBonusCents } : {})
+  };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let { error } = await (svc.from('physical_products') as any)
-    .update({ ...basePayload, rating, reviews_count: reviewsCount })
+    .update(fullPayload)
     .eq('id', id).eq('tenant_id', tenant.id);
+  if (error && /wallet_bonus_cents/.test(error.message ?? '')) {
+    // Migration 0061 no corrió → retry sin bonus
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('physical_products') as any)
+      .update({ ...basePayload, rating, reviews_count: reviewsCount })
+      .eq('id', id).eq('tenant_id', tenant.id);
+    error = retry.error;
+  }
   if (error && /rating|reviews_count/.test(error.message ?? '')) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const retry = await (svc.from('physical_products') as any)

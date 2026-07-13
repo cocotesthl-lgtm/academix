@@ -6,6 +6,7 @@ import { ProductToolbar } from '@/components/owner/products/ProductToolbar';
 import { ProductEditorForm } from '@/components/owner/products/ProductEditorForm';
 import type { PhysicalProduct, ProductVariant } from '@/lib/products/actions';
 import { getTenantPlan } from '@/lib/plans/queries';
+import { getTenantModules } from '@/lib/modules/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,26 @@ export default async function ProductEditPage({
   const uploadsEnabled = tenantPlan.plan?.features?.uploads_enabled === true;
   const planName = tenantPlan.plan?.name ?? null;
 
+  // App Saldos: gate del input de bonus wallet + info de moneda default
+  const tenantModules = await getTenantModules(tenant.id);
+  const walletsEnabled = tenantModules.wallets !== false;
+  let walletCurrency: { label: string; symbol: string } | null = null;
+  let walletBonusCents = 0;
+  if (walletsEnabled) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cur } = await (svc.from('wallet_currencies') as any)
+        .select('label, symbol').eq('tenant_id', tenant.id).eq('is_default', true).maybeSingle();
+      if (cur) walletCurrency = { label: cur.label, symbol: cur.symbol };
+    } catch { /* migration 0063 pendiente */ }
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: pwb } = await (svc.from('physical_products') as any)
+        .select('wallet_bonus_cents').eq('id', id).maybeSingle();
+      if (pwb?.wallet_bonus_cents != null) walletBonusCents = pwb.wallet_bonus_cents;
+    } catch { /* migration 0061 pendiente */ }
+  }
+
   const u = new URL(env.appUrl);
   const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
   const host = isLocal
@@ -68,6 +89,9 @@ export default async function ProductEditPage({
           categories={categories}
           uploadsEnabled={uploadsEnabled}
           planName={planName}
+          walletsEnabled={walletsEnabled}
+          walletCurrency={walletCurrency}
+          walletBonusCents={walletBonusCents}
         />
       </div>
     </div>

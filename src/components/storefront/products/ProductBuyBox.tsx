@@ -14,11 +14,13 @@ function formatMoney(cents: number, currency: string): string {
 export function ProductBuyBox({
   tenantId,
   product,
-  variants
+  variants,
+  walletBonus = null
 }: {
   tenantId: string;
   product: PhysicalProduct;
   variants: ProductVariant[];
+  walletBonus?: { cents: number; symbol: string; label: string; logoUrl?: string | null } | null;
 }) {
   const hasVariants = variants.length > 0;
   const [selectedId, setSelectedId] = useState<string>(
@@ -100,6 +102,24 @@ export function ProductBuyBox({
       {product.track_stock && !outOfStock && displayStock <= 5 && (
         <div className="text-xs text-amber-700 font-medium">
           Últimas {displayStock} unidades
+        </div>
+      )}
+
+      {/* Bonus wallet — al comprar el buyer gana saldo en la wallet del sitio.
+          Solo visible si el owner configuró wallet_bonus_cents > 0. */}
+      {walletBonus && walletBonus.cents > 0 && (
+        <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          {walletBonus.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={walletBonus.logoUrl} alt={walletBonus.label} className="w-5 h-5 rounded object-cover shrink-0" />
+          ) : (
+            <span className="text-lg leading-none">🎁</span>
+          )}
+          <div className="min-w-0">
+            Ganás <strong className="font-mono">
+              {walletBonus.symbol} {(walletBonus.cents / 100).toLocaleString('es-AR')} {walletBonus.label}
+            </strong> en tu saldo al comprar
+          </div>
         </div>
       )}
 

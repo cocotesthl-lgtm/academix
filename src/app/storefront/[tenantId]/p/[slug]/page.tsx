@@ -92,6 +92,29 @@ export default async function ProductPublicPage({
     : product.stock_qty;
   const inStock = !product.track_stock || totalStock > 0;
 
+  // Wallet bonus del producto físico + moneda default del tenant.
+  // Todo defensivo: si migration 0061/0063 no corrió, walletBonus queda null.
+  let walletBonus: { cents: number; symbol: string; label: string; logoUrl?: string | null } | null = null;
+  try {
+    const svc = getServiceClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: pwb } = await (svc.from('physical_products') as any)
+      .select('wallet_bonus_cents').eq('id', product.id).maybeSingle();
+    const bonusCents = (pwb as { wallet_bonus_cents?: number | null } | null)?.wallet_bonus_cents ?? 0;
+    if (bonusCents > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cur } = await (svc.from('wallet_currencies') as any)
+        .select('label, symbol, logo_url')
+        .eq('tenant_id', tenantId).eq('is_default', true).maybeSingle();
+      walletBonus = {
+        cents: bonusCents,
+        symbol: cur?.symbol ?? '$',
+        label: cur?.label ?? 'ARS',
+        logoUrl: cur?.logo_url ?? null
+      };
+    }
+  } catch { /* migration pendiente */ }
+
   return (
     <article className="max-w-6xl mx-auto px-6 py-10">
       <TrackPageView tenantId={tenantId} eventType="product_view" productId={product.id} />
@@ -154,6 +177,7 @@ export default async function ProductPublicPage({
             tenantId={tenantId}
             product={product}
             variants={variants}
+            walletBonus={walletBonus}
           />
 
           {product.description && (

@@ -11,7 +11,10 @@ export function ProductEditorForm({
   variants,
   categories,
   uploadsEnabled = false,
-  planName = null
+  planName = null,
+  walletsEnabled = false,
+  walletCurrency = null,
+  walletBonusCents = 0
 }: {
   product: PhysicalProduct;
   variants: ProductVariant[];
@@ -19,6 +22,10 @@ export function ProductEditorForm({
   /** true si el plan del tenant incluye features.uploads_enabled */
   uploadsEnabled?: boolean;
   planName?: string | null;
+  /** App Saldos instalada — habilita el input de bonus wallet. */
+  walletsEnabled?: boolean;
+  walletCurrency?: { label: string; symbol: string } | null;
+  walletBonusCents?: number;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [gallery, setGallery] = useState<string>(product.gallery.join('\n'));
@@ -156,6 +163,35 @@ export function ProductEditorForm({
             />
           </div>
         </div>
+
+        {/* Bonus wallet (App Saldos) — gated por moduleKey='wallets' */}
+        {walletsEnabled && (
+          <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/[0.04] p-4 space-y-2">
+            <div className="flex items-baseline justify-between gap-3 flex-wrap">
+              <label className="text-sm font-semibold text-emerald-100 flex items-center gap-1.5">
+                💰 Bonus de saldo al comprar
+              </label>
+              <span className="text-[10px] text-white/45 uppercase tracking-wider">Opcional</span>
+            </div>
+            <p className="text-xs text-white/60 leading-snug">
+              Al comprar este producto, se acredita este monto en la wallet del buyer
+              {walletCurrency ? <> en <strong>{walletCurrency.symbol} {walletCurrency.label}</strong></> : null}.
+              Ideal para cashback o retención. <code className="bg-black/40 px-1 rounded">0</code> = sin bonus.
+            </p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-white/50 text-sm">{walletCurrency?.symbol ?? '$'}</span>
+              <input
+                name="wallet_bonus"
+                type="number"
+                min="0"
+                step="1"
+                defaultValue={(walletBonusCents / 100).toString()}
+                className="flex-1 max-w-[200px] rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono focus:outline-none focus:border-white/40"
+              />
+              {walletCurrency && <span className="text-[11px] text-white/45">{walletCurrency.label}</span>}
+            </div>
+          </div>
+        )}
 
         {/* Stock (solo si no hay variantes) */}
         <div className="rounded-lg border border-white/10 p-4 space-y-3">
