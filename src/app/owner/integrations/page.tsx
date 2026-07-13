@@ -1,7 +1,6 @@
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { disconnectIntegrationAction } from "@/lib/integrations/actions";
-import { updatePaypalAutoConvertAction } from "@/lib/paypal/actions";
 import { env } from "@/lib/env";
 import { CopyButton } from "@/components/owner/CopyButton";
 import { PaypalConnectForm } from "@/components/owner/integrations/PaypalConnectForm";
@@ -56,21 +55,6 @@ export default async function IntegrationsPage({
     ? (paypal.metadata as { currency: string }).currency
     : 'USD';
   const paypalWebhookUrl = `${platformOrigin}/api/webhooks/paypal/${tenant.id}`;
-
-  // Config de conversión automática (0066). Defensivo por migration.
-  let paypalAutoConvert = false;
-  let paypalRate: number | null = null;
-  let paypalRoundCents = false;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: tCfg } = await (svc.from('tenants') as any)
-      .select('paypal_auto_convert, paypal_conversion_rate, paypal_round_cents')
-      .eq('id', tenant.id).maybeSingle();
-    paypalAutoConvert = !!(tCfg as { paypal_auto_convert?: boolean } | null)?.paypal_auto_convert;
-    const rate = (tCfg as { paypal_conversion_rate?: string | number | null } | null)?.paypal_conversion_rate;
-    paypalRate = rate != null ? Number(rate) : null;
-    paypalRoundCents = !!(tCfg as { paypal_round_cents?: boolean } | null)?.paypal_round_cents;
-  } catch { /* migration 0066 pendiente */ }
 
   // ¿La plataforma está configurada para hacer OAuth con MP? Sin estas env
   // vars el botón "Conectar" sólo lleva al error_handler, así que mejor
@@ -309,59 +293,16 @@ export default async function IntegrationsPage({
               </div>
             )}
 
-            {/* Conversión automática global (0066). Alternativa al override
-                Hotmart-style por producto — el owner setea una tasa una
-                vez y todos los productos se auto-convierten al vender por
-                PayPal. */}
-            <form action={updatePaypalAutoConvertAction}
-              className="rounded-lg border border-blue-500/25 bg-blue-500/[0.04] p-4 space-y-3">
-              <div>
-                <h3 className="text-sm font-semibold text-blue-100">🔁 Conversión automática de precios</h3>
-                <p className="text-xs text-white/60 mt-1 leading-snug">
-                  Activá esto para que la plataforma convierta automáticamente el precio local
-                  de cada producto a <strong>{paypalCurrency}</strong> cuando alguien pague por PayPal.
-                  Alternativa a setear el precio internacional producto por producto.
-                </p>
-              </div>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="auto_convert" defaultChecked={paypalAutoConvert}
-                  className="w-4 h-4" />
-                <span className="text-sm">Convertir precios locales a {paypalCurrency} automáticamente</span>
-              </label>
-
-              <div className="grid sm:grid-cols-[1fr_auto] gap-3 items-end pt-1">
-                <div>
-                  <label className="text-[10px] uppercase tracking-wider text-white/45">
-                    Tasa: 1 {paypalCurrency} = <em>?</em> en tu moneda local
-                  </label>
-                  <input name="rate" type="number" step="0.01" min="0"
-                    defaultValue={paypalRate ?? ''}
-                    placeholder="1000"
-                    className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm font-mono" />
-                  <p className="text-[10px] text-white/40 mt-1">
-                    Ej: si 1 USD = 1000 ARS, escribí <code className="bg-black/40 px-1 rounded">1000</code>.
-                    Un curso de $14.900 pasa a US$ 14.90.
-                  </p>
-                </div>
-                <button type="submit"
-                  className="rounded bg-white text-black text-sm font-semibold px-4 py-2 hover:bg-white/90 h-fit">
-                  Guardar
-                </button>
-              </div>
-
-              <label className="flex items-center gap-2 cursor-pointer pt-1">
-                <input type="checkbox" name="round_cents" defaultChecked={paypalRoundCents}
-                  className="w-4 h-4" />
-                <span className="text-sm">Redondear centavos (precios "limpios" tipo 15 USD)</span>
-              </label>
-
-              <p className="text-[11px] text-white/50 pt-1 border-t border-white/5">
-                💡 <strong>Precedencia:</strong> si un producto tiene un precio PayPal manual seteado en
-                su editor, ese gana. Si no, se aplica esta conversión. Si nada de esto está seteado,
-                PayPal cobra el precio local interpretado 1:1 en {paypalCurrency}.
-              </p>
-            </form>
+            {/* Nudge de precios PayPal — el owner tiene que ir a cada producto
+                y setear su precio en {paypalCurrency} desde el editor. */}
+            <div className="rounded-lg border border-blue-500/25 bg-blue-500/[0.04] p-4 text-xs text-white/75 leading-relaxed">
+              💡 <strong className="text-blue-100">Precio internacional por producto:</strong>{' '}
+              en el editor de cada curso vas a ver un campo "🌍 Precio internacional (PayPal — {paypalCurrency})".
+              Seteá el monto en {paypalCurrency} que querés cobrar por PayPal.
+              <br /><br />
+              Si dejás el campo vacío, PayPal cobra el precio local del curso interpretado
+              como {paypalCurrency} — puede quedar sin sentido si tu curso está en pesos.
+            </div>
           </div>
         ) : (
           <>
