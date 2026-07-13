@@ -74,6 +74,29 @@ export default async function CourseEditPage({
     } catch { /* migration 0063 falta */ }
   }
 
+  // PayPal integration → moneda + precio actual del curso para el input
+  // Hotmart-style. Si el tenant no conectó PayPal, no mostramos el input.
+  let paypalCurrency: string | null = null;
+  let paypalPriceCents: number | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: pp } = await (svc.from('integrations') as any)
+      .select('metadata').eq('tenant_id', tenant.id)
+      .eq('provider', 'paypal').eq('status', 'connected').maybeSingle();
+    const c = (pp?.metadata as { currency?: string } | null)?.currency;
+    if (c) paypalCurrency = c.toUpperCase();
+  } catch { /* migration 0064 falta */ }
+  if (paypalCurrency) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cp } = await (svc.from('courses') as any)
+        .select('paypal_price_cents').eq('id', id).maybeSingle();
+      if (typeof (cp as { paypal_price_cents?: number | null } | null)?.paypal_price_cents === 'number') {
+        paypalPriceCents = (cp as { paypal_price_cents: number }).paypal_price_cents;
+      }
+    } catch { /* migration 0065 falta */ }
+  }
+
   if (!course) notFound();
 
   // Query separada para nuevos campos (checkout/calendar/subscription) —
@@ -202,6 +225,8 @@ export default async function CourseEditPage({
         primaryColor={primaryColor}
         walletsEnabled={walletsEnabled}
         walletCurrency={walletCurrency}
+        paypalCurrency={paypalCurrency}
+        paypalPriceCents={paypalPriceCents}
         storefrontOrigin={(() => {
           const u = new URL(env.appUrl);
           const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');

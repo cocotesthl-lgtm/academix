@@ -1668,4 +1668,12 @@ exception when undefined_object then null; end $$;
 alter table public.integrations add constraint integrations_provider_check
   check (provider in ('mercadopago','shopify','google_drive','paypal'));
 
+-- ── 0065_paypal_price ────────────────────────────────────────────
+-- Precio USD/EUR/etc por producto (opcional). Si null, PayPal usa
+-- price_cents con la moneda del tenant.
+alter table public.courses
+  add column if not exists paypal_price_cents integer;
+alter table public.physical_products
+  add column if not exists paypal_price_cents integer;
+
 -- ✓ Listo. Recargá la app.

@@ -54,25 +54,41 @@ export async function POST(
     return NextResponse.json({ error: 'paypal_config_incomplete' }, { status: 500 });
   }
 
-  // Load course price
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: course } = await (svc.from('courses') as any)
-    .select('id, title, price_cents, currency, status')
-    .eq('id', body.course_id)
-    .eq('tenant_id', tenantId)
-    .maybeSingle();
+  // Load course price. Defensivo: si migration 0065 no corrió, hacemos
+  // el retry sin paypal_price_cents y caemos al fallback.
+  let course: {
+    id: string; title: string; price_cents: number;
+    currency: string; status: string; paypal_price_cents: number | null;
+  } | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (svc.from('courses') as any)
+      .select('id, title, price_cents, currency, status, paypal_price_cents')
+      .eq('id', body.course_id).eq('tenant_id', tenantId).maybeSingle();
+    course = data;
+  } catch {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (svc.from('courses') as any)
+      .select('id, title, price_cents, currency, status')
+      .eq('id', body.course_id).eq('tenant_id', tenantId).maybeSingle();
+    if (data) course = { ...data, paypal_price_cents: null };
+  }
   if (!course) return NextResponse.json({ error: 'course_not_found' }, { status: 404 });
   if (course.status === 'draft') return NextResponse.json({ error: 'course_not_published' }, { status: 409 });
   if (!course.price_cents || course.price_cents <= 0) {
     return NextResponse.json({ error: 'course_is_free_no_paypal' }, { status: 400 });
   }
 
-  // Currency de cobro: la que el owner eligió al conectar PayPal (Fase C).
-  // El monto es el price_cents del curso interpretado en esa moneda 1:1
-  // (no hay tasa de cambio automática — el owner decide qué moneda usar).
-  // Fallback USD si el owner conectó antes de la Fase C.
+  // Currency de cobro: la que el owner eligió al conectar PayPal.
+  // Amount: si el owner seteó paypal_price_cents (patrón Hotmart —
+  // precio específico USD/EUR/etc para el cobro internacional), usa ese.
+  // Si no, cae al price_cents del curso interpretado 1:1 en la moneda
+  // de PayPal (fallback histórico).
   const paypalCurrency = ((integ.metadata as { currency?: string })?.currency || 'USD').toUpperCase();
-  const amount = (course.price_cents / 100).toFixed(2);
+  const priceForPaypal = course.paypal_price_cents && course.paypal_price_cents > 0
+    ? course.paypal_price_cents
+    : course.price_cents;
+  const amount = (priceForPaypal / 100).toFixed(2);
 
   // Get access token
   const tok = await getPayPalAccessToken({

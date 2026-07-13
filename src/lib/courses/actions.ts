@@ -195,15 +195,31 @@ export async function updateCourseAction(
     payload.wallet_bonus_cents = bonusCents;
   }
 
+  // Precio específico para PayPal (patrón Hotmart — precio USD/EUR/etc
+  // separado del ARS). Opt-in: si el owner deja el campo vacío, se
+  // guarda null y PayPal cae al price_cents en su moneda.
+  if (formData.has('paypal_price')) {
+    const raw = String(formData.get('paypal_price') ?? '').replace(/[^0-9.]/g, '').trim();
+    payload.paypal_price_cents = raw === '' || raw === '0'
+      ? null
+      : Math.max(0, Math.round(parseFloat(raw) * 100));
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (svc.from('courses') as any)
     .update(payload)
     .eq('id', id)
     .eq('tenant_id', tenant.id);
 
-  // Retry sin wallet_bonus_cents si la migration 0061 no corrió.
-  if (error && error.message?.toLowerCase().includes('wallet_bonus_cents')) {
+  // Retry defensivo: si la migration 0061 (wallet_bonus_cents) o la
+  // 0065 (paypal_price_cents) no corrió, sacamos el campo problemático
+  // del payload y reintentamos.
+  if (error && (
+    error.message?.toLowerCase().includes('wallet_bonus_cents') ||
+    error.message?.toLowerCase().includes('paypal_price_cents')
+  )) {
     delete payload.wallet_bonus_cents;
+    delete payload.paypal_price_cents;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: retryErr } = await (svc.from('courses') as any)
       .update(payload)

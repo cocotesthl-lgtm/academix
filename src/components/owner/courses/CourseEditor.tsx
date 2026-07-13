@@ -58,7 +58,8 @@ export type Module = {
 
 export function CourseEditor({
   course, modules, categories, primaryColor = '#0a0a0a', storefrontOrigin = '',
-  walletsEnabled = false, walletCurrency = null
+  walletsEnabled = false, walletCurrency = null,
+  paypalCurrency = null, paypalPriceCents = null
 }: {
   course: Course;
   modules: Module[];
@@ -69,6 +70,12 @@ export function CourseEditor({
   walletsEnabled?: boolean;
   /** Moneda default de la wallet del tenant para mostrar preview del bonus. */
   walletCurrency?: WalletCurrencyInfo | null;
+  /** Moneda que el owner eligió al conectar PayPal (USD/EUR/BRL/…).
+   *  Null = PayPal no está conectado; ocultamos el input Hotmart-style. */
+  paypalCurrency?: string | null;
+  /** Precio PayPal actual del curso (en centavos). Null = no seteado
+   *  (usa fallback price_cents en la moneda de PayPal). */
+  paypalPriceCents?: number | null;
 }) {
   const [updateState, updateAction, updatePending] = useActionState<Result | null, FormData>(
     updateCourseAction,
@@ -138,6 +145,38 @@ export function CourseEditor({
               </select>
             </div>
           </div>
+
+          {/* Precio Hotmart-style: campo separado para PayPal internacional.
+              Solo visible si el owner conectó PayPal — así no confundimos
+              a los que solo cobran con MP. */}
+          {paypalCurrency && (
+            <div className="rounded-lg border border-blue-500/30 bg-blue-500/[0.04] p-4 space-y-2">
+              <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                <label className="text-sm font-semibold text-blue-100 flex items-center gap-1.5">
+                  🌍 Precio internacional (PayPal — {paypalCurrency})
+                </label>
+                <span className="text-[10px] text-white/45 uppercase tracking-wider">Opcional</span>
+              </div>
+              <p className="text-xs text-white/60 leading-snug">
+                Si vendés a compradores del exterior, seteá acá el precio en {paypalCurrency}.
+                Cuando alguien pague con PayPal, cobra este monto. Si lo dejás vacío,
+                PayPal cobra el precio de arriba interpretado como {paypalCurrency} (puede quedar sin
+                sentido si tu curso está en pesos). Estilo Hotmart.
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-white/50 text-sm">{paypalCurrency}</span>
+                <input
+                  name="paypal_price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  defaultValue={paypalPriceCents != null ? (paypalPriceCents / 100).toString() : ''}
+                  placeholder="15.00"
+                  className="flex-1 max-w-[200px] rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono focus:outline-none focus:border-white/40"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-6">
             <label className="flex items-center gap-2">
