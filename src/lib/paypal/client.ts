@@ -70,3 +70,58 @@ export async function validatePayPalCredentials(opts: {
   if (r.status === 403) return { ok: false, error: 'Tus credentials no tienen permisos para Orders v2. Verificá que la app tenga "Accept Payments" activado.' };
   return { ok: false, error: `PayPal respondió ${r.status}: ${r.error.slice(0, 200)}` };
 }
+
+/**
+ * Verifica la firma de un webhook usando la API oficial de PayPal.
+ *
+ * PayPal firma cada webhook con headers PAYPAL-TRANSMISSION-* y los
+ * verificás llamando a /v1/notifications/verify-webhook-signature con
+ * el webhook_id que el owner configuró en developer.paypal.com.
+ *
+ * Docs: https://developer.paypal.com/api/rest/webhooks/rest/#link-verifywebhooksignature
+ *
+ * Devuelve true si PayPal confirma SUCCESS. Cualquier otro caso → false,
+ * y el caller decide si loguea + descarta o registra igual.
+ */
+export async function verifyPayPalWebhookSignature(opts: {
+  clientId: string;
+  clientSecret: string;
+  mode: PayPalMode;
+  webhookId: string;
+  headers: {
+    transmission_id: string;
+    transmission_time: string;
+    cert_url: string;
+    auth_algo: string;
+    transmission_sig: string;
+  };
+  eventBody: unknown;
+}): Promise<boolean> {
+  const tok = await getPayPalAccessToken({
+    clientId: opts.clientId, clientSecret: opts.clientSecret, mode: opts.mode
+  });
+  if (!tok.ok) return false;
+
+  const resp = await fetch(`${paypalApiBase(opts.mode)}/v1/notifications/verify-webhook-signature`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${tok.access_token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      transmission_id: opts.headers.transmission_id,
+      transmission_time: opts.headers.transmission_time,
+      cert_url: opts.headers.cert_url,
+      auth_algo: opts.headers.auth_algo,
+      transmission_sig: opts.headers.transmission_sig,
+      webhook_id: opts.webhookId,
+      webhook_event: opts.eventBody
+    }),
+    cache: 'no-store'
+  });
+  if (!resp.ok) return false;
+  try {
+    const json = await resp.json() as { verification_status?: string };
+    return json.verification_status === 'SUCCESS';
+  } catch { return false; }
+}
