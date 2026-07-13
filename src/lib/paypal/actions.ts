@@ -99,3 +99,31 @@ export async function connectPaypalAction(formData: FormData): Promise<ConnectRe
     return { ok: false, error: `Error interno: ${msg}` };
   }
 }
+
+/**
+ * Actualiza la config de conversión automática de precios locales →
+ * PayPal (patrón alternativo al override por producto Hotmart-style).
+ *
+ * Form fields:
+ *   auto_convert: 'on' | otherwise → activa/desactiva
+ *   rate: número (cuántas unidades del precio local = 1 unidad PayPal)
+ *   round_cents: 'on' | otherwise → si redondea al entero
+ */
+export async function updatePaypalAutoConvertAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const enabled = formData.get('auto_convert') === 'on' || formData.get('auto_convert') === 'true';
+  const roundCents = formData.get('round_cents') === 'on' || formData.get('round_cents') === 'true';
+  const rawRate = String(formData.get('rate') ?? '').replace(/[^0-9.]/g, '').trim();
+  const rate = rawRate && parseFloat(rawRate) > 0 ? parseFloat(rawRate) : null;
+
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (svc.from('tenants') as any).update({
+    paypal_auto_convert: enabled,
+    paypal_conversion_rate: rate,
+    paypal_round_cents: roundCents,
+    updated_at: new Date().toISOString()
+  }).eq('id', tenant.id);
+  if (error) console.error('[paypal.autoConvert] update failed:', error);
+  revalidatePath('/owner/integrations');
+}

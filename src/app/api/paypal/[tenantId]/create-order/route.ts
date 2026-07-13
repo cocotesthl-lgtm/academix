@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { getPayPalAccessToken, paypalApiBase, type PayPalMode } from '@/lib/paypal/client';
+import { resolvePayPalPriceCents } from '@/lib/paypal/price';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -80,14 +81,33 @@ export async function POST(
   }
 
   // Currency de cobro: la que el owner eligió al conectar PayPal.
-  // Amount: si el owner seteó paypal_price_cents (patrón Hotmart —
-  // precio específico USD/EUR/etc para el cobro internacional), usa ese.
-  // Si no, cae al price_cents del curso interpretado 1:1 en la moneda
-  // de PayPal (fallback histórico).
   const paypalCurrency = ((integ.metadata as { currency?: string })?.currency || 'USD').toUpperCase();
-  const priceForPaypal = course.paypal_price_cents && course.paypal_price_cents > 0
-    ? course.paypal_price_cents
-    : course.price_cents;
+
+  // Config de conversión automática global del tenant. Defensivo:
+  // si migration 0066 no corrió, se queda en false y no rompe.
+  let autoConvert = false;
+  let conversionRate: number | null = null;
+  let roundCents = false;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: t } = await (svc.from('tenants') as any)
+      .select('paypal_auto_convert, paypal_conversion_rate, paypal_round_cents')
+      .eq('id', tenantId).maybeSingle();
+    autoConvert = !!(t as { paypal_auto_convert?: boolean } | null)?.paypal_auto_convert;
+    const rate = (t as { paypal_conversion_rate?: string | number | null } | null)?.paypal_conversion_rate;
+    conversionRate = rate != null ? Number(rate) : null;
+    roundCents = !!(t as { paypal_round_cents?: boolean } | null)?.paypal_round_cents;
+  } catch { /* migration 0066 pendiente */ }
+
+  // Resolver precio: 1º override manual del producto, 2º conversión
+  // automática, 3º fallback 1:1 (comportamiento histórico).
+  const priceForPaypal = resolvePayPalPriceCents({
+    localPriceCents: course.price_cents,
+    productOverrideCents: course.paypal_price_cents ?? null,
+    tenantAutoConvert: autoConvert,
+    tenantConversionRate: conversionRate,
+    tenantRoundCents: roundCents
+  });
   const amount = (priceForPaypal / 100).toFixed(2);
 
   // Get access token

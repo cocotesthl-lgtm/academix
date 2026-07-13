@@ -1676,4 +1676,11 @@ alter table public.courses
 alter table public.physical_products
   add column if not exists paypal_price_cents integer;
 
+-- ── 0066_paypal_auto_convert ─────────────────────────────────────
+-- Tasa global para auto-convertir precios locales → PayPal.
+alter table public.tenants
+  add column if not exists paypal_auto_convert boolean not null default false,
+  add column if not exists paypal_conversion_rate numeric(14,4),
+  add column if not exists paypal_round_cents boolean not null default false;
+
 -- ✓ Listo. Recargá la app.
