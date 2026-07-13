@@ -51,6 +51,9 @@ export default async function IntegrationsPage({
   const paypalClientId = paypal?.metadata && typeof (paypal.metadata as { client_id?: unknown }).client_id === 'string'
     ? (paypal.metadata as { client_id: string }).client_id
     : null;
+  const paypalCurrency = paypal?.metadata && typeof (paypal.metadata as { currency?: unknown }).currency === 'string'
+    ? (paypal.metadata as { currency: string }).currency
+    : 'USD';
   const paypalWebhookUrl = `${platformOrigin}/api/webhooks/paypal/${tenant.id}`;
 
   // ¿La plataforma está configurada para hacer OAuth con MP? Sin estas env
@@ -251,7 +254,7 @@ export default async function IntegrationsPage({
 
         {paypal ? (
           <div className="space-y-3 pt-4 border-t border-white/10">
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-3 gap-3 text-sm">
               <div>
                 <div className="text-xs text-white/50 uppercase tracking-wider mb-1">Cuenta business</div>
                 <div className="font-mono text-white text-xs break-all">{paypal.external_account_id ?? '—'}</div>
@@ -259,9 +262,14 @@ export default async function IntegrationsPage({
               {paypalClientId && (
                 <div>
                   <div className="text-xs text-white/50 uppercase tracking-wider mb-1">Client ID</div>
-                  <div className="font-mono text-white/70 text-xs break-all">{paypalClientId.slice(0, 24)}…</div>
+                  <div className="font-mono text-white/70 text-xs break-all">{paypalClientId.slice(0, 20)}…</div>
                 </div>
               )}
+              <div>
+                <div className="text-xs text-white/50 uppercase tracking-wider mb-1">Cobra en</div>
+                <div className="font-mono text-emerald-300 text-sm font-bold">{paypalCurrency}</div>
+                <div className="text-[10px] text-white/40">precio × 1 = valor a cobrar</div>
+              </div>
             </div>
 
             <div>

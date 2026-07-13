@@ -67,14 +67,11 @@ export async function POST(
     return NextResponse.json({ error: 'course_is_free_no_paypal' }, { status: 400 });
   }
 
-  // PayPal Orders v2 API requiere currency ISO 4217. Aceptamos USD/EUR/BRL/etc.
-  // ARS PayPal no lo soporta en Orders v2 (solo con settlement en USD).
-  // Si el curso está en ARS, forzamos USD con una conversión simple (fallback
-  // razonable). Idealmente el owner elige "moneda para cobros PayPal" en la
-  // config del tenant — TODO en fase C.
-  const currency = (course.currency as string || 'USD').toUpperCase();
-  const supportedCurrencies = ['USD','EUR','GBP','BRL','MXN','CAD','AUD','JPY','CHF','SGD','HKD','SEK','NOK','DKK','NZD','PLN','TWD','ILS','TRY'];
-  const paypalCurrency = supportedCurrencies.includes(currency) ? currency : 'USD';
+  // Currency de cobro: la que el owner eligió al conectar PayPal (Fase C).
+  // El monto es el price_cents del curso interpretado en esa moneda 1:1
+  // (no hay tasa de cambio automática — el owner decide qué moneda usar).
+  // Fallback USD si el owner conectó antes de la Fase C.
+  const paypalCurrency = ((integ.metadata as { currency?: string })?.currency || 'USD').toUpperCase();
   const amount = (course.price_cents / 100).toFixed(2);
 
   // Get access token

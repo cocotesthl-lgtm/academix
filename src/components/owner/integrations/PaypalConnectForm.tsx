@@ -4,6 +4,32 @@ import { useState, useTransition } from 'react';
 import { connectPaypalAction } from '@/lib/paypal/actions';
 
 /**
+ * Currencies que PayPal soporta en Orders v2. Fuente:
+ * https://developer.paypal.com/api/rest/reference/currency-codes/
+ * ARS NO figura — cobrás en otra moneda aunque tu tenant esté en Argentina.
+ */
+const PAYPAL_CURRENCIES: Array<{ code: string; label: string }> = [
+  { code: 'USD', label: 'USD — Dólar estadounidense' },
+  { code: 'EUR', label: 'EUR — Euro' },
+  { code: 'GBP', label: 'GBP — Libra esterlina' },
+  { code: 'BRL', label: 'BRL — Real brasileño' },
+  { code: 'MXN', label: 'MXN — Peso mexicano' },
+  { code: 'CAD', label: 'CAD — Dólar canadiense' },
+  { code: 'AUD', label: 'AUD — Dólar australiano' },
+  { code: 'JPY', label: 'JPY — Yen japonés' },
+  { code: 'CHF', label: 'CHF — Franco suizo' },
+  { code: 'SGD', label: 'SGD — Dólar de Singapur' },
+  { code: 'HKD', label: 'HKD — Dólar de Hong Kong' },
+  { code: 'SEK', label: 'SEK — Corona sueca' },
+  { code: 'NOK', label: 'NOK — Corona noruega' },
+  { code: 'DKK', label: 'DKK — Corona danesa' },
+  { code: 'NZD', label: 'NZD — Dólar neozelandés' },
+  { code: 'PLN', label: 'PLN — Zloty polaco' },
+  { code: 'ILS', label: 'ILS — Shekel israelí' },
+  { code: 'TWD', label: 'TWD — Dólar taiwanés' }
+];
+
+/**
  * Form de conexión de PayPal. Cliente porque:
  *  - Necesita mostrar errores inline devueltos por el action (bad creds
  *    detectado en tiempo real por PayPal API)
@@ -48,6 +74,20 @@ export function PaypalConnectForm() {
             </button>
           </div>
         </div>
+      </div>
+
+      <div>
+        <label className="text-[10px] uppercase tracking-wider text-white/45">Moneda de cobro en PayPal</label>
+        <select name="currency" defaultValue="USD"
+          className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-sm">
+          {PAYPAL_CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>{c.label}</option>
+          ))}
+        </select>
+        <p className="text-[10px] text-white/40 mt-1">
+          El buyer siempre paga en esta moneda vía PayPal — aunque tu curso esté en pesos, PayPal cobra en la moneda que elijas
+          (PayPal no soporta ARS). El monto se convierte 1:1 desde el precio del curso.
+        </p>
       </div>
 
       <div>

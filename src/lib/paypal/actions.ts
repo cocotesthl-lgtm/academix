@@ -26,6 +26,9 @@ export async function connectPaypalAction(formData: FormData): Promise<ConnectRe
   const businessEmail = String(formData.get('business_email') ?? '').trim().toLowerCase();
   const sandbox = formData.get('sandbox') === 'on' || formData.get('sandbox') === 'true';
   const webhookId = String(formData.get('webhook_id') ?? '').trim() || null;
+  // Moneda en que PayPal cobra al buyer. Default USD.
+  const rawCurrency = String(formData.get('currency') ?? 'USD').trim().toUpperCase();
+  const currency = /^[A-Z]{3}$/.test(rawCurrency) ? rawCurrency : 'USD';
 
   if (!clientId || !clientSecret) {
     return { ok: false, error: 'Faltan Client ID y/o Client Secret.' };
@@ -53,7 +56,8 @@ export async function connectPaypalAction(formData: FormData): Promise<ConnectRe
     webhook_secret: webhookId,
     metadata: {
       client_id: clientId,
-      sandbox
+      sandbox,
+      currency
     },
     updated_at: new Date().toISOString()
   }, { onConflict: 'tenant_id,provider' });
