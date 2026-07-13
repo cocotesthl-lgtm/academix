@@ -241,6 +241,18 @@ export default async function CourseDetailPage({
     }
   } catch { /* migration 0061/0063 pendiente */ }
 
+  // ¿MP conectado? Sin esto el buyer clickea "Continuar al pago" y ve
+  // el JSON crudo mercadopago_not_connected. Si MP no está y PayPal sí,
+  // ocultamos el form MP entero y mostramos solo el botón PayPal.
+  let mpConnected = false;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: mpInteg } = await (svc.from('integrations') as any)
+      .select('id').eq('tenant_id', tenantId)
+      .eq('provider', 'mercadopago').eq('status', 'connected').maybeSingle();
+    mpConnected = !!mpInteg;
+  } catch { /* tabla no existe → mpConnected queda false */ }
+
   // PayPal integration (opcional). Si el tenant lo conectó, exponemos el
   // clientId y modo al client component para renderizar Smart Buttons
   // como método alternativo al MP form.
@@ -775,6 +787,14 @@ export default async function CourseDetailPage({
                 <div>calendarMode: <strong>{calendarMode}</strong></div>
               </div>
             )}
+            {/* Buy box adaptativo según qué gateways están conectados:
+                - MP ok            → CouponInput (form MP) + botón PayPal opcional debajo
+                - Solo PayPal      → SOLO botón PayPal (sin form MP roto)
+                - Ninguno          → mensaje "checkout no configurado"
+                Además tickets (event_tickets) siempre usan TicketPicker que
+                por ahora solo soporta MP — si MP no está queda igual (owner
+                debe configurar MP antes de vender eventos, TODO fase futura).
+            */}
             {calendarMode === 'event_tickets' ? (
               <TicketPicker
                 courseId={course.id}
@@ -785,7 +805,7 @@ export default async function CourseDetailPage({
                 takenSeatsByDate={takenSeatsByDate}
                 defaultEmail={currentUser?.email ?? ''}
               />
-            ) : (
+            ) : mpConnected ? (
               <CouponInput
                 courseId={course.id}
                 priceCents={course.price_cents}
@@ -804,17 +824,27 @@ export default async function CourseDetailPage({
                 isReservation={isReservationProduct}
                 walletBonus={walletBonus}
               />
-            )}
-            {/* Método alternativo: PayPal — solo si el owner lo conectó y
-                el curso tiene precio > 0. No usa buyer info form ni cupones
-                (Fase B); flujo directo curso → PayPal → enroll. */}
-            {paypalConfig && course.price_cents > 0 && (
-              <div className="pt-2">
-                <div className="flex items-center gap-2 text-[11px] text-black/40 uppercase tracking-wider mb-2">
-                  <div className="flex-1 h-px bg-black/10" />
-                  <span>o pagar con</span>
-                  <div className="flex-1 h-px bg-black/10" />
-                </div>
+            ) : !paypalConfig ? (
+              // Ni MP ni PayPal: no hay forma de cobrar. Mostramos aviso
+              // en vez de un botón roto.
+              <div className="rounded-md border border-amber-400 bg-amber-50 text-amber-900 text-sm p-3">
+                Este sitio todavía no tiene un método de pago configurado.
+                Contactá al vendedor para completar tu compra.
+              </div>
+            ) : null}
+
+            {/* Botón PayPal: aparece si el owner conectó PayPal y el precio
+                > 0. Es el método principal si MP no está, o el alternativo
+                si sí lo está. Solo se saltea en free courses o event tickets. */}
+            {paypalConfig && course.price_cents > 0 && calendarMode !== 'event_tickets' && (
+              <div className={mpConnected ? 'pt-2' : ''}>
+                {mpConnected && (
+                  <div className="flex items-center gap-2 text-[11px] text-black/40 uppercase tracking-wider mb-2">
+                    <div className="flex-1 h-px bg-black/10" />
+                    <span>o pagar con</span>
+                    <div className="flex-1 h-px bg-black/10" />
+                  </div>
+                )}
                 <PayPalCheckoutButton
                   tenantId={tenantId}
                   courseId={course.id}
@@ -825,7 +855,14 @@ export default async function CourseDetailPage({
               </div>
             )}
             <p className="text-xs text-center text-black/40">
-              Pago seguro vía MercadoPago{paypalConfig ? ' o PayPal' : ''}
+              Pago seguro vía{' '}
+              {mpConnected && paypalConfig
+                ? 'MercadoPago o PayPal'
+                : mpConnected
+                  ? 'MercadoPago'
+                  : paypalConfig
+                    ? 'PayPal'
+                    : '—'}
             </p>
           </div>
         </aside>
