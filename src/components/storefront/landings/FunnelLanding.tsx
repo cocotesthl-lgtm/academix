@@ -1,4 +1,5 @@
 import { CouponInput } from '@/components/storefront/CouponInput';
+import { PayPalCheckoutButton } from '@/components/storefront/PayPalCheckoutButton';
 import type { LandingConfig } from '@/lib/courses/landing';
 import { LandingChrome } from '@/components/storefront/landings/LandingChrome';
 
@@ -54,7 +55,10 @@ export function FunnelLanding({
   calendarMode,
   calendarLabel,
   calendarRequired,
-  calendarSlots
+  calendarSlots,
+  tenantId,
+  mpConnected = true,
+  paypalConfig = null
 }: {
   course: CourseInfo;
   modules: ModuleWithLessons[];
@@ -69,6 +73,12 @@ export function FunnelLanding({
   calendarSlots?: import('@/lib/calendar/types').BookingSlot[];
   config: LandingConfig;
   buyerEmail: string;
+  /** Necesario para el botón PayPal (Fase B). */
+  tenantId?: string;
+  /** Si MP no está conectado, ocultamos el form MP en TODOS los CTAs de la landing. */
+  mpConnected?: boolean;
+  /** Si el owner conectó PayPal, renderizamos Smart Buttons como alternativa. */
+  paypalConfig?: { clientId: string; sandbox: boolean } | null;
 }) {
   const headline = config.headline?.trim() || course.title;
   const subtitle = config.subtitle?.trim();
@@ -89,23 +99,63 @@ export function FunnelLanding({
   const bonuses = config.bonuses ?? [];
   const offerText = config.offer_text?.trim();
 
+  /**
+   * Bloque de pago reusable con gate por método conectado.
+   * Se usa en los 3 CTAs de la landing (hero / inline / final) para que
+   * todos respeten el mismo flujo:
+   *   - MP conectado   → form MP normal
+   *   - Solo PayPal    → Smart Button PayPal
+   *   - Ninguno        → aviso "sitio sin método de pago"
+   */
+  const PayBox = ({ label }: { label?: string }) => (
+    <>
+      {mpConnected ? (
+        <CouponInput
+          courseId={course.id}
+          priceCents={course.price_cents}
+          currency={course.currency}
+          primary={primary}
+          defaultEmail={buyerEmail}
+          checkoutConfig={checkoutConfig}
+          calendarMode={calendarMode}
+          calendarLabel={calendarLabel}
+          calendarRequired={calendarRequired}
+          calendarSlots={calendarSlots}
+          buyLabel={label ?? ctaLabel}
+          ctaText={label ?? ctaLabel}
+        />
+      ) : !paypalConfig ? (
+        <div className="rounded-md border border-amber-400 bg-amber-50 text-amber-900 text-sm p-3 text-left">
+          Este sitio todavía no tiene un método de pago configurado.
+          Contactá al vendedor para completar tu compra.
+        </div>
+      ) : null}
+
+      {paypalConfig && course.price_cents > 0 && tenantId && (
+        <div className={mpConnected ? 'mt-3' : ''}>
+          {mpConnected && (
+            <div className="flex items-center gap-2 text-[11px] text-black/40 uppercase tracking-wider mb-2">
+              <div className="flex-1 h-px bg-black/10" />
+              <span>o pagar con</span>
+              <div className="flex-1 h-px bg-black/10" />
+            </div>
+          )}
+          <PayPalCheckoutButton
+            tenantId={tenantId}
+            courseId={course.id}
+            clientId={paypalConfig.clientId}
+            sandbox={paypalConfig.sandbox}
+            currency={course.currency}
+          />
+        </div>
+      )}
+    </>
+  );
+
   const InlineCTA = ({ label }: { label?: string }) => (
-    <div className="my-12 text-center">
-      <CouponInput
-        courseId={course.id}
-        priceCents={course.price_cents}
-        currency={course.currency}
-        primary={primary}
-        defaultEmail={buyerEmail}
-        checkoutConfig={checkoutConfig}
-        calendarMode={calendarMode}
-        calendarLabel={calendarLabel}
-        calendarRequired={calendarRequired}
-        calendarSlots={calendarSlots}
-        buyLabel={label ?? ctaLabel}
-        ctaText={label ?? ctaLabel}
-      />
-      {ctaCaption && <p className="text-xs text-black/55 mt-2 max-w-md mx-auto">{ctaCaption}</p>}
+    <div className="my-12 text-center max-w-md mx-auto">
+      <PayBox label={label} />
+      {ctaCaption && <p className="text-xs text-black/55 mt-2">{ctaCaption}</p>}
     </div>
   );
 
@@ -137,20 +187,7 @@ export function FunnelLanding({
             </p>
           )}
           <div className="mt-8 max-w-md mx-auto">
-            <CouponInput
-              courseId={course.id}
-              priceCents={course.price_cents}
-              currency={course.currency}
-              primary={primary}
-              defaultEmail={buyerEmail}
-        checkoutConfig={checkoutConfig}
-        calendarMode={calendarMode}
-        calendarLabel={calendarLabel}
-        calendarRequired={calendarRequired}
-        calendarSlots={calendarSlots}
-              buyLabel={ctaLabel}
-              ctaText={ctaLabel}
-            />
+            <PayBox label={ctaLabel} />
             {ctaCaption && <p className="text-xs text-black/55 mt-2.5">{ctaCaption}</p>}
           </div>
         </div>
@@ -367,21 +404,8 @@ export function FunnelLanding({
             <div className="text-3xl font-black mb-3">
               {course.price_cents === 0 ? 'Gratis' : `$${(course.price_cents / 100).toLocaleString('es-AR')} ${course.currency}`}
             </div>
-            <CouponInput
-              courseId={course.id}
-              priceCents={course.price_cents}
-              currency={course.currency}
-              primary={primary}
-              defaultEmail={buyerEmail}
-        checkoutConfig={checkoutConfig}
-        calendarMode={calendarMode}
-        calendarLabel={calendarLabel}
-        calendarRequired={calendarRequired}
-        calendarSlots={calendarSlots}
-              buyLabel={ctaLabel}
-              ctaText={ctaLabel}
-            />
-            <p className="text-xs text-black/55 mt-2">{ctaCaption ?? 'Pago seguro vía MercadoPago'}</p>
+            <PayBox label={ctaLabel} />
+            <p className="text-xs text-black/55 mt-2">{ctaCaption ?? 'Pago seguro'}</p>
           </div>
         </div>
       </section>

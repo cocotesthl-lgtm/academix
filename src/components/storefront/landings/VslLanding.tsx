@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { CouponInput } from '@/components/storefront/CouponInput';
+import { PayPalCheckoutButton } from '@/components/storefront/PayPalCheckoutButton';
 import { parseVideoUrl, type LandingConfig } from '@/lib/courses/landing';
 import { LandingChrome } from '@/components/storefront/landings/LandingChrome';
 
@@ -40,7 +41,10 @@ export function VslLanding({
   calendarMode,
   calendarLabel,
   calendarRequired,
-  calendarSlots
+  calendarSlots,
+  tenantId,
+  mpConnected = true,
+  paypalConfig = null
 }: {
   course: CourseInfo;
   primary: string;
@@ -51,6 +55,9 @@ export function VslLanding({
   calendarLabel?: string | null;
   calendarRequired?: boolean;
   calendarSlots?: import('@/lib/calendar/types').BookingSlot[];
+  tenantId?: string;
+  mpConnected?: boolean;
+  paypalConfig?: { clientId: string; sandbox: boolean } | null;
 }) {
   const headline = config.headline?.trim() || course.title;
   const subtitle = config.subtitle?.trim();
@@ -303,20 +310,48 @@ export function VslLanding({
                 </div>
                 <p className="text-xs text-black/55 mt-1">Pago único · Acceso permanente</p>
               </div>
-              <CouponInput
-                courseId={course.id}
-                priceCents={course.price_cents}
-                currency={course.currency}
-                primary={accent}
-                defaultEmail={formData.email || buyerEmail}
-                buyLabel={ctaLabel}
-                ctaText={ctaLabel}
-                checkoutConfig={checkoutConfig}
-                calendarMode={calendarMode}
-                calendarLabel={calendarLabel}
-                calendarRequired={calendarRequired}
-                calendarSlots={calendarSlots}
-              />
+              {/* Buy box adaptativo: MP form / PayPal button / aviso "sin método" */}
+              {mpConnected ? (
+                <CouponInput
+                  courseId={course.id}
+                  priceCents={course.price_cents}
+                  currency={course.currency}
+                  primary={accent}
+                  defaultEmail={formData.email || buyerEmail}
+                  buyLabel={ctaLabel}
+                  ctaText={ctaLabel}
+                  checkoutConfig={checkoutConfig}
+                  calendarMode={calendarMode}
+                  calendarLabel={calendarLabel}
+                  calendarRequired={calendarRequired}
+                  calendarSlots={calendarSlots}
+                />
+              ) : !paypalConfig ? (
+                <div className="rounded-md border border-amber-400 bg-amber-50 text-amber-900 text-sm p-3">
+                  Este sitio todavía no tiene un método de pago configurado.
+                  Contactá al vendedor para completar tu compra.
+                </div>
+              ) : null}
+
+              {paypalConfig && course.price_cents > 0 && tenantId && (
+                <div className={mpConnected ? 'pt-1' : ''}>
+                  {mpConnected && (
+                    <div className="flex items-center gap-2 text-[11px] text-black/40 uppercase tracking-wider mb-2">
+                      <div className="flex-1 h-px bg-black/10" />
+                      <span>o pagar con</span>
+                      <div className="flex-1 h-px bg-black/10" />
+                    </div>
+                  )}
+                  <PayPalCheckoutButton
+                    tenantId={tenantId}
+                    courseId={course.id}
+                    clientId={paypalConfig.clientId}
+                    sandbox={paypalConfig.sandbox}
+                    currency={course.currency}
+                  />
+                </div>
+              )}
+
               {ctaCaption && <p className="text-xs text-center text-black/55">{ctaCaption}</p>}
               <div className="rounded-lg bg-black/[0.04] p-3 text-xs space-y-1.5 text-center">
                 <div className="font-semibold flex items-center justify-center gap-1.5">
