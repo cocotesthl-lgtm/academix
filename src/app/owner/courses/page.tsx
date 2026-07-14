@@ -29,6 +29,7 @@ type PhysRow = {
   currency: string;
   stock_qty: number;
   cover_url: string | null;
+  sku: string | null;
   created_at: string;
 };
 
@@ -70,7 +71,7 @@ export default async function CoursesIndex() {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return await (svc.from("physical_products") as any)
-          .select("id, slug, title, status, price_cents, currency, stock_qty, cover_url, created_at")
+          .select("id, slug, title, status, price_cents, currency, stock_qty, cover_url, sku, created_at")
           .eq("tenant_id", tenant.id)
           .order("created_at", { ascending: false });
       } catch { return { data: [] }; }
@@ -179,6 +180,7 @@ export default async function CoursesIndex() {
         newHref="/products/new"
         physicalItems={physicalProducts}
         extras={[
+          { emoji: '📷', label: 'Escanear inventario', href: '/inventory-scan' },
           { emoji: '🚚', label: 'Envíos', href: '/shipping' },
           { emoji: '📦', label: 'Órdenes', href: '/orders' },
           { emoji: '🗂️', label: 'Categorías', href: '/categories' },
@@ -419,7 +421,7 @@ function AppSection({
           rows={physicalItems.map((p) => ({
             id: p.id, slug: p.slug, title: p.title, status: p.status,
             price_cents: p.price_cents, currency: p.currency,
-            cover_url: p.cover_url,
+            cover_url: p.cover_url, sku: p.sku,
             stock_qty: p.stock_qty,
             editHref: `/products/${p.id}`
           }))}

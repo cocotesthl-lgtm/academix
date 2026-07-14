@@ -23,6 +23,8 @@ type Row = {
   cover_url?: string | null;
   /** Solo para físicos */
   stock_qty?: number;
+  /** SKU — se muestra debajo del slug y se incluye en el buscador. */
+  sku?: string | null;
   /** Para stats de courses (clientes, revenue, sparkline) */
   clients?: number;
   revenue?: number;
@@ -49,7 +51,8 @@ export function AppSectionList({
     if (!q) return rows;
     return rows.filter((r) =>
       r.title.toLowerCase().includes(q) ||
-      r.slug.toLowerCase().includes(q)
+      r.slug.toLowerCase().includes(q) ||
+      (r.sku ? r.sku.toLowerCase().includes(q) : false)
     );
   }, [rows, query]);
 
@@ -64,7 +67,7 @@ export function AppSectionList({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="🔍 Buscar por título o slug…"
+            placeholder="🔍 Buscar por título, slug o SKU…"
             className="w-full sm:w-72 rounded bg-white/5 border border-white/15 px-2.5 py-1.5 text-xs placeholder:text-white/40 focus:outline-none focus:border-white/30"
           />
         </div>
@@ -108,7 +111,10 @@ export function AppSectionList({
                   )}
                   <div className="min-w-0">
                     <Link href={r.editHref} className="font-medium hover:underline block truncate">{r.title}</Link>
-                    <div className="text-xs text-white/40 truncate">/{r.slug}</div>
+                    <div className="text-xs text-white/40 truncate">
+                      /{r.slug}
+                      {r.sku && <span className="ml-2 font-mono">SKU: {r.sku}</span>}
+                    </div>
                   </div>
                 </div>
               </td>
