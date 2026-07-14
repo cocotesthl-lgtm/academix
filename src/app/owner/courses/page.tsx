@@ -354,11 +354,12 @@ function AppSection({
       ) : !moduleActive && !isEmpty ? (
         <>
           <div className="px-5 py-2.5 text-[11px] text-amber-200/85 bg-amber-500/[0.06] border-b border-amber-500/20">
-            ⚠️ App desactivada — los productos siguen guardados pero no se muestran en tu sitio hasta que la actives.
+            ⚠️ App desactivada — los productos siguen guardados pero se muestran como <strong>inactivos</strong> y ocultos por defecto.
           </div>
           {items && stats && (
             <AppSectionList
               kind="courses"
+              dimmed
               rows={items.map((c) => {
                 const s = stats.get(c.id);
                 return {
@@ -374,10 +375,11 @@ function AppSection({
           {physicalItems && (
             <AppSectionList
               kind="physical"
+              dimmed
               rows={physicalItems.map((p) => ({
                 id: p.id, slug: p.slug, title: p.title, status: p.status,
                 price_cents: p.price_cents, currency: p.currency,
-                cover_url: p.cover_url,
+                cover_url: p.cover_url, sku: p.sku,
                 stock_qty: p.stock_qty,
                 editHref: `/products/${p.id}`
               }))}
@@ -386,6 +388,7 @@ function AppSection({
           {bundleItems && (
             <AppSectionList
               kind="bundles"
+              dimmed
               rows={bundleItems.map((b) => ({
                 id: b.id, slug: b.slug, title: b.title, status: b.status,
                 price_cents: b.price_cents, currency: b.currency,

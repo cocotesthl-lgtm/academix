@@ -37,14 +37,37 @@ const INITIAL_ROWS = 5;
 
 export function AppSectionList({
   rows,
-  kind
+  kind,
+  dimmed = false
 }: {
   rows: Row[];
   /** 'courses' muestra clientes+revenue+sparkline; 'physical' muestra stock. */
   kind: 'courses' | 'physical' | 'bundles';
+  /**
+   * Cuando true (app desactivada), la lista arranca oculta detrás de un
+   * botón "Mostrar contenido guardado" y cada row muestra el chip como
+   * `inactivo` sin importar el status real — contenido de una app off
+   * no es de interés a priori pero se preserva por si el owner reactiva.
+   */
+  dimmed?: boolean;
 }) {
   const [query, setQuery] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const [revealed, setRevealed] = useState(!dimmed);
+
+  if (dimmed && !revealed) {
+    return (
+      <div className="px-5 py-4 text-center border-t border-white/5 bg-white/[0.01]">
+        <button
+          type="button"
+          onClick={() => setRevealed(true)}
+          className="text-xs text-white/60 hover:text-white underline underline-offset-2"
+        >
+          Mostrar contenido guardado ({rows.length}) ↓
+        </button>
+      </div>
+    );
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -118,7 +141,7 @@ export function AppSectionList({
                   </div>
                 </div>
               </td>
-              <td className="px-3 py-3"><StatusChip s={r.status} /></td>
+              <td className="px-3 py-3"><StatusChip s={dimmed ? 'inactivo' : r.status} /></td>
               <td className="px-3 py-3 text-white/80">
                 {r.price_cents === 0 ? 'Gratis' : `${(r.price_cents / 100).toLocaleString('es-AR')} ${r.currency}`}
               </td>
@@ -175,7 +198,7 @@ export function AppSectionList({
 function StatusChip({ s }: { s: string }) {
   const cls = s === 'published'
     ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-    : s === 'archived'
+    : s === 'archived' || s === 'inactivo'
       ? 'border-white/15 text-white/40'
       : 'border-amber-500/30 bg-amber-500/10 text-amber-300';
   return <span className={`inline-block text-xs px-2 py-0.5 rounded border ${cls}`}>{s}</span>;
