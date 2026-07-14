@@ -353,7 +353,7 @@ function AppSection({
         </div>
       ) : !moduleActive && !isEmpty ? (
         <>
-          <div className="px-5 py-2.5 text-[11px] text-amber-200/85 bg-amber-500/[0.06] border-b border-amber-500/20">
+          <div className="px-5 py-2.5 text-xs text-amber-900 bg-amber-100 border-b border-amber-300 dark:text-amber-200 dark:bg-amber-500/10 dark:border-amber-500/30">
             ⚠️ App desactivada — los productos siguen guardados pero se muestran como <strong>inactivos</strong> y ocultos por defecto.
           </div>
           {items && stats && (
