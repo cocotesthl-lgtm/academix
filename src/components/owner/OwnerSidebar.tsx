@@ -61,6 +61,10 @@ type NavEntry =
 // el árbol para que grupos tengan coherencia semántica.
 const NAV: NavEntry[] = [
   { kind: 'item', icon: 'home', item: { label: 'Inicio', href: '/dashboard' } },
+  // Mis ofertas: hub central donde el owner ve TODAS sus apps agrupadas
+  // y las puede activar. Siempre visible como baseline — sino el owner
+  // sin apps activas no tiene entrada al hub para activar ninguna.
+  { kind: 'item', icon: 'shopping-bag', item: { label: 'Mis ofertas', href: '/courses' } },
 
   // ── BASELINE (siempre visibles cuando su macro está prendido) ────
   // Estos grupos no tienen apps instalables — son features estructurales
@@ -120,7 +124,8 @@ const NAV: NavEntry[] = [
     group: {
       label: 'Catálogo', icon: 'shopping-bag', moduleKey: 'catalog',
       items: [
-        { label: 'Publicaciones', href: '/courses', moduleKey: 'courses' },
+        // "Publicaciones" (Mis ofertas) subió a baseline arriba de Ventas —
+        // sacado de acá para no duplicar.
         { label: 'Productos físicos', href: '/products', moduleKey: 'ecommerce' },
         { label: 'Contenido VIP', href: '/vip', moduleKey: 'vip' },
         { label: 'Bundles', href: '/bundles', moduleKey: 'bundles' },

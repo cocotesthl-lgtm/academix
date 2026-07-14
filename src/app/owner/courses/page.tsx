@@ -3,7 +3,7 @@ import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { getTenantModules } from "@/lib/modules/queries";
 import { PageHeader } from "@/components/owner/PageHeader";
-import { Sparkline } from "@/components/owner/Sparkline";
+import { AppSectionList } from "@/components/owner/courses/AppSectionList";
 import type { ModuleKey } from "@/lib/modules/types";
 
 export const dynamic = "force-dynamic";
@@ -297,98 +297,43 @@ function AppSection({
         <div className="px-5 py-6 text-sm text-white/45">
           Todavía no tenés {title.toLowerCase()}. Tocá <strong className="text-white/70">{newLabel}</strong> para crear la primera.
         </div>
-      ) : (
-        <table className="w-full text-sm">
-          <thead className="text-white/45 text-[10px] uppercase tracking-wider bg-white/[0.02]">
-            <tr>
-              <th className="text-left px-5 py-2">Título</th>
-              <th className="text-left px-3 py-2">Estado</th>
-              <th className="text-left px-3 py-2">Precio</th>
-              {items && stats && (<>
-                <th className="text-right px-3 py-2">Clientes</th>
-                <th className="text-right px-3 py-2">Recaudado</th>
-                <th className="text-right px-3 py-2">Últ. 30d</th>
-              </>)}
-              {physicalItems && <th className="text-right px-3 py-2">Stock</th>}
-              <th className="text-right px-5 py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items && stats && items.map((c) => {
-              const s = stats.get(c.id);
-              return (
-                <tr key={c.id} className="border-t border-white/5 hover:bg-white/[0.02]">
-                  <td className="px-5 py-3">
-                    <Link href={editHrefFor(c)} className="font-medium hover:underline">{c.title}</Link>
-                    <div className="text-xs text-white/40">/{c.slug}</div>
-                  </td>
-                  <td className="px-3 py-3"><StatusChip s={c.status} /></td>
-                  <td className="px-3 py-3 text-white/80">
-                    {c.price_cents === 0 ? 'Gratis' : `${(c.price_cents / 100).toLocaleString('es-AR')} ${c.currency}`}
-                  </td>
-                  <td className="px-3 py-3 text-right font-medium">{s?.clients ?? 0}</td>
-                  <td className="px-3 py-3 text-right font-mono">
-                    {s && s.revenue > 0
-                      ? <span className="text-emerald-300">${(s.revenue / 100).toLocaleString('es-AR')}</span>
-                      : <span className="text-white/30">—</span>}
-                  </td>
-                  <td className="px-3 py-3 text-right">
-                    {s && s.trend.some((v) => v > 0)
-                      ? <Sparkline values={s.trend} color="#10b981" width={80} height={22} className="inline-block" />
-                      : <span className="text-white/25 text-xs">sin ventas</span>}
-                  </td>
-                  <td className="px-5 py-3 text-right">
-                    <Link href={editHrefFor(c)} className="text-xs text-white/60 hover:text-white">Editar →</Link>
-                  </td>
-                </tr>
-              );
-            })}
-            {physicalItems && physicalItems.map((p) => (
-              <tr key={p.id} className="border-t border-white/5 hover:bg-white/[0.02]">
-                <td className="px-5 py-3">
-                  <Link href={`/products/${p.id}`} className="font-medium hover:underline">{p.title}</Link>
-                  <div className="text-xs text-white/40">/p/{p.slug}</div>
-                </td>
-                <td className="px-3 py-3"><StatusChip s={p.status} /></td>
-                <td className="px-3 py-3 text-white/80">
-                  {p.price_cents === 0 ? 'Gratis' : `${(p.price_cents / 100).toLocaleString('es-AR')} ${p.currency}`}
-                </td>
-                <td className="px-3 py-3 text-right text-white/70">{p.stock_qty}</td>
-                <td className="px-5 py-3 text-right">
-                  <Link href={`/products/${p.id}`} className="text-xs text-white/60 hover:text-white">Editar →</Link>
-                </td>
-              </tr>
-            ))}
-            {bundleItems && bundleItems.map((b) => (
-              <tr key={b.id} className="border-t border-white/5 hover:bg-white/[0.02]">
-                <td className="px-5 py-3">
-                  <Link href={`/bundles/${b.id}`} className="font-medium hover:underline">{b.title}</Link>
-                  <div className="text-xs text-white/40">/{b.slug}</div>
-                </td>
-                <td className="px-3 py-3"><StatusChip s={b.status} /></td>
-                <td className="px-3 py-3 text-white/80">
-                  {b.price_cents === 0 ? 'Gratis' : `${(b.price_cents / 100).toLocaleString('es-AR')} ${b.currency}`}
-                </td>
-                <td className="px-5 py-3 text-right">
-                  <Link href={`/bundles/${b.id}`} className="text-xs text-white/60 hover:text-white">Editar →</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      ) : items && stats ? (
+        <AppSectionList
+          kind="courses"
+          rows={items.map((c) => {
+            const s = stats.get(c.id);
+            return {
+              id: c.id, slug: c.slug, title: c.title, status: c.status,
+              price_cents: c.price_cents, currency: c.currency,
+              clients: s?.clients ?? 0,
+              revenue: s?.revenue ?? 0,
+              trend: s?.trend,
+              editHref: editHrefFor(c)
+            };
+          })}
+        />
+      ) : physicalItems ? (
+        <AppSectionList
+          kind="physical"
+          rows={physicalItems.map((p) => ({
+            id: p.id, slug: p.slug, title: p.title, status: p.status,
+            price_cents: p.price_cents, currency: p.currency,
+            stock_qty: p.stock_qty,
+            editHref: `/products/${p.id}`
+          }))}
+        />
+      ) : bundleItems ? (
+        <AppSectionList
+          kind="bundles"
+          rows={bundleItems.map((b) => ({
+            id: b.id, slug: b.slug, title: b.title, status: b.status,
+            price_cents: b.price_cents, currency: b.currency,
+            editHref: `/bundles/${b.id}`
+          }))}
+        />
+      ) : null}
     </section>
   );
-}
-
-/** Chip visual del status. */
-function StatusChip({ s }: { s: string }) {
-  const cls = s === 'published'
-    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-    : s === 'archived'
-      ? 'border-white/15 text-white/40'
-      : 'border-amber-500/30 bg-amber-500/10 text-amber-300';
-  return <span className={`inline-block text-xs px-2 py-0.5 rounded border ${cls}`}>{s}</span>;
 }
 
 /** VIP packs se editan en /owner/vip/[id]; el resto en /owner/courses/[id]. */
