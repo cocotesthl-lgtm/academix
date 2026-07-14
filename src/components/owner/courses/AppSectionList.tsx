@@ -55,6 +55,22 @@ export function AppSectionList({
   const [showAll, setShowAll] = useState(false);
   const [revealed, setRevealed] = useState(!dimmed);
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) =>
+      r.title.toLowerCase().includes(q) ||
+      r.slug.toLowerCase().includes(q) ||
+      (r.sku ? r.sku.toLowerCase().includes(q) : false)
+    );
+  }, [rows, query]);
+
+  const visible = showAll ? filtered : filtered.slice(0, INITIAL_ROWS);
+  const hiddenCount = filtered.length - visible.length;
+
+  // ⚠️ El early return va DESPUÉS de todos los hooks — si no, al pulsar
+  // "Mostrar contenido" cambiaba la cantidad de hooks entre renders y
+  // React crasheaba la pestaña entera ("This page couldn't load").
   if (dimmed && !revealed) {
     return (
       <div className="px-5 py-4 text-center border-t border-white/5 bg-white/[0.01]">
@@ -68,19 +84,6 @@ export function AppSectionList({
       </div>
     );
   }
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) =>
-      r.title.toLowerCase().includes(q) ||
-      r.slug.toLowerCase().includes(q) ||
-      (r.sku ? r.sku.toLowerCase().includes(q) : false)
-    );
-  }, [rows, query]);
-
-  const visible = showAll ? filtered : filtered.slice(0, INITIAL_ROWS);
-  const hiddenCount = filtered.length - visible.length;
 
   return (
     <div>
