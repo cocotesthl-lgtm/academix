@@ -148,6 +148,17 @@ export async function updateProductAction(id: string, formData: FormData): Promi
     ? Math.max(0, Math.round(parseFloat(walletBonusRaw || '0') * 100))
     : null;
 
+  // Precio internacional PayPal — opt-in por producto. Vacío o 0 = null
+  // (fallback al price_cents interpretado en la moneda de PayPal).
+  const paypalRaw = formData.has('paypal_price')
+    ? String(formData.get('paypal_price') ?? '').replace(/[^0-9.]/g, '').trim()
+    : null;
+  const paypalPriceCents = paypalRaw != null
+    ? (paypalRaw === '' || paypalRaw === '0'
+        ? null
+        : Math.max(0, Math.round(parseFloat(paypalRaw) * 100)))
+    : null;
+
   // Defensivo: si migration 0058 no corrió, reintento sin rating/reviews_count.
   // Idem 0061 para wallet_bonus_cents.
   const basePayload: Record<string, unknown> = {
@@ -162,12 +173,22 @@ export async function updateProductAction(id: string, formData: FormData): Promi
     ...basePayload,
     rating,
     reviews_count: reviewsCount,
-    ...(walletBonusCents != null ? { wallet_bonus_cents: walletBonusCents } : {})
+    ...(walletBonusCents != null ? { wallet_bonus_cents: walletBonusCents } : {}),
+    ...(formData.has('paypal_price') ? { paypal_price_cents: paypalPriceCents } : {})
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let { error } = await (svc.from('physical_products') as any)
     .update(fullPayload)
     .eq('id', id).eq('tenant_id', tenant.id);
+  if (error && /paypal_price_cents/.test(error.message ?? '')) {
+    // Migration 0065 no corrió → retry sin paypal_price
+    const retryPayload = { ...basePayload, rating, reviews_count: reviewsCount };
+    if (walletBonusCents != null) (retryPayload as Record<string, unknown>).wallet_bonus_cents = walletBonusCents;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('physical_products') as any)
+      .update(retryPayload).eq('id', id).eq('tenant_id', tenant.id);
+    error = retry.error;
+  }
   if (error && /wallet_bonus_cents/.test(error.message ?? '')) {
     // Migration 0061 no corrió → retry sin bonus
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

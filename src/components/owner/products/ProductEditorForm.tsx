@@ -14,7 +14,9 @@ export function ProductEditorForm({
   planName = null,
   walletsEnabled = false,
   walletCurrency = null,
-  walletBonusCents = 0
+  walletBonusCents = 0,
+  paypalCurrency = null,
+  paypalPriceCents = null
 }: {
   product: PhysicalProduct;
   variants: ProductVariant[];
@@ -26,6 +28,10 @@ export function ProductEditorForm({
   walletsEnabled?: boolean;
   walletCurrency?: { label: string; symbol: string } | null;
   walletBonusCents?: number;
+  /** Moneda PayPal del tenant. Null = PayPal no conectado, oculta el input. */
+  paypalCurrency?: string | null;
+  /** Precio PayPal actual del producto. Null = no seteado. */
+  paypalPriceCents?: number | null;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [gallery, setGallery] = useState<string>(product.gallery.join('\n'));
@@ -163,6 +169,35 @@ export function ProductEditorForm({
             />
           </div>
         </div>
+
+        {/* Precio internacional PayPal — gate por PayPal conectado */}
+        {paypalCurrency && (
+          <div className="rounded-lg border border-blue-500/30 bg-blue-500/[0.04] p-4 space-y-2">
+            <div className="flex items-baseline justify-between gap-3 flex-wrap">
+              <label className="text-sm font-semibold text-blue-100 flex items-center gap-1.5">
+                🌍 Precio internacional (PayPal — {paypalCurrency})
+              </label>
+              <span className="text-[10px] text-white/45 uppercase tracking-wider">Opcional</span>
+            </div>
+            <p className="text-xs text-white/60 leading-snug">
+              Monto en {paypalCurrency} que se cobra al buyer que paga por PayPal.
+              Si lo dejás vacío, PayPal cobra el precio del producto interpretado como {paypalCurrency}
+              (puede quedar sin sentido si el precio está en pesos).
+            </p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-white/50 text-sm">{paypalCurrency}</span>
+              <input
+                name="paypal_price"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue={paypalPriceCents != null ? (paypalPriceCents / 100).toString() : ''}
+                placeholder="15.00"
+                className="flex-1 max-w-[200px] rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono focus:outline-none focus:border-white/40"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Bonus wallet (App Saldos) — gated por moduleKey='wallets' */}
         {walletsEnabled && (

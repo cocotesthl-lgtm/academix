@@ -60,6 +60,27 @@ export default async function ProductEditPage({
     } catch { /* migration 0061 pendiente */ }
   }
 
+  // PayPal: moneda del tenant + precio actual del producto
+  let paypalCurrency: string | null = null;
+  let paypalPriceCents: number | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: pp } = await (svc.from('integrations') as any)
+      .select('metadata').eq('tenant_id', tenant.id)
+      .eq('provider', 'paypal').eq('status', 'connected').maybeSingle();
+    const c = (pp?.metadata as { currency?: string } | null)?.currency;
+    if (c) paypalCurrency = c.toUpperCase();
+  } catch { /* migration 0064 pendiente */ }
+  if (paypalCurrency) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: ppp } = await (svc.from('physical_products') as any)
+        .select('paypal_price_cents').eq('id', id).maybeSingle();
+      const v = (ppp as { paypal_price_cents?: number | null } | null)?.paypal_price_cents;
+      if (typeof v === 'number') paypalPriceCents = v;
+    } catch { /* migration 0065 pendiente */ }
+  }
+
   const u = new URL(env.appUrl);
   const isLocal = u.hostname === 'localhost' || u.hostname.endsWith('.localhost');
   const host = isLocal
@@ -92,6 +113,8 @@ export default async function ProductEditPage({
           walletsEnabled={walletsEnabled}
           walletCurrency={walletCurrency}
           walletBonusCents={walletBonusCents}
+          paypalCurrency={paypalCurrency}
+          paypalPriceCents={paypalPriceCents}
         />
       </div>
     </div>

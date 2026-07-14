@@ -48,6 +48,27 @@ export default async function VipPackEditPage({ params }: {
   }) | null;
   if (!pack) notFound();
 
+  // PayPal integration + paypal_price actual (defensivo por migrations)
+  let paypalCurrency: string | null = null;
+  let paypalPriceCents: number | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: pp } = await (svc.from('integrations') as any)
+      .select('metadata').eq('tenant_id', tenant.id)
+      .eq('provider', 'paypal').eq('status', 'connected').maybeSingle();
+    const c = (pp?.metadata as { currency?: string } | null)?.currency;
+    if (c) paypalCurrency = c.toUpperCase();
+  } catch { /* migration 0064 pendiente */ }
+  if (paypalCurrency) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cp } = await (svc.from('courses') as any)
+        .select('paypal_price_cents').eq('id', id).maybeSingle();
+      const v = (cp as { paypal_price_cents?: number | null } | null)?.paypal_price_cents;
+      if (typeof v === 'number') paypalPriceCents = v;
+    } catch { /* migration 0065 pendiente */ }
+  }
+
   const items: VipMediaItem[] = Array.isArray(pack.media_items) ? pack.media_items : [];
   const publicPath = `/c/${pack.slug}`;
 
@@ -98,6 +119,27 @@ export default async function VipPackEditPage({ params }: {
               </select>
             </div>
           </div>
+
+          {paypalCurrency && (
+            <div className="rounded-lg border border-blue-500/30 bg-blue-500/[0.04] p-3 space-y-2">
+              <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                <label className="text-sm font-semibold text-blue-100 flex items-center gap-1.5">
+                  🌍 Precio internacional (PayPal — {paypalCurrency})
+                </label>
+                <span className="text-[10px] text-white/45 uppercase tracking-wider">Opcional</span>
+              </div>
+              <p className="text-[11px] text-white/60 leading-snug">
+                Monto en {paypalCurrency} que se cobra vía PayPal. Si lo dejás vacío, PayPal cobra el precio ARS interpretado como {paypalCurrency}.
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-white/50 text-sm">{paypalCurrency}</span>
+                <input name="paypal_price" type="number" min={0} step="0.01"
+                  defaultValue={paypalPriceCents != null ? (paypalPriceCents / 100).toString() : ''}
+                  placeholder="15.00"
+                  className="flex-1 max-w-[200px] rounded bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono" />
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-white/60">URL de portada (cover)</label>

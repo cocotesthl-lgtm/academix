@@ -91,9 +91,18 @@ export async function updateVipPackMetaAction(formData: FormData): Promise<void>
   const priceRaw = String(formData.get('price') ?? '0').replace(/[^0-9.]/g, '');
   const priceCents = Math.max(0, Math.round(parseFloat(priceRaw || '0') * 100));
 
+  // Precio internacional PayPal opcional (0065)
+  const paypalRaw = formData.has('paypal_price')
+    ? String(formData.get('paypal_price') ?? '').replace(/[^0-9.]/g, '').trim()
+    : null;
+  const paypalPriceCents = paypalRaw != null
+    ? (paypalRaw === '' || paypalRaw === '0'
+        ? null
+        : Math.max(0, Math.round(parseFloat(paypalRaw) * 100)))
+    : undefined;
+
   const svc = getServiceClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (svc.from('courses') as any).update({
+  const basePayload: Record<string, unknown> = {
     title: String(formData.get('title') ?? '').trim() || 'Pack VIP',
     description: String(formData.get('description') ?? '').trim() || null,
     pack_description: String(formData.get('pack_description') ?? '').trim() || null,
@@ -102,7 +111,19 @@ export async function updateVipPackMetaAction(formData: FormData): Promise<void>
     preview_url: safeUrl(String(formData.get('preview_url') ?? '')),
     status: String(formData.get('status') ?? 'draft') === 'published' ? 'published' : 'draft',
     updated_at: new Date().toISOString()
-  }).eq('id', id).eq('tenant_id', tenant.id);
+  };
+  const payload: Record<string, unknown> = paypalPriceCents !== undefined
+    ? { ...basePayload, paypal_price_cents: paypalPriceCents }
+    : basePayload;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (svc.from('courses') as any)
+    .update(payload).eq('id', id).eq('tenant_id', tenant.id);
+  if (error && /paypal_price_cents/.test(error.message ?? '')) {
+    // Migration 0065 pendiente → retry sin ese campo
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('courses') as any)
+      .update(basePayload).eq('id', id).eq('tenant_id', tenant.id);
+  }
   revalidatePath(`/owner/vip/${id}`);
 }
 
