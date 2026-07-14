@@ -16,6 +16,7 @@ type CourseRow = {
   price_cents: number;
   currency: string;
   product_type: string | null;
+  cover_url: string | null;
   created_at: string;
 };
 
@@ -27,13 +28,16 @@ type PhysRow = {
   price_cents: number;
   currency: string;
   stock_qty: number;
+  cover_url: string | null;
   created_at: string;
 };
 
 type BundleRow = {
   id: string; slug: string; title: string; status: string;
-  price_cents: number; currency: string; created_at: string;
+  price_cents: number; currency: string; cover_url: string | null; created_at: string;
 };
+
+type ExtraLink = { label: string; href: string; emoji?: string };
 
 /**
  * Sección "Mis ofertas" reorganizada por app.
@@ -58,7 +62,7 @@ export default async function CoursesIndex() {
     bundlesRaw
   ] = await Promise.all([
     svc.from("courses")
-      .select("id, slug, title, status, price_cents, currency, product_type, created_at")
+      .select("id, slug, title, status, price_cents, currency, product_type, cover_url, created_at")
       .eq("tenant_id", tenant.id)
       .order("created_at", { ascending: false }),
     // physical_products puede no existir en migraciones viejas
@@ -66,7 +70,7 @@ export default async function CoursesIndex() {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return await (svc.from("physical_products") as any)
-          .select("id, slug, title, status, price_cents, currency, stock_qty, created_at")
+          .select("id, slug, title, status, price_cents, currency, stock_qty, cover_url, created_at")
           .eq("tenant_id", tenant.id)
           .order("created_at", { ascending: false });
       } catch { return { data: [] }; }
@@ -76,7 +80,7 @@ export default async function CoursesIndex() {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return await (svc.from("bundles") as any)
-          .select("id, slug, title, status, price_cents, currency, created_at")
+          .select("id, slug, title, status, price_cents, currency, cover_url, created_at")
           .eq("tenant_id", tenant.id)
           .order("created_at", { ascending: false });
       } catch { return { data: [] }; }
@@ -161,6 +165,9 @@ export default async function CoursesIndex() {
         newHref="/courses/new"
         items={publicaciones}
         stats={stats}
+        extras={[
+          { emoji: '🗂️', label: 'Categorías', href: '/categories' }
+        ]}
       />
 
       <AppSection
@@ -171,6 +178,12 @@ export default async function CoursesIndex() {
         subtitle="Productos con envío, variantes, stock. Se ven en /tienda."
         newHref="/products/new"
         physicalItems={physicalProducts}
+        extras={[
+          { emoji: '🚚', label: 'Envíos', href: '/shipping' },
+          { emoji: '📦', label: 'Órdenes', href: '/orders' },
+          { emoji: '🗂️', label: 'Categorías', href: '/categories' },
+          { emoji: '🎟️', label: 'Gift cards', href: '/giftcards' }
+        ]}
       />
 
       <AppSection
@@ -183,6 +196,9 @@ export default async function CoursesIndex() {
         newLabel="Ir a Contenido VIP"
         items={vipPacks}
         stats={stats}
+        extras={[
+          { emoji: '💬', label: 'Mensajes', href: '/mensajes' }
+        ]}
       />
 
       <AppSection
@@ -194,6 +210,11 @@ export default async function CoursesIndex() {
         newHref="/crear-oferta?type=event"
         items={events}
         stats={stats}
+        extras={[
+          { emoji: '📷', label: 'Escanear entradas', href: '/eventos/validar' },
+          { emoji: '📋', label: 'Asistencia', href: '/eventos/asistencia' },
+          { emoji: '📍', label: 'Sedes', href: '/venues' }
+        ]}
       />
 
       <AppSection
@@ -205,6 +226,11 @@ export default async function CoursesIndex() {
         newHref="/crear-oferta?type=mentorship"
         items={reservations}
         stats={stats}
+        extras={[
+          { emoji: '🗓️', label: 'Calendario', href: '/eventos/calendario' },
+          { emoji: '📍', label: 'Sedes', href: '/venues' },
+          { emoji: '👤', label: 'Reservas', href: '/reservas' }
+        ]}
       />
 
       <AppSection
@@ -227,6 +253,9 @@ export default async function CoursesIndex() {
         newHref="/crear-oferta?type=topup"
         items={topups}
         stats={stats}
+        extras={[
+          { emoji: '💼', label: 'Saldos de clientes', href: '/wallets' }
+        ]}
       />
     </div>
   );
@@ -239,7 +268,8 @@ export default async function CoursesIndex() {
 function AppSection({
   moduleActive, moduleKey, emoji, title, subtitle,
   newHref, newLabel = '+ Nuevo',
-  items, physicalItems, bundleItems, stats
+  items, physicalItems, bundleItems, stats,
+  extras = []
 }: {
   moduleActive: boolean;
   moduleKey: ModuleKey;
@@ -252,6 +282,8 @@ function AppSection({
   physicalItems?: PhysRow[];
   bundleItems?: BundleRow[];
   stats?: Map<string, { clients: number; revenue: number; trend: number[] }>;
+  /** Shortcuts extra específicos de la app (envíos, escaneo, categorías, etc). */
+  extras?: ExtraLink[];
 }) {
   void moduleKey;
   const hasCourses = (items?.length ?? 0) > 0;
@@ -260,10 +292,10 @@ function AppSection({
   const isEmpty = !hasCourses && !hasPhys && !hasBundles;
 
   return (
-    <section className="rounded-xl border border-white/10 overflow-hidden">
+    <section className={`rounded-xl border overflow-hidden ${moduleActive ? 'border-white/10' : 'border-white/5 opacity-90'}`}>
       <header className="flex items-start justify-between gap-3 px-5 py-4 bg-white/[0.02] border-b border-white/10">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+          <h2 className="text-lg font-semibold flex items-center gap-2 flex-wrap">
             <span>{emoji}</span>
             <span>{title}</span>
             <span className={`text-[10px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded ${
@@ -275,24 +307,92 @@ function AppSection({
             </span>
           </h2>
           <p className="text-xs text-white/55 mt-0.5">{subtitle}</p>
+          {/* Extras: chips con shortcuts a features relacionadas de la app */}
+          {extras.length > 0 && (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {extras.map((x) => (
+                <Link key={x.href} href={x.href}
+                  className="inline-flex items-center gap-1 text-[11px] rounded-full border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] px-2.5 py-1 text-white/75 hover:text-white transition">
+                  {x.emoji && <span>{x.emoji}</span>}
+                  <span>{x.label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
-        {moduleActive ? (
-          <Link href={newHref}
-            className="shrink-0 rounded-md bg-white text-black text-sm font-semibold px-3 py-1.5 hover:bg-white/90">
-            {newLabel}
-          </Link>
-        ) : (
-          <Link href="/modulos"
-            className="shrink-0 rounded-md border border-white/15 text-white/70 text-sm px-3 py-1.5 hover:bg-white/5">
-            Activar app →
-          </Link>
-        )}
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {moduleActive ? (
+            <Link href={newHref}
+              className="rounded-md bg-white text-black text-sm font-semibold px-3 py-1.5 hover:bg-white/90">
+              {newLabel}
+            </Link>
+          ) : (
+            <>
+              <Link href="/modulos"
+                className="rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 text-sm px-3 py-1.5 hover:bg-emerald-500/20">
+                ⚡ Activar app
+              </Link>
+              {!isEmpty && (
+                <span className="text-[10px] text-white/40">
+                  {(items?.length ?? 0) + (physicalItems?.length ?? 0) + (bundleItems?.length ?? 0)} ítems guardados
+                </span>
+              )}
+            </>
+          )}
+        </div>
       </header>
 
-      {!moduleActive ? (
+      {/* Cuando la app está off: si igual hay productos guardados de antes,
+          los mostramos con un banner (evita "perder" data). Si no hay
+          nada, mostramos el aviso de activar. */}
+      {!moduleActive && isEmpty ? (
         <div className="px-5 py-6 text-sm text-white/50">
           Instalá esta app para empezar a vender {title.toLowerCase()}.
         </div>
+      ) : !moduleActive && !isEmpty ? (
+        <>
+          <div className="px-5 py-2.5 text-[11px] text-amber-200/85 bg-amber-500/[0.06] border-b border-amber-500/20">
+            ⚠️ App desactivada — los productos siguen guardados pero no se muestran en tu sitio hasta que la actives.
+          </div>
+          {items && stats && (
+            <AppSectionList
+              kind="courses"
+              rows={items.map((c) => {
+                const s = stats.get(c.id);
+                return {
+                  id: c.id, slug: c.slug, title: c.title, status: c.status,
+                  price_cents: c.price_cents, currency: c.currency,
+                  cover_url: c.cover_url,
+                  clients: s?.clients ?? 0, revenue: s?.revenue ?? 0, trend: s?.trend,
+                  editHref: editHrefFor(c)
+                };
+              })}
+            />
+          )}
+          {physicalItems && (
+            <AppSectionList
+              kind="physical"
+              rows={physicalItems.map((p) => ({
+                id: p.id, slug: p.slug, title: p.title, status: p.status,
+                price_cents: p.price_cents, currency: p.currency,
+                cover_url: p.cover_url,
+                stock_qty: p.stock_qty,
+                editHref: `/products/${p.id}`
+              }))}
+            />
+          )}
+          {bundleItems && (
+            <AppSectionList
+              kind="bundles"
+              rows={bundleItems.map((b) => ({
+                id: b.id, slug: b.slug, title: b.title, status: b.status,
+                price_cents: b.price_cents, currency: b.currency,
+                cover_url: b.cover_url,
+                editHref: `/bundles/${b.id}`
+              }))}
+            />
+          )}
+        </>
       ) : isEmpty ? (
         <div className="px-5 py-6 text-sm text-white/45">
           Todavía no tenés {title.toLowerCase()}. Tocá <strong className="text-white/70">{newLabel}</strong> para crear la primera.
@@ -305,6 +405,7 @@ function AppSection({
             return {
               id: c.id, slug: c.slug, title: c.title, status: c.status,
               price_cents: c.price_cents, currency: c.currency,
+              cover_url: c.cover_url,
               clients: s?.clients ?? 0,
               revenue: s?.revenue ?? 0,
               trend: s?.trend,
@@ -318,6 +419,7 @@ function AppSection({
           rows={physicalItems.map((p) => ({
             id: p.id, slug: p.slug, title: p.title, status: p.status,
             price_cents: p.price_cents, currency: p.currency,
+            cover_url: p.cover_url,
             stock_qty: p.stock_qty,
             editHref: `/products/${p.id}`
           }))}
@@ -328,6 +430,7 @@ function AppSection({
           rows={bundleItems.map((b) => ({
             id: b.id, slug: b.slug, title: b.title, status: b.status,
             price_cents: b.price_cents, currency: b.currency,
+            cover_url: b.cover_url,
             editHref: `/bundles/${b.id}`
           }))}
         />

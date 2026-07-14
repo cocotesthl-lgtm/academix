@@ -19,6 +19,8 @@ type Row = {
   status: string;
   price_cents: number;
   currency: string;
+  /** Thumbnail visible al lado del título (cover_url del producto). */
+  cover_url?: string | null;
   /** Solo para físicos */
   stock_qty?: number;
   /** Para stats de courses (clientes, revenue, sparkline) */
@@ -94,8 +96,21 @@ export function AppSectionList({
           {visible.map((r) => (
             <tr key={r.id} className="border-t border-white/5 hover:bg-white/[0.02]">
               <td className="px-5 py-3">
-                <Link href={r.editHref} className="font-medium hover:underline">{r.title}</Link>
-                <div className="text-xs text-white/40">/{r.slug}</div>
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Thumbnail — 40x40, fallback a un placeholder gris cuando el producto no tiene foto */}
+                  {r.cover_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.cover_url} alt="" className="w-10 h-10 rounded object-cover bg-white/5 shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded bg-white/5 border border-white/10 flex items-center justify-center text-white/25 text-xs shrink-0">
+                      —
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <Link href={r.editHref} className="font-medium hover:underline block truncate">{r.title}</Link>
+                    <div className="text-xs text-white/40 truncate">/{r.slug}</div>
+                  </div>
+                </div>
               </td>
               <td className="px-3 py-3"><StatusChip s={r.status} /></td>
               <td className="px-3 py-3 text-white/80">
