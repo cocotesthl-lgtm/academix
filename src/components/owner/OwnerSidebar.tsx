@@ -65,6 +65,10 @@ const NAV: NavEntry[] = [
   // y las puede activar. Siempre visible como baseline — sino el owner
   // sin apps activas no tiene entrada al hub para activar ninguna.
   { kind: 'item', icon: 'shopping-bag', item: { label: 'Mis ofertas', href: '/courses' } },
+  // Apps (App Market) también baseline — es el segundo lugar clave para
+  // el owner y tenerlo escondido bajo "Mi sitio > Apps" (un grupo
+  // colapsable) generaba fricción para activar/desactivar features.
+  { kind: 'item', icon: 'settings', item: { label: 'Apps', href: '/modulos' } },
 
   // ── BASELINE (siempre visibles cuando su macro está prendido) ────
   // Estos grupos no tienen apps instalables — son features estructurales
@@ -105,7 +109,7 @@ const NAV: NavEntry[] = [
       items: [
         { label: 'Editor de páginas', href: '/site' },
         { label: 'Templates', href: '/templates' },
-        { label: 'Apps', href: '/modulos' },                // App Market — instalar features
+        // "Apps" subió a baseline arriba — sacado de acá para no duplicar.
         { label: 'Identidad', href: '/branding' },
         { label: 'Dominio', href: '/dominio' }
       ]
