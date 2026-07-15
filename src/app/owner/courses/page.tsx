@@ -287,7 +287,6 @@ function AppSection({
   /** Shortcuts extra específicos de la app (envíos, escaneo, categorías, etc). */
   extras?: ExtraLink[];
 }) {
-  void moduleKey;
   const hasCourses = (items?.length ?? 0) > 0;
   const hasPhys = (physicalItems?.length ?? 0) > 0;
   const hasBundles = (bundleItems?.length ?? 0) > 0;
@@ -330,7 +329,7 @@ function AppSection({
             </Link>
           ) : (
             <>
-              <Link href="/modulos"
+              <Link href={`/modulos?open=${moduleKey}`}
                 className="rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 text-sm px-3 py-1.5 hover:bg-emerald-500/20">
                 ⚡ Activar app
               </Link>

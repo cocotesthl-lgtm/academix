@@ -16,9 +16,14 @@ export const dynamic = 'force-dynamic';
  * no se instalan sueltos — se prenden automáticamente al instalar cualquier
  * app de su categoría (o quedan visibles como filtro).
  */
-export default async function ModulosPage() {
+export default async function ModulosPage({
+  searchParams
+}: {
+  searchParams: Promise<{ open?: string }>;
+}) {
   const { tenant } = await requireOwner();
   const modules = await getTenantModules(tenant.id);
+  const { open: openKey = null } = await searchParams;
 
   // Sólo mostramos apps (submódulos). Los macros son categorías, no apps.
   const subKeys = MODULE_KEYS.filter((k) => MODULE_LEVEL[k] === 'sub');
@@ -62,7 +67,7 @@ export default async function ModulosPage() {
       />
 
       {/* Marketplace */}
-      <AppMarket apps={apps} categories={categories} />
+      <AppMarket apps={apps} categories={categories} initialOpenKey={openKey} />
 
       <p className="text-[11px] text-white/40">
         Inicio y Configuración siempre están visibles — no se pueden apagar.

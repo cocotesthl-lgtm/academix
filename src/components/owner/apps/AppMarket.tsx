@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { toggleModuleAction } from '@/lib/modules/actions';
 import type { ModuleKey } from '@/lib/modules/types';
 
@@ -19,7 +19,12 @@ export type AppCard = {
   reviews: number;
 };
 
-type Props = { apps: AppCard[]; categories: { key: string; label: string; emoji?: string }[] };
+type Props = {
+  apps: AppCard[];
+  categories: { key: string; label: string; emoji?: string }[];
+  /** Key opcional de una app para pre-abrir su modal (viene de ?open=... en la URL). */
+  initialOpenKey?: string | null;
+};
 
 /**
  * App Market estilo Wix. Cards con icono, categoría, descripción y botón
@@ -27,11 +32,29 @@ type Props = { apps: AppCard[]; categories: { key: string; label: string; emoji?
  *
  * "Instalar" / "Desinstalar" llama a toggleModuleAction. La página server
  * re-renderiza con el estado nuevo tras el submit.
+ *
+ * Si initialOpenKey coincide con una app conocida, abre el modal de esa
+ * app automáticamente al montar — usado por el link "Activar app" desde
+ * Mis ofertas, para que el owner no tenga que buscarla.
  */
-export function AppMarket({ apps, categories }: Props) {
-  const [selected, setSelected] = useState<AppCard | null>(null);
+export function AppMarket({ apps, categories, initialOpenKey = null }: Props) {
+  const [selected, setSelected] = useState<AppCard | null>(() => {
+    if (!initialOpenKey) return null;
+    return apps.find((a) => a.key === initialOpenKey) ?? null;
+  });
   const [category, setCategory] = useState<string>('all');
   const [query, setQuery] = useState('');
+
+  // Limpia ?open=... de la URL una vez que abrimos el modal — así si el
+  // owner cierra y navega no queda "sticky" el auto-open.
+  useEffect(() => {
+    if (!initialOpenKey || typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('open')) {
+      url.searchParams.delete('open');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [initialOpenKey]);
 
   const filtered = useMemo(() => {
     return apps.filter((a) => {
