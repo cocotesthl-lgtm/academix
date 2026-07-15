@@ -94,6 +94,25 @@ export default async function CoursesIndex() {
 
   const modules = await getTenantModules(tenant.id);
 
+  // Counts defensivos para las apps sin lista completa (planes, promos,
+  // dropship): sólo mostramos "N ítems" en el header. Si la tabla no
+  // existe (migración vieja) fallback silencioso a 0.
+  async function countRows(table: string, extraFilter?: (q: unknown) => unknown): Promise<number> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q: any = (svc.from(table) as any).select('id', { count: 'exact', head: true }).eq('tenant_id', tenant.id);
+      if (extraFilter) q = extraFilter(q);
+      const { count } = await q;
+      return count ?? 0;
+    } catch { return 0; }
+  }
+  const [plansCount, promotionsCount, dropshipCount] = await Promise.all([
+    countRows('customer_plans'),
+    countRows('promotions'),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    countRows('reseller_products', (q: any) => q)
+  ]);
+
   // Stats por publicación (clientes + revenue + trend 30d) — solo para courses
   type Stats = { clients: number; revenue: number; trend: number[] };
   const stats = new Map<string, Stats>();
@@ -262,6 +281,59 @@ export default async function CoursesIndex() {
         stats={stats}
         extras={[
           { emoji: '💼', label: 'Saldos de clientes', href: '/wallets' }
+        ]}
+      />
+
+      <AppSection
+        moduleActive={modules.plans !== false}
+        moduleKey="plans"
+        emoji="💳"
+        title="Planes / Suscripciones a clientes"
+        subtitle={
+          plansCount > 0
+            ? `${plansCount} plan${plansCount === 1 ? '' : 'es'} asignado${plansCount === 1 ? '' : 's'} — cobros recurrentes`
+            : 'Membresías, cuotas, cobros por servicio con cobro recurrente'
+        }
+        newHref="/cuentas"
+        newLabel="Ir a Planes"
+        items={[]}
+        stats={stats}
+        extras={[
+          { emoji: '📊', label: 'Ver suscripciones', href: '/suscripciones' }
+        ]}
+      />
+
+      <AppSection
+        moduleActive={modules.promotions !== false}
+        moduleKey="promotions"
+        emoji="🎯"
+        title="Promociones"
+        subtitle={
+          promotionsCount > 0
+            ? `${promotionsCount} promocion${promotionsCount === 1 ? '' : 'es'} activas`
+            : 'Cupones, descuentos y ofertas por tiempo limitado'
+        }
+        newHref="/promotions/new"
+        items={[]}
+        stats={stats}
+      />
+
+      <AppSection
+        moduleActive={modules.dropshipping !== false}
+        moduleKey="dropshipping"
+        emoji="🚛"
+        title="Dropshipping"
+        subtitle={
+          dropshipCount > 0
+            ? `${dropshipCount} producto${dropshipCount === 1 ? '' : 's'} en reventa desde el marketplace mayorista`
+            : 'Revendé productos de otros tenants sin manejar stock'
+        }
+        newHref="/dropship/browse"
+        newLabel="Explorar catálogo"
+        items={[]}
+        stats={stats}
+        extras={[
+          { emoji: '📦', label: 'Órdenes dropship', href: '/dropship/orders' }
         ]}
       />
       </div>
