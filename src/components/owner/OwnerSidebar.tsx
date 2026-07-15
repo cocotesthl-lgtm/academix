@@ -95,7 +95,7 @@ const NAV: NavEntry[] = [
         { label: 'Ventas', href: '/ventas' },
         { label: 'Órdenes (tienda)', href: '/orders', moduleKey: 'ecommerce' },
         { label: 'Analytics', href: '/analytics' },
-        { label: 'Suscripciones', href: '/suscripciones' },
+        { label: 'Suscripciones', href: '/suscripciones', moduleKey: 'plans' },
         { label: 'Finanzas', href: '/finance' }
       ]
     }

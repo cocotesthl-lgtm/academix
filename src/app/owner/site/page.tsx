@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { mergeConfig, type SectionKey } from "@/lib/site/types";
+import { getTenantModules } from "@/lib/modules/queries";
+import type { ModuleKey } from "@/lib/modules/types";
 import {
   toggleSectionAction,
   moveSectionAction,
@@ -81,9 +84,23 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
 
+/**
+ * Secciones que dependen de una app específica. Cuando la app está off,
+ * el editor de la sección se bloquea y muestra un CTA "Activar app".
+ * El toggle de habilitar la sección tampoco funciona hasta activar.
+ */
+const SECTION_REQUIRES_MODULE: Partial<Record<SectionKey, { key: ModuleKey; label: string }>> = {
+  blog_preview:   { key: 'blog',       label: 'Blog' },
+  products:       { key: 'ecommerce',  label: 'Tienda online (productos físicos)' },
+  products_strip: { key: 'ecommerce',  label: 'Tienda online (productos físicos)' },
+  benefits_bar:   { key: 'ecommerce',  label: 'Tienda online (productos físicos)' },
+  workwithus:     { key: 'affiliates', label: 'Programa de afiliados' }
+};
+
 export default async function SiteBuilderPage() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
+  const modules = await getTenantModules(tenant.id);
   // Traigo también site_config_published + timestamp para el toolbar
   // (Wix-style draft/published). Defensivo con any por si migration 0048
   // aún no corrió: los campos vienen undefined y todo sigue funcionando.
@@ -238,6 +255,10 @@ export default async function SiteBuilderPage() {
         const meta = SECTION_META[key];
         const isFirst = idx === 0;
         const isLast = idx === cfg.order.length - 1;
+        const req = SECTION_REQUIRES_MODULE[key];
+        const requiresModule = req && modules[req.key] === false
+          ? { key: req.key, label: req.label }
+          : null;
         return (
           <Section
             key={key}
@@ -245,6 +266,7 @@ export default async function SiteBuilderPage() {
             title={meta.title}
             desc={meta.desc}
             enabled={cfg.sections[key].enabled}
+            requiresModule={requiresModule}
             bgColor={cfg.sections[key].bg_color ?? null}
             textColor={cfg.sections[key].text_color ?? null}
             styles={{
@@ -621,9 +643,11 @@ export default async function SiteBuilderPage() {
 }
 
 function Section({
-  title, desc, enabled, sectionKey, bgColor, textColor, styles, children, isFirst, isLast, position, total
+  title, desc, enabled, sectionKey, requiresModule, bgColor, textColor, styles, children, isFirst, isLast, position, total
 }: {
   title: string; desc: string; enabled: boolean; sectionKey: string;
+  /** Si la sección depende de una app off, se pasa este objeto y la sección aparece bloqueada. */
+  requiresModule: { key: ModuleKey; label: string } | null;
   bgColor: string | null; textColor: string | null;
   styles: {
     title_color: string | null; body_color: string | null; accent_color: string | null;
@@ -632,8 +656,12 @@ function Section({
   };
   children: React.ReactNode; isFirst: boolean; isLast: boolean; position: number; total: number;
 }) {
+  const locked = !!requiresModule;
   return (
-    <div className={`rounded-xl border ${enabled ? 'border-white/15 bg-white/[0.02]' : 'border-white/10 bg-white/[0.01] opacity-70'}`}>
+    <div className={`rounded-xl border ${
+      locked ? 'border-amber-500/30 bg-amber-500/[0.03]' :
+      enabled ? 'border-white/15 bg-white/[0.02]' : 'border-white/10 bg-white/[0.01] opacity-70'
+    }`}>
       <div className="p-5 flex items-start justify-between gap-3 border-b border-white/5 flex-wrap">
         <div className="flex items-start gap-3">
           <div className="flex flex-col gap-1 pt-1">
@@ -649,39 +677,63 @@ function Section({
             </form>
           </div>
           <div>
-            <h3 className="font-semibold">
+            <h3 className="font-semibold flex items-center gap-2 flex-wrap">
               {title}
-              <span className="ml-2 text-xs text-white/30 font-normal">{position}/{total}</span>
+              <span className="text-xs text-white/30 font-normal">{position}/{total}</span>
+              {locked && (
+                <span className="text-[10px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300">
+                  🔒 App off
+                </span>
+              )}
             </h3>
             <p className="text-xs text-white/50 mt-0.5">{desc}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Color pickers — auto-aplican al elegir, sin botón Aplicar.
-              Se guarda + revalida apenas el owner pica un color en la rueda. */}
-          <ColorAutoSave
-            label="Fondo"
-            fieldName="bg_color"
-            sectionKey={sectionKey}
-            initial={bgColor}
-            action={setSectionBgColorAction}
-          />
-          {/* Texto color picker sacado del header — vive en el panel Estilos
-              cuando el owner lo necesita. El texto se ve bien por default
-              gracias al auto-flip basado en el bg. */}
-          <SectionStyleEditor sectionKey={sectionKey} initial={styles} />
-          <form action={toggleSectionAction}>
-            <input type="hidden" name="section" value={sectionKey} />
-            <button
-              type="submit"
-              className={`text-xs px-2.5 py-1 rounded border whitespace-nowrap ${enabled ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-white/15 text-white/50'}`}
-            >
-              {enabled ? '✓ activa' : 'desactivada'}
-            </button>
-          </form>
+          {/* Color pickers y toggle sólo tienen sentido cuando la sección
+              no está bloqueada por app off — si la app no está activa, el
+              contenido no va a renderizar en el sitio de todas formas. */}
+          {!locked && (<>
+            <ColorAutoSave
+              label="Fondo"
+              fieldName="bg_color"
+              sectionKey={sectionKey}
+              initial={bgColor}
+              action={setSectionBgColorAction}
+            />
+            <SectionStyleEditor sectionKey={sectionKey} initial={styles} />
+            <form action={toggleSectionAction}>
+              <input type="hidden" name="section" value={sectionKey} />
+              <button
+                type="submit"
+                className={`text-xs px-2.5 py-1 rounded border whitespace-nowrap ${enabled ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-white/15 text-white/50'}`}
+              >
+                {enabled ? '✓ activa' : 'desactivada'}
+              </button>
+            </form>
+          </>)}
         </div>
       </div>
-      {enabled && <div className="p-5" data-sec-editor={sectionKey}>{children}</div>}
+      {locked ? (
+        // Estado bloqueado: reemplaza el editor por un CTA para activar la app.
+        // El link va a /modulos?open=<key> — el AppMarket auto-abre ese modal
+        // (mismo patrón que "Activar app" desde Mis ofertas).
+        <div className="p-6 text-center space-y-3">
+          <p className="text-sm text-white/70">
+            Esta sección requiere la app{' '}
+            <strong className="text-white">{requiresModule!.label}</strong>.
+            Actívala para poder editarla y mostrarla en tu sitio.
+          </p>
+          <Link
+            href={`/modulos?open=${requiresModule!.key}`}
+            className="inline-block rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 text-sm font-semibold px-4 py-2 hover:bg-emerald-500/20"
+          >
+            ⚡ Activar {requiresModule!.label}
+          </Link>
+        </div>
+      ) : enabled ? (
+        <div className="p-5" data-sec-editor={sectionKey}>{children}</div>
+      ) : null}
     </div>
   );
 }
