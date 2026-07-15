@@ -44,7 +44,7 @@ export default async function ArticleEditPage({
       />
 
       {article.status !== 'published' && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-xs text-amber-200/80">
+        <div className="rounded-lg border border-amber-300 bg-amber-100 px-4 py-2 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
           📝 En borrador — el artículo no aparece en tu blog público. Tocá <strong>Publicar</strong> arriba cuando esté listo.
         </div>
       )}

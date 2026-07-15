@@ -213,7 +213,7 @@ export default async function CourseEditPage({
 
       {/* Banner draft compacto — recordatorio de que el producto no es visible */}
       {course.status !== 'published' && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-xs text-amber-200/80">
+        <div className="rounded-lg border border-amber-300 bg-amber-100 px-4 py-2 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
           📝 En borrador — invisible para tus visitantes. La URL pública (/c/{course.slug}) devuelve 404 hasta que toques <strong>Publicar</strong> arriba.
         </div>
       )}
