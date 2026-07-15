@@ -4,6 +4,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { getTenantModules } from "@/lib/modules/queries";
 import { PageHeader } from "@/components/owner/PageHeader";
 import { AppSectionList } from "@/components/owner/courses/AppSectionList";
+import { MisOfertasFilter } from "@/components/owner/courses/MisOfertasFilter";
 import type { ModuleKey } from "@/lib/modules/types";
 
 export const dynamic = "force-dynamic";
@@ -150,11 +151,15 @@ export default async function CoursesIndex() {
   const topups         = courses.filter((c) => c.product_type === 'topup');
 
   return (
-    <div className="max-w-5xl space-y-8">
+    <div className="max-w-5xl space-y-6">
       <PageHeader
         title="Mis ofertas"
         description="Cada app te habilita un tipo de venta distinto. Instalá las que necesites desde Mi sitio → Apps."
       />
+
+      <MisOfertasFilter />
+
+      <div id="mis-ofertas-sections" data-filter="active" className="space-y-8">
 
       {/* Publicaciones — siempre visible (courses macro está prendido default) */}
       <AppSection
@@ -259,6 +264,7 @@ export default async function CoursesIndex() {
           { emoji: '💼', label: 'Saldos de clientes', href: '/wallets' }
         ]}
       />
+      </div>
     </div>
   );
 }
@@ -293,7 +299,10 @@ function AppSection({
   const isEmpty = !hasCourses && !hasPhys && !hasBundles;
 
   return (
-    <section className={`rounded-xl border overflow-hidden ${moduleActive ? 'border-white/10' : 'border-white/5 opacity-90'}`}>
+    <section
+      data-mod-active={moduleActive ? 'true' : 'false'}
+      className={`rounded-xl border overflow-hidden ${moduleActive ? 'border-white/10' : 'border-white/5 opacity-90'}`}
+    >
       <header className="flex items-start justify-between gap-3 px-5 py-4 bg-white/[0.02] border-b border-white/10">
         <div className="min-w-0">
           <h2 className="text-lg font-semibold flex items-center gap-2 flex-wrap">
