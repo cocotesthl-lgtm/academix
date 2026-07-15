@@ -14,11 +14,14 @@ import { ProductTypeMockup } from './ProductTypeMockup';
  * (landing template, calendar mode, content labels, pricing mode).
  * Paso 1.5 (opcional): elegir una plantilla pre-armada o empezar en blanco.
  * Paso 2: título + precio + descripción opcional. Placeholders adaptados.
+ *
+ * Cuando llega ?type=xxx (desde Mis ofertas → "+ Nuevo"), skippeamos el
+ * type-picker y arrancamos mostrando sólo las plantillas para ese tipo,
+ * con un link chico "cambiar tipo" para volver al picker completo.
  */
 export function NewCourseForm({ modules = ALL_MODULES_ON }: { modules?: Modules }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [step, setStep] = useState<1 | 2>(1);
   // Filtrar tipos por módulos activos. Si el owner apagó 'ecommerce', no
   // aparece 'physical'; si apagó 'events', no aparece 'event', etc. Siempre
   // dejamos al menos uno (fallback a courses hardcodeado).
@@ -27,13 +30,20 @@ export function NewCourseForm({ modules = ALL_MODULES_ON }: { modules?: Modules 
   // Sólo aceptamos el hint si el tipo está en la lista visible; si no,
   // caemos al primero disponible.
   const hintedType = searchParams.get('type');
-  const initialType = (
-    visibleTypes.find((p) => p.id === hintedType)?.id ??
-    visibleTypes[0]?.id ??
-    'course'
-  ) as ProductType;
+  const matchedHint = visibleTypes.find((p) => p.id === hintedType);
+  const initialType = (matchedHint?.id ?? visibleTypes[0]?.id ?? 'course') as ProductType;
   const [type, setType] = useState<ProductType>(initialType);
   const [template, setTemplate] = useState<OfferTemplate | null>(null);
+  // Con hint válido arrancamos escondiendo el type-picker → el owner ya
+  // "sabe" qué está creando; sólo tiene que elegir plantilla o blanco.
+  // Sin hint (usuario entró a /courses/new suelto) mostramos el picker.
+  const [showTypePicker, setShowTypePicker] = useState<boolean>(!matchedHint);
+  const [step, setStep] = useState<1 | 2>(() => {
+    // Si el hint apunta a un tipo SIN plantillas, saltear el paso 1 y
+    // dejarlos directo en el form vacío del paso 2 — nada que elegir.
+    if (matchedHint && getTemplatesForType(initialType).length === 0) return 2;
+    return 1;
+  });
   const [state, action, pending] = useActionState<Result<{ id: string }> | null, FormData>(
     createCourseAction,
     null
@@ -63,53 +73,79 @@ export function NewCourseForm({ modules = ALL_MODULES_ON }: { modules?: Modules 
   if (step === 1) {
     return (
       <div className="space-y-5 max-w-4xl">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-white/40 mb-1">Paso 1 de 2</div>
-          <h2 className="text-xl font-semibold">¿Qué vas a vender?</h2>
-          <p className="text-sm text-white/55 mt-1">
-            Elegí el tipo y configuramos la página, el checkout y las etiquetas por vos.
-            Después podés editar todo si querés.
-          </p>
-        </div>
+        {showTypePicker ? (
+          <>
+            <div>
+              <div className="text-xs uppercase tracking-wider text-white/40 mb-1">Paso 1 de 2</div>
+              <h2 className="text-xl font-semibold">¿Qué vas a vender?</h2>
+              <p className="text-sm text-white/55 mt-1">
+                Elegí el tipo y configuramos la página, el checkout y las etiquetas por vos.
+                Después podés editar todo si querés.
+              </p>
+            </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {visibleTypes.map((p) => {
-            const selected = type === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => { setType(p.id); setTemplate(null); }}
-                className={`text-left rounded-xl border p-4 transition flex flex-col gap-3 ${
-                  selected
-                    ? 'border-white bg-white/10 ring-1 ring-white/30'
-                    : 'border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.05]'
-                }`}
-              >
-                {/* Mockup visual de cómo se ve la oferta cuando el comprador la abre */}
-                <div className="-mx-1 -mt-1">
-                  <ProductTypeMockup type={p.id} />
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="text-2xl leading-none mt-0.5">{p.emoji}</div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-sm flex items-center gap-2 flex-wrap">
-                      {p.label}
-                      {selected && (
-                        <span className="text-[10px] uppercase tracking-wide bg-white text-black px-1.5 py-0.5 rounded">
-                          elegido
-                        </span>
-                      )}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {visibleTypes.map((p) => {
+                const selected = type === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => { setType(p.id); setTemplate(null); }}
+                    className={`text-left rounded-xl border p-4 transition flex flex-col gap-3 ${
+                      selected
+                        ? 'border-white bg-white/10 ring-1 ring-white/30'
+                        : 'border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.05]'
+                    }`}
+                  >
+                    {/* Mockup visual de cómo se ve la oferta cuando el comprador la abre */}
+                    <div className="-mx-1 -mt-1">
+                      <ProductTypeMockup type={p.id} />
                     </div>
-                    <p className="text-xs text-white/55 mt-1 leading-snug">{p.short}</p>
-                    <p className="text-[10px] text-white/35 mt-2 leading-snug italic">{p.examples}</p>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="text-2xl leading-none mt-0.5">{p.emoji}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-sm flex items-center gap-2 flex-wrap">
+                          {p.label}
+                          {selected && (
+                            <span className="text-[10px] uppercase tracking-wide bg-white text-black px-1.5 py-0.5 rounded">
+                              elegido
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-white/55 mt-1 leading-snug">{p.short}</p>
+                        <p className="text-[10px] text-white/35 mt-2 leading-snug italic">{p.examples}</p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          // Modo focused: llegamos con ?type= y ya sabemos qué se está creando.
+          // Header compacto con el tipo + link para volver al picker completo.
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-white/40 mb-1">Paso 1 de 2</div>
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <span>{spec.emoji}</span>
+                <span>Elegí una plantilla para: {spec.label}</span>
+              </h2>
+              <p className="text-sm text-white/55 mt-1">
+                Cargamos título, descripción y precio de ejemplo. Podés editar todo antes de guardar.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowTypePicker(true)}
+              className="text-xs text-white/55 hover:text-white underline mt-1"
+            >
+              ← Cambiar tipo
+            </button>
+          </div>
+        )}
 
         {/* ─── Plantilla pre-armada para ese tipo ─── */}
         {templatesForType.length > 0 && (
