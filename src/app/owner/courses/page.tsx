@@ -214,7 +214,7 @@ export default async function CoursesIndex() {
         emoji="🎫"
         title="Eventos con tickets"
         subtitle="Conciertos, conferencias, talleres — entradas con QR"
-        newHref="/crear-oferta?type=event"
+        newHref="/courses/new?type=event"
         items={events}
         stats={stats}
         extras={[
@@ -230,7 +230,7 @@ export default async function CoursesIndex() {
         emoji="📅"
         title="Reservas y turnos"
         subtitle="Mentorías 1-a-1, restaurantes, sedes con turnos"
-        newHref="/crear-oferta?type=mentorship"
+        newHref="/courses/new?type=mentorship"
         items={reservations}
         stats={stats}
         extras={[
@@ -257,7 +257,7 @@ export default async function CoursesIndex() {
         emoji="💰"
         title="Cargas de saldo"
         subtitle="Productos que acreditan saldo interno al buyer"
-        newHref="/crear-oferta?type=topup"
+        newHref="/courses/new?type=topup"
         items={topups}
         stats={stats}
         extras={[

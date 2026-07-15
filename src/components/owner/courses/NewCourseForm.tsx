@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createCourseAction, type Result } from '@/lib/courses/actions';
 import { PRODUCT_TYPES, type ProductType } from '@/lib/courses/product-types';
 import { getTemplatesForType, type OfferTemplate } from '@/lib/courses/templates/offer-templates';
@@ -17,12 +17,21 @@ import { ProductTypeMockup } from './ProductTypeMockup';
  */
 export function NewCourseForm({ modules = ALL_MODULES_ON }: { modules?: Modules }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<1 | 2>(1);
   // Filtrar tipos por módulos activos. Si el owner apagó 'ecommerce', no
   // aparece 'physical'; si apagó 'events', no aparece 'event', etc. Siempre
   // dejamos al menos uno (fallback a courses hardcodeado).
   const visibleTypes = PRODUCT_TYPES.filter((p) => modules[p.moduleKey] !== false);
-  const initialType = (visibleTypes[0]?.id ?? 'course') as ProductType;
+  // Prefill por ?type= (usado por los shortcuts "+ Nuevo" de Mis ofertas).
+  // Sólo aceptamos el hint si el tipo está en la lista visible; si no,
+  // caemos al primero disponible.
+  const hintedType = searchParams.get('type');
+  const initialType = (
+    visibleTypes.find((p) => p.id === hintedType)?.id ??
+    visibleTypes[0]?.id ??
+    'course'
+  ) as ProductType;
   const [type, setType] = useState<ProductType>(initialType);
   const [template, setTemplate] = useState<OfferTemplate | null>(null);
   const [state, action, pending] = useActionState<Result<{ id: string }> | null, FormData>(

@@ -274,7 +274,7 @@ export default async function WalletsPage() {
                 También podés regalar bonus en cualquier compra (curso, físico, etc.) desde el editor del producto.
               </p>
             </div>
-            <Link href="/crear-oferta?type=topup"
+            <Link href="/courses/new?type=topup"
               className="text-xs px-3 py-2 rounded bg-white text-black font-semibold hover:bg-white/90 whitespace-nowrap">
               + Nueva carga de saldo
             </Link>
