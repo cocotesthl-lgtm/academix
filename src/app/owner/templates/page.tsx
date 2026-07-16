@@ -3,6 +3,7 @@ import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { SITE_TEMPLATES, TEMPLATE_CATEGORIES, type SiteTemplate } from '@/lib/site/templates/catalog';
 import { applySiteTemplateAction } from '@/lib/site/templates/actions';
+import { MODULE_META, type ModuleKey } from '@/lib/modules/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,6 +106,31 @@ function TemplateCard({ tpl }: { tpl: SiteTemplate }) {
             {tpl.shortDesc}
           </p>
         </div>
+
+        {tpl.modules !== undefined && (
+          <div className="pt-2 border-t border-black/5">
+            <div className="text-[10px] uppercase tracking-widest text-black/45 mb-1.5">
+              Apps que activa
+            </div>
+            {tpl.modules.length === 0 ? (
+              <p className="text-[11px] text-black/50 italic">
+                Ninguna — sitio institucional puro (podés activar apps después).
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-1">
+                {tpl.modules
+                  .filter((k): k is ModuleKey => !!MODULE_META[k])
+                  .map((k) => (
+                    <span key={k}
+                      className="inline-flex items-center gap-0.5 rounded-full bg-black/5 px-2 py-0.5 text-[10px] text-black/70">
+                      <span>{MODULE_META[k]?.emoji ?? '🧩'}</span>
+                      <span>{MODULE_META[k]?.label ?? k}</span>
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-black/5">
           <div className="flex items-center gap-1.5 text-[10px] text-black/45">
             <span className="inline-block w-3 h-3 rounded-full border border-black/10"

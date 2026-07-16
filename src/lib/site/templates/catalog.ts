@@ -1,4 +1,5 @@
 import { DEFAULT_SITE_CONFIG, type SiteConfig } from '@/lib/site/types';
+import type { ModuleKey } from '@/lib/modules/types';
 
 /**
  * Catálogo de templates curados (hardcoded — sin DB). El owner los aplica
@@ -18,6 +19,15 @@ export type SiteTemplate = {
   longDesc?: string;
   suggestedPrimary: string;  // color recomendado #hex
   config: SiteConfig;
+  /**
+   * Apps que este template necesita. Cuando el owner aplica el template,
+   * se prenden estas apps y se apagan las demás (excepto los macros
+   * baseline `team`, `sales`, `site` que no son apps sino estructura).
+   *
+   * Si no se declara, el template no toca los módulos del tenant
+   * (backward compat con templates aplicados antes de este cambio).
+   */
+  modules?: ModuleKey[];
 };
 
 function clone(): SiteConfig {
@@ -61,7 +71,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       emoji: '⚖️',
       shortDesc: 'Para abogados, contadores, consultores. Hero institucional + áreas de práctica + contacto.',
       suggestedPrimary: '#1f2937',
-      config: c
+      config: c,
+      // Sin apps de venta — solo el sitio institucional + formulario de contacto.
+      modules: []
     };
   })(),
 
@@ -88,7 +100,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       emoji: '🍽️',
       shortDesc: 'Hero + galería de platos + mapa + form de reserva. Pensado para parrillas, bistros, cafés.',
       suggestedPrimary: '#b91c1c',
-      config: c
+      config: c,
+      // Reservas de mesa
+      modules: ['calendar', 'reservations']
     };
   })(),
 
@@ -114,7 +128,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       emoji: '🎯',
       shortDesc: 'Para tiro, escape rooms, paintball, kart. Hero impactante + galería + sedes + reservas.',
       suggestedPrimary: '#dc2626',
-      config: c
+      config: c,
+      // Reservas y tickets (con QR de entrada)
+      modules: ['calendar', 'reservations', 'events']
     };
   })(),
 
@@ -140,7 +156,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       emoji: '💅',
       shortDesc: 'Para salones, manicura, peluquería, spa, masajes. Galería + servicios + precios + turnos.',
       suggestedPrimary: '#ec4899',
-      config: c
+      config: c,
+      // Turnos + planes de bonos/paquetes
+      modules: ['calendar', 'reservations', 'catalog', 'plans']
     };
   })(),
 
@@ -167,7 +185,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       emoji: '🏋️',
       shortDesc: 'Hero motivador + stats + instructores + planes mensuales + testimonios. Para gimnasios y estudios.',
       suggestedPrimary: '#16a34a',
-      config: c
+      config: c,
+      // Membresías (planes recurrentes) + reserva de clases
+      modules: ['catalog', 'plans', 'calendar', 'reservations']
     };
   })(),
 
@@ -181,7 +201,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       emoji: '🎓',
       shortDesc: 'El default de OfferNow. Cursos online, catálogo, testimonios. Para creators y formadores.',
       suggestedPrimary: '#f97316',
-      config: c
+      config: c,
+      // Cursos + VIP + bundles + afiliados (todo lo típico de un creator)
+      modules: ['catalog', 'courses', 'vip', 'bundles', 'promotions', 'crm', 'affiliates']
     };
   })(),
 
@@ -279,7 +301,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       shortDesc: 'Estilo Amazon / MercadoLibre / Tienda Nube. Hero slider + cinta beneficios + categorías + productos.',
       longDesc: 'Template pensado para negocios que venden productos físicos. No incluye FAQs, testimonios ni "por qué elegirnos" — cosas que no van en un ecommerce estándar. Sí incluye lo que sí va: hero rotativo, cinta con envíos/cuotas/transferencia, grid de categorías con imágenes grandes, carrusel horizontal de productos destacados, y grid completo del catálogo.',
       suggestedPrimary: '#0a0a0a',
-      config: c
+      config: c,
+      // Tienda física + promos + bundles + gift cards (via ecommerce)
+      modules: ['catalog', 'ecommerce', 'promotions', 'bundles']
     };
   })(),
 
@@ -304,7 +328,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       emoji: '📷',
       shortDesc: 'Hero + galería full-screen + sobre mí + servicios. Para fotógrafos, diseñadores, freelance.',
       suggestedPrimary: '#0891b2',
-      config: c
+      config: c,
+      // Portfolio puro — sin apps. Sólo contact form.
+      modules: []
     };
   })(),
 
@@ -340,7 +366,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       shortDesc: 'Portada con las últimas notas, newsletter y sección editorial. Blog CMS + SEO + RSS listos.',
       longDesc: 'Ideal para portales de noticias locales, revistas independientes o blogs de opinión. Incluye artículos con imagen destacada, categorías, RSS feed automático, sitemap.xml y meta tags Open Graph. Podés cobrar por suscripciones premium.',
       suggestedPrimary: '#dc2626',
-      config: c
+      config: c,
+      // Blog + forms de contacto + planes de suscripción premium
+      modules: ['crm', 'blog', 'forms', 'catalog', 'plans']
     };
   })()
 ];

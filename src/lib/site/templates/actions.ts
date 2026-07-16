@@ -6,7 +6,30 @@ import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { SITE_TEMPLATES } from './catalog';
 import { seedEcommerceDemoData } from './seed-ecommerce';
-import { normalizeModules } from '@/lib/modules/types';
+import { normalizeModules, type Modules, type ModuleKey } from '@/lib/modules/types';
+
+/**
+ * Macros estructurales que siempre quedan prendidos, incluso cuando el
+ * template no los declara. No son "apps" sino funcionalidad de panel
+ * (Personas, Ventas, Mi sitio) — apagarlos rompería la navegación.
+ */
+const BASELINE_MACROS: ModuleKey[] = ['team', 'sales', 'site'];
+
+/**
+ * Construye el set de módulos final: arranca de todo apagado, prende los
+ * declarados por el template y siempre garantiza los macros baseline.
+ */
+function computeTemplateModules(declared: ModuleKey[]): Modules {
+  const out = {} as Modules;
+  // Arrancar todo en false
+  const allKeys = Object.keys(normalizeModules({})) as ModuleKey[];
+  for (const k of allKeys) out[k] = false;
+  // Prender los del template
+  for (const k of declared) out[k] = true;
+  // Baseline siempre on
+  for (const k of BASELINE_MACROS) out[k] = true;
+  return out;
+}
 
 /** Aplica un template completo al sitio del tenant. Pisa todo el site_config. */
 export async function applySiteTemplateAction(formData: FormData): Promise<void> {
@@ -41,13 +64,19 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
     patch.cart_enabled = true;
     patch.cart_position = 'header';
     patch.cart_display = 'dropdown';
-    // También activar el módulo 'ecommerce' + su macro 'catalog' para que
-    // aparezca en el sidebar. Preservamos lo que el owner tenía prendido
-    // en el resto de módulos. Sin esto, aplicar el template deja 'Productos
-    // físicos' escondido del sidebar si el tenant tenía ese sub apagado.
-    const currentModules = normalizeModules((tRow as { modules?: unknown } | null)?.modules);
-    patch.modules = { ...currentModules, catalog: true, ecommerce: true, promotions: true, bundles: true };
   }
+
+  // Módulos: si el template declara qué apps necesita, se aplica ese set
+  // exacto (apagando todo lo demás excepto los macros baseline). Sin esto
+  // los tenants nuevos arrancaban con todas las apps prendidas aunque el
+  // template fuera de un rubro que solo usa una o dos.
+  if (Array.isArray(tpl.modules)) {
+    patch.modules = computeTemplateModules(tpl.modules);
+  }
+  // Silenciar el aviso de "tRow no se usa" cuando ninguno de los checks
+  // arriba lo referencia (por ejemplo si no es ecommerce y no tocamos
+  // brand). Ya lo leímos porque necesitamos el brand actual.
+  void tRow;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: updErr } = await (svc.from('tenants') as any).update(patch).eq('id', tenant.id);
