@@ -337,19 +337,11 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
   /* 9. Sitio de noticias / editorial (estilo NYT / Clarín / La Nación) */
   (() => {
     const c = clone();
-    // Orden: masthead (hero mínimo) → portada (blog_preview newspaper) →
-    // más notas (segundo blog_preview grid) → newsletter → about + contact
-    enableOnly(c, ['hero', 'blog_preview', 'newsletter', 'about', 'contact']);
-    // Hero como masthead sobrio — sin imagen, sólo eyebrow con fecha + título
-    // grande + subtitle chico. Layout centered para look editorial.
-    c.sections.hero.layout = 'centered';
-    c.sections.hero.eyebrow = 'Edición de hoy';
-    c.sections.hero.title = 'Las noticias que importan.';
-    c.sections.hero.subtitle = 'Cobertura diaria, análisis y opinión — periodismo independiente.';
-    c.sections.hero.cta_label = 'Ver últimas notas';
-    c.sections.hero.cta_href = '#blog_preview';
-    c.sections.hero.cta_label_2 = 'Suscribirme';
-    c.sections.hero.cta_href_2 = '#newsletter';
+    // Sin hero promocional ni about/contact — un sitio de noticias real
+    // no tiene eso en la portada. El "hero" es el masthead del header
+    // (logo grande + nav de secciones), y sobre eso va directo la portada
+    // newspaper con las notas. Newsletter queda como suscripción.
+    enableOnly(c, ['blog_preview', 'newsletter']);
     // Portada en layout newspaper: 1 gran artículo + 2 laterales + fila de 3.
     // Total 6 artículos organizados con jerarquía tipo NYT.
     c.sections.blog_preview.enabled = true;
@@ -360,10 +352,10 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     c.sections.blog_preview.cta_label = 'Ver todas las notas';
     c.sections.newsletter.title = 'Recibí las noticias por email';
     c.sections.newsletter.subtitle = 'Un resumen semanal en tu casilla, sin spam.';
-    c.sections.about.title = 'Sobre nosotros';
-    c.sections.about.body = 'Somos un equipo pequeño con una convicción: la información local importa. Contamos historias que otros no cuentan.';
-    c.sections.contact.title = 'Escribinos';
-    c.sections.contact.subtitle = '¿Tenés un dato? ¿Una historia? Contanos.';
+    // Header en modo masthead: logo grande centrado en serif + nav de
+    // secciones abajo, look NYT/WSJ/The Times. El "hero" desaparece
+    // porque el masthead ya cumple esa función.
+    c.nav.style = 'masthead';
     // Nav de secciones editoriales — el owner puede editarlas en el builder.
     // Cada link va a /blog?cat=... asumiendo que las categorías del blog
     // tienen esos slugs (o quedan como placeholder para que el owner los

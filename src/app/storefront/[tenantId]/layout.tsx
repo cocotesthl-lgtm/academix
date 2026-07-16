@@ -226,67 +226,134 @@ export default async function StorefrontLayout({
       {isAffiliate && !affBarHidden && (
         <AffiliateBar primary={primary} tenantSlug={tenant.slug} tenantId={tenantId} />
       )}
-      <header data-storefront-header className="storefront-header border-b border-black/10 bg-white sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <a href="/" className="flex items-center gap-3">
-            {logoLayout === 'horizontal' && brand.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={brand.logo_url} alt={tenant.name} className="h-9 w-auto max-w-[200px] object-contain" />
-            ) : (
-              <>
-                {brand.logo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={brand.logo_url} alt={tenant.name} className="h-9 w-9 object-contain rounded" />
-                ) : (
-                  <div
-                    className="h-9 w-9 rounded-lg flex items-center justify-center text-white font-bold"
-                    style={{ background: primary }}
-                  >
-                    {tenant.name.slice(0, 1).toUpperCase()}
-                  </div>
+      {cfg.nav.style === 'masthead' ? (
+        // ── Masthead editorial (NYT / WSJ / The Times) ─────────────────
+        // Row 1: barra fina superior con fecha y login/subscribe a la derecha.
+        // Row 2: logo GRANDE centrado en serif con el nombre del sitio.
+        // Row 3: nav de secciones en fila horizontal separada por bordes.
+        // Diseño sobrio, blanco/negro, sin colores brand — el brand vive
+        // solo en el logo y en los CTA de suscripción.
+        <header data-storefront-header className="storefront-header bg-white sticky top-0 z-50 border-b border-black/15">
+          {/* Row 1: fecha izquierda + login/suscribirse derecha */}
+          <div className="border-b border-black/10">
+            <div className="max-w-6xl mx-auto px-6 py-2 flex items-center justify-between gap-3 text-[11px]">
+              <div className="text-black/60">
+                {new Date().toLocaleDateString('es-AR', {
+                  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+                })}
+              </div>
+              <div className="flex items-center gap-3">
+                {cfg.nav.show_login && (
+                  <StorefrontUserMenu
+                    loggedIn={!!user}
+                    email={user?.email ?? ''}
+                    primary={primary}
+                    loginHref={`${appSubdomainUrl('/login')}?next=${encodeURIComponent(`https://${tenant.slug}.${env.rootDomain}/mi-cuenta`)}&tenant=${encodeURIComponent(tenantId)}`}
+                    panelHref={panelHref}
+                    hasEnrollments={hasEnrollments}
+                    signoutRedirect="/"
+                  />
                 )}
-                <div className="font-bold leading-tight">
-                  {logoText || tenant.name}
-                </div>
-              </>
-            )}
-          </a>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-black/70">
-            {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
-              <CategoriesMegaMenu
-                label={cfg.nav.categories_mega_label || 'Categorías'}
-                categories={megaCategories}
-                primary={primary}
-              />
-            )}
-            {cfg.nav.links.map((l) => (
-              <a key={l.id} href={l.href} className="hover:text-black">{l.label}</a>
-            ))}
-            {cfg.nav.show_my_courses === true && (
-              <a href="/learn" className="hover:text-black">{cfg.nav.my_courses_label || 'Mis publicaciones'}</a>
-            )}
-            {cfg.nav.show_affiliates === true && (
-              <a href="/affiliate" className="hover:text-black">{cfg.nav.affiliates_label || 'Afiliados'}</a>
-            )}
-          </nav>
-          <div className="flex items-center gap-1.5">
-            {showHeaderCart && (
-              <CartWidget tenantId={tenantId} primary={primary} variant="header" display={cartDisplay} />
-            )}
-            {cfg.nav.show_login && (
-              <StorefrontUserMenu
-                loggedIn={!!user}
-                email={user?.email ?? ''}
-                primary={primary}
-                loginHref={`${appSubdomainUrl('/login')}?next=${encodeURIComponent(`https://${tenant.slug}.${env.rootDomain}/mi-cuenta`)}&tenant=${encodeURIComponent(tenantId)}`}
-                panelHref={panelHref}
-                hasEnrollments={hasEnrollments}
-                signoutRedirect="/"
-              />
-            )}
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
+          {/* Row 2: logo grande centrado */}
+          <div className="max-w-6xl mx-auto px-6 py-5 text-center">
+            <a href="/" className="inline-flex flex-col items-center gap-1">
+              {brand.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brand.logo_url} alt={tenant.name} className="h-14 md:h-16 w-auto object-contain" />
+              ) : (
+                <span className="font-serif text-4xl md:text-5xl font-black tracking-tight text-black">
+                  {logoText || tenant.name}
+                </span>
+              )}
+            </a>
+          </div>
+          {/* Row 3: nav de secciones centrado */}
+          {(cfg.nav.links.length > 0 || cfg.nav.show_categories_mega) && (
+            <div className="border-t border-black/15">
+              <nav className="max-w-6xl mx-auto px-6 py-2.5 flex items-center justify-center gap-5 md:gap-7 text-[13px] font-semibold text-black/80 flex-wrap">
+                {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
+                  <CategoriesMegaMenu
+                    label={cfg.nav.categories_mega_label || 'Categorías'}
+                    categories={megaCategories}
+                    primary={primary}
+                  />
+                )}
+                {cfg.nav.links.map((l) => (
+                  <a key={l.id} href={l.href} className="hover:text-black transition uppercase tracking-wide">{l.label}</a>
+                ))}
+                {cfg.nav.show_my_courses === true && (
+                  <a href="/learn" className="hover:text-black uppercase tracking-wide">{cfg.nav.my_courses_label || 'Mi cuenta'}</a>
+                )}
+              </nav>
+            </div>
+          )}
+        </header>
+      ) : (
+        <header data-storefront-header className="storefront-header border-b border-black/10 bg-white sticky top-0 z-50">
+          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+            <a href="/" className="flex items-center gap-3">
+              {logoLayout === 'horizontal' && brand.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brand.logo_url} alt={tenant.name} className="h-9 w-auto max-w-[200px] object-contain" />
+              ) : (
+                <>
+                  {brand.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={brand.logo_url} alt={tenant.name} className="h-9 w-9 object-contain rounded" />
+                  ) : (
+                    <div
+                      className="h-9 w-9 rounded-lg flex items-center justify-center text-white font-bold"
+                      style={{ background: primary }}
+                    >
+                      {tenant.name.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="font-bold leading-tight">
+                    {logoText || tenant.name}
+                  </div>
+                </>
+              )}
+            </a>
+            <nav className="hidden md:flex items-center gap-6 text-sm text-black/70">
+              {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
+                <CategoriesMegaMenu
+                  label={cfg.nav.categories_mega_label || 'Categorías'}
+                  categories={megaCategories}
+                  primary={primary}
+                />
+              )}
+              {cfg.nav.links.map((l) => (
+                <a key={l.id} href={l.href} className="hover:text-black">{l.label}</a>
+              ))}
+              {cfg.nav.show_my_courses === true && (
+                <a href="/learn" className="hover:text-black">{cfg.nav.my_courses_label || 'Mis publicaciones'}</a>
+              )}
+              {cfg.nav.show_affiliates === true && (
+                <a href="/affiliate" className="hover:text-black">{cfg.nav.affiliates_label || 'Afiliados'}</a>
+              )}
+            </nav>
+            <div className="flex items-center gap-1.5">
+              {showHeaderCart && (
+                <CartWidget tenantId={tenantId} primary={primary} variant="header" display={cartDisplay} />
+              )}
+              {cfg.nav.show_login && (
+                <StorefrontUserMenu
+                  loggedIn={!!user}
+                  email={user?.email ?? ''}
+                  primary={primary}
+                  loginHref={`${appSubdomainUrl('/login')}?next=${encodeURIComponent(`https://${tenant.slug}.${env.rootDomain}/mi-cuenta`)}&tenant=${encodeURIComponent(tenantId)}`}
+                  panelHref={panelHref}
+                  hasEnrollments={hasEnrollments}
+                  signoutRedirect="/"
+                />
+              )}
+            </div>
+          </div>
+        </header>
+      )}
 
       <main>{children}</main>
 

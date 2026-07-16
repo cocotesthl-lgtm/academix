@@ -325,6 +325,14 @@ export type SiteConfig = {
      */
     show_categories_mega?: boolean;
     categories_mega_label?: string;   // "Categorías" por default
+    /**
+     * Estilo del header del storefront:
+     * - 'default': logo a la izquierda + nav inline a la derecha (default)
+     * - 'masthead': logo GRANDE centrado en tipografía serif + nav de
+     *   secciones en fila abajo. Look editorial tipo NYT/WSJ/The Times.
+     *   Ideal para sitios de noticias — no aplica para ecommerce/academia.
+     */
+    style?: 'default' | 'masthead';
   };
   footer: { text: string; socials: SocialLink[]; links: NavLink[] };
 };
