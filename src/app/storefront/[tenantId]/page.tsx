@@ -168,16 +168,34 @@ export default async function StorefrontHome({
     author_name: string | null; published_at: string;
   };
   let blogPreviewArticles: BlogPreviewArticle[] = [];
+  // Universo total de artículos que puede necesitar la página (blog_preview
+  // + todas las columnas de article_list). Se hace una sola query y cada
+  // sección hace slice. Es más eficiente que N queries pequeñas.
+  let allArticles: BlogPreviewArticle[] = [];
   const blogPreviewCfg = cfg.sections.blog_preview;
-  if (blogPreviewCfg?.enabled) {
+  const articleListCfg = cfg.sections.article_list;
+  const needsArticles = blogPreviewCfg?.enabled || articleListCfg?.enabled;
+  if (needsArticles) {
     try {
-      const count = Math.max(1, Math.min(12, blogPreviewCfg.count || 3));
+      // Calcular cuántos artículos totales pedir: blog_preview.count +
+      // (max skip + max count entre las columnas de article_list).
+      let needed = blogPreviewCfg?.enabled ? Math.max(1, Math.min(12, blogPreviewCfg.count || 3)) : 0;
+      if (articleListCfg?.enabled && Array.isArray(articleListCfg.columns)) {
+        for (const col of articleListCfg.columns) {
+          needed = Math.max(needed, (col.skip ?? 0) + (col.count ?? 5));
+        }
+      }
+      needed = Math.min(50, Math.max(3, needed));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: articlesRaw } = await (svc.from('articles') as any)
         .select('id, slug, title, excerpt, cover_url, author_name, published_at')
         .eq('tenant_id', tenantId).eq('status', 'published')
-        .order('published_at', { ascending: false }).limit(count);
-      blogPreviewArticles = (articlesRaw ?? []) as BlogPreviewArticle[];
+        .order('published_at', { ascending: false }).limit(needed);
+      allArticles = (articlesRaw ?? []) as BlogPreviewArticle[];
+      if (blogPreviewCfg?.enabled) {
+        const count = Math.max(1, Math.min(12, blogPreviewCfg.count || 3));
+        blogPreviewArticles = allArticles.slice(0, count);
+      }
     } catch { /* migration 0050 pendiente */ }
   }
 
@@ -1342,6 +1360,78 @@ export default async function StorefrontHome({
                       </Link>
                     </div>
                   )}
+                </div>
+              </section>
+            );
+          }
+
+          case 'article_list': {
+            // Multi-columnas de headlines (thumb chica + título). Cada
+            // columna filtra el universo de artículos por skip + count + order.
+            // No renderiza nada si no hay artículos o no hay columnas.
+            const c = cfg.sections.article_list;
+            const cols = Array.isArray(c?.columns) ? c.columns : [];
+            if (allArticles.length === 0 || cols.length === 0) return null;
+            const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+            // Helper: aplica order + skip + count al universo de artículos
+            function pickFor(col: typeof cols[number]): BlogPreviewArticle[] {
+              const skip = Math.max(0, col.skip ?? 0);
+              const count = Math.max(1, Math.min(20, col.count ?? 5));
+              let pool = [...allArticles];
+              if (col.order === 'oldest') pool = pool.slice().reverse();
+              if (col.order === 'random') {
+                // Shuffle determinístico basado en col.id para no cambiar en cada request
+                let seed = 0;
+                for (let i = 0; i < col.id.length; i++) seed = ((seed << 5) - seed + col.id.charCodeAt(i)) | 0;
+                pool = pool.slice().sort(() => {
+                  seed = (seed * 9301 + 49297) % 233280;
+                  return seed / 233280 - 0.5;
+                });
+              }
+              return pool.slice(skip, skip + count);
+            }
+            const gridCols = cols.length === 1 ? 'md:grid-cols-1'
+              : cols.length === 2 ? 'md:grid-cols-2'
+              : cols.length === 3 ? 'md:grid-cols-3'
+              : 'md:grid-cols-4';
+            return (
+              <section key={key} {...dt} id={key} className="px-6 py-10"
+                style={{ background: bg ?? undefined }}>
+                <div className={`max-w-6xl mx-auto grid ${gridCols} gap-8`}>
+                  {cols.map((col) => {
+                    const items = pickFor(col);
+                    if (items.length === 0) return null;
+                    return (
+                      <div key={col.id}>
+                        <h3 className="text-lg font-bold pb-2 mb-3 border-b-2 border-black">
+                          {col.title}
+                        </h3>
+                        <ul className="divide-y divide-black/10">
+                          {items.map((a) => (
+                            <li key={a.id} className="py-3">
+                              <Link href={`/blog/${a.slug}`} className="flex items-start gap-3 group">
+                                {a.cover_url ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={a.cover_url} alt="" className="w-20 h-20 object-cover bg-zinc-100 shrink-0" />
+                                ) : (
+                                  <div className="w-20 h-20 bg-zinc-100 shrink-0" />
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-serif font-bold text-[15px] leading-tight group-hover:underline">
+                                    {a.title}
+                                  </h4>
+                                  <div className="text-[10px] uppercase tracking-widest text-black/45 mt-1">
+                                    {fmtDate(a.published_at)}
+                                    {a.author_name && ` · ${a.author_name}`}
+                                  </div>
+                                </div>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             );

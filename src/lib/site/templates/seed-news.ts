@@ -74,6 +74,61 @@ const ARTICLES: SeedArticle[] = [
     author_name: 'Columnista Invitado',
     body_html: '<p>Contenido del artículo. Editá desde el panel Blog.</p>',
     daysAgo: 3
+  },
+  // ── Artículos extra para poblar Últimas noticias + Tendencias ──
+  {
+    slug: 'economia-inflacion-mensual',
+    title: 'Cayó la inflación mensual por segundo mes consecutivo',
+    excerpt: 'El índice de precios mostró una desaceleración marcada según el informe oficial publicado esta mañana.',
+    cover_url: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800&auto=format&fit=crop&q=80',
+    author_name: 'Economía',
+    body_html: '<p>Contenido del artículo. Editá desde el panel Blog.</p>',
+    daysAgo: 0
+  },
+  {
+    slug: 'salud-nueva-vacuna-aprobada',
+    title: 'Aprueban nueva vacuna con eficacia superior al 90%',
+    excerpt: 'El anuncio marca un hito en la lucha contra la enfermedad y despierta expectativas en la comunidad médica.',
+    cover_url: 'https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=800&auto=format&fit=crop&q=80',
+    author_name: 'Salud',
+    body_html: '<p>Contenido del artículo. Editá desde el panel Blog.</p>',
+    daysAgo: 1
+  },
+  {
+    slug: 'clima-alerta-tormenta',
+    title: 'Alerta meteorológica: tormentas fuertes en varias provincias',
+    excerpt: 'El Servicio Meteorológico Nacional emitió alertas de nivel amarillo para las próximas 48 horas.',
+    cover_url: 'https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?w=800&auto=format&fit=crop&q=80',
+    author_name: 'Clima',
+    body_html: '<p>Contenido del artículo. Editá desde el panel Blog.</p>',
+    daysAgo: 1
+  },
+  {
+    slug: 'educacion-reforma-secundaria',
+    title: 'La reforma educativa que busca modernizar la secundaria',
+    excerpt: 'Docentes y especialistas debaten los alcances del proyecto que se tratará en el Congreso este mes.',
+    cover_url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80',
+    author_name: 'Educación',
+    body_html: '<p>Contenido del artículo. Editá desde el panel Blog.</p>',
+    daysAgo: 2
+  },
+  {
+    slug: 'tecno-inteligencia-artificial-empresas',
+    title: 'La IA cambia el mapa laboral: qué habilidades pesan más',
+    excerpt: 'Un estudio revela cuáles son las competencias más buscadas y cómo prepararse para el mercado actual.',
+    cover_url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop&q=80',
+    author_name: 'Tecnología',
+    body_html: '<p>Contenido del artículo. Editá desde el panel Blog.</p>',
+    daysAgo: 2
+  },
+  {
+    slug: 'sociedad-encuesta-satisfaccion',
+    title: 'Encuesta: qué opinan los ciudadanos sobre los servicios públicos',
+    excerpt: 'Un informe con más de 3000 respuestas muestra los rubros mejor y peor evaluados por la gente.',
+    cover_url: 'https://images.unsplash.com/photo-1521295121783-8a321d551ad2?w=800&auto=format&fit=crop&q=80',
+    author_name: 'Sociedad',
+    body_html: '<p>Contenido del artículo. Editá desde el panel Blog.</p>',
+    daysAgo: 3
   }
 ];
 

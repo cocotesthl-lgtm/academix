@@ -340,8 +340,16 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     // Sin hero promocional ni about/contact — un sitio de noticias real
     // no tiene eso en la portada. El "hero" es el masthead del header
     // (logo grande + nav de secciones), y sobre eso va directo la portada
-    // newspaper con las notas. Newsletter queda como suscripción.
-    enableOnly(c, ['blog_preview', 'newsletter']);
+    // newspaper + columnas de headlines + newsletter.
+    enableOnly(c, ['blog_preview', 'article_list', 'newsletter']);
+    // article_list: dos columnas de headlines abajo de la portada.
+    // Skip=6 en Últimas para no repetir los que ya están en la portada.
+    // Tendencias en random para variar cada vez.
+    c.sections.article_list.enabled = true;
+    c.sections.article_list.columns = [
+      { id: 'al-latest',   title: 'Últimas noticias', count: 5, order: 'latest', skip: 6 },
+      { id: 'al-trending', title: 'Tendencias',       count: 5, order: 'random', skip: 0 }
+    ];
     // Portada en layout newspaper: 1 gran artículo + 2 laterales + fila de 3.
     // Total 6 artículos organizados con jerarquía tipo NYT.
     c.sections.blog_preview.enabled = true;

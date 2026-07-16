@@ -2979,6 +2979,99 @@ export function BlogPreviewEditor({ initial }: { initial: BlogPreviewValues }) {
   );
 }
 
+/* ─────────────────────────────────────────────────────────────
+   article_list — multi-columnas de headlines (Últimas / Tendencias / etc)
+   ───────────────────────────────────────────────────────────── */
+
+export type ArticleListColumn = {
+  id: string;
+  title: string;
+  count: number;
+  order?: 'latest' | 'oldest' | 'random';
+  skip?: number;
+};
+
+export type ArticleListValues = { columns: ArticleListColumn[] };
+
+export function ArticleListEditor({ initial }: { initial: ArticleListValues }) {
+  const [v, setV] = useState<ArticleListValues>(initial);
+  const { pending, saved, fire } = useSave('article_list');
+
+  function upd(id: string, patch: Partial<ArticleListColumn>) {
+    setV({ ...v, columns: v.columns.map((c) => c.id === id ? { ...c, ...patch } : c) });
+  }
+  function add() {
+    if (v.columns.length >= 4) return;
+    setV({ ...v, columns: [...v.columns, { id: 'al-' + Math.random().toString(36).slice(2, 8), title: 'Nueva columna', count: 5, order: 'latest', skip: 0 }] });
+  }
+  function del(id: string) {
+    setV({ ...v, columns: v.columns.filter((c) => c.id !== id) });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="text-xs text-white/50">
+        Cada columna es una lista independiente. Podés poner hasta 4 (Últimas noticias, Tendencias, Opinión…).
+      </div>
+
+      <div className="space-y-3">
+        {v.columns.map((col, i) => (
+          <div key={col.id} className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="text-[10px] uppercase tracking-widest text-white/45">Columna {i + 1}</div>
+              {v.columns.length > 1 && (
+                <button type="button" onClick={() => del(col.id)}
+                  className="text-[10px] text-rose-300 hover:text-rose-200">Eliminar</button>
+              )}
+            </div>
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-widest text-white/45">Título</span>
+              <input value={col.title} onChange={(e) => upd(col.id, { title: e.target.value })}
+                className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm" />
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-white/45">Artículos</span>
+                <select value={String(col.count)} onChange={(e) => upd(col.id, { count: parseInt(e.target.value, 10) })}
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm">
+                  {[3, 4, 5, 6, 7, 8, 10].map((n) => <option key={n} value={n} className="bg-[#0a0a0a]">{n}</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-white/45">Orden</span>
+                <select value={col.order ?? 'latest'} onChange={(e) => upd(col.id, { order: e.target.value as 'latest' | 'oldest' | 'random' })}
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm">
+                  <option value="latest" className="bg-[#0a0a0a]">Últimos</option>
+                  <option value="oldest" className="bg-[#0a0a0a]">Más viejos</option>
+                  <option value="random" className="bg-[#0a0a0a]">Aleatorio</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-white/45">Saltar</span>
+                <input type="number" min={0} max={20} value={col.skip ?? 0}
+                  onChange={(e) => upd(col.id, { skip: Math.max(0, parseInt(e.target.value || '0', 10)) })}
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm" />
+              </label>
+            </div>
+            <p className="text-[10px] text-white/40">
+              💡 Usá "Saltar" para no repetir artículos que ya están en la portada. Ej: portada muestra 6, esta columna con skip=6 empieza en el 7mo.
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {v.columns.length < 4 && (
+        <button type="button" onClick={add}
+          className="text-xs rounded border border-white/20 hover:border-white/40 px-3 py-1.5">
+          + Agregar columna
+        </button>
+      )}
+
+      <SaveBar pending={pending} saved={saved} onSave={() => fire({ columns: JSON.stringify(v.columns) })} />
+    </div>
+  );
+}
+
 export type ProductsValues = {
   title: string;
   subtitle: string;

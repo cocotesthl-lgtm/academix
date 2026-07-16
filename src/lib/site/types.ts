@@ -113,6 +113,7 @@ export type SectionKey =
   | 'map'
   | 'workwithus'
   | 'blog_preview'
+  | 'article_list'
   | 'products'
   | 'cta_final';
 
@@ -301,6 +302,28 @@ export type SiteConfig = {
        */
       layout?: 'grid' | 'newspaper';
     };
+    /**
+     * Multi-columnas de listas compactas de artículos. Cada columna tiene
+     * su propio título ("Últimas noticias", "Tendencias", "Opinión") y
+     * su propio criterio de orden. Pensado para sitios editoriales que
+     * quieren mostrar varias listas de headlines lado a lado abajo de
+     * la portada (estilo NYT / The Times).
+     */
+    article_list: SectionBase & {
+      /**
+       * 1-4 columnas. Cada una es una lista independiente de artículos.
+       * order: 'latest' (default) | 'oldest' | 'random'
+       * skip: cuántos artículos saltear al principio (evita duplicar
+       * los que ya están en la portada). count: cuántos mostrar.
+       */
+      columns: Array<{
+        id: string;
+        title: string;
+        count: number;
+        order?: 'latest' | 'oldest' | 'random';
+        skip?: number;
+      }>;
+    };
     products: SectionBase & {
       title: string;
       subtitle: string;
@@ -363,6 +386,7 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'newsletter',
   'products',        // grid completo de productos físicos
   'blog_preview',    // preview del blog antes del contacto
+  'article_list',    // multi-columnas de headlines (sitios editoriales)
   'contact',
   'workwithus',
   'map'
@@ -591,6 +615,13 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       count: 3,
       cta_label: 'Ver todos los artículos',
       layout: 'grid'
+    },
+    article_list: {
+      enabled: false,     // sólo relevante en sitios editoriales
+      columns: [
+        { id: 'al-latest',   title: 'Últimas noticias', count: 5, order: 'latest', skip: 6 },
+        { id: 'al-trending', title: 'Tendencias',       count: 5, order: 'random', skip: 0 }
+      ]
     },
     products: {
       enabled: false, // se prende cuando el owner publica su primer producto físico

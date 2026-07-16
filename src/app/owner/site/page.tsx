@@ -34,6 +34,7 @@ import {
   ContactEditor,
   MapEditor,
   BlogPreviewEditor,
+  ArticleListEditor,
   ProductsEditor,
   BenefitsBarEditor,
   CategoryCardsEditor,
@@ -80,6 +81,7 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   map:          { title: "📍 Mapa / Ubicación", desc: "Mostrá dónde estás con Google Maps embebido (sin API key)." },
   workwithus:   { title: "🤝 Trabajá con nosotros", desc: "CTA de programa de afiliados. Aparece solo si activaste el programa en Afiliados → Configuración." },
   blog_preview: { title: "📰 Últimas del blog", desc: "Grid con los últimos artículos publicados en tu blog. Link para ver todo." },
+  article_list: { title: "📑 Columnas de headlines", desc: "Múltiples listas de artículos lado a lado (Últimas, Tendencias, etc). Para sitios editoriales tipo NYT/The Times." },
   products:     { title: "📦 Tienda / Productos físicos", desc: "Grid con productos publicados. Link para ver toda la tienda." },
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
@@ -542,6 +544,11 @@ export default async function SiteBuilderPage() {
                   cta_label: cfg.sections.blog_preview.cta_label,
                   layout: cfg.sections.blog_preview.layout ?? 'grid'
                 }}
+              />
+            )}
+            {key === 'article_list' && (
+              <ArticleListEditor
+                initial={{ columns: cfg.sections.article_list?.columns ?? [] }}
               />
             )}
             {key === 'products' && (
