@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { PageHeader } from '@/components/owner/PageHeader';
+import { createUserAction } from '@/lib/users/actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -230,6 +231,24 @@ export default async function OwnerUsuariosPage({
         title="Usuarios"
         description="Todos los clientes únicos de tu tenant, agrupados por cuenta. Cada fila abre un detalle con todo su historial."
       />
+
+      {/* Crear usuario rápido: form inline con email + nombre. Si el email
+          ya existe, redirige a su detalle en vez de crear duplicado. */}
+      <form action={createUserAction} className="flex flex-wrap gap-2 items-end rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <div className="flex-1 min-w-[180px]">
+          <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1">Email (obligatorio)</label>
+          <input name="email" type="email" required placeholder="cliente@mail.com"
+            className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40" />
+        </div>
+        <div className="flex-1 min-w-[180px]">
+          <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1">Nombre (opcional)</label>
+          <input name="display_name" placeholder="Juan Pérez"
+            className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40" />
+        </div>
+        <button className="rounded-md bg-white text-black text-sm font-semibold px-4 py-2">
+          + Crear usuario
+        </button>
+      </form>
 
       <div className="grid sm:grid-cols-3 gap-3">
         <Stat label="Clientes únicos" value={totalUsers.toString()} />

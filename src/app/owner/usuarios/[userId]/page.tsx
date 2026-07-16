@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { PageHeader } from '@/components/owner/PageHeader';
+import { UserActionsPanel } from '@/components/owner/users/UserActionsPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,9 @@ export default async function UserDetailPage({
     ordersRow,
     walletsRow,
     plansRow,
-    salesRow
+    salesRow,
+    coursesRow,
+    membershipsRow
   ] = await Promise.all([
     (async () => {
       try {
@@ -141,6 +144,26 @@ export default async function UserDetailPage({
           status: string; product_title: string | null;
         }>;
       } catch { return []; }
+    })(),
+    // Cursos del tenant para el dropdown de "otorgar acceso"
+    (async () => {
+      try {
+        const { data } = await svc.from('courses')
+          .select('id, title, product_type')
+          .eq('tenant_id', tenant.id).eq('status', 'published')
+          .order('title');
+        return (data ?? []) as Array<{ id: string; title: string; product_type: string | null }>;
+      } catch { return []; }
+    })(),
+    // Roles activos del user en este tenant
+    (async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data } = await (svc.from('memberships') as any)
+          .select('role')
+          .eq('tenant_id', tenant.id).eq('user_id', userId).eq('status', 'active');
+        return (data ?? []) as Array<{ role: string }>;
+      } catch { return []; }
     })()
   ]);
 
@@ -161,6 +184,8 @@ export default async function UserDetailPage({
   const wallets = walletsRow;
   const { plans, invoices } = plansRow as { plans: Array<{ id: string; plan_name: string; monthly_amount_cents: number; currency: string; status: string; start_date: string; end_date: string | null }>; invoices: Invoice[] };
   const sales = salesRow;
+  const availableCourses = coursesRow as Array<{ id: string; title: string; product_type: string | null }>;
+  const activeRoles = (membershipsRow as Array<{ role: string }>).map((m) => m.role);
 
   // Sumar LTV: sales + physical_orders pagadas
   const salesTotal = sales.reduce((s, x) => s + Number(x.amount_gross_cents), 0);
@@ -365,6 +390,15 @@ export default async function UserDetailPage({
           )}
         </SectionCard>
       )}
+
+      {/* ── ⚙️ Panel de acciones ── */}
+      <UserActionsPanel
+        userId={profile.id}
+        currentEmail={profile.email}
+        currentDisplayName={profile.display_name}
+        courses={availableCourses}
+        activeRoles={activeRoles}
+      />
 
       {/* ── Actividad de compra reciente ── */}
       {sales.length > 0 && (
