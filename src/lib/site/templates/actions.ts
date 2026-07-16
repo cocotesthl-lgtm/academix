@@ -6,6 +6,7 @@ import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { SITE_TEMPLATES } from './catalog';
 import { seedEcommerceDemoData } from './seed-ecommerce';
+import { seedNewsDemoData } from './seed-news';
 import { normalizeModules, type Modules, type ModuleKey } from '@/lib/modules/types';
 
 /**
@@ -110,9 +111,26 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
     }
   }
 
+  // News → sembrar 6 artículos con covers Unsplash para que el layout
+  // newspaper de blog_preview pueda renderizar apenas se aplica el template.
+  // Sin esto el sitio queda vacío (hero + newsletter + about + contact) y
+  // pierde todo el look NYT/Clarín que define al template. Idempotente:
+  // si el tenant ya tiene artículos, no toca nada.
+  if (tpl.id === 'news') {
+    try {
+      await seedNewsDemoData(tenant.id);
+    } catch (e) {
+      console.error('[applySiteTemplate] seed news fallo (no critico):', e);
+    }
+  }
+
   revalidatePath('/owner/site');
   revalidatePath('/owner/templates');
   revalidatePath('/owner/products');
   revalidatePath('/owner/categories');
+  revalidatePath('/owner/blog');
+  // Invalidar el storefront público — los artículos seeded se ven en /
+  // (portada newspaper) y en /blog. Sin esto quedan cacheados los "0 artículos".
+  revalidatePath('/', 'layout');
   redirect('/owner/site?templateApplied=' + encodeURIComponent(tpl.name));
 }
