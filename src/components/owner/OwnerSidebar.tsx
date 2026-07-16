@@ -69,6 +69,11 @@ const NAV: NavEntry[] = [
   // el owner y tenerlo escondido bajo "Mi sitio > Apps" (un grupo
   // colapsable) generaba fricción para activar/desactivar features.
   { kind: 'item', icon: 'settings', item: { label: 'Apps', href: '/modulos' } },
+  // Usuarios — clientes del tenant. Universal (todos los tenants
+  // tienen buyers), así que baseline top-level. Antes vivía en
+  // Personas pero ese grupo depende del macro `team` — si estaba
+  // off, "Usuarios" quedaba escondido sin motivo.
+  { kind: 'item', icon: 'users', item: { label: 'Usuarios', href: '/usuarios' } },
 
   // ── BASELINE (siempre visibles cuando su macro está prendido) ────
   // Estos grupos no tienen apps instalables — son features estructurales
@@ -80,7 +85,6 @@ const NAV: NavEntry[] = [
     group: {
       label: 'Personas', icon: 'users', moduleKey: 'team',
       items: [
-        { label: 'Usuarios', href: '/usuarios' },
         { label: 'Equipo', href: '/equipo' },
         { label: 'Instructores', href: '/instructors' }
       ]
