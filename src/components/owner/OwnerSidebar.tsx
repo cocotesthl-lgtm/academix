@@ -80,6 +80,7 @@ const NAV: NavEntry[] = [
     group: {
       label: 'Personas', icon: 'users', moduleKey: 'team',
       items: [
+        { label: 'Usuarios', href: '/usuarios' },
         { label: 'Equipo', href: '/equipo' },
         { label: 'Instructores', href: '/instructors' }
       ]
