@@ -138,9 +138,13 @@ export default async function StorefrontLayout({
         panelHref = appSubdomainUrl('/dashboard');
       } else if (roles.includes('instructor')) {
         panelHref = appSubdomainUrl('/instructor');
-      } else if (hasEnrollments) {
-        // Sin role de owner/instructor: si tiene cursos comprados acá → /learn
-        panelHref = '/learn';
+      } else {
+        // Sin role de owner/instructor: es un buyer. El hub /mi-cuenta
+        // consolida cursos, entradas, órdenes, reservas, saldo, planes.
+        // Ya no forzamos hasEnrollments — mi-cuenta muestra empty state
+        // amigable cuando no hay data y sigue siendo la landing correcta
+        // para que el buyer pueda encontrar todo desde un solo lugar.
+        panelHref = '/mi-cuenta';
       }
     } catch { /* ignore */ }
   }
@@ -274,7 +278,7 @@ export default async function StorefrontLayout({
                 loggedIn={!!user}
                 email={user?.email ?? ''}
                 primary={primary}
-                loginHref={`${appSubdomainUrl('/login')}?next=${encodeURIComponent(`https://${tenant.slug}.${env.rootDomain}/learn`)}&tenant=${encodeURIComponent(tenantId)}`}
+                loginHref={`${appSubdomainUrl('/login')}?next=${encodeURIComponent(`https://${tenant.slug}.${env.rootDomain}/mi-cuenta`)}&tenant=${encodeURIComponent(tenantId)}`}
                 panelHref={panelHref}
                 hasEnrollments={hasEnrollments}
                 signoutRedirect="/"
