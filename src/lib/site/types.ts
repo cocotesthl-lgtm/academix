@@ -292,8 +292,14 @@ export type SiteConfig = {
     blog_preview: SectionBase & {
       title: string;
       subtitle: string;
-      count: number;       // cuántos artículos mostrar (1-6)
+      count: number;       // cuántos artículos mostrar (1-12)
       cta_label: string;   // "Ver todo el blog" — link a /blog
+      /**
+       * 'grid'     : 3 columnas iguales con card (default, blogs generales)
+       * 'newspaper': 1 artículo grande + 2 laterales + fila de 3 abajo
+       *              (estilo NYT — mejor para sitios de noticias)
+       */
+      layout?: 'grid' | 'newspaper';
     };
     products: SectionBase & {
       title: string;
@@ -575,7 +581,8 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
       title: 'Últimas del blog',
       subtitle: 'Novedades, guías y notas.',
       count: 3,
-      cta_label: 'Ver todos los artículos'
+      cta_label: 'Ver todos los artículos',
+      layout: 'grid'
     },
     products: {
       enabled: false, // se prende cuando el owner publica su primer producto físico

@@ -2908,10 +2908,11 @@ export type BlogPreviewValues = {
   subtitle: string;
   count: number;
   cta_label: string;
+  layout?: 'grid' | 'newspaper';
 };
 
 export function BlogPreviewEditor({ initial }: { initial: BlogPreviewValues }) {
-  const [v, setV] = useState(initial);
+  const [v, setV] = useState<BlogPreviewValues>({ ...initial, layout: initial.layout ?? 'grid' });
   const { pending, saved, fire } = useSave('blog_preview');
 
   return (
@@ -2919,6 +2920,17 @@ export function BlogPreviewEditor({ initial }: { initial: BlogPreviewValues }) {
       <div className="space-y-3">
         <RichTextField label="Título" value={v.title} onChange={(x) => setV({ ...v, title: x })} />
         <Field label="Subtítulo" value={v.subtitle} onChange={(x) => setV({ ...v, subtitle: x })} />
+        <label className="block">
+          <span className="text-xs text-white/60 block mb-1">Layout</span>
+          <select
+            value={v.layout ?? 'grid'}
+            onChange={(e) => setV({ ...v, layout: e.target.value as 'grid' | 'newspaper' })}
+            className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm"
+          >
+            <option value="grid" className="bg-[#0a0a0a]">Grid — 3 columnas iguales (default blog)</option>
+            <option value="newspaper" className="bg-[#0a0a0a]">Newspaper — 1 gran + 2 side + fila abajo (estilo NYT)</option>
+          </select>
+        </label>
         <label className="block">
           <span className="text-xs text-white/60 block mb-1">Cantidad de artículos a mostrar</span>
           <select
@@ -2928,16 +2940,18 @@ export function BlogPreviewEditor({ initial }: { initial: BlogPreviewValues }) {
           >
             <option value="1" className="bg-[#0a0a0a]">1 artículo</option>
             <option value="2" className="bg-[#0a0a0a]">2 artículos</option>
-            <option value="3" className="bg-[#0a0a0a]">3 artículos (recomendado)</option>
+            <option value="3" className="bg-[#0a0a0a]">3 artículos (recomendado para grid)</option>
             <option value="4" className="bg-[#0a0a0a]">4 artículos</option>
-            <option value="6" className="bg-[#0a0a0a]">6 artículos</option>
+            <option value="6" className="bg-[#0a0a0a]">6 artículos (recomendado para newspaper)</option>
+            <option value="9" className="bg-[#0a0a0a]">9 artículos</option>
+            <option value="12" className="bg-[#0a0a0a]">12 artículos</option>
           </select>
         </label>
         <Field label="Texto del botón hacia /blog" value={v.cta_label} onChange={(x) => setV({ ...v, cta_label: x })} placeholder="Ver todos los artículos" />
         <p className="text-[10px] text-white/40">
           💡 La sección solo aparece si tenés al menos un artículo publicado en tu Blog.
         </p>
-        <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, count: String(v.count) })} />
+        <SaveBar pending={pending} saved={saved} onSave={() => fire({ ...v, count: String(v.count), layout: v.layout ?? 'grid' })} />
       </div>
       <PreviewFrame>
         <div className="p-4">

@@ -171,7 +171,7 @@ export default async function StorefrontHome({
   const blogPreviewCfg = cfg.sections.blog_preview;
   if (blogPreviewCfg?.enabled) {
     try {
-      const count = Math.max(1, Math.min(6, blogPreviewCfg.count || 3));
+      const count = Math.max(1, Math.min(12, blogPreviewCfg.count || 3));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: articlesRaw } = await (svc.from('articles') as any)
         .select('id, slug, title, excerpt, cover_url, author_name, published_at')
@@ -1196,6 +1196,109 @@ export default async function StorefrontHome({
             // Si no hay artículos publicados, no renderea nada aunque la sección esté enabled.
             if (blogPreviewArticles.length === 0) return null;
             const c = cfg.sections.blog_preview;
+            const layout = c.layout ?? 'grid';
+            const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+
+            // ─── Layout newspaper: 1 gran + 2 laterales + fila de 3 abajo ───
+            // Pensado para sitios de noticias: densidad y jerarquía tipo NYT.
+            if (layout === 'newspaper' && blogPreviewArticles.length >= 1) {
+              const [featured, ...rest] = blogPreviewArticles;
+              const sideArticles = rest.slice(0, 2);
+              const rowArticles = rest.slice(2, 5);
+              return (
+                <section key={key} {...dt} id={key} className="px-6 py-12"
+                  style={{ background: bg ?? undefined }}>
+                  <div className="max-w-6xl mx-auto">
+                    {c.title && (
+                      <div className="mb-6 pb-3 border-b border-black/15 flex items-baseline justify-between">
+                        <h2 className="text-xl font-bold" dangerouslySetInnerHTML={richHtml(c.title)} />
+                        {c.cta_label && (
+                          <Link href="/blog" className="text-xs font-semibold hover:underline" style={{ color: primary }}>
+                            {c.cta_label} →
+                          </Link>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="grid md:grid-cols-[2fr_1fr] gap-6 pb-8 border-b border-black/10">
+                      {/* Featured — big article */}
+                      <Link href={`/blog/${featured.slug}`} className="group block">
+                        {featured.cover_url && (
+                          <div className="aspect-[16/10] overflow-hidden bg-zinc-100 mb-4">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={featured.cover_url} alt={featured.title}
+                              className="w-full h-full object-cover group-hover:scale-[1.02] transition" />
+                          </div>
+                        )}
+                        <div className="text-[10px] uppercase tracking-widest text-black/50 font-semibold mb-2">
+                          Portada · {fmtDate(featured.published_at)}
+                        </div>
+                        <h3 className="font-serif text-3xl md:text-4xl font-bold leading-tight mb-3 group-hover:underline decoration-2 underline-offset-4">
+                          {featured.title}
+                        </h3>
+                        {featured.excerpt && (
+                          <p className="text-black/70 text-base leading-relaxed line-clamp-3">{featured.excerpt}</p>
+                        )}
+                        {featured.author_name && (
+                          <div className="text-xs text-black/50 mt-3">Por {featured.author_name}</div>
+                        )}
+                      </Link>
+
+                      {/* Side column */}
+                      <div className="border-t md:border-t-0 md:border-l border-black/10 pt-6 md:pt-0 md:pl-6 space-y-6 divide-y divide-black/10">
+                        {sideArticles.map((a, i) => (
+                          <Link key={a.id} href={`/blog/${a.slug}`}
+                            className={`block group ${i > 0 ? 'pt-6' : ''}`}>
+                            {a.cover_url && (
+                              <div className="aspect-[16/10] overflow-hidden bg-zinc-100 mb-3">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <div className="text-[10px] uppercase tracking-widest text-black/50 font-semibold mb-1.5">
+                              {fmtDate(a.published_at)}
+                            </div>
+                            <h4 className="font-serif text-lg font-bold leading-tight group-hover:underline">
+                              {a.title}
+                            </h4>
+                            {a.excerpt && (
+                              <p className="text-sm text-black/60 mt-1.5 line-clamp-2">{a.excerpt}</p>
+                            )}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Row below of 3 más */}
+                    {rowArticles.length > 0 && (
+                      <div className="grid md:grid-cols-3 gap-6 pt-8">
+                        {rowArticles.map((a) => (
+                          <Link key={a.id} href={`/blog/${a.slug}`} className="group block">
+                            {a.cover_url && (
+                              <div className="aspect-[16/10] overflow-hidden bg-zinc-100 mb-3">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <div className="text-[10px] uppercase tracking-widest text-black/50 font-semibold mb-1.5">
+                              {fmtDate(a.published_at)}
+                            </div>
+                            <h4 className="font-serif text-lg font-bold leading-tight group-hover:underline">
+                              {a.title}
+                            </h4>
+                            {a.excerpt && (
+                              <p className="text-sm text-black/60 mt-1.5 line-clamp-2">{a.excerpt}</p>
+                            )}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </section>
+              );
+            }
+
+            // ─── Layout grid (default, todo lo demás) ───
             const gridCols = blogPreviewArticles.length === 1 ? 'md:grid-cols-1'
               : blogPreviewArticles.length === 2 ? 'md:grid-cols-2'
               : 'md:grid-cols-3';
@@ -1211,29 +1314,24 @@ export default async function StorefrontHome({
                     </div>
                   </FadeIn>
                   <div className={`grid ${gridCols} gap-6`}>
-                    {blogPreviewArticles.map((a) => {
-                      const dateLabel = new Date(a.published_at).toLocaleDateString('es-AR', {
-                        day: 'numeric', month: 'short', year: 'numeric'
-                      });
-                      return (
-                        <Link key={a.id} href={`/blog/${a.slug}`}
-                          className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
-                          {a.cover_url && (
-                            <div className="aspect-[16/9] bg-zinc-100 overflow-hidden">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
-                            </div>
-                          )}
-                          <div className="p-5">
-                            <div className="text-[10px] uppercase tracking-widest text-black/45 mb-2">
-                              {dateLabel}{a.author_name ? ` · ${a.author_name}` : ''}
-                            </div>
-                            <h3 className="font-bold text-lg mb-1.5 leading-tight">{a.title}</h3>
-                            {a.excerpt && <p className="text-sm text-black/60 line-clamp-2">{a.excerpt}</p>}
+                    {blogPreviewArticles.map((a) => (
+                      <Link key={a.id} href={`/blog/${a.slug}`}
+                        className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
+                        {a.cover_url && (
+                          <div className="aspect-[16/9] bg-zinc-100 overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
                           </div>
-                        </Link>
-                      );
-                    })}
+                        )}
+                        <div className="p-5">
+                          <div className="text-[10px] uppercase tracking-widest text-black/45 mb-2">
+                            {fmtDate(a.published_at)}{a.author_name ? ` · ${a.author_name}` : ''}
+                          </div>
+                          <h3 className="font-bold text-lg mb-1.5 leading-tight">{a.title}</h3>
+                          {a.excerpt && <p className="text-sm text-black/60 line-clamp-2">{a.excerpt}</p>}
+                        </div>
+                      </Link>
+                    ))}
                   </div>
                   {c.cta_label && (
                     <div className="text-center mt-10">

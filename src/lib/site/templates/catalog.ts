@@ -334,28 +334,48 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     };
   })(),
 
-  /* 9. Sitio de noticias / editorial */
+  /* 9. Sitio de noticias / editorial (estilo NYT / Clarín / La Nación) */
   (() => {
     const c = clone();
+    // Orden: masthead (hero mínimo) → portada (blog_preview newspaper) →
+    // más notas (segundo blog_preview grid) → newsletter → about + contact
     enableOnly(c, ['hero', 'blog_preview', 'newsletter', 'about', 'contact']);
-    c.sections.hero.eyebrow = 'Sitio editorial';
+    // Hero como masthead sobrio — sin imagen, sólo eyebrow con fecha + título
+    // grande + subtitle chico. Layout centered para look editorial.
+    c.sections.hero.layout = 'centered';
+    c.sections.hero.eyebrow = 'Edición de hoy';
     c.sections.hero.title = 'Las noticias que importan.';
-    c.sections.hero.subtitle = 'Cobertura diaria, análisis y opinión sobre lo que pasa en tu comunidad.';
-    c.sections.hero.cta_label = 'Ver todas las notas';
-    c.sections.hero.cta_href = '/blog';
+    c.sections.hero.subtitle = 'Cobertura diaria, análisis y opinión — periodismo independiente.';
+    c.sections.hero.cta_label = 'Ver últimas notas';
+    c.sections.hero.cta_href = '#blog_preview';
     c.sections.hero.cta_label_2 = 'Suscribirme';
     c.sections.hero.cta_href_2 = '#newsletter';
+    // Portada en layout newspaper: 1 gran artículo + 2 laterales + fila de 3.
+    // Total 6 artículos organizados con jerarquía tipo NYT.
     c.sections.blog_preview.enabled = true;
-    c.sections.blog_preview.title = 'Últimas notas';
-    c.sections.blog_preview.subtitle = 'Lo más reciente de nuestra redacción.';
+    c.sections.blog_preview.title = 'Portada';
+    c.sections.blog_preview.subtitle = '';
     c.sections.blog_preview.count = 6;
-    c.sections.blog_preview.cta_label = 'Ver todo el blog';
+    c.sections.blog_preview.layout = 'newspaper';
+    c.sections.blog_preview.cta_label = 'Ver todas las notas';
     c.sections.newsletter.title = 'Recibí las noticias por email';
     c.sections.newsletter.subtitle = 'Un resumen semanal en tu casilla, sin spam.';
     c.sections.about.title = 'Sobre nosotros';
     c.sections.about.body = 'Somos un equipo pequeño con una convicción: la información local importa. Contamos historias que otros no cuentan.';
     c.sections.contact.title = 'Escribinos';
     c.sections.contact.subtitle = '¿Tenés un dato? ¿Una historia? Contanos.';
+    // Nav de secciones editoriales — el owner puede editarlas en el builder.
+    // Cada link va a /blog?cat=... asumiendo que las categorías del blog
+    // tienen esos slugs (o quedan como placeholder para que el owner los
+    // ajuste a sus propias categorías).
+    c.nav.links = [
+      { id: '00000000-0000-0000-0000-000000000n01', label: 'Actualidad',    href: '/blog?cat=actualidad' },
+      { id: '00000000-0000-0000-0000-000000000n02', label: 'Política',      href: '/blog?cat=politica' },
+      { id: '00000000-0000-0000-0000-000000000n03', label: 'Deportes',      href: '/blog?cat=deportes' },
+      { id: '00000000-0000-0000-0000-000000000n04', label: 'Cultura',       href: '/blog?cat=cultura' },
+      { id: '00000000-0000-0000-0000-000000000n05', label: 'Internacional', href: '/blog?cat=internacional' },
+      { id: '00000000-0000-0000-0000-000000000n06', label: 'Opinión',       href: '/blog?cat=opinion' }
+    ];
     c.nav.show_my_courses = false;
     c.nav.show_affiliates = false;
     return {

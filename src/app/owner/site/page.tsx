@@ -539,7 +539,8 @@ export default async function SiteBuilderPage() {
                   title: cfg.sections.blog_preview.title,
                   subtitle: cfg.sections.blog_preview.subtitle,
                   count: cfg.sections.blog_preview.count ?? 3,
-                  cta_label: cfg.sections.blog_preview.cta_label
+                  cta_label: cfg.sections.blog_preview.cta_label,
+                  layout: cfg.sections.blog_preview.layout ?? 'grid'
                 }}
               />
             )}
