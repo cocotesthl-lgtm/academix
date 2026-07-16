@@ -135,18 +135,6 @@ const ARTICLES: SeedArticle[] = [
 export async function seedNewsDemoData(tenantId: string): Promise<void> {
   const svc = getServiceClient();
 
-  // Idempotente: bail out si ya hay artículos en el tenant
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count } = await (svc.from('articles') as any)
-      .select('id', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId);
-    if ((count ?? 0) > 0) return;
-  } catch {
-    // articles table doesn't exist yet → migration pendiente, no hacer nada
-    return;
-  }
-
   const now = Date.now();
   const rows = ARTICLES.map((a) => ({
     tenant_id: tenantId,
@@ -160,11 +148,19 @@ export async function seedNewsDemoData(tenantId: string): Promise<void> {
     published_at: new Date(now - a.daysAgo * 86400_000).toISOString()
   }));
 
+  // Idempotente vía upsert con onConflict en (tenant_id, slug) — la UNIQUE
+  // constraint de la migration 0050. Si el artículo demo ya existe, no lo
+  // pisamos (ignoreDuplicates); si es nuevo (ej: extendimos el seed de 6 a 12),
+  // se agrega. Así re-aplicar el template siempre completa lo que falta sin
+  // romper ediciones del owner.
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (svc.from('articles') as any).insert(rows);
-    if (error) console.warn('[seedNews] insert falló:', error.message);
+    const { error } = await (svc.from('articles') as any)
+      .upsert(rows, { onConflict: 'tenant_id,slug', ignoreDuplicates: true });
+    if (error) console.warn('[seedNews] upsert falló:', error.message);
   } catch (e) {
-    console.warn('[seedNews] insert threw:', e);
+    // Si articles no existe (migration 0050 pendiente en este tenant),
+    // fallback silencioso — no rompe el apply del template.
+    console.warn('[seedNews] upsert threw:', e);
   }
 }
