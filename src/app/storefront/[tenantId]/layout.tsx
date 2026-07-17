@@ -245,22 +245,48 @@ export default async function StorefrontLayout({
                 <a href="/blog" aria-label="Buscar" className="w-9 h-9 rounded hover:bg-white/10 flex items-center justify-center">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
                 </a>
-                {/* Logo compacto (visible chico en la barra sticky) */}
-                <a href="/" className="ml-2 hidden sm:inline-flex items-center gap-2 text-white/90 hover:text-white">
+                {/* Logo compacto (más prominente ahora — text-2xl vs text-lg
+                    antes — para acercarnos al look The Times). */}
+                <a href="/" className="ml-3 inline-flex items-center gap-2 text-white hover:opacity-80">
                   {brand.logo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={brand.logo_url} alt={tenant.name} className="h-6 w-auto object-contain brightness-0 invert" />
+                    <img src={brand.logo_url} alt={tenant.name} className="h-8 w-auto object-contain brightness-0 invert" />
                   ) : (
-                    <span className="font-serif text-lg font-bold tracking-tight">
+                    <span className="font-serif text-xl md:text-2xl font-bold tracking-tight">
                       {logoText || tenant.name}
                     </span>
                   )}
                 </a>
               </div>
-              <div className="flex items-center gap-2 text-[13px]">
-                <span className="hidden md:inline text-white/60 text-[11px] mr-2">
+              <div className="flex items-center gap-2 md:gap-3 text-[13px]">
+                <span className="hidden lg:inline text-white/60 text-[11px] mr-1">
                   {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
+                {/* CTA de suscripción: usa el precio del plan MÁS BARATO del
+                    site_config.sections.pricing.tiers. Se renderiza solo si
+                    pricing está enabled y hay al menos 1 tier. Extraemos el
+                    primer número del string price ("$ 1.990 / mes" → 1990). */}
+                {(() => {
+                  const pricing = cfg.sections?.pricing;
+                  if (!pricing?.enabled) return null;
+                  const tiers = Array.isArray(pricing.tiers) ? pricing.tiers : [];
+                  if (tiers.length === 0) return null;
+                  const cheapest = tiers
+                    .map((t) => {
+                      const match = (t.price || '').match(/[\d.,]+/);
+                      const n = match ? parseFloat(match[0].replace(/\./g, '').replace(',', '.')) : NaN;
+                      return { tier: t, price: n };
+                    })
+                    .filter((x) => Number.isFinite(x.price) && x.price > 0)
+                    .sort((a, b) => a.price - b.price)[0];
+                  if (!cheapest) return null;
+                  return (
+                    <a href={cheapest.tier.cta_href || '#pricing'}
+                      className="rounded bg-white text-black text-[12px] md:text-[13px] font-bold px-3 py-1.5 hover:bg-white/90 whitespace-nowrap uppercase tracking-wide">
+                      Suscribite por ${cheapest.price.toLocaleString('es-AR')}
+                    </a>
+                  );
+                })()}
                 {cfg.nav.show_login && (
                   <StorefrontUserMenu
                     loggedIn={!!user}
