@@ -21,30 +21,57 @@ type ArticleFull = {
   tags?: string[] | null;
 };
 
+/**
+ * Query defensiva: intenta con tags; si la columna no existe (migration
+ * 0069 pendiente), reintenta sin tags. Similar para articles y demo_articles
+ * respecto a columnas del pool (0067) y campo demo_ref (0067).
+ */
+async function selectArticleSafe(
+  tableFrom: unknown,
+  filters: (q: unknown) => unknown
+): Promise<ArticleFull | null> {
+  const baseCols = 'id, slug, title, excerpt, cover_url, body_html, author_name, published_at';
+  // Intento con tags
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const q1 = filters((tableFrom as any).select(`${baseCols}, tags`)) as any;
+    const r1 = await q1.maybeSingle();
+    if (r1?.data) return r1.data as ArticleFull;
+    if (!r1?.error) return null;
+    // Si hubo error (columna missing) caemos al retry sin tags
+  } catch { /* ignore */ }
+  // Retry sin tags
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const q2 = filters((tableFrom as any).select(baseCols)) as any;
+    const r2 = await q2.maybeSingle();
+    if (r2?.data) return r2.data as ArticleFull;
+  } catch { /* ignore */ }
+  return null;
+}
+
 async function findArticleBySlug(tenantId: string, slug: string): Promise<ArticleFull | null> {
   const svc = getServiceClient();
 
   // 1. Real del tenant por slug directo
-  try {
+  const bySlug = await selectArticleSafe(
+    svc.from('articles'),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (svc.from('articles') as any)
-      .select('id, slug, title, excerpt, cover_url, body_html, author_name, published_at, tags')
-      .eq('tenant_id', tenantId).eq('slug', slug).eq('status', 'published')
-      .maybeSingle();
-    if (data) return data as ArticleFull;
-  } catch { /* ignore */ }
+    (q: any) => q.eq('tenant_id', tenantId).eq('slug', slug).eq('status', 'published')
+  );
+  if (bySlug) return bySlug;
 
-  // 2. Real del tenant customización de demo
+  // 2. Real del tenant customización de demo (columna demo_ref requiere 0067)
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (svc.from('articles') as any)
-      .select('id, slug, title, excerpt, cover_url, body_html, author_name, published_at, tags')
-      .eq('tenant_id', tenantId).eq('demo_ref', slug).eq('status', 'published')
-      .maybeSingle();
-    if (data) return data as ArticleFull;
-  } catch { /* ignore */ }
+    const byDemoRef = await selectArticleSafe(
+      svc.from('articles'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (q: any) => q.eq('tenant_id', tenantId).eq('demo_ref', slug).eq('status', 'published')
+    );
+    if (byDemoRef) return byDemoRef;
+  } catch { /* demo_ref no existe todavía */ }
 
-  // 3. Demo del pool global
+  // 3. Demo del pool global (todo requiere 0067; falla silencioso si no)
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: hidden } = await (svc.from('tenant_demo_hidden') as any)
@@ -52,15 +79,13 @@ async function findArticleBySlug(tenantId: string, slug: string): Promise<Articl
       .maybeSingle();
     if (hidden) return null;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: demo } = await (svc.from('demo_articles') as any)
-      .select('slug, title, excerpt, cover_url, body_html, author_name, published_at, tags')
-      .eq('slug', slug).eq('status', 'published')
-      .maybeSingle();
-    if (!demo) return null;
-    const d = demo as ArticleFull & { slug: string };
-    return { ...d, id: `demo:${d.slug}` };
-  } catch { /* ignore */ }
+    const fromPool = await selectArticleSafe(
+      svc.from('demo_articles'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (q: any) => q.eq('slug', slug).eq('status', 'published')
+    );
+    if (fromPool) return { ...fromPool, id: `demo:${fromPool.slug}` };
+  } catch { /* pool no existe todavía */ }
 
   return null;
 }
