@@ -3163,9 +3163,11 @@ export function CategoryShowcaseEditor({
               </label>
               <label className="block">
                 <span className="text-[10px] uppercase tracking-widest text-white/45">Cantidad de artículos</span>
-                <select value={String(b.count ?? 5)} onChange={(e) => upd(b.id, { count: parseInt(e.target.value, 10) })}
+                <select value={String(b.count ?? 7)} onChange={(e) => upd(b.id, { count: parseInt(e.target.value, 10) })}
                   className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm">
-                  {[3, 4, 5, 6, 7].map((n) => <option key={n} value={n} className="bg-[#0a0a0a]">{n}</option>)}
+                  <option value="5" className="bg-[#0a0a0a]">5 (1 grande + 4 chicos)</option>
+                  <option value="7" className="bg-[#0a0a0a]">7 (1 grande + 6 chicos) — recomendado</option>
+                  <option value="9" className="bg-[#0a0a0a]">9 (1 grande + 8 chicos)</option>
                 </select>
               </label>
             </div>

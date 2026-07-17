@@ -192,19 +192,41 @@ export default async function StorefrontHome({
         needed += categoryShowcaseCfg.blocks.length * 5;
       }
       needed = Math.min(80, Math.max(3, needed));
-      // Join con course_categories para poder filtrar por category_slug en category_showcase.
+      // Traigo articles y categorías por separado y mergeo en memoria.
+      // El PostgREST join implícito con alias fallaba en algunos setups
+      // (Supabase no siempre resuelve `category:column_id(...)` cuando el
+      // constraint name no matchea el patrón esperado), así este approach
+      // es más robusto y no depende de la inferencia de FK.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: articlesRaw } = await (svc.from('articles') as any)
-        .select('id, slug, title, excerpt, cover_url, author_name, published_at, category:category_id(slug, name)')
+        .select('id, slug, title, excerpt, cover_url, author_name, published_at, category_id')
         .eq('tenant_id', tenantId).eq('status', 'published')
         .order('published_at', { ascending: false }).limit(needed);
-      // Normalizar: aplanar category join a category_slug / category_name
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      allArticles = ((articlesRaw ?? []) as Array<any>).map((r) => ({
-        id: r.id, slug: r.slug, title: r.title, excerpt: r.excerpt,
-        cover_url: r.cover_url, author_name: r.author_name, published_at: r.published_at,
-        category_slug: r.category?.slug ?? null, category_name: r.category?.name ?? null
-      })) as BlogPreviewArticle[];
+      const articlesList = (articlesRaw ?? []) as Array<{
+        id: string; slug: string; title: string; excerpt: string | null;
+        cover_url: string | null; author_name: string | null;
+        published_at: string; category_id: string | null;
+      }>;
+      const catIds = Array.from(new Set(articlesList.map((a) => a.category_id).filter(Boolean))) as string[];
+      const catMap = new Map<string, { slug: string; name: string }>();
+      if (catIds.length > 0) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: catsRaw2 } = await (svc.from('course_categories') as any)
+            .select('id, slug, name').in('id', catIds);
+          for (const c of (catsRaw2 ?? []) as Array<{ id: string; slug: string; name: string }>) {
+            catMap.set(c.id, { slug: c.slug, name: c.name });
+          }
+        } catch { /* ignore */ }
+      }
+      allArticles = articlesList.map((r) => {
+        const cat = r.category_id ? catMap.get(r.category_id) : null;
+        return {
+          id: r.id, slug: r.slug, title: r.title, excerpt: r.excerpt,
+          cover_url: r.cover_url, author_name: r.author_name, published_at: r.published_at,
+          category_slug: cat?.slug ?? null, category_name: cat?.name ?? null
+        };
+      });
       if (blogPreviewCfg?.enabled) {
         const count = Math.max(1, Math.min(12, blogPreviewCfg.count || 3));
         blogPreviewArticles = allArticles.slice(0, count);
@@ -1392,7 +1414,9 @@ export default async function StorefrontHome({
                 style={{ background: bg ?? undefined }}>
                 <div className="max-w-6xl mx-auto space-y-12">
                   {blocks.map((block) => {
-                    const total = Math.max(3, Math.min(8, block.count ?? 5));
+                    // 1 grande + 6 chicos = 7 total (default). El owner puede cambiar
+                    // en el editor entre 5 (1+4), 7 (1+6, recomendado), 9 (1+8).
+                    const total = Math.max(3, Math.min(9, block.count ?? 7));
                     const items = allArticles
                       .filter((a) => !block.category_slug || a.category_slug === block.category_slug)
                       .slice(0, total);
@@ -1400,23 +1424,30 @@ export default async function StorefrontHome({
                     const featured = items[0];
                     const smalls = items.slice(1);
                     const accent = block.accent_color || defaultAccent;
+                    // El link de "ver todos" apunta a /blog?cat=slug — la pagina de blog
+                    // filtra por esa categoría y lista todos sus artículos. Es la manera
+                    // más directa de que el owner navegue a la vista por categoría.
+                    const catHref = block.category_slug
+                      ? `/blog?cat=${encodeURIComponent(block.category_slug)}`
+                      : '/blog';
                     return (
                       <div key={block.id} className="pt-2">
-                        {/* Header: label con color + arrow chevron */}
+                        {/* Header: label linkeable con color + arrow chevron */}
                         <div className="flex items-center gap-2 mb-5 pb-2 border-b border-black/15">
-                          <h3 className="text-2xl font-bold" style={{ color: accent }}>
+                          <a href={catHref} className="text-2xl font-bold hover:underline decoration-2 underline-offset-4"
+                            style={{ color: accent }}>
                             {block.title}
-                          </h3>
-                          <a href={`/blog?cat=${encodeURIComponent(block.category_slug)}`}
-                            className="inline-flex items-center justify-center w-6 h-6 rounded-full border transition"
+                          </a>
+                          <a href={catHref}
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-full border transition hover:bg-current/5"
                             style={{ borderColor: accent, color: accent }}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg>
                           </a>
                         </div>
 
-                        <div className="grid md:grid-cols-3 gap-6">
-                          {/* Columna izquierda: artículo grande */}
-                          <Link href={`/blog/${featured.slug}`} className="group block md:col-span-1">
+                        <div className="grid md:grid-cols-[1.4fr_2fr] gap-x-6 gap-y-6">
+                          {/* Columna izquierda: artículo GRANDE */}
+                          <Link href={`/blog/${featured.slug}`} className="group block">
                             {featured.cover_url && (
                               <div className="aspect-[4/3] overflow-hidden bg-zinc-100 mb-3">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1427,7 +1458,7 @@ export default async function StorefrontHome({
                             <div className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accent }}>
                               {featured.category_name || 'Nota'}
                             </div>
-                            <h4 className="font-serif text-xl md:text-2xl font-bold leading-tight mt-1 group-hover:underline">
+                            <h4 className="font-serif text-2xl md:text-3xl font-bold leading-tight mt-1 group-hover:underline">
                               {featured.title}
                             </h4>
                             {featured.excerpt && (
@@ -1438,26 +1469,26 @@ export default async function StorefrontHome({
                             )}
                           </Link>
 
-                          {/* Columnas derecha: 2×2 grid de chicos, cada card con thumb arriba + título */}
-                          <div className="md:col-span-2 grid grid-cols-2 gap-x-6 gap-y-6">
+                          {/* Columna derecha: grid 3×2 de chicos (6 items) */}
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-5">
                             {smalls.map((a) => (
-                              <Link key={a.id} href={`/blog/${a.slug}`} className="group block border-l border-black/10 pl-4">
+                              <Link key={a.id} href={`/blog/${a.slug}`} className="group block">
                                 {a.cover_url && (
                                   <div className="aspect-[4/3] overflow-hidden bg-zinc-100 mb-2">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
                                   </div>
                                 )}
-                                <div className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accent }}>
+                                <div className="text-[9px] uppercase tracking-widest font-semibold" style={{ color: accent }}>
                                   {a.category_name || 'Nota'}
                                 </div>
-                                <h5 className="font-serif text-[15px] font-bold leading-tight mt-1 group-hover:underline">
+                                <h5 className="font-serif text-[14px] font-bold leading-snug mt-1 group-hover:underline">
                                   {a.title}
                                 </h5>
                                 {a.author_name && (
-                                  <div className="text-[11px] text-black/50 mt-1">{a.author_name}</div>
+                                  <div className="text-[10px] text-black/50 mt-1">{a.author_name}</div>
                                 )}
-                                <div className="text-[10px] text-black/40 mt-1">{fmtDate(a.published_at)}</div>
+                                <div className="text-[10px] text-black/40 mt-0.5">{fmtDate(a.published_at)}</div>
                               </Link>
                             ))}
                           </div>
