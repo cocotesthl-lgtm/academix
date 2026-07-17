@@ -12,6 +12,7 @@ import { CartWidget } from "@/components/storefront/cart/CartWidget";
 import { WhatsAppFloat } from "@/components/storefront/WhatsAppFloat";
 import { CategoriesMegaMenu, type MegaCategory } from "@/components/storefront/CategoriesMegaMenu";
 import { MastheadScrollBehavior } from "@/components/storefront/MastheadScrollBehavior";
+import { MastheadCategoryNav } from "@/components/storefront/MastheadCategoryNav";
 
 /**
  * Metadata default para TODO el storefront. Cada page individual puede
@@ -295,9 +296,9 @@ export default async function StorefrontLayout({
                 )}
               </div>
               <div className="flex items-center gap-2 md:gap-3 text-[13px]">
-                <span className="hidden lg:inline text-white/60 text-[11px] mr-1">
-                  {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
+                {/* Fecha antes vivía acá; ahora va centrada arriba del logo
+                    grande (look The Times: "Friday July 17 2026"). Sacada
+                    del dark bar para dar más espacio al CTA suscripción. */}
                 {/* CTA de suscripción: usa el precio del plan MÁS BARATO del
                     site_config.sections.pricing.tiers. Se renderiza solo si
                     pricing está enabled y hay al menos 1 tier. Extraemos el
@@ -337,9 +338,14 @@ export default async function StorefrontLayout({
               </div>
             </div>
           </header>
-          {/* Bloque no-sticky: logo grande + nav de categorías */}
-          <div className="bg-white border-b border-black/15">
-            <div className="max-w-6xl mx-auto px-6 py-6 md:py-8 text-center">
+          {/* Bloque no-sticky: fecha + logo grande */}
+          <div className="bg-white">
+            <div className="max-w-6xl mx-auto px-6 pt-4 pb-6 md:pt-5 md:pb-7 text-center">
+              {/* Fecha del día — centrada arriba del logo, tipografía chica
+                  y gris. Matchea el look The Times ("Friday July 17 2026"). */}
+              <div className="text-[11px] md:text-[12px] text-black/55 mb-2">
+                {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </div>
               <a href="/" className="inline-block">
                 {brand.logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -356,19 +362,17 @@ export default async function StorefrontLayout({
               dark). Al scrollear, la barra de categorías se ancla justo
               debajo del header dark y queda pegada arriba — look The Times. */}
           {(cfg.nav.links.length > 0 || cfg.nav.show_categories_mega) && (
-            <div className="cp-masthead-cats-row bg-white border-b border-black/15 sticky top-14 z-40">
-              <nav className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-center gap-5 md:gap-8 text-[13px] font-semibold text-black flex-wrap">
-                {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
+            <div className="cp-masthead-cats-row bg-white border-b-[3px] border-black/20 sticky top-14 z-40">
+              {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
+                <div className="max-w-6xl mx-auto px-6 pt-2">
                   <CategoriesMegaMenu
                     label={cfg.nav.categories_mega_label || 'Categorías'}
                     categories={megaCategories}
                     primary={primary}
                   />
-                )}
-                {cfg.nav.links.map((l) => (
-                  <a key={l.id} href={l.href} className="hover:opacity-70 transition uppercase tracking-wide">{l.label}</a>
-                ))}
-              </nav>
+                </div>
+              )}
+              <MastheadCategoryNav links={cfg.nav.links} />
             </div>
           )}
         </>
