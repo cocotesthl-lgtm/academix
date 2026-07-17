@@ -129,6 +129,7 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
   revalidatePath('/owner/products');
   revalidatePath('/owner/categories');
   revalidatePath('/owner/blog');
+  revalidatePath('/owner/categorias');
   // Invalidar el storefront público — los artículos seeded se ven en /
   // (portada newspaper) y en /blog. Sin esto quedan cacheados los "0 artículos".
   revalidatePath('/', 'layout');

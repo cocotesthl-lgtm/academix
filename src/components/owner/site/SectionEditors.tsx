@@ -3072,6 +3072,123 @@ export function ArticleListEditor({ initial }: { initial: ArticleListValues }) {
   );
 }
 
+/* ─────────────────────────────────────────────────────────────
+   category_showcase — vitrinas por categoría (Life & Style style)
+   ───────────────────────────────────────────────────────────── */
+
+export type CategoryShowcaseBlock = {
+  id: string;
+  title: string;
+  category_slug: string;
+  accent_color?: string;
+  count?: number;
+};
+
+export type CategoryShowcaseValues = { blocks: CategoryShowcaseBlock[] };
+
+export function CategoryShowcaseEditor({
+  initial,
+  availableCategories
+}: {
+  initial: CategoryShowcaseValues;
+  availableCategories: Array<{ slug: string; name: string }>;
+}) {
+  const [v, setV] = useState<CategoryShowcaseValues>(initial);
+  const { pending, saved, fire } = useSave('category_showcase');
+
+  function upd(id: string, patch: Partial<CategoryShowcaseBlock>) {
+    setV({ ...v, blocks: v.blocks.map((b) => b.id === id ? { ...b, ...patch } : b) });
+  }
+  function add() {
+    setV({ ...v, blocks: [...v.blocks, {
+      id: 'cs-' + Math.random().toString(36).slice(2, 8),
+      title: 'Nueva sección', category_slug: '', count: 5
+    }] });
+  }
+  function del(id: string) {
+    setV({ ...v, blocks: v.blocks.filter((b) => b.id !== id) });
+  }
+  function move(id: string, dir: -1 | 1) {
+    const i = v.blocks.findIndex((b) => b.id === id);
+    if (i < 0) return;
+    const j = i + dir;
+    if (j < 0 || j >= v.blocks.length) return;
+    const arr = v.blocks.slice();
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    setV({ ...v, blocks: arr });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="text-xs text-white/50">
+        Cada bloque es una vitrina de una categoría: 1 artículo grande + 4 chicos en grid.
+        Reordená con las flechas. Usá "Aleatorio" en count si querés que varíe.
+      </div>
+
+      <div className="space-y-3">
+        {v.blocks.map((b, i) => (
+          <div key={b.id} className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="text-[10px] uppercase tracking-widest text-white/45">Bloque {i + 1}</div>
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => move(b.id, -1)} disabled={i === 0}
+                  className="text-xs px-1.5 py-0.5 rounded hover:bg-white/10 disabled:opacity-30">▲</button>
+                <button type="button" onClick={() => move(b.id, 1)} disabled={i === v.blocks.length - 1}
+                  className="text-xs px-1.5 py-0.5 rounded hover:bg-white/10 disabled:opacity-30">▼</button>
+                <button type="button" onClick={() => del(b.id)}
+                  className="text-[10px] text-rose-300 hover:text-rose-200 ml-1">Eliminar</button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-white/45">Título visible</span>
+                <input value={b.title} onChange={(e) => upd(b.id, { title: e.target.value })}
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm" />
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-white/45">Categoría del blog</span>
+                <select value={b.category_slug} onChange={(e) => upd(b.id, { category_slug: e.target.value })}
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm">
+                  <option value="" className="bg-[#0a0a0a]">— elegí una —</option>
+                  {availableCategories.map((c) => (
+                    <option key={c.slug} value={c.slug} className="bg-[#0a0a0a]">{c.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-white/45">Color del label (hex)</span>
+                <input value={b.accent_color ?? ''} onChange={(e) => upd(b.id, { accent_color: e.target.value })}
+                  placeholder="#38bdf8"
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm font-mono" />
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-white/45">Cantidad de artículos</span>
+                <select value={String(b.count ?? 5)} onChange={(e) => upd(b.id, { count: parseInt(e.target.value, 10) })}
+                  className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-1.5 text-sm">
+                  {[3, 4, 5, 6, 7].map((n) => <option key={n} value={n} className="bg-[#0a0a0a]">{n}</option>)}
+                </select>
+              </label>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button type="button" onClick={add}
+        className="text-xs rounded border border-white/20 hover:border-white/40 px-3 py-1.5">
+        + Agregar bloque de categoría
+      </button>
+
+      {availableCategories.length === 0 && (
+        <p className="text-[11px] text-amber-300/80">
+          ⚠️ No hay categorías creadas. Andá a <a className="underline" href="/categorias">Categorías</a> y agregá algunas primero.
+        </p>
+      )}
+
+      <SaveBar pending={pending} saved={saved} onSave={() => fire({ blocks: JSON.stringify(v.blocks) })} />
+    </div>
+  );
+}
+
 export type ProductsValues = {
   title: string;
   subtitle: string;

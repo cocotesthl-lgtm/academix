@@ -338,17 +338,25 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
   (() => {
     const c = clone();
     // Sin hero promocional ni about/contact — un sitio de noticias real
-    // no tiene eso en la portada. El "hero" es el masthead del header
-    // (logo grande + nav de secciones), y sobre eso va directo la portada
-    // newspaper + columnas de headlines + newsletter.
-    enableOnly(c, ['blog_preview', 'article_list', 'newsletter']);
-    // article_list: dos columnas de headlines abajo de la portada.
-    // Skip=6 en Últimas para no repetir los que ya están en la portada.
-    // Tendencias en random para variar cada vez.
+    // no tiene eso en la portada. El "hero" es el masthead del header,
+    // y sobre eso va directo la portada + columnas de headlines +
+    // vitrinas por categoría + newsletter.
+    enableOnly(c, ['blog_preview', 'article_list', 'category_showcase', 'newsletter']);
+    // article_list: 2 columnas debajo de la portada (Últimas + Tendencias).
     c.sections.article_list.enabled = true;
     c.sections.article_list.columns = [
       { id: 'al-latest',   title: 'Últimas noticias', count: 5, order: 'latest', skip: 6 },
       { id: 'al-trending', title: 'Tendencias',       count: 5, order: 'random', skip: 0 }
+    ];
+    // Vitrinas por categoría — 4 bloques principales tipo NYT "Life & Style".
+    // El owner puede reordenar / agregar más desde el editor. Los colores
+    // matchean los accent_color del seed de categorías (ver seed-news.ts).
+    c.sections.category_showcase.enabled = true;
+    c.sections.category_showcase.blocks = [
+      { id: 'cs-mundo',     title: 'Mundo',     category_slug: 'mundo',     accent_color: '#0891b2', count: 5 },
+      { id: 'cs-deportes',  title: 'Deportes',  category_slug: 'deportes',  accent_color: '#16a34a', count: 5 },
+      { id: 'cs-economia',  title: 'Economía',  category_slug: 'economia',  accent_color: '#ca8a04', count: 5 },
+      { id: 'cs-lifestyle', title: 'Lifestyle', category_slug: 'lifestyle', accent_color: '#db2777', count: 5 }
     ];
     // Portada en layout newspaper: 1 gran artículo + 2 laterales + fila de 3.
     // Total 6 artículos organizados con jerarquía tipo NYT.
@@ -368,13 +376,16 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     // Cada link va a /blog?cat=... asumiendo que las categorías del blog
     // tienen esos slugs (o quedan como placeholder para que el owner los
     // ajuste a sus propias categorías).
+    // Nav apunta a las 8 categorías del seed (ver seed-news.ts NEWS_CATEGORIES)
     c.nav.links = [
-      { id: '00000000-0000-0000-0000-000000000n01', label: 'Actualidad',    href: '/blog?cat=actualidad' },
-      { id: '00000000-0000-0000-0000-000000000n02', label: 'Política',      href: '/blog?cat=politica' },
-      { id: '00000000-0000-0000-0000-000000000n03', label: 'Deportes',      href: '/blog?cat=deportes' },
-      { id: '00000000-0000-0000-0000-000000000n04', label: 'Cultura',       href: '/blog?cat=cultura' },
-      { id: '00000000-0000-0000-0000-000000000n05', label: 'Internacional', href: '/blog?cat=internacional' },
-      { id: '00000000-0000-0000-0000-000000000n06', label: 'Opinión',       href: '/blog?cat=opinion' }
+      { id: '00000000-0000-0000-0000-000000000n01', label: 'Últimas',    href: '/blog?cat=ultimas' },
+      { id: '00000000-0000-0000-0000-000000000n02', label: 'Mundo',      href: '/blog?cat=mundo' },
+      { id: '00000000-0000-0000-0000-000000000n03', label: 'Deportes',   href: '/blog?cat=deportes' },
+      { id: '00000000-0000-0000-0000-000000000n04', label: 'Política',   href: '/blog?cat=politica' },
+      { id: '00000000-0000-0000-0000-000000000n05', label: 'Economía',   href: '/blog?cat=economia' },
+      { id: '00000000-0000-0000-0000-000000000n06', label: 'Negocios',   href: '/blog?cat=negocios' },
+      { id: '00000000-0000-0000-0000-000000000n07', label: 'Policiales', href: '/blog?cat=policiales' },
+      { id: '00000000-0000-0000-0000-000000000n08', label: 'Lifestyle',  href: '/blog?cat=lifestyle' }
     ];
     c.nav.show_my_courses = false;
     c.nav.show_affiliates = false;

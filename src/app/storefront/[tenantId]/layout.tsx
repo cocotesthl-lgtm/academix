@@ -228,21 +228,38 @@ export default async function StorefrontLayout({
       )}
       {cfg.nav.style === 'masthead' ? (
         // ── Masthead editorial (NYT / WSJ / The Times) ─────────────────
-        // Row 1: barra fina superior con fecha y login/subscribe a la derecha.
-        // Row 2: logo GRANDE centrado en serif con el nombre del sitio.
-        // Row 3: nav de secciones en fila horizontal separada por bordes.
-        // Diseño sobrio, blanco/negro, sin colores brand — el brand vive
-        // solo en el logo y en los CTA de suscripción.
-        <header data-storefront-header className="storefront-header bg-white sticky top-0 z-50 border-b border-black/15">
-          {/* Row 1: fecha izquierda + login/suscribirse derecha */}
-          <div className="border-b border-black/10">
-            <div className="max-w-6xl mx-auto px-6 py-2 flex items-center justify-between gap-3 text-[11px]">
-              <div className="text-black/60">
-                {new Date().toLocaleDateString('es-AR', {
-                  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-                })}
+        // Estructura: 1 barra dark SIEMPRE VISIBLE arriba (sticky) con
+        // hamburger + search + subscribe/login, y debajo un bloque NO
+        // pegajoso con logo grande + nav de categorías. Al scrollear, el
+        // logo y las categorías se van, solo queda la barra dark → look
+        // The Times / WSJ.
+        <>
+          {/* Row sticky: barra dark siempre visible */}
+          <header data-storefront-header className="bg-[#0d1114] text-white sticky top-0 z-50 border-b border-white/10">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-2.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1">
+                <button aria-label="Menú" className="w-9 h-9 rounded hover:bg-white/10 flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                </button>
+                <a href="/blog" aria-label="Buscar" className="w-9 h-9 rounded hover:bg-white/10 flex items-center justify-center">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                </a>
+                {/* Logo compacto (visible chico en la barra sticky) */}
+                <a href="/" className="ml-2 hidden sm:inline-flex items-center gap-2 text-white/90 hover:text-white">
+                  {brand.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={brand.logo_url} alt={tenant.name} className="h-6 w-auto object-contain brightness-0 invert" />
+                  ) : (
+                    <span className="font-serif text-lg font-bold tracking-tight">
+                      {logoText || tenant.name}
+                    </span>
+                  )}
+                </a>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-[13px]">
+                <span className="hidden md:inline text-white/60 text-[11px] mr-2">
+                  {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
                 {cfg.nav.show_login && (
                   <StorefrontUserMenu
                     loggedIn={!!user}
@@ -256,41 +273,39 @@ export default async function StorefrontLayout({
                 )}
               </div>
             </div>
-          </div>
-          {/* Row 2: logo grande centrado */}
-          <div className="max-w-6xl mx-auto px-6 py-5 text-center">
-            <a href="/" className="inline-flex flex-col items-center gap-1">
-              {brand.logo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={brand.logo_url} alt={tenant.name} className="h-14 md:h-16 w-auto object-contain" />
-              ) : (
-                <span className="font-serif text-4xl md:text-5xl font-black tracking-tight text-black">
-                  {logoText || tenant.name}
-                </span>
-              )}
-            </a>
-          </div>
-          {/* Row 3: nav de secciones centrado */}
-          {(cfg.nav.links.length > 0 || cfg.nav.show_categories_mega) && (
-            <div className="border-t border-black/15">
-              <nav className="max-w-6xl mx-auto px-6 py-2.5 flex items-center justify-center gap-5 md:gap-7 text-[13px] font-semibold text-black/80 flex-wrap">
-                {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
-                  <CategoriesMegaMenu
-                    label={cfg.nav.categories_mega_label || 'Categorías'}
-                    categories={megaCategories}
-                    primary={primary}
-                  />
+          </header>
+          {/* Bloque no-sticky: logo grande + nav de categorías */}
+          <div className="bg-white border-b border-black/15">
+            <div className="max-w-6xl mx-auto px-6 py-6 md:py-8 text-center">
+              <a href="/" className="inline-block">
+                {brand.logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={brand.logo_url} alt={tenant.name} className="h-16 md:h-24 w-auto mx-auto object-contain" />
+                ) : (
+                  <span className="font-serif text-5xl md:text-7xl font-black tracking-tight text-black">
+                    {logoText || tenant.name}
+                  </span>
                 )}
-                {cfg.nav.links.map((l) => (
-                  <a key={l.id} href={l.href} className="hover:text-black transition uppercase tracking-wide">{l.label}</a>
-                ))}
-                {cfg.nav.show_my_courses === true && (
-                  <a href="/learn" className="hover:text-black uppercase tracking-wide">{cfg.nav.my_courses_label || 'Mi cuenta'}</a>
-                )}
-              </nav>
+              </a>
             </div>
-          )}
-        </header>
+            {(cfg.nav.links.length > 0 || cfg.nav.show_categories_mega) && (
+              <div className="border-t border-black/15">
+                <nav className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-center gap-5 md:gap-8 text-[13px] font-semibold text-black flex-wrap">
+                  {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
+                    <CategoriesMegaMenu
+                      label={cfg.nav.categories_mega_label || 'Categorías'}
+                      categories={megaCategories}
+                      primary={primary}
+                    />
+                  )}
+                  {cfg.nav.links.map((l) => (
+                    <a key={l.id} href={l.href} className="hover:opacity-70 transition uppercase tracking-wide">{l.label}</a>
+                  ))}
+                </nav>
+              </div>
+            )}
+          </div>
+        </>
       ) : (
         <header data-storefront-header className="storefront-header border-b border-black/10 bg-white sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">

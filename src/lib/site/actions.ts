@@ -257,12 +257,18 @@ export async function updateSectionFieldsAction(formData: FormData): Promise<voi
   }
   if (formData.has('show_directions_cta')) section.show_directions_cta = formData.get('show_directions_cta') === 'on';
   if (formData.has('layout')) section.layout = String(formData.get('layout') ?? 'centered');
-  // article_list.columns: JSON serializado en el cliente por el editor.
+  // article_list.columns y category_showcase.blocks: JSON serializado.
   // Validación defensiva — si no parsea o no es array, ignoramos el patch.
   if (formData.has('columns')) {
     try {
       const parsed = JSON.parse(String(formData.get('columns') ?? '[]'));
       if (Array.isArray(parsed)) section.columns = parsed;
+    } catch { /* input inválido, no tocar */ }
+  }
+  if (formData.has('blocks')) {
+    try {
+      const parsed = JSON.parse(String(formData.get('blocks') ?? '[]'));
+      if (Array.isArray(parsed)) section.blocks = parsed;
     } catch { /* input inválido, no tocar */ }
   }
   if (formData.has('media_type')) {

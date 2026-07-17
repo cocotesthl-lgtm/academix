@@ -166,6 +166,8 @@ export default async function StorefrontHome({
     id: string; slug: string; title: string;
     excerpt: string | null; cover_url: string | null;
     author_name: string | null; published_at: string;
+    category_slug?: string | null;
+    category_name?: string | null;
   };
   let blogPreviewArticles: BlogPreviewArticle[] = [];
   // Universo total de artículos que puede necesitar la página (blog_preview
@@ -174,24 +176,35 @@ export default async function StorefrontHome({
   let allArticles: BlogPreviewArticle[] = [];
   const blogPreviewCfg = cfg.sections.blog_preview;
   const articleListCfg = cfg.sections.article_list;
-  const needsArticles = blogPreviewCfg?.enabled || articleListCfg?.enabled;
+  const categoryShowcaseCfg = cfg.sections.category_showcase;
+  const needsArticles = blogPreviewCfg?.enabled || articleListCfg?.enabled || categoryShowcaseCfg?.enabled;
   if (needsArticles) {
     try {
       // Calcular cuántos artículos totales pedir: blog_preview.count +
-      // (max skip + max count entre las columnas de article_list).
+      // article_list total + category_showcase total. Le sumo margen.
       let needed = blogPreviewCfg?.enabled ? Math.max(1, Math.min(12, blogPreviewCfg.count || 3)) : 0;
       if (articleListCfg?.enabled && Array.isArray(articleListCfg.columns)) {
         for (const col of articleListCfg.columns) {
           needed = Math.max(needed, (col.skip ?? 0) + (col.count ?? 5));
         }
       }
-      needed = Math.min(50, Math.max(3, needed));
+      if (categoryShowcaseCfg?.enabled && Array.isArray(categoryShowcaseCfg.blocks)) {
+        needed += categoryShowcaseCfg.blocks.length * 5;
+      }
+      needed = Math.min(80, Math.max(3, needed));
+      // Join con course_categories para poder filtrar por category_slug en category_showcase.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: articlesRaw } = await (svc.from('articles') as any)
-        .select('id, slug, title, excerpt, cover_url, author_name, published_at')
+        .select('id, slug, title, excerpt, cover_url, author_name, published_at, category:category_id(slug, name)')
         .eq('tenant_id', tenantId).eq('status', 'published')
         .order('published_at', { ascending: false }).limit(needed);
-      allArticles = (articlesRaw ?? []) as BlogPreviewArticle[];
+      // Normalizar: aplanar category join a category_slug / category_name
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      allArticles = ((articlesRaw ?? []) as Array<any>).map((r) => ({
+        id: r.id, slug: r.slug, title: r.title, excerpt: r.excerpt,
+        cover_url: r.cover_url, author_name: r.author_name, published_at: r.published_at,
+        category_slug: r.category?.slug ?? null, category_name: r.category?.name ?? null
+      })) as BlogPreviewArticle[];
       if (blogPreviewCfg?.enabled) {
         const count = Math.max(1, Math.min(12, blogPreviewCfg.count || 3));
         blogPreviewArticles = allArticles.slice(0, count);
@@ -1360,6 +1373,98 @@ export default async function StorefrontHome({
                       </Link>
                     </div>
                   )}
+                </div>
+              </section>
+            );
+          }
+
+          case 'category_showcase': {
+            // Vitrinas por categoría estilo NYT "Life & Style":
+            // header con label en color acento + 1 artículo grande a la
+            // izquierda + grid 2×2 de artículos chicos a la derecha.
+            const c = cfg.sections.category_showcase;
+            const blocks = Array.isArray(c?.blocks) ? c.blocks : [];
+            if (allArticles.length === 0 || blocks.length === 0) return null;
+            const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+            const defaultAccent = '#0891b2';
+            return (
+              <section key={key} {...dt} id={key} className="px-6 py-8 space-y-12"
+                style={{ background: bg ?? undefined }}>
+                <div className="max-w-6xl mx-auto space-y-12">
+                  {blocks.map((block) => {
+                    const total = Math.max(3, Math.min(8, block.count ?? 5));
+                    const items = allArticles
+                      .filter((a) => !block.category_slug || a.category_slug === block.category_slug)
+                      .slice(0, total);
+                    if (items.length === 0) return null;
+                    const featured = items[0];
+                    const smalls = items.slice(1);
+                    const accent = block.accent_color || defaultAccent;
+                    return (
+                      <div key={block.id} className="pt-2">
+                        {/* Header: label con color + arrow chevron */}
+                        <div className="flex items-center gap-2 mb-5 pb-2 border-b border-black/15">
+                          <h3 className="text-2xl font-bold" style={{ color: accent }}>
+                            {block.title}
+                          </h3>
+                          <a href={`/blog?cat=${encodeURIComponent(block.category_slug)}`}
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-full border transition"
+                            style={{ borderColor: accent, color: accent }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 6 6 6-6 6"/></svg>
+                          </a>
+                        </div>
+
+                        <div className="grid md:grid-cols-3 gap-6">
+                          {/* Columna izquierda: artículo grande */}
+                          <Link href={`/blog/${featured.slug}`} className="group block md:col-span-1">
+                            {featured.cover_url && (
+                              <div className="aspect-[4/3] overflow-hidden bg-zinc-100 mb-3">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={featured.cover_url} alt={featured.title}
+                                  className="w-full h-full object-cover group-hover:scale-[1.02] transition" />
+                              </div>
+                            )}
+                            <div className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accent }}>
+                              {featured.category_name || 'Nota'}
+                            </div>
+                            <h4 className="font-serif text-xl md:text-2xl font-bold leading-tight mt-1 group-hover:underline">
+                              {featured.title}
+                            </h4>
+                            {featured.excerpt && (
+                              <p className="text-sm text-black/60 mt-2 line-clamp-3">{featured.excerpt}</p>
+                            )}
+                            {featured.author_name && (
+                              <div className="text-xs text-black/50 mt-2">{featured.author_name}</div>
+                            )}
+                          </Link>
+
+                          {/* Columnas derecha: 2×2 grid de chicos, cada card con thumb arriba + título */}
+                          <div className="md:col-span-2 grid grid-cols-2 gap-x-6 gap-y-6">
+                            {smalls.map((a) => (
+                              <Link key={a.id} href={`/blog/${a.slug}`} className="group block border-l border-black/10 pl-4">
+                                {a.cover_url && (
+                                  <div className="aspect-[4/3] overflow-hidden bg-zinc-100 mb-2">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
+                                  </div>
+                                )}
+                                <div className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accent }}>
+                                  {a.category_name || 'Nota'}
+                                </div>
+                                <h5 className="font-serif text-[15px] font-bold leading-tight mt-1 group-hover:underline">
+                                  {a.title}
+                                </h5>
+                                {a.author_name && (
+                                  <div className="text-[11px] text-black/50 mt-1">{a.author_name}</div>
+                                )}
+                                <div className="text-[10px] text-black/40 mt-1">{fmtDate(a.published_at)}</div>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             );

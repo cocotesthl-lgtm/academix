@@ -35,6 +35,7 @@ import {
   MapEditor,
   BlogPreviewEditor,
   ArticleListEditor,
+  CategoryShowcaseEditor,
   ProductsEditor,
   BenefitsBarEditor,
   CategoryCardsEditor,
@@ -82,6 +83,7 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   workwithus:   { title: "🤝 Trabajá con nosotros", desc: "CTA de programa de afiliados. Aparece solo si activaste el programa en Afiliados → Configuración." },
   blog_preview: { title: "📰 Últimas del blog", desc: "Grid con los últimos artículos publicados en tu blog. Link para ver todo." },
   article_list: { title: "📑 Columnas de headlines", desc: "Múltiples listas de artículos lado a lado (Últimas, Tendencias, etc). Para sitios editoriales tipo NYT/The Times." },
+  category_showcase: { title: "🗞️ Vitrinas por categoría", desc: "Un bloque por cada categoría (Deportes, Cultura, etc): 1 artículo grande + 4 chicos en grid. Estilo NYT 'Life & Style' / The Times." },
   products:     { title: "📦 Tienda / Productos físicos", desc: "Grid con productos publicados. Link para ver toda la tienda." },
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }
 };
@@ -142,6 +144,18 @@ export default async function SiteBuilderPage() {
     .eq("status", "published")
     .order("created_at", { ascending: false });
   const courseTargets = buildCourseTargets((ownerCourses ?? []) as Array<{ slug: string; title: string }>);
+
+  // Categorías del tenant (para el dropdown del category_showcase editor).
+  // Defensivo si no hay tabla o RLS.
+  let availableCategories: Array<{ slug: string; name: string }> = [];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: catsRaw } = await (svc.from('course_categories') as any)
+      .select('slug, name')
+      .eq('tenant_id', tenant.id)
+      .order('position', { ascending: true });
+    availableCategories = (catsRaw ?? []) as Array<{ slug: string; name: string }>;
+  } catch { /* ignore */ }
 
   // Forms disponibles del tenant (para el dropdown del hero media_type='form').
   // Defensivo: si la migración 0030 aún no corrió, fallback silencioso a [].
@@ -549,6 +563,12 @@ export default async function SiteBuilderPage() {
             {key === 'article_list' && (
               <ArticleListEditor
                 initial={{ columns: cfg.sections.article_list?.columns ?? [] }}
+              />
+            )}
+            {key === 'category_showcase' && (
+              <CategoryShowcaseEditor
+                initial={{ blocks: cfg.sections.category_showcase?.blocks ?? [] }}
+                availableCategories={availableCategories}
               />
             )}
             {key === 'products' && (

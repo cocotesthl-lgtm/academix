@@ -114,6 +114,7 @@ export type SectionKey =
   | 'workwithus'
   | 'blog_preview'
   | 'article_list'
+  | 'category_showcase'
   | 'products'
   | 'cta_final';
 
@@ -315,6 +316,7 @@ export type SiteConfig = {
        * order: 'latest' (default) | 'oldest' | 'random'
        * skip: cuántos artículos saltear al principio (evita duplicar
        * los que ya están en la portada). count: cuántos mostrar.
+       * category_slug: si se setea, filtra por esa categoría
        */
       columns: Array<{
         id: string;
@@ -322,6 +324,28 @@ export type SiteConfig = {
         count: number;
         order?: 'latest' | 'oldest' | 'random';
         skip?: number;
+        category_slug?: string;
+      }>;
+    };
+    /**
+     * Vitrina por categoría estilo NYT "Life & Style" / The Times.
+     * Header con el nombre de la categoría (en color acento) y un
+     * arrow al lado. Layout: 1 artículo grande a la izquierda + grid
+     * 2×2 de artículos chicos a la derecha. Se puede repetir la
+     * sección con distintos block_id apuntando a categorías distintas.
+     */
+    category_showcase: SectionBase & {
+      /**
+       * Bloques a mostrar. Cada bloque es una categoría. El template
+       * de Noticias trae uno por cada categoría del sitio y el owner
+       * puede reordenar/agregar/quitar desde el editor.
+       */
+      blocks: Array<{
+        id: string;
+        title: string;              // label visible ("Life & Style")
+        category_slug: string;      // filtro
+        accent_color?: string;      // color del label — sobrescribe el default
+        count?: number;             // total de artículos (default 5 = 1 grande + 4 chicos)
       }>;
     };
     products: SectionBase & {
@@ -387,6 +411,7 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'products',        // grid completo de productos físicos
   'blog_preview',    // preview del blog antes del contacto
   'article_list',    // multi-columnas de headlines (sitios editoriales)
+  'category_showcase', // vitrinas por categoría estilo NYT / The Times
   'contact',
   'workwithus',
   'map'
@@ -622,6 +647,10 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
         { id: 'al-latest',   title: 'Últimas noticias', count: 5, order: 'latest', skip: 6 },
         { id: 'al-trending', title: 'Tendencias',       count: 5, order: 'random', skip: 0 }
       ]
+    },
+    category_showcase: {
+      enabled: false,
+      blocks: []
     },
     products: {
       enabled: false, // se prende cuando el owner publica su primer producto físico
