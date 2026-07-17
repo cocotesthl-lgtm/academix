@@ -205,6 +205,21 @@ export default async function StorefrontHome({
     }
   }
 
+  // Videos para la sección videos_reel (si está enabled). Trae del pool
+  // global + tenant vía helper — si migration 0071 no corrió, devuelve [].
+  type ReelVideo = { slug: string; title: string; youtube_id: string };
+  let reelVideos: ReelVideo[] = [];
+  const videosReelCfg = cfg.sections.videos_reel;
+  if (videosReelCfg?.enabled) {
+    try {
+      const { fetchVideosForTenant } = await import('@/lib/demo-pool/queries');
+      const vids = await fetchVideosForTenant(tenantId, {
+        limit: Math.max(3, Math.min(8, videosReelCfg.count || 5))
+      });
+      reelVideos = vids.map((v) => ({ slug: v.slug, title: v.title, youtube_id: v.youtube_id }));
+    } catch { /* migration 0071 pendiente */ }
+  }
+
   // Productos físicos destacados (solo si la sección products está enabled).
   // Defensivo si migration 0051 no corrió: tabla no existe → catch silencioso.
   type ProductPreview = {
@@ -1355,6 +1370,47 @@ export default async function StorefrontHome({
                       </Link>
                     </div>
                   )}
+                </div>
+              </section>
+            );
+          }
+
+          case 'videos_reel': {
+            const c = cfg.sections.videos_reel;
+            if (!c?.enabled || reelVideos.length === 0) return null;
+            return (
+              <section key={key} {...dt} id={key} className="px-6 py-8"
+                style={{ background: bg ?? undefined }}>
+                <div className="max-w-6xl mx-auto">
+                  <div className="mb-4 pb-2 border-b-2 border-black">
+                    <h2 className="font-serif text-xl font-bold" dangerouslySetInnerHTML={richHtml(c.title || 'Videos de hoy')} />
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {reelVideos.map((v) => (
+                      <Link key={v.slug} href={`/reels?v=${encodeURIComponent(v.slug)}`}
+                        className="group block">
+                        <div className="relative aspect-[9/16] overflow-hidden bg-black">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`https://img.youtube.com/vi/${v.youtube_id}/hqdefault.jpg`}
+                            alt={v.title}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition"
+                          />
+                          {/* Play overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center shadow-lg">
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="black">
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                        <h3 className="mt-3 font-serif text-[15px] font-bold leading-snug group-hover:underline">
+                          {v.title}
+                        </h3>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </section>
             );

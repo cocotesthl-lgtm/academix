@@ -115,6 +115,7 @@ export type SectionKey =
   | 'blog_preview'
   | 'article_list'
   | 'category_showcase'
+  | 'videos_reel'
   | 'products'
   | 'cta_final';
 
@@ -334,6 +335,15 @@ export type SiteConfig = {
      * 2×2 de artículos chicos a la derecha. Se puede repetir la
      * sección con distintos block_id apuntando a categorías distintas.
      */
+    /**
+     * Strip horizontal de videos cortos (YouTube Shorts) tipo NYT
+     * "Watch Today's Videos". Click en un video abre /reels que es un
+     * player fullscreen con navegación vertical estilo TikTok/Instagram.
+     */
+    videos_reel: SectionBase & {
+      title: string;    // "Videos de hoy", "Reels", "Ver ahora", etc.
+      count: number;    // 3-8 thumbnails visibles en la strip
+    };
     category_showcase: SectionBase & {
       /**
        * Bloques a mostrar. Cada bloque es una categoría. El template
@@ -412,6 +422,7 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'blog_preview',    // preview del blog antes del contacto
   'article_list',    // multi-columnas de headlines (sitios editoriales)
   'category_showcase', // vitrinas por categoría estilo NYT / The Times
+  'videos_reel',       // strip de shorts + player /reels
   'contact',
   'workwithus',
   'map'
@@ -651,6 +662,11 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     category_showcase: {
       enabled: false,
       blocks: []
+    },
+    videos_reel: {
+      enabled: false,
+      title: 'Videos de hoy',
+      count: 5
     },
     products: {
       enabled: false, // se prende cuando el owner publica su primer producto físico

@@ -45,6 +45,18 @@ export type CategoryRow = {
   is_demo?: boolean;
 };
 
+export type VideoRow = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  youtube_id: string;
+  category_slug?: string | null;
+  category_name?: string | null;
+  position: number;
+  is_demo?: boolean;
+};
+
 export type PhysicalProductRow = {
   id: string;
   slug: string;
@@ -191,6 +203,94 @@ export async function fetchArticlesForTenant(
   // Merge sort por published_at DESC + cap al limit
   out.sort((a, b) => b.published_at.localeCompare(a.published_at));
   return out.slice(0, limit);
+}
+
+/**
+ * Fetch videos del tenant + demos visibles (pool global). Devuelve
+ * ordenados por position ASC. Cada demo viene con id sintético
+ * "demo:{slug}" para materialize-on-edit.
+ */
+export async function fetchVideosForTenant(
+  tenantId: string,
+  opts: { limit?: number } = {}
+): Promise<VideoRow[]> {
+  const svc = getServiceClient();
+  const limit = Math.max(1, Math.min(50, opts.limit ?? 20));
+  const out: VideoRow[] = [];
+
+  const realDemoRefs = new Set<string>();
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (svc.from('videos') as any)
+      .select('id, slug, title, description, youtube_id, position, demo_ref')
+      .eq('tenant_id', tenantId)
+      .order('position', { ascending: true })
+      .limit(limit);
+    for (const v of ((data ?? []) as Array<VideoRow & { demo_ref: string | null }>)) {
+      out.push({ ...v, is_demo: false });
+      if (v.demo_ref) realDemoRefs.add(v.demo_ref);
+    }
+  } catch { /* migration 0071 pendiente */ }
+
+  try {
+    const hiddenSet = await getHiddenSet(tenantId, 'video');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: demos } = await (svc.from('demo_videos') as any)
+      .select('id, slug, title, description, youtube_id, category_slug, position')
+      .order('position', { ascending: true })
+      .limit(limit);
+    for (const d of ((demos ?? []) as VideoRow[])) {
+      if (hiddenSet.has(d.slug)) continue;
+      if (realDemoRefs.has(d.slug)) continue;
+      out.push({
+        ...d,
+        id: `demo:${d.slug}`,
+        is_demo: true
+      });
+    }
+  } catch { /* pool no existe todavía */ }
+
+  return out.slice(0, limit);
+}
+
+/**
+ * Fetch UN video por slug (para el reels player) — busca en real +
+ * customización + pool en ese orden, igual que findArticleBySlug.
+ */
+export async function findVideoBySlug(tenantId: string, slug: string): Promise<VideoRow | null> {
+  const svc = getServiceClient();
+  // 1. Real por slug
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (svc.from('videos') as any)
+      .select('id, slug, title, description, youtube_id, position')
+      .eq('tenant_id', tenantId).eq('slug', slug).maybeSingle();
+    if (data) return { ...(data as VideoRow), is_demo: false };
+  } catch { /* ignore */ }
+  // 2. Real por demo_ref
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (svc.from('videos') as any)
+      .select('id, slug, title, description, youtube_id, position')
+      .eq('tenant_id', tenantId).eq('demo_ref', slug).maybeSingle();
+    if (data) return { ...(data as VideoRow), is_demo: false };
+  } catch { /* ignore */ }
+  // 3. Pool
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: hidden } = await (svc.from('tenant_demo_hidden') as any)
+      .select('id').eq('tenant_id', tenantId).eq('resource_type', 'video').eq('demo_slug', slug)
+      .maybeSingle();
+    if (hidden) return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: demo } = await (svc.from('demo_videos') as any)
+      .select('slug, title, description, youtube_id, category_slug, position')
+      .eq('slug', slug).maybeSingle();
+    if (!demo) return null;
+    const d = demo as VideoRow;
+    return { ...d, id: `demo:${d.slug}`, is_demo: true };
+  } catch { /* ignore */ }
+  return null;
 }
 
 /**

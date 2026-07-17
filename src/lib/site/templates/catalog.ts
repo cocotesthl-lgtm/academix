@@ -341,7 +341,13 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     // no tiene eso en la portada. El "hero" es el masthead del header,
     // y sobre eso va directo la portada + columnas de headlines +
     // vitrinas por categoría + newsletter.
-    enableOnly(c, ['blog_preview', 'article_list', 'category_showcase', 'pricing', 'newsletter']);
+    enableOnly(c, ['blog_preview', 'article_list', 'videos_reel', 'category_showcase', 'pricing', 'newsletter']);
+    // Strip de shorts (YouTube) tipo NYT "Watch Today's Videos".
+    // El click en un thumb va a /reels?v=<slug> con player fullscreen
+    // vertical autoplay.
+    c.sections.videos_reel.enabled = true;
+    c.sections.videos_reel.title = 'Videos de hoy';
+    c.sections.videos_reel.count = 5;
     // Suscripción/membresía tipo NYT/WSJ/The Times: 3 planes con distintas
     // periodicidades. El owner conecta los precios y el link con el
     // sistema de plans/preapproval de OfferNow desde el editor.
