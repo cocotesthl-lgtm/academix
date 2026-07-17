@@ -1,10 +1,12 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { env } from '@/lib/env';
 import { ArticleToolbar } from '@/components/owner/blog/ArticleToolbar';
 import { ArticleEditorForm } from '@/components/owner/blog/ArticleEditorForm';
 import type { Article } from '@/lib/articles/actions';
+import { isDemoId, demoSlugFromId } from '@/lib/demo-pool/queries';
+import { materializeDemoArticle } from '@/lib/demo-pool/mutations';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +18,17 @@ export default async function ArticleEditPage({
   const { id } = await params;
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
+
+  // Copy-on-open: si es un demo, materializarlo antes de abrir el editor
+  // y redirigir al id real. Owner ve el editor con la data del demo pre-cargada
+  // desde el primer momento y puede editar/publicar sin issues.
+  if (isDemoId(id)) {
+    const slug = demoSlugFromId(id);
+    if (!slug) notFound();
+    const realId = await materializeDemoArticle(tenant.id, slug);
+    if (!realId) notFound();
+    redirect(`/blog/${realId}`);
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (svc.from('articles') as any)

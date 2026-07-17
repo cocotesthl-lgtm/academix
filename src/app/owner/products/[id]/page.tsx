@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { env } from '@/lib/env';
@@ -7,6 +7,8 @@ import { ProductEditorForm } from '@/components/owner/products/ProductEditorForm
 import type { PhysicalProduct, ProductVariant } from '@/lib/products/actions';
 import { getTenantPlan } from '@/lib/plans/queries';
 import { getTenantModules } from '@/lib/modules/queries';
+import { isDemoId, demoSlugFromId } from '@/lib/demo-pool/queries';
+import { materializeDemoPhysicalProduct } from '@/lib/demo-pool/mutations';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +20,15 @@ export default async function ProductEditPage({
   const { id } = await params;
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
+
+  // Copy-on-open: si es demo, materializar y redirect al id real.
+  if (isDemoId(id)) {
+    const slug = demoSlugFromId(id);
+    if (!slug) notFound();
+    const realId = await materializeDemoPhysicalProduct(tenant.id, slug);
+    if (!realId) notFound();
+    redirect(`/products/${realId}`);
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (svc.from('physical_products') as any)

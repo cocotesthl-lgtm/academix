@@ -4,6 +4,7 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { createArticleAction } from '@/lib/articles/actions';
 import { PageHeader } from '@/components/owner/PageHeader';
 import { relativeTime } from '@/lib/time';
+import { fetchArticlesForTenant } from '@/lib/demo-pool/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,19 +16,33 @@ type Row = {
   published_at: string | null;
   updated_at: string;
   cover_url: string | null;
+  is_demo?: boolean;
 };
 
 export default async function BlogListPage() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (svc.from('articles') as any)
-    .select('id, slug, title, status, published_at, updated_at, cover_url')
-    .eq('tenant_id', tenant.id)
-    .order('updated_at', { ascending: false });
-
-  const rows = (data ?? []) as Row[];
+  // Reales del tenant + demos visibles del pool. Los demos tienen id
+  // sintético "demo:{slug}" y aparecen con badge "Demo".
+  const reals = await (async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (svc.from('articles') as any)
+      .select('id, slug, title, status, published_at, updated_at, cover_url')
+      .eq('tenant_id', tenant.id)
+      .order('updated_at', { ascending: false });
+    return (data ?? []) as Row[];
+  })();
+  const demos = await fetchArticlesForTenant(tenant.id, { limit: 100 });
+  // Solo demos puros (is_demo=true) — los reales ya vienen arriba.
+  const demoRows: Row[] = demos.filter((d) => d.is_demo).map((d) => ({
+    id: d.id, slug: d.slug, title: d.title,
+    status: 'published' as const,
+    published_at: d.published_at, updated_at: d.published_at,
+    cover_url: d.cover_url,
+    is_demo: true
+  }));
+  const rows: Row[] = [...reals, ...demoRows];
   const publishedCount = rows.filter((r) => r.status === 'published').length;
 
   return (
@@ -72,9 +87,20 @@ export default async function BlogListPage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{r.title || 'Sin título'}</div>
+                  <div className="font-medium truncate flex items-center gap-2">
+                    <span className="truncate">{r.title || 'Sin título'}</span>
+                    {r.is_demo && (
+                      <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 shrink-0">
+                        Demo
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[11px] text-white/45 mt-0.5 truncate">
-                    /blog/{r.slug} · última edición {relativeTime(r.updated_at)}
+                    /blog/{r.slug}
+                    {r.is_demo
+                      ? ' · del pool global (editá para personalizarlo)'
+                      : ` · última edición ${relativeTime(r.updated_at)}`
+                    }
                   </div>
                 </div>
                 <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded ${

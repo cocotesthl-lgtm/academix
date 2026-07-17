@@ -4,6 +4,7 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { createProductAction } from '@/lib/products/actions';
 import { PageHeader } from '@/components/owner/PageHeader';
 import { relativeTime } from '@/lib/time';
+import { fetchPhysicalProductsForTenant } from '@/lib/demo-pool/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ type Row = {
   track_stock: boolean;
   cover_url: string | null;
   updated_at: string;
+  is_demo?: boolean;
 };
 
 type VariantAgg = { product_id: string; total_stock: number; variant_count: number };
@@ -37,7 +39,22 @@ export default async function ProductsListPage() {
     .select('id, slug, title, status, price_cents, currency, stock_qty, track_stock, cover_url, updated_at')
     .eq('tenant_id', tenant.id)
     .order('updated_at', { ascending: false });
-  const rows = (data ?? []) as Row[];
+  const realRows = ((data ?? []) as Row[]).map((r) => ({ ...r, is_demo: false }));
+
+  // Demos visibles del pool (con badge). Traen id sintético "demo:{slug}".
+  const demoProducts = await fetchPhysicalProductsForTenant(tenant.id, { limit: 100 });
+  const demoRows: Row[] = demoProducts.filter((d) => d.is_demo).map((d) => ({
+    id: d.id, slug: d.slug, title: d.title,
+    status: 'published' as const,
+    price_cents: d.price_cents,
+    currency: d.currency ?? 'ARS',
+    stock_qty: d.stock_qty,
+    track_stock: false,
+    cover_url: d.cover_url,
+    updated_at: new Date().toISOString(),
+    is_demo: true
+  }));
+  const rows: Row[] = [...realRows, ...demoRows];
 
   // Traer stock agregado de variantes por producto
   const productIds = rows.map((r) => r.id);
@@ -128,13 +145,22 @@ export default async function ProductsListPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{r.title || 'Sin título'}</div>
+                    <div className="font-medium truncate flex items-center gap-2">
+                      <span className="truncate">{r.title || 'Sin título'}</span>
+                      {r.is_demo && (
+                        <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 shrink-0">
+                          Demo
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[11px] text-white/45 mt-0.5 truncate">
                       {formatMoney(r.price_cents, r.currency)}
                       {' · '}
                       <span className={lowStock ? 'text-amber-300' : ''}>{stockDisplay}</span>
-                      {' · '}
-                      última edición {relativeTime(r.updated_at)}
+                      {r.is_demo
+                        ? ' · del pool global (editá para personalizarlo)'
+                        : ` · última edición ${relativeTime(r.updated_at)}`
+                      }
                     </div>
                   </div>
                   <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded ${
