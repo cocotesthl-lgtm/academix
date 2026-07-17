@@ -19,7 +19,6 @@ export async function generateMetadata({
   const tenant = await getTenantById(tenantId);
   if (!tenant) return {};
   const origin = storefrontOrigin(tenant.slug);
-  // Título/descripción dinámicos según categoría activa (mejor SEO por página).
   const catLabel = cat ? await lookupCategoryName(tenantId, cat) : null;
   const title = catLabel ? `${catLabel} · Blog` : 'Blog';
   const description = catLabel
@@ -48,8 +47,6 @@ export async function generateMetadata({
   };
 }
 
-// Helper: mirar el nombre de una categoría por slug (para header + meta).
-// Defensivo — si no existe la tabla o el slug, devuelve null.
 async function lookupCategoryName(tenantId: string, slug: string): Promise<string | null> {
   try {
     const svc = getServiceClient();
@@ -70,7 +67,12 @@ type ArticleCard = {
   published_at: string;
   category_id: string | null;
 };
-type CategoryRow = { id: string; slug: string; name: string };
+type CategoryRow = {
+  id: string;
+  slug: string;
+  name: string;
+  parent_id: string | null;
+};
 
 export default async function BlogIndexPage({
   params,
@@ -83,29 +85,42 @@ export default async function BlogIndexPage({
   const { cat: catSlug = null } = await searchParams;
   const tenant = await getTenantById(tenantId);
   if (!tenant) notFound();
-  const primary = tenant.brand?.primary_color ?? '#0a0a0a';
 
   const svc = getServiceClient();
 
-  // Cargar TODAS las categorías del tenant para el nav horizontal arriba
-  // (siempre visible, permite saltar entre categorías).
+  // Traer TODAS las categorías (main + sub) para poder navegar la jerarquía.
+  // Defensivo si parent_id no existe (migration 0054 pendiente en algún tenant):
+  // reintentamos sin ese campo y tratamos todas como top-level.
   let allCategories: CategoryRow[] = [];
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (svc.from('course_categories') as any)
-      .select('id, slug, name').eq('tenant_id', tenantId).order('position', { ascending: true });
+      .select('id, slug, name, parent_id').eq('tenant_id', tenantId).order('position', { ascending: true });
     allCategories = (data ?? []) as CategoryRow[];
-  } catch { /* ignore */ }
+  } catch {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (svc.from('course_categories') as any)
+        .select('id, slug, name').eq('tenant_id', tenantId).order('position', { ascending: true });
+      allCategories = ((data ?? []) as Array<{ id: string; slug: string; name: string }>)
+        .map((c) => ({ ...c, parent_id: null }));
+    } catch { /* ignore */ }
+  }
 
-  // Resolver la categoría activa (si el owner pasó ?cat=slug).
-  const activeCategory = catSlug
-    ? allCategories.find((c) => c.slug === catSlug) ?? null
-    : null;
-  // Si el slug NO matchea ninguna categoría real, tratamos como "todas"
-  // (evitamos 404 duro por si el owner borró la categoría después).
-  const filterCatId = activeCategory?.id ?? null;
+  // Separar categorías top-level (main) de subcategorías.
+  const mainCategories = allCategories.filter((c) => !c.parent_id);
+  const activeCategory = catSlug ? allCategories.find((c) => c.slug === catSlug) ?? null : null;
+  // ¿Es una subcategoría? Miramos su parent — si tiene, ese es el padre.
+  const isSub = !!activeCategory?.parent_id;
+  const parentCategory = isSub
+    ? allCategories.find((c) => c.id === activeCategory?.parent_id) ?? null
+    : activeCategory;
+  // Subcategorías del padre actual (si estamos en una main o en una sub)
+  const subsOfParent = parentCategory
+    ? allCategories.filter((c) => c.parent_id === parentCategory.id)
+    : [];
 
-  // Cargar artículos, filtrando por category_id si hay categoría activa.
+  // Cargar artículos filtrando por category_id de la categoría activa.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let q: any = (svc.from('articles') as any)
     .select('id, slug, title, excerpt, cover_url, author_name, published_at, category_id')
@@ -113,31 +128,57 @@ export default async function BlogIndexPage({
     .eq('status', 'published')
     .order('published_at', { ascending: false })
     .limit(50);
-  if (filterCatId) q = q.eq('category_id', filterCatId);
+  if (activeCategory) q = q.eq('category_id', activeCategory.id);
   const { data } = await q;
   const rows = (data ?? []) as ArticleCard[];
 
+  // El título grande es siempre el nombre de la categoría activa (main o sub);
+  // si no hay categoría activa, "Blog".
   const pageTitle = activeCategory?.name ?? 'Blog';
 
   return (
-    <article className="max-w-5xl mx-auto px-6 py-10">
-      <header className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold" style={activeCategory ? { color: primary } : undefined}>
+    <article className="max-w-6xl mx-auto px-6 py-10">
+      <header className="text-center mb-6">
+        <h1 className="font-serif text-4xl md:text-5xl font-bold text-black">
           {pageTitle}
         </h1>
       </header>
 
-      {/* Nav de categorías — siempre visible; resalta la activa */}
-      {allCategories.length > 0 && (
-        <nav className="flex flex-wrap gap-2 justify-center mb-8 pb-4 border-b border-black/10">
-          <CatChip href="/blog" label="Todas" active={!activeCategory} />
-          {allCategories.map((c) => (
-            <CatChip key={c.id} href={`/blog?cat=${encodeURIComponent(c.slug)}`}
-              label={c.name} active={activeCategory?.id === c.id} />
-          ))}
+      {/* Sub-nav estilo The Times: underline en la activa, sin chips.
+          Muestra "Top stories" como link a la vista de la main sin filtro
+          de subcategoría, más las subcategorías del parent actual.
+          Si la página está en /blog sin categoría, muestra las mains. */}
+      {(subsOfParent.length > 0 || (!activeCategory && mainCategories.length > 0)) && (
+        <nav className="flex flex-wrap gap-x-6 gap-y-2 justify-center border-b border-black/15 pb-3 mb-8 text-[13px]">
+          {parentCategory ? (
+            <>
+              <SubNavLink
+                href={`/blog?cat=${encodeURIComponent(parentCategory.slug)}`}
+                label="Top stories"
+                active={activeCategory?.id === parentCategory.id}
+              />
+              {subsOfParent.map((s) => (
+                <SubNavLink
+                  key={s.id}
+                  href={`/blog?cat=${encodeURIComponent(s.slug)}`}
+                  label={s.name}
+                  active={activeCategory?.id === s.id}
+                />
+              ))}
+            </>
+          ) : (
+            <>
+              <SubNavLink href="/blog" label="Todas" active={!activeCategory} />
+              {mainCategories.map((c) => (
+                <SubNavLink key={c.id} href={`/blog?cat=${encodeURIComponent(c.slug)}`}
+                  label={c.name} active={false} />
+              ))}
+            </>
+          )}
         </nav>
       )}
 
+      {/* Grid de artículos */}
       {rows.length === 0 ? (
         <div className="text-center py-16 text-black/45">
           <div className="text-4xl mb-3">📝</div>
@@ -183,14 +224,18 @@ export default async function BlogIndexPage({
   );
 }
 
-function CatChip({ href, label, active }: { href: string; label: string; active: boolean }) {
+/** Link de subnav estilo The Times: sin bordes, underline en la activa. */
+function SubNavLink({ href, label, active }: { href: string; label: string; active: boolean }) {
   return (
-    <Link href={href}
-      className={`text-xs px-3 py-1.5 rounded-full transition uppercase tracking-wide ${
+    <Link
+      href={href}
+      className={`relative pb-2 font-semibold transition ${
         active
-          ? 'bg-black text-white font-semibold'
-          : 'border border-black/15 text-black/70 hover:border-black/40 hover:text-black'
-      }`}>
+          ? 'text-black'
+          : 'text-black/65 hover:text-black'
+      }`}
+      style={active ? { boxShadow: 'inset 0 -3px 0 0 currentColor' } : undefined}
+    >
       {label}
     </Link>
   );

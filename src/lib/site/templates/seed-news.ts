@@ -29,6 +29,53 @@ export const NEWS_CATEGORIES: SeedCategory[] = [
   { slug: 'lifestyle',    name: 'Lifestyle',        accent_color: '#db2777' }
 ];
 
+/**
+ * Subcategorías por categoría padre. Se crean con parent_id apuntando
+ * a la categoría del mismo slug. Sirven para el nav de subsecciones
+ * dentro de cada categoría (estilo The Times /money → Tax · Pensions
+ * · Mortgages · etc).
+ */
+type SeedSubCategory = { slug: string; name: string; parent_slug: string };
+export const NEWS_SUBCATEGORIES: SeedSubCategory[] = [
+  // Mundo
+  { slug: 'sub-ee-uu',        name: 'EE.UU.',           parent_slug: 'mundo' },
+  { slug: 'sub-europa',       name: 'Europa',           parent_slug: 'mundo' },
+  { slug: 'sub-asia',         name: 'Asia',             parent_slug: 'mundo' },
+  { slug: 'sub-latam',        name: 'Latinoamérica',    parent_slug: 'mundo' },
+  { slug: 'sub-medio-oriente',name: 'Medio Oriente',    parent_slug: 'mundo' },
+  // Deportes
+  { slug: 'sub-futbol',       name: 'Fútbol',           parent_slug: 'deportes' },
+  { slug: 'sub-tenis',        name: 'Tenis',            parent_slug: 'deportes' },
+  { slug: 'sub-basquet',      name: 'Básquet',          parent_slug: 'deportes' },
+  { slug: 'sub-rugby',        name: 'Rugby',            parent_slug: 'deportes' },
+  { slug: 'sub-formula1',     name: 'Fórmula 1',        parent_slug: 'deportes' },
+  // Política
+  { slug: 'sub-congreso',     name: 'Congreso',         parent_slug: 'politica' },
+  { slug: 'sub-gobierno',     name: 'Gobierno',         parent_slug: 'politica' },
+  { slug: 'sub-provincias',   name: 'Provincias',       parent_slug: 'politica' },
+  { slug: 'sub-elecciones',   name: 'Elecciones',       parent_slug: 'politica' },
+  // Economía
+  { slug: 'sub-inflacion',    name: 'Inflación',        parent_slug: 'economia' },
+  { slug: 'sub-dolar',        name: 'Dólar',            parent_slug: 'economia' },
+  { slug: 'sub-bonos',        name: 'Bonos',            parent_slug: 'economia' },
+  { slug: 'sub-consumo',      name: 'Consumo',          parent_slug: 'economia' },
+  // Negocios
+  { slug: 'sub-empresas',     name: 'Empresas',         parent_slug: 'negocios' },
+  { slug: 'sub-emprendedores',name: 'Emprendedores',    parent_slug: 'negocios' },
+  { slug: 'sub-fusiones',     name: 'Fusiones y adquisiciones', parent_slug: 'negocios' },
+  // Policiales
+  { slug: 'sub-crimenes',     name: 'Crímenes',         parent_slug: 'policiales' },
+  { slug: 'sub-narcotrafico', name: 'Narcotráfico',     parent_slug: 'policiales' },
+  { slug: 'sub-ciberdelito',  name: 'Ciberdelito',      parent_slug: 'policiales' },
+  // Lifestyle
+  { slug: 'sub-cine',         name: 'Cine',             parent_slug: 'lifestyle' },
+  { slug: 'sub-gastronomia',  name: 'Gastronomía',      parent_slug: 'lifestyle' },
+  { slug: 'sub-viajes',       name: 'Viajes',           parent_slug: 'lifestyle' },
+  { slug: 'sub-moda',         name: 'Moda',             parent_slug: 'lifestyle' },
+  { slug: 'sub-bienestar',    name: 'Bienestar',        parent_slug: 'lifestyle' },
+  { slug: 'sub-libros',       name: 'Libros',           parent_slug: 'lifestyle' }
+];
+
 type SeedArticle = {
   slug: string;
   title: string;
@@ -134,6 +181,40 @@ export async function seedNewsDemoData(tenantId: string): Promise<void> {
         .select('id, slug').eq('tenant_id', tenantId);
       for (const row of (data ?? []) as Array<{ id: string; slug: string }>) {
         categoryIdBySlug.set(row.slug, row.id);
+      }
+    }
+
+    // Subcategorías con parent_id resuelto — algunas migraciones no tienen
+    // parent_id todavía, así que si el insert falla lo reintentamos sin él.
+    // La migration 0054 agrega parent_id + is_featured.
+    const subRows = NEWS_SUBCATEGORIES
+      .filter((s) => categoryIdBySlug.has(s.parent_slug))
+      .map((s, i) => ({
+        tenant_id: tenantId,
+        slug: s.slug,
+        name: s.name,
+        position: NEWS_CATEGORIES.length + i,
+        is_featured: false,
+        parent_id: categoryIdBySlug.get(s.parent_slug)!
+      }));
+    if (subRows.length > 0) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: subErr } = await (svc.from('course_categories') as any)
+          .upsert(subRows, { onConflict: 'tenant_id,slug', ignoreDuplicates: true });
+        if (subErr) {
+          // Fallback: sin parent_id (migration 0054 pendiente en este tenant).
+          console.warn('[seedNews] subcats con parent_id falló, reintento sin:', subErr.message);
+          const fallback = subRows.map(({ parent_id: _ignored, ...rest }) => {
+            void _ignored;
+            return rest;
+          });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (svc.from('course_categories') as any)
+            .upsert(fallback, { onConflict: 'tenant_id,slug', ignoreDuplicates: true });
+        }
+      } catch (e) {
+        console.warn('[seedNews] subcats seed threw:', e);
       }
     }
   } catch (e) {
