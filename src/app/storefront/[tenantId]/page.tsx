@@ -1259,20 +1259,9 @@ export default async function StorefrontHome({
               const sideArticles = rest.slice(0, 2);
               const rowArticles = rest.slice(2, 5);
               return (
-                <section key={key} {...dt} id={key} className="px-6 py-12"
+                <section key={key} {...dt} id={key} className="px-6 py-8"
                   style={{ background: bg ?? undefined }}>
                   <div className="max-w-6xl mx-auto">
-                    {c.title && (
-                      <div className="mb-6 pb-3 border-b border-black/15 flex items-baseline justify-between">
-                        <h2 className="text-xl font-bold" dangerouslySetInnerHTML={richHtml(c.title)} />
-                        {c.cta_label && (
-                          <Link href="/blog" className="text-xs font-semibold hover:underline" style={{ color: primary }}>
-                            {c.cta_label} →
-                          </Link>
-                        )}
-                      </div>
-                    )}
-
                     <div className="grid md:grid-cols-[2fr_1fr] gap-6 pb-8 border-b border-black/10">
                       {/* Featured — big article */}
                       <Link href={`/blog/${featured.slug}`} className="group block">
@@ -1284,7 +1273,7 @@ export default async function StorefrontHome({
                           </div>
                         )}
                         <div className="text-[10px] uppercase tracking-widest text-black/50 font-semibold mb-2">
-                          Portada · {fmtDate(featured.published_at)}
+                          {fmtDate(featured.published_at)}
                         </div>
                         <h3 className="font-serif text-3xl md:text-4xl font-bold leading-tight mb-3 group-hover:underline decoration-2 underline-offset-4">
                           {featured.title}
