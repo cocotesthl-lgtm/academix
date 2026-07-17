@@ -109,6 +109,18 @@ export async function updateProductAction(id: string, formData: FormData): Promi
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
 
+  // Copy-on-edit: si el producto es un demo del pool global, primero
+  // lo materializamos a una row real del tenant, después aplicamos updates.
+  const { isDemoId, demoSlugFromId } = await import('@/lib/demo-pool/queries');
+  if (isDemoId(id)) {
+    const slug = demoSlugFromId(id);
+    if (!slug) return;
+    const { materializeDemoPhysicalProduct } = await import('@/lib/demo-pool/mutations');
+    const realId = await materializeDemoPhysicalProduct(tenant.id, slug);
+    if (!realId) return;
+    id = realId;
+  }
+
   const title = String(formData.get('title') ?? '').trim().slice(0, 200) || 'Sin título';
   const rawSlug = String(formData.get('slug') ?? '').trim();
   const description = String(formData.get('description') ?? '').trim() || null;
@@ -222,6 +234,19 @@ export async function setProductStatusAction(id: string, status: 'draft' | 'publ
 
 export async function deleteProductAction(id: string): Promise<void> {
   const { tenant } = await requireOwner();
+
+  // Si es un demo, soft-hide en tenant_demo_hidden. No tocamos el pool.
+  const { isDemoId, demoSlugFromId } = await import('@/lib/demo-pool/queries');
+  if (isDemoId(id)) {
+    const slug = demoSlugFromId(id);
+    if (slug) {
+      const { hideDemoPhysicalProduct } = await import('@/lib/demo-pool/mutations');
+      await hideDemoPhysicalProduct(tenant.id, slug);
+    }
+    revalidatePath('/products');
+    redirect('/products');
+  }
+
   const svc = getServiceClient();
   await svc.from('physical_products').delete().eq('id', id).eq('tenant_id', tenant.id);
   revalidatePath('/products');

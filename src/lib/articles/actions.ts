@@ -68,8 +68,21 @@ export async function createArticleAction(): Promise<void> {
 
 export async function updateArticleAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
-  const id = String(formData.get('id') ?? '');
+  let id = String(formData.get('id') ?? '');
   if (!id) return;
+
+  // Copy-on-edit: si el id es sintético "demo:{slug}", materializamos el
+  // demo a una row real del tenant antes de aplicar el update. Esto pasa
+  // cuando el owner edita un artículo del pool global por primera vez.
+  const { isDemoId, demoSlugFromId } = await import('@/lib/demo-pool/queries');
+  if (isDemoId(id)) {
+    const slug = demoSlugFromId(id);
+    if (!slug) return;
+    const { materializeDemoArticle } = await import('@/lib/demo-pool/mutations');
+    const realId = await materializeDemoArticle(tenant.id, slug);
+    if (!realId) return;
+    id = realId;
+  }
 
   const rawTitle = String(formData.get('title') ?? '').trim() || 'Sin título';
   const rawSlug = String(formData.get('slug') ?? '').trim();
@@ -130,6 +143,21 @@ export async function deleteArticleAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const id = String(formData.get('id') ?? '');
   if (!id) return;
+
+  // Si es un demo (no existe en articles reales), hacemos soft-hide en
+  // tenant_demo_hidden en vez de tocar el pool global.
+  const { isDemoId, demoSlugFromId } = await import('@/lib/demo-pool/queries');
+  if (isDemoId(id)) {
+    const slug = demoSlugFromId(id);
+    if (slug) {
+      const { hideDemoArticle } = await import('@/lib/demo-pool/mutations');
+      await hideDemoArticle(tenant.id, slug);
+    }
+    revalidatePath('/blog');
+    revalidatePath('/', 'layout');
+    redirect('/blog');
+  }
+
   const svc = getServiceClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('articles') as any).delete().eq('id', id).eq('tenant_id', tenant.id);
