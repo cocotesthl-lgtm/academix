@@ -118,24 +118,13 @@ export default async function BlogIndexPage({
   const rows = (data ?? []) as ArticleCard[];
 
   const pageTitle = activeCategory?.name ?? 'Blog';
-  const pageSubtitle = activeCategory
-    ? `Todas las notas de ${activeCategory.name}.`
-    : 'Últimas notas, artículos y novedades.';
 
   return (
     <article className="max-w-5xl mx-auto px-6 py-10">
       <header className="text-center mb-8">
-        {activeCategory && (
-          <div className="text-xs uppercase tracking-widest text-black/45 mb-2">
-            <Link href="/blog" className="hover:underline">Blog</Link>
-            <span className="mx-2">·</span>
-            <span>Categoría</span>
-          </div>
-        )}
-        <h1 className="text-4xl md:text-5xl font-bold mb-2" style={activeCategory ? { color: primary } : undefined}>
+        <h1 className="text-4xl md:text-5xl font-bold" style={activeCategory ? { color: primary } : undefined}>
           {pageTitle}
         </h1>
-        <p className="text-black/55">{pageSubtitle}</p>
       </header>
 
       {/* Nav de categorías — siempre visible; resalta la activa */}

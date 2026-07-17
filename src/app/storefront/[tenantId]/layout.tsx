@@ -234,9 +234,10 @@ export default async function StorefrontLayout({
         // logo y las categorías se van, solo queda la barra dark → look
         // The Times / WSJ.
         <>
-          {/* Row sticky: barra dark siempre visible */}
-          <header data-storefront-header className="bg-[#0d1114] text-white sticky top-0 z-50 border-b border-white/10">
-            <div className="max-w-7xl mx-auto px-4 md:px-6 py-2.5 flex items-center justify-between gap-3">
+          {/* Row sticky: barra dark siempre visible (altura fija h-14 = 56px
+              para que el nav de categorías pueda anclarse exactamente debajo) */}
+          <header data-storefront-header className="bg-[#0d1114] text-white sticky top-0 z-50 border-b border-white/10 h-14 flex items-center">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between gap-3 w-full">
               <div className="flex items-center gap-1">
                 <button aria-label="Menú" className="w-9 h-9 rounded hover:bg-white/10 flex items-center justify-center">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
@@ -288,23 +289,26 @@ export default async function StorefrontLayout({
                 )}
               </a>
             </div>
-            {(cfg.nav.links.length > 0 || cfg.nav.show_categories_mega) && (
-              <div className="border-t border-black/15">
-                <nav className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-center gap-5 md:gap-8 text-[13px] font-semibold text-black flex-wrap">
-                  {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
-                    <CategoriesMegaMenu
-                      label={cfg.nav.categories_mega_label || 'Categorías'}
-                      categories={megaCategories}
-                      primary={primary}
-                    />
-                  )}
-                  {cfg.nav.links.map((l) => (
-                    <a key={l.id} href={l.href} className="hover:opacity-70 transition uppercase tracking-wide">{l.label}</a>
-                  ))}
-                </nav>
-              </div>
-            )}
           </div>
+          {/* Nav de categorías: STICKY con top-14 (56px = altura del header
+              dark). Al scrollear, la barra de categorías se ancla justo
+              debajo del header dark y queda pegada arriba — look The Times. */}
+          {(cfg.nav.links.length > 0 || cfg.nav.show_categories_mega) && (
+            <div className="bg-white border-b border-black/15 sticky top-14 z-40">
+              <nav className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-center gap-5 md:gap-8 text-[13px] font-semibold text-black flex-wrap">
+                {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
+                  <CategoriesMegaMenu
+                    label={cfg.nav.categories_mega_label || 'Categorías'}
+                    categories={megaCategories}
+                    primary={primary}
+                  />
+                )}
+                {cfg.nav.links.map((l) => (
+                  <a key={l.id} href={l.href} className="hover:opacity-70 transition uppercase tracking-wide">{l.label}</a>
+                ))}
+              </nav>
+            </div>
+          )}
         </>
       ) : (
         <header data-storefront-header className="storefront-header border-b border-black/10 bg-white sticky top-0 z-50">

@@ -341,7 +341,58 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     // no tiene eso en la portada. El "hero" es el masthead del header,
     // y sobre eso va directo la portada + columnas de headlines +
     // vitrinas por categoría + newsletter.
-    enableOnly(c, ['blog_preview', 'article_list', 'category_showcase', 'newsletter']);
+    enableOnly(c, ['blog_preview', 'article_list', 'category_showcase', 'pricing', 'newsletter']);
+    // Suscripción/membresía tipo NYT/WSJ/The Times: 3 planes con distintas
+    // periodicidades. El owner conecta los precios y el link con el
+    // sistema de plans/preapproval de OfferNow desde el editor.
+    c.sections.pricing.enabled = true;
+    c.sections.pricing.title = 'Suscribite y accedé sin límites';
+    c.sections.pricing.subtitle = 'Membresía digital con acceso completo a todas nuestras notas, análisis y podcasts.';
+    c.sections.pricing.tiers = [
+      {
+        id: 'plan-mensual',
+        name: 'Mensual',
+        price: '$ 1.990 / mes',
+        description: 'Cancelás cuando quieras',
+        features: [
+          'Acceso ilimitado a todas las notas',
+          'Podcasts y newsletters exclusivos',
+          'Sin publicidad',
+          'App móvil incluida'
+        ],
+        cta_label: 'Empezar mes gratis',
+        cta_href: '/mi-cuenta'
+      },
+      {
+        id: 'plan-semestral',
+        name: 'Semestral',
+        price: '$ 9.990 / 6 meses',
+        description: 'Ahorrás ~17%',
+        features: [
+          'Todo lo del plan Mensual',
+          'Precio congelado por 6 meses',
+          'Acceso a archivo histórico',
+          'Sección VIP y columnistas'
+        ],
+        cta_label: 'Suscribirme',
+        cta_href: '/mi-cuenta',
+        highlighted: true
+      },
+      {
+        id: 'plan-anual',
+        name: 'Anual',
+        price: '$ 17.990 / año',
+        description: 'Ahorrás ~25% · 2 meses gratis',
+        features: [
+          'Todo lo del plan Semestral',
+          'Regalo: 1 suscripción secundaria',
+          'Descuentos en eventos y talleres',
+          'Prioridad en atención al cliente'
+        ],
+        cta_label: 'Suscribirme anual',
+        cta_href: '/mi-cuenta'
+      }
+    ];
     // article_list: 2 columnas debajo de la portada (Últimas + Tendencias).
     c.sections.article_list.enabled = true;
     c.sections.article_list.columns = [
