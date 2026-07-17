@@ -97,32 +97,21 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
     }
   }
 
-  // Ecommerce → sembrar categorías y productos reales en la DB si el tenant
-  // está limpio. Aparecen en /owner/products y /owner/categorias listos para
-  // que el owner solo cambie textos/precios/fotos (no arrancar de cero).
-  // Si el tenant ya tiene productos o categorías, no tocamos nada.
-  if (tpl.id === 'ecommerce') {
-    try {
-      await seedEcommerceDemoData(tenant.id);
-    } catch (e) {
-      // migration 0051 pendiente o error de RLS — no queremos que se rompa el
-      // apply del template por eso. El owner puede crear los productos manual.
-      console.error('[applySiteTemplate] seed ecommerce fallo (no critico):', e);
-    }
-  }
-
-  // News → sembrar 6 artículos con covers Unsplash para que el layout
-  // newspaper de blog_preview pueda renderizar apenas se aplica el template.
-  // Sin esto el sitio queda vacío (hero + newsletter + about + contact) y
-  // pierde todo el look NYT/Clarín que define al template. Idempotente:
-  // si el tenant ya tiene artículos, no toca nada.
-  if (tpl.id === 'news') {
-    try {
-      await seedNewsDemoData(tenant.id);
-    } catch (e) {
-      console.error('[applySiteTemplate] seed news fallo (no critico):', e);
-    }
-  }
+  // ── Ya no seedeamos data per-tenant ────────────────────────────────
+  // Migration 0067 introdujo el pool demo global (demo_articles,
+  // demo_course_categories, demo_physical_products). Los templates
+  // ahora solo modifican site_config; el contenido demo vive UNA VEZ
+  // en el pool global y los queries de storefront hacen UNION real +
+  // pool visible (queries en src/lib/demo-pool/queries.ts).
+  //
+  // Ventaja: 1000 tenants con template Noticias = ~40 rows GLOBALES
+  // en vez de 40.000 duplicadas. Cuando el owner edita un demo, se
+  // materializa (copy-on-edit) via helpers en demo-pool/mutations.ts.
+  //
+  // Los seed-*.ts viejos quedan como referencia pero ya no se ejecutan
+  // desde el flow de aplicar template. Sirven para poblar el pool
+  // demo (una sola vez, via migration 0068_populate_demo_pool.sql).
+  void seedEcommerceDemoData; void seedNewsDemoData;
 
   revalidatePath('/owner/site');
   revalidatePath('/owner/templates');

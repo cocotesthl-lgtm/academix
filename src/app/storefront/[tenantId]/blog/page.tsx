@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getTenantById } from '@/lib/tenant/resolve';
 import { getServiceClient } from '@/lib/supabase/service';
 import { storefrontOrigin } from '@/lib/seo/meta';
+import { fetchArticlesForTenant, fetchCategoriesForTenant } from '@/lib/demo-pool/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,13 +49,9 @@ export async function generateMetadata({
 }
 
 async function lookupCategoryName(tenantId: string, slug: string): Promise<string | null> {
-  try {
-    const svc = getServiceClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (svc.from('course_categories') as any)
-      .select('name').eq('tenant_id', tenantId).eq('slug', slug).maybeSingle();
-    return (data as { name?: string } | null)?.name ?? null;
-  } catch { return null; }
+  // Busca en el conjunto efectivo (real + demos visibles).
+  const cats = await fetchCategoriesForTenant(tenantId);
+  return cats.find((c) => c.slug === slug)?.name ?? null;
 }
 
 type ArticleCard = {
@@ -86,51 +83,30 @@ export default async function BlogIndexPage({
   const tenant = await getTenantById(tenantId);
   if (!tenant) notFound();
 
-  const svc = getServiceClient();
+  // Categorías efectivas (real + demos visibles) — helper del pool.
+  const allCategories = await fetchCategoriesForTenant(tenantId);
 
-  // Traer TODAS las categorías (main + sub) para poder navegar la jerarquía.
-  // Defensivo si parent_id no existe (migration 0054 pendiente en algún tenant):
-  // reintentamos sin ese campo y tratamos todas como top-level.
-  let allCategories: CategoryRow[] = [];
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (svc.from('course_categories') as any)
-      .select('id, slug, name, parent_id').eq('tenant_id', tenantId).order('position', { ascending: true });
-    allCategories = (data ?? []) as CategoryRow[];
-  } catch {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (svc.from('course_categories') as any)
-        .select('id, slug, name').eq('tenant_id', tenantId).order('position', { ascending: true });
-      allCategories = ((data ?? []) as Array<{ id: string; slug: string; name: string }>)
-        .map((c) => ({ ...c, parent_id: null }));
-    } catch { /* ignore */ }
-  }
-
-  // Separar categorías top-level (main) de subcategorías.
+  // Separar top-level de subs.
   const mainCategories = allCategories.filter((c) => !c.parent_id);
   const activeCategory = catSlug ? allCategories.find((c) => c.slug === catSlug) ?? null : null;
-  // ¿Es una subcategoría? Miramos su parent — si tiene, ese es el padre.
   const isSub = !!activeCategory?.parent_id;
   const parentCategory = isSub
     ? allCategories.find((c) => c.id === activeCategory?.parent_id) ?? null
     : activeCategory;
-  // Subcategorías del padre actual (si estamos en una main o en una sub)
   const subsOfParent = parentCategory
     ? allCategories.filter((c) => c.parent_id === parentCategory.id)
     : [];
 
-  // Cargar artículos filtrando por category_id de la categoría activa.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let q: any = (svc.from('articles') as any)
-    .select('id, slug, title, excerpt, cover_url, author_name, published_at, category_id')
-    .eq('tenant_id', tenantId)
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(50);
-  if (activeCategory) q = q.eq('category_id', activeCategory.id);
-  const { data } = await q;
-  const rows = (data ?? []) as ArticleCard[];
+  // Artículos efectivos (real + demos visibles) con filtro por categoría.
+  const mergedArticles = await fetchArticlesForTenant(tenantId, {
+    limit: 50,
+    categorySlug: activeCategory?.slug ?? null
+  });
+  const rows: ArticleCard[] = mergedArticles.map((a) => ({
+    id: a.id, slug: a.slug, title: a.title, excerpt: a.excerpt,
+    cover_url: a.cover_url, author_name: a.author_name,
+    published_at: a.published_at, category_id: a.category_id ?? null
+  }));
 
   // El título grande es siempre el nombre de la categoría activa (main o sub);
   // si no hay categoría activa, "Blog".

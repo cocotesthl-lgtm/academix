@@ -179,59 +179,30 @@ export default async function StorefrontHome({
   const categoryShowcaseCfg = cfg.sections.category_showcase;
   const needsArticles = blogPreviewCfg?.enabled || articleListCfg?.enabled || categoryShowcaseCfg?.enabled;
   if (needsArticles) {
-    try {
-      // Calcular cuántos artículos totales pedir: blog_preview.count +
-      // article_list total + category_showcase total. Le sumo margen.
-      let needed = blogPreviewCfg?.enabled ? Math.max(1, Math.min(12, blogPreviewCfg.count || 3)) : 0;
-      if (articleListCfg?.enabled && Array.isArray(articleListCfg.columns)) {
-        for (const col of articleListCfg.columns) {
-          needed = Math.max(needed, (col.skip ?? 0) + (col.count ?? 5));
-        }
+    // Usa el helper del pool: devuelve union de articles reales del tenant
+    // + demos globales visibles (menos hidden + menos ya customizados por
+    // este tenant). Cada row viene con category_slug/name normalizados.
+    let needed = blogPreviewCfg?.enabled ? Math.max(1, Math.min(12, blogPreviewCfg.count || 3)) : 0;
+    if (articleListCfg?.enabled && Array.isArray(articleListCfg.columns)) {
+      for (const col of articleListCfg.columns) {
+        needed = Math.max(needed, (col.skip ?? 0) + (col.count ?? 5));
       }
-      if (categoryShowcaseCfg?.enabled && Array.isArray(categoryShowcaseCfg.blocks)) {
-        needed += categoryShowcaseCfg.blocks.length * 5;
-      }
-      needed = Math.min(80, Math.max(3, needed));
-      // Traigo articles y categorías por separado y mergeo en memoria.
-      // El PostgREST join implícito con alias fallaba en algunos setups
-      // (Supabase no siempre resuelve `category:column_id(...)` cuando el
-      // constraint name no matchea el patrón esperado), así este approach
-      // es más robusto y no depende de la inferencia de FK.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: articlesRaw } = await (svc.from('articles') as any)
-        .select('id, slug, title, excerpt, cover_url, author_name, published_at, category_id')
-        .eq('tenant_id', tenantId).eq('status', 'published')
-        .order('published_at', { ascending: false }).limit(needed);
-      const articlesList = (articlesRaw ?? []) as Array<{
-        id: string; slug: string; title: string; excerpt: string | null;
-        cover_url: string | null; author_name: string | null;
-        published_at: string; category_id: string | null;
-      }>;
-      const catIds = Array.from(new Set(articlesList.map((a) => a.category_id).filter(Boolean))) as string[];
-      const catMap = new Map<string, { slug: string; name: string }>();
-      if (catIds.length > 0) {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: catsRaw2 } = await (svc.from('course_categories') as any)
-            .select('id, slug, name').in('id', catIds);
-          for (const c of (catsRaw2 ?? []) as Array<{ id: string; slug: string; name: string }>) {
-            catMap.set(c.id, { slug: c.slug, name: c.name });
-          }
-        } catch { /* ignore */ }
-      }
-      allArticles = articlesList.map((r) => {
-        const cat = r.category_id ? catMap.get(r.category_id) : null;
-        return {
-          id: r.id, slug: r.slug, title: r.title, excerpt: r.excerpt,
-          cover_url: r.cover_url, author_name: r.author_name, published_at: r.published_at,
-          category_slug: cat?.slug ?? null, category_name: cat?.name ?? null
-        };
-      });
-      if (blogPreviewCfg?.enabled) {
-        const count = Math.max(1, Math.min(12, blogPreviewCfg.count || 3));
-        blogPreviewArticles = allArticles.slice(0, count);
-      }
-    } catch { /* migration 0050 pendiente */ }
+    }
+    if (categoryShowcaseCfg?.enabled && Array.isArray(categoryShowcaseCfg.blocks)) {
+      needed += categoryShowcaseCfg.blocks.length * 5;
+    }
+    needed = Math.min(80, Math.max(3, needed));
+    const { fetchArticlesForTenant } = await import('@/lib/demo-pool/queries');
+    const merged = await fetchArticlesForTenant(tenantId, { limit: needed });
+    allArticles = merged.map((r) => ({
+      id: r.id, slug: r.slug, title: r.title, excerpt: r.excerpt,
+      cover_url: r.cover_url, author_name: r.author_name, published_at: r.published_at,
+      category_slug: r.category_slug ?? null, category_name: r.category_name ?? null
+    }));
+    if (blogPreviewCfg?.enabled) {
+      const count = Math.max(1, Math.min(12, blogPreviewCfg.count || 3));
+      blogPreviewArticles = allArticles.slice(0, count);
+    }
   }
 
   // Productos físicos destacados (solo si la sección products está enabled).
