@@ -11,6 +11,7 @@ import { StorefrontUserMenu } from "@/components/storefront/StorefrontUserMenu";
 import { CartWidget } from "@/components/storefront/cart/CartWidget";
 import { WhatsAppFloat } from "@/components/storefront/WhatsAppFloat";
 import { CategoriesMegaMenu, type MegaCategory } from "@/components/storefront/CategoriesMegaMenu";
+import { MastheadScrollBehavior } from "@/components/storefront/MastheadScrollBehavior";
 
 /**
  * Metadata default para TODO el storefront. Cada page individual puede
@@ -228,15 +229,40 @@ export default async function StorefrontLayout({
       )}
       {cfg.nav.style === 'masthead' ? (
         // ── Masthead editorial (NYT / WSJ / The Times) ─────────────────
-        // Estructura: 1 barra dark SIEMPRE VISIBLE arriba (sticky) con
-        // hamburger + search + subscribe/login, y debajo un bloque NO
-        // pegajoso con logo grande + nav de categorías. Al scrollear, el
-        // logo y las categorías se van, solo queda la barra dark → look
-        // The Times / WSJ.
+        // Estructura scroll-adaptive:
+        //   Estado inicial (scrolled=false):
+        //     [Dark bar: hamburger+search+logo | date+CTA+login]
+        //     [Blanco: LOGO GIGANTE centrado]
+        //     [Blanco: categorías sticky top-14]
+        //   Estado scrolled (después de bajar ~140px):
+        //     [Dark bar: hamburger+search+logo | CATEGORÍAS inline | CTA+login]
+        //     (el bloque blanco de arriba se scrolleó fuera, la fila blanca
+        //     de categorías se oculta porque ahora viven en el dark bar)
+        //   Todo controlado con data-scrolled="true" en el header +
+        //   selectores CSS. El toggle lo hace MastheadScrollBehavior.
         <>
-          {/* Row sticky: barra dark siempre visible (altura fija h-14 = 56px
-              para que el nav de categorías pueda anclarse exactamente debajo) */}
-          <header data-storefront-header className="bg-[#0d1114] text-white sticky top-0 z-50 border-b border-white/10 h-14 flex items-center">
+          <MastheadScrollBehavior />
+          {/* Estilos de scroll-adaptive: cuando el header dark tiene
+              data-scrolled="true", mostramos el nav inline dentro y
+              ocultamos la fila blanca sticky de categorías (que sería
+              redundante). El nav inline se anima con fade + slide. */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            .cp-masthead-inline-nav { display: none !important; }
+            .cp-masthead[data-scrolled="true"] .cp-masthead-inline-nav {
+              display: flex !important;
+              animation: cpMastheadNavIn 200ms ease-out;
+            }
+            .cp-masthead[data-scrolled="true"] ~ .cp-masthead-cats-row {
+              opacity: 0;
+              pointer-events: none;
+              transition: opacity 150ms ease-out;
+            }
+            @keyframes cpMastheadNavIn {
+              from { opacity: 0; transform: translateX(-8px); }
+              to { opacity: 1; transform: translateX(0); }
+            }
+          `}} />
+          <header data-storefront-header className="cp-masthead bg-[#0d1114] text-white sticky top-0 z-50 border-b border-white/10 h-14 flex items-center">
             <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between gap-3 w-full">
               <div className="flex items-center gap-1">
                 <button aria-label="Menú" className="w-9 h-9 rounded hover:bg-white/10 flex items-center justify-center">
@@ -257,6 +283,16 @@ export default async function StorefrontLayout({
                     </span>
                   )}
                 </a>
+                {/* Nav INLINE en el dark bar — hidden por default, aparece
+                    cuando data-scrolled="true" (después de scrollear ~140px
+                    y perder de vista el bloque grande blanco). */}
+                {cfg.nav.links.length > 0 && (
+                  <nav className="cp-masthead-inline-nav hidden ml-4 lg:ml-6 items-center gap-4 lg:gap-5 text-[12px] font-semibold text-white/90 whitespace-nowrap">
+                    {cfg.nav.links.slice(0, 8).map((l) => (
+                      <a key={l.id} href={l.href} className="hover:text-white transition uppercase tracking-wide">{l.label}</a>
+                    ))}
+                  </nav>
+                )}
               </div>
               <div className="flex items-center gap-2 md:gap-3 text-[13px]">
                 <span className="hidden lg:inline text-white/60 text-[11px] mr-1">
@@ -320,7 +356,7 @@ export default async function StorefrontLayout({
               dark). Al scrollear, la barra de categorías se ancla justo
               debajo del header dark y queda pegada arriba — look The Times. */}
           {(cfg.nav.links.length > 0 || cfg.nav.show_categories_mega) && (
-            <div className="bg-white border-b border-black/15 sticky top-14 z-40">
+            <div className="cp-masthead-cats-row bg-white border-b border-black/15 sticky top-14 z-40">
               <nav className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-center gap-5 md:gap-8 text-[13px] font-semibold text-black flex-wrap">
                 {cfg.nav.show_categories_mega === true && megaCategories.length > 0 && (
                   <CategoriesMegaMenu

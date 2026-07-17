@@ -361,7 +361,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
           'App móvil incluida'
         ],
         cta_label: 'Empezar mes gratis',
-        cta_href: '/mi-cuenta'
+        cta_href: '#pricing'
       },
       {
         id: 'plan-semestral',
@@ -375,7 +375,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
           'Sección VIP y columnistas'
         ],
         cta_label: 'Suscribirme',
-        cta_href: '/mi-cuenta',
+        cta_href: '#pricing',
         highlighted: true
       },
       {
@@ -390,7 +390,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
           'Prioridad en atención al cliente'
         ],
         cta_label: 'Suscribirme anual',
-        cta_href: '/mi-cuenta'
+        cta_href: '#pricing'
       }
     ];
     // article_list: 2 columnas debajo de la portada (Últimas + Tendencias).
