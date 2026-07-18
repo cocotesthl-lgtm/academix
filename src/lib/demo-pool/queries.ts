@@ -29,6 +29,8 @@ export type ArticleRow = {
   category_id: string | null;
   category_slug?: string | null;
   category_name?: string | null;
+  /** YouTube video ID opcional que reemplaza la cover en posiciones featured. */
+  youtube_video_id?: string | null;
   /** True cuando la row viene del pool global (no del tenant). */
   is_demo?: boolean;
   /** El slug del demo original (para tracking / copy-on-edit). */
@@ -142,48 +144,54 @@ export async function fetchArticlesForTenant(
   const catById = new Map(cats.map((c) => [c.id, c]));
   const targetCat = opts.categorySlug ? catBySlug.get(opts.categorySlug) : null;
 
-  // 1. Reales del tenant
+  // 1. Reales del tenant — query defensiva por columna youtube_video_id
+  //    (migration 0074 puede no estar corrida todavía)
   const realDemoRefs = new Set<string>();
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q: any = (svc.from('articles') as any)
-      .select('id, slug, title, excerpt, cover_url, author_name, published_at, category_id, demo_ref')
-      .eq('tenant_id', tenantId)
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .limit(limit);
-    // Filtro por categoría real (si la categoría activa es real)
-    if (targetCat && !targetCat.is_demo) q = q.eq('category_id', targetCat.id);
-    const { data } = await q;
-    for (const a of ((data ?? []) as Array<{ id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; author_name: string | null; published_at: string; category_id: string | null; demo_ref: string | null }>)) {
-      const cat = a.category_id ? catById.get(a.category_id) : null;
-      out.push({
-        id: a.id, slug: a.slug, title: a.title, excerpt: a.excerpt,
-        cover_url: a.cover_url, author_name: a.author_name,
-        published_at: a.published_at, category_id: a.category_id,
-        category_slug: cat?.slug ?? null, category_name: cat?.name ?? null,
-        is_demo: false
-      });
-      if (a.demo_ref) realDemoRefs.add(a.demo_ref);
+  async function selectRealArticles(): Promise<Array<{ id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; author_name: string | null; published_at: string; category_id: string | null; demo_ref: string | null; youtube_video_id?: string | null }>> {
+    const baseCols = 'id, slug, title, excerpt, cover_url, author_name, published_at, category_id, demo_ref';
+    for (const cols of [`${baseCols}, youtube_video_id`, baseCols]) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let q: any = (svc.from('articles') as any).select(cols)
+          .eq('tenant_id', tenantId).eq('status', 'published')
+          .order('published_at', { ascending: false }).limit(limit);
+        if (targetCat && !targetCat.is_demo) q = q.eq('category_id', targetCat.id);
+        const r = await q;
+        if (!r.error) return (r.data ?? []) as never;
+      } catch { /* fallthrough */ }
     }
-  } catch { /* ignore */ }
+    return [];
+  }
+  for (const a of await selectRealArticles()) {
+    const cat = a.category_id ? catById.get(a.category_id) : null;
+    out.push({
+      id: a.id, slug: a.slug, title: a.title, excerpt: a.excerpt,
+      cover_url: a.cover_url, author_name: a.author_name,
+      published_at: a.published_at, category_id: a.category_id,
+      category_slug: cat?.slug ?? null, category_name: cat?.name ?? null,
+      youtube_video_id: a.youtube_video_id ?? null,
+      is_demo: false
+    });
+    if (a.demo_ref) realDemoRefs.add(a.demo_ref);
+  }
 
-  // 2. Demos globales
+  // 2. Demos globales — misma query defensiva por youtube_video_id
   try {
     const hiddenSet = await getHiddenSet(tenantId, 'article');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let q: any = (svc.from('demo_articles') as any)
-      .select('id, slug, title, excerpt, cover_url, author_name, published_at, category_slug')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .limit(limit);
-    // Filtro por categoría demo (targetCat es demo — filtramos por slug)
-    if (targetCat && targetCat.is_demo) q = q.eq('category_slug', targetCat.slug);
-    // Si categoría activa es real, mostramos SOLO reales — no mostramos
-    // demos que quizás tengan mismo slug de categoría pero no matchean el id
-    else if (targetCat && !targetCat.is_demo) q = q.eq('category_slug', '_never_match_');
-    const { data: demos } = await q;
-    for (const d of ((demos ?? []) as Array<{ id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; author_name: string | null; published_at: string; category_slug: string | null }>)) {
+    const baseColsDemo = 'id, slug, title, excerpt, cover_url, author_name, published_at, category_slug';
+    let demos: Array<{ id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; author_name: string | null; published_at: string; category_slug: string | null; youtube_video_id?: string | null }> = [];
+    for (const cols of [`${baseColsDemo}, youtube_video_id`, baseColsDemo]) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let q: any = (svc.from('demo_articles') as any).select(cols)
+          .eq('status', 'published').order('published_at', { ascending: false }).limit(limit);
+        if (targetCat && targetCat.is_demo) q = q.eq('category_slug', targetCat.slug);
+        else if (targetCat && !targetCat.is_demo) q = q.eq('category_slug', '_never_match_');
+        const r = await q;
+        if (!r.error) { demos = (r.data ?? []) as never; break; }
+      } catch { /* fallthrough */ }
+    }
+    for (const d of demos) {
       if (hiddenSet.has(d.slug)) continue;
       if (realDemoRefs.has(d.slug)) continue;
       const cat = d.category_slug ? catBySlug.get(d.category_slug) : null;
@@ -195,6 +203,7 @@ export async function fetchArticlesForTenant(
         category_id: cat?.id ?? null,
         category_slug: d.category_slug,
         category_name: cat?.name ?? null,
+        youtube_video_id: d.youtube_video_id ?? null,
         is_demo: true,
         demo_slug: d.slug
       });

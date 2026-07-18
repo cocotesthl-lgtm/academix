@@ -168,6 +168,7 @@ export default async function StorefrontHome({
     author_name: string | null; published_at: string;
     category_slug?: string | null;
     category_name?: string | null;
+    youtube_video_id?: string | null;
   };
   let blogPreviewArticles: BlogPreviewArticle[] = [];
   // Universo total de artículos que puede necesitar la página (blog_preview
@@ -197,7 +198,8 @@ export default async function StorefrontHome({
     allArticles = merged.map((r) => ({
       id: r.id, slug: r.slug, title: r.title, excerpt: r.excerpt,
       cover_url: r.cover_url, author_name: r.author_name, published_at: r.published_at,
-      category_slug: r.category_slug ?? null, category_name: r.category_name ?? null
+      category_slug: r.category_slug ?? null, category_name: r.category_name ?? null,
+      youtube_video_id: r.youtube_video_id ?? null
     }));
     if (blogPreviewCfg?.enabled) {
       const count = Math.max(1, Math.min(12, blogPreviewCfg.count || 3));
@@ -207,24 +209,20 @@ export default async function StorefrontHome({
 
   // Videos para la sección videos_reel (si está enabled). Trae del pool
   // global + tenant vía helper — si migration 0071 no corrió, devuelve [].
-  // El primer featured=true se muestra como hero grande con autoplay muted;
-  // el resto va en la strip horizontal debajo.
-  type ReelVideo = { slug: string; title: string; youtube_id: string; is_featured?: boolean };
+  // Sin hero destacado: el owner pidió que el video destacado vaya
+  // adentro del artículo featured del showcase, no como sección aparte.
+  type ReelVideo = { slug: string; title: string; youtube_id: string };
   let reelVideos: ReelVideo[] = [];
-  let featuredVideo: ReelVideo | null = null;
   const videosReelCfg = cfg.sections.videos_reel;
   if (videosReelCfg?.enabled) {
     try {
       const { fetchVideosForTenant } = await import('@/lib/demo-pool/queries');
       const vids = await fetchVideosForTenant(tenantId, {
-        limit: Math.max(3, Math.min(8, videosReelCfg.count || 5)) + 1
+        limit: Math.max(3, Math.min(8, videosReelCfg.count || 5))
       });
-      const all = vids.map((v) => ({
-        slug: v.slug, title: v.title, youtube_id: v.youtube_id, is_featured: v.is_featured
+      reelVideos = vids.map((v) => ({
+        slug: v.slug, title: v.title, youtube_id: v.youtube_id
       }));
-      // Primer featured es el hero, el resto (o los non-featured) van a la strip
-      featuredVideo = all.find((v) => v.is_featured) ?? null;
-      reelVideos = all.filter((v) => v !== featuredVideo).slice(0, videosReelCfg.count || 5);
     } catch { /* migration 0071 pendiente */ }
   }
 
@@ -1385,7 +1383,7 @@ export default async function StorefrontHome({
 
           case 'videos_reel': {
             const c = cfg.sections.videos_reel;
-            if (!c?.enabled || (!featuredVideo && reelVideos.length === 0)) return null;
+            if (!c?.enabled || reelVideos.length === 0) return null;
             return (
               <section key={key} {...dt} id={key} className="px-6 py-8"
                 style={{ background: bg ?? undefined }}>
@@ -1393,51 +1391,24 @@ export default async function StorefrontHome({
                   <div className="mb-4 pb-2 border-b-2 border-black">
                     <h2 className="font-serif text-xl font-bold" dangerouslySetInnerHTML={richHtml(c.title || 'Videos destacados')} />
                   </div>
-
-                  {/* Featured hero — 16:9 con autoplay muted inline (loop) */}
-                  {featuredVideo && (
-                    <Link href={`/reels?v=${encodeURIComponent(featuredVideo.slug)}`}
-                      className="block mb-6 group">
-                      <div className="relative aspect-video overflow-hidden bg-black">
-                        <iframe
-                          src={`https://www.youtube.com/embed/${featuredVideo.youtube_id}?autoplay=1&mute=1&loop=1&playlist=${featuredVideo.youtube_id}&controls=0&modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&fs=0&disablekb=1`}
-                          title={featuredVideo.title}
-                          className="absolute inset-0 w-full h-full pointer-events-none"
-                          allow="autoplay; encrypted-media; picture-in-picture"
-                          allowFullScreen={false}
-                          frameBorder="0"
-                        />
-                        {/* Overlay tape gradient inferior + título */}
-                        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none">
-                          <h3 className="font-serif text-2xl md:text-3xl font-bold text-white leading-tight drop-shadow-lg">
-                            {featuredVideo.title}
-                          </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {reelVideos.map((v) => (
+                      <Link key={v.slug} href={`/reels?v=${encodeURIComponent(v.slug)}`}
+                        className="group block">
+                        <div className="relative aspect-[9/16] overflow-hidden bg-black">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`https://img.youtube.com/vi/${v.youtube_id}/hqdefault.jpg`}
+                            alt={v.title}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition"
+                          />
                         </div>
-                      </div>
-                    </Link>
-                  )}
-
-                  {/* Strip horizontal — sin play icon, hover subtle */}
-                  {reelVideos.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                      {reelVideos.map((v) => (
-                        <Link key={v.slug} href={`/reels?v=${encodeURIComponent(v.slug)}`}
-                          className="group block">
-                          <div className="relative aspect-[9/16] overflow-hidden bg-black">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={`https://img.youtube.com/vi/${v.youtube_id}/hqdefault.jpg`}
-                              alt={v.title}
-                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition"
-                            />
-                          </div>
-                          <h3 className="mt-3 font-serif text-[15px] font-bold leading-snug group-hover:underline">
-                            {v.title}
-                          </h3>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
+                        <h3 className="mt-3 font-serif text-[15px] font-bold leading-snug group-hover:underline">
+                          {v.title}
+                        </h3>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </section>
             );
@@ -1489,15 +1460,34 @@ export default async function StorefrontHome({
                         </div>
 
                         <div className="grid md:grid-cols-[1.4fr_2fr] gap-x-6 gap-y-6">
-                          {/* Columna izquierda: artículo GRANDE */}
+                          {/* Columna izquierda: artículo GRANDE.
+                              Si tiene youtube_video_id linkeado, autoplay
+                              muted del video como preview en vez de la foto
+                              cover. Pointer-events-none en iframe para no
+                              robar el click al <Link> padre. */}
                           <Link href={`/blog/${featured.slug}`} className="group block">
-                            {featured.cover_url && (
+                            {featured.youtube_video_id ? (
+                              <div className="aspect-[4/3] overflow-hidden bg-black mb-3 relative">
+                                <iframe
+                                  src={`https://www.youtube.com/embed/${featured.youtube_video_id}?autoplay=1&mute=1&loop=1&playlist=${featured.youtube_video_id}&controls=0&modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&fs=0&disablekb=1`}
+                                  title={featured.title}
+                                  className="absolute inset-0 w-full h-full pointer-events-none"
+                                  allow="autoplay; encrypted-media"
+                                  allowFullScreen={false}
+                                  frameBorder="0"
+                                />
+                                {/* Tape overlay para tapar el chrome YT
+                                    (título flotante top + logo bottom) */}
+                                <div className="absolute top-0 left-0 right-0 h-[42px] bg-black pointer-events-none" />
+                                <div className="absolute bottom-0 left-0 right-0 h-[36px] bg-black pointer-events-none" />
+                              </div>
+                            ) : featured.cover_url ? (
                               <div className="aspect-[4/3] overflow-hidden bg-zinc-100 mb-3">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={featured.cover_url} alt={featured.title}
                                   className="w-full h-full object-cover group-hover:scale-[1.02] transition" />
                               </div>
-                            )}
+                            ) : null}
                             <div className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accent }}>
                               {featured.category_name || 'Nota'}
                             </div>
