@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type ReelVideo = {
   slug: string;
@@ -11,35 +11,30 @@ export type ReelVideo = {
 };
 
 /**
- * Player de shorts estilo NYT / TikTok / Reels.
+ * Player de shorts estilo Reels/TikTok, MINIMALISTA.
  *
- * UX decisiones clave:
- *   - Videos EMPIEZAN PAUSADOS con play button center visible.
- *     Cuando el usuario clickea play, es un user gesture → autoplay
- *     con AUDIO funciona (browsers permiten unmuted playback tras
- *     interacción). Evita el problema de "todo muteado por default"
- *     que reportó el owner.
- *   - Controles UNOBTRUSIVOS a la derecha: up/down arrow en círculos
- *     semitransparentes tipo NYT. Nada de overlay grande en el
- *     centro del video como el diseño anterior.
- *   - Aspect ratio 9:16 fijo y estricto — el iframe respeta el
- *     tamaño del container y YouTube shorts nativos también son 9:16
- *     así que no hay letterbox ni deformación.
- *   - Solo el video activo tiene iframe cargado. Los demás son
- *     posters estáticos.
+ * Decisiones de diseño:
+ *   - Autoplay MUTED cuando el video entra en viewport (browsers lo
+ *     permiten). El usuario ve el video reproduciéndose sin sonido.
+ *     Un click en el botón de volumen lo activa (user gesture → OK).
+ *   - Controls nativos de YouTube OCULTOS via controls=0. Nosotros
+ *     dibujamos nuestros propios: play/pause center, mute/unmute,
+ *     share, todo minimalista.
+ *   - Control del iframe via postMessage (YouTube iframe API). No
+ *     necesitamos cargar el SDK completo, solo mandamos comandos.
+ *   - No tenant name en header, solo back arrow.
  *
- * El "audio muteado por default" del código anterior venía de forzar
- * autoplay. Al no autoplay, ese problema desaparece — el usuario
- * inicia el video con click y ya viene con sonido.
+ * Trade-off honesto: YouTube fuerza el logo "Watch on YouTube" y
+ * el título flotante en shorts embebidos. No hay forma limpia de
+ * ocultarlos desde el iframe. Los tapamos parcialmente con nuestro
+ * overlay pero pueden asomarse en zonas.
  */
 export function ReelsPlayer({
   videos,
-  initialSlug,
-  tenantName
+  initialSlug
 }: {
   videos: ReelVideo[];
   initialSlug: string | null;
-  tenantName: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeSlug, setActiveSlug] = useState<string>(() =>
@@ -47,10 +42,6 @@ export function ReelsPlayer({
       ? initialSlug
       : videos[0]?.slug ?? ''
   );
-  // "Playing" = el usuario apretó play en el video activo. Cambia el
-  // src del iframe para hacer autoplay real (con sonido, porque es
-  // resultado de un user gesture).
-  const [playing, setPlaying] = useState<Set<string>>(new Set());
 
   // Scroll al video inicial al mount
   useEffect(() => {
@@ -59,7 +50,7 @@ export function ReelsPlayer({
     el?.scrollIntoView({ behavior: 'auto', block: 'start' });
   }, [initialSlug]);
 
-  // Track cuál está visible (para up/down navigation)
+  // IntersectionObserver — track cuál está visible
   useEffect(() => {
     if (!containerRef.current) return;
     const observer = new IntersectionObserver(
@@ -87,26 +78,16 @@ export function ReelsPlayer({
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function play(slug: string) {
-    setPlaying((prev) => {
-      const next = new Set(prev);
-      next.add(slug);
-      return next;
-    });
-  }
-
   return (
     <div className="w-full h-svh flex items-center justify-center bg-black text-white overflow-hidden">
-      {/* Header con back + tenant name (top overlay gradient) */}
-      <header className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
-        <Link href="/" className="w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center hover:bg-black/60 pointer-events-auto">
+      {/* Header solo con back button (sin tenant name) */}
+      <header className="absolute top-0 left-0 right-0 z-30 p-3 pointer-events-none">
+        <Link href="/" className="w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center hover:bg-black/70 pointer-events-auto">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </Link>
-        <div className="text-sm font-semibold">{tenantName}</div>
-        <div className="w-10" />
       </header>
 
-      {/* Navigation controls RIGHT SIDE (estilo NYT) — sólo desktop */}
+      {/* Navigation buttons a la derecha — solo desktop */}
       <div className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 z-30 flex-col gap-3">
         <button
           type="button"
@@ -143,8 +124,6 @@ export function ReelsPlayer({
             key={v.slug}
             video={v}
             isActive={activeSlug === v.slug}
-            isPlaying={playing.has(v.slug)}
-            onPlay={() => play(v.slug)}
           />
         ))}
       </div>
@@ -157,43 +136,119 @@ export function ReelsPlayer({
   );
 }
 
-function ReelSection({
-  video, isActive, isPlaying, onPlay
-}: {
-  video: ReelVideo;
-  isActive: boolean;
-  isPlaying: boolean;
-  onPlay: () => void;
-}) {
-  // Solo cargamos el iframe cuando el usuario dio play y el video está
-  // activo. Antes de eso mostramos solo el poster + play button.
-  // Autoplay CON SONIDO (mute=0) es válido porque isPlaying=true
-  // significa que hubo click del usuario (user gesture).
-  const embedSrc = isActive && isPlaying
-    ? `https://www.youtube.com/embed/${video.youtube_id}?autoplay=1&mute=0&playsinline=1&loop=1&playlist=${video.youtube_id}&controls=1&modestbranding=1&rel=0`
-    : '';
+function ReelSection({ video, isActive }: { video: ReelVideo; isActive: boolean }) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [muted, setMuted] = useState(true);
+  const [paused, setPaused] = useState(false);
+  const [shareOk, setShareOk] = useState(false);
+
+  // Cuando el video se activa: mount iframe. Cuando deja de ser activo:
+  // desmount (evita audio en el background).
+  const shouldRenderIframe = isActive;
+
+  // URL del embed: controls=0 (sin controles nativos), autoplay=1&mute=1
+  // (chrome permite autoplay muted), enablejsapi=1 para postMessage.
+  const embedSrc = useMemo(() => {
+    if (!shouldRenderIframe) return '';
+    return `https://www.youtube.com/embed/${video.youtube_id}?autoplay=1&mute=1&playsinline=1&loop=1&playlist=${video.youtube_id}&controls=0&modestbranding=1&rel=0&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1`;
+  }, [shouldRenderIframe, video.youtube_id]);
+
+  // Reset estado local cuando cambia de video activo (nuevo mount)
+  useEffect(() => {
+    if (isActive) {
+      setMuted(true);
+      setPaused(false);
+    }
+  }, [isActive, video.slug]);
+
+  // Helper para mandar comandos al iframe via postMessage
+  const sendCommand = useCallback((func: string, args: unknown[] = []) => {
+    const iframe = iframeRef.current;
+    if (!iframe || !iframe.contentWindow) return;
+    iframe.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func, args }),
+      '*'
+    );
+  }, []);
+
+  function toggleMute() {
+    if (muted) {
+      sendCommand('unMute');
+      sendCommand('setVolume', [100]);
+      setMuted(false);
+    } else {
+      sendCommand('mute');
+      setMuted(true);
+    }
+  }
+
+  function togglePlay() {
+    if (paused) {
+      sendCommand('playVideo');
+      setPaused(false);
+    } else {
+      sendCommand('pauseVideo');
+      setPaused(true);
+    }
+  }
+
+  async function share() {
+    const url = typeof window !== 'undefined' ? window.location.origin + window.location.pathname + '?v=' + video.slug : '';
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title: video.title, url });
+        return;
+      } catch { /* user cancelled */ }
+    }
+    // Fallback clipboard
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareOk(true);
+      setTimeout(() => setShareOk(false), 2000);
+    } catch { /* ignore */ }
+  }
 
   return (
     <section
       data-slug={video.slug}
       className="h-svh w-full flex items-center justify-center snap-start relative bg-black"
     >
-      {/* Contenedor del video con aspect 9:16 estricto.
-          max-height evita que en pantallas muy altas el video se
-          estire más allá del viewport. */}
+      {/* Video 9:16 estricto */}
       <div className="relative bg-black" style={{ aspectRatio: '9 / 16', height: 'min(90svh, 720px)', maxWidth: '100vw' }}>
         {embedSrc ? (
-          <iframe
-            src={embedSrc}
-            title={video.title}
-            className="absolute inset-0 w-full h-full"
-            allow="autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-            frameBorder="0"
-          />
-        ) : (
           <>
-            {/* Poster estático mientras no está en play */}
+            <iframe
+              ref={iframeRef}
+              src={embedSrc}
+              title={video.title}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen={false}
+              frameBorder="0"
+            />
+            {/* Overlay tap-area: click centro = play/pause. pointer-events-auto
+                encima del iframe para intercepar clicks (iframe está en
+                pointer-events-none para no interferir). */}
+            <button
+              type="button"
+              onClick={togglePlay}
+              className="absolute inset-0 z-10"
+              aria-label={paused ? 'Reproducir' : 'Pausar'}
+            />
+            {/* Play button visible solo cuando está pausado */}
+            {paused && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur border-2 border-white/80 flex items-center justify-center">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          // Poster estático cuando no está activo (video off-screen)
+          <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`}
@@ -203,25 +258,60 @@ function ReelSection({
                 (e.currentTarget as HTMLImageElement).src = `https://img.youtube.com/vi/${video.youtube_id}/hqdefault.jpg`;
               }}
             />
-            {/* Play button center — click reproduce con audio */}
+          </>
+        )}
+
+        {/* Controles custom bottom-right (mute + share) — solo si iframe está mounted */}
+        {shouldRenderIframe && (
+          <div className="absolute bottom-4 right-4 z-30 flex flex-col gap-3">
+            {/* Mute/unmute */}
             <button
               type="button"
-              onClick={onPlay}
-              className="absolute inset-0 flex items-center justify-center group"
-              aria-label="Reproducir video"
+              onClick={toggleMute}
+              className="w-11 h-11 rounded-full bg-black/50 backdrop-blur hover:bg-black/70 flex items-center justify-center transition"
+              aria-label={muted ? 'Activar sonido' : 'Silenciar'}
             >
-              <div className="w-20 h-20 rounded-full bg-white/25 backdrop-blur-sm border-2 border-white/60 flex items-center justify-center group-hover:bg-white/40 group-hover:scale-110 transition">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
-                  <path d="M8 5v14l11-7z" />
+              {muted ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <line x1="23" y1="9" x2="17" y2="15"/>
+                  <line x1="17" y1="9" x2="23" y2="15"/>
                 </svg>
-              </div>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                </svg>
+              )}
             </button>
-          </>
+            {/* Share */}
+            <button
+              type="button"
+              onClick={share}
+              className="w-11 h-11 rounded-full bg-black/50 backdrop-blur hover:bg-black/70 flex items-center justify-center transition relative"
+              aria-label="Compartir"
+            >
+              {shareOk ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="18" cy="5" r="3"/>
+                  <circle cx="6" cy="12" r="3"/>
+                  <circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+              )}
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Info sobre el video (overlay inferior con gradient) */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 pt-16 pb-6 px-4 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none">
+      {/* Info sobre el video */}
+      <div className="absolute bottom-0 left-0 right-24 z-20 pt-16 pb-6 px-4 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none">
         <div className="max-w-[420px] mx-auto text-white">
           <h2 className="font-serif text-lg font-bold leading-tight drop-shadow-lg">
             {video.title}

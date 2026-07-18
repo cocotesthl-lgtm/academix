@@ -38,7 +38,6 @@ export default async function ReelsPage({
           youtube_id: v.youtube_id
         }))}
         initialSlug={initialSlug}
-        tenantName={tenant.name}
       />
     </div>
   );
