@@ -13,17 +13,16 @@ export type SidebarArticle = {
 /**
  * Sidebar de la página de nota — estilo Infobae/La Nación.
  *
- * Tiene tres bloques configurables (arriba tabs, abajo lista):
- *   - Lo Último (últimos por fecha)
- *   - Más leídas (proxy: orden aleatorio determinístico por ahora)
- *   - Te recomendamos (mezcla del pool)
+ * Bloques (top-down):
+ *   1. AD SLOT TOP (skyscraper vertical)
+ *   2. Tabs "Más leídas" | "Lo Último" (ambos con thumb + título)
+ *   3. AD SLOT MIDDLE (rectangle)
+ *   4. "Te recomendamos" — STICKY con top-24
  *
- * El bloque "Te recomendamos" es sticky con top-24 → mientras el usuario
- * scrollea leyendo la nota, el bloque queda pegado a la vista.
- *
- * TODO: cuando exista tracking de views, "Más leídas" ordena por view_count
- * y "Te recomendamos" usa un ranking por category match + freshness.
- * Por ahora los 3 usan la misma lista base con distinto orden.
+ * El sticky funciona con top-24 (56px del dark bar + 40px de nav
+ * categorías = 96px ≈ top-24). Se despega naturalmente cuando el
+ * container `<aside>` se acaba (que ahora se extiende hasta el
+ * final de "Últimas Noticias" gracias al refactor del article page).
  */
 export function ArticleSidebar({
   articles,
@@ -34,27 +33,25 @@ export function ArticleSidebar({
 }) {
   const [activeTab, setActiveTab] = useState<'ultimo' | 'leidas'>('leidas');
 
-  // "Más leídas" = orden aleatorio pero estable por slug (sirve como proxy
-  // hasta que tengamos view tracking). "Lo último" = orden natural
-  // (los artículos ya vienen ordenados por published_at DESC del helper).
-  const ultimoList = articles.slice(0, 6);
+  const ultimoList = articles.slice(0, 5);
   const leidasList = useMemo(() => {
     const arr = articles.slice();
-    // Shuffle determinístico
     let seed = 42;
     arr.sort(() => {
       seed = (seed * 9301 + 49297) % 233280;
       return seed / 233280 - 0.5;
     });
-    return arr.slice(0, 6);
+    return arr.slice(0, 5);
   }, [articles]);
 
-  // "Te recomendamos" = 4 artículos con thumbs — sticky, siempre visible
   const recomendadosList = articles.slice(0, 4);
 
   return (
     <div className="space-y-6">
-      {/* Bloque 1: Lo Último / Más leídas (tabs) */}
+      {/* Ad top */}
+      <AdSlotSidebar kind="skyscraper" label="Publicidad" />
+
+      {/* Bloque tabs — todos con thumbnails */}
       <div className="border border-black/10">
         <div className="flex border-b-2 border-black/20">
           <TabBtn
@@ -72,23 +69,36 @@ export function ArticleSidebar({
             Lo Último
           </TabBtn>
         </div>
-        <ol className="divide-y divide-black/5">
-          {(activeTab === 'leidas' ? leidasList : ultimoList).map((a, i) => (
+        <ul className="divide-y divide-black/5">
+          {(activeTab === 'leidas' ? leidasList : ultimoList).map((a) => (
             <li key={a.slug} className="p-3">
               <Link href={`/blog/${a.slug}`} className="flex items-start gap-3 group">
-                <span className="text-2xl font-black shrink-0 leading-none" style={{ color: primary }}>
-                  {i + 1}
-                </span>
-                <span className="font-serif text-sm font-bold leading-snug group-hover:underline">
-                  {a.title}
-                </span>
+                {a.cover_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.cover_url} alt="" className="w-16 h-16 object-cover shrink-0" />
+                ) : (
+                  <div className="w-16 h-16 bg-black/5 shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  {a.category_name && (
+                    <div className="text-[10px] uppercase tracking-widest text-black/45 mb-0.5">
+                      {a.category_name}
+                    </div>
+                  )}
+                  <h4 className="font-serif text-[13px] font-bold leading-snug group-hover:underline">
+                    {a.title}
+                  </h4>
+                </div>
               </Link>
             </li>
           ))}
-        </ol>
+        </ul>
       </div>
 
-      {/* Bloque 2: Te recomendamos — STICKY */}
+      {/* Ad middle */}
+      <AdSlotSidebar kind="rectangle" label="Publicidad" />
+
+      {/* Bloque "Te recomendamos" — sticky */}
       <div className="border border-black/10 sticky top-24">
         <div className="px-3 py-2 border-b-2 border-black/20">
           <strong className="text-sm">Te Recomendamos</strong>
@@ -141,5 +151,25 @@ function TabBtn({
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * Placeholder inline para ads en el sidebar. Rectangle o Skyscraper.
+ * Cuando el owner conecte un ad network real, se reemplaza este componente
+ * por el snippet del provider.
+ */
+function AdSlotSidebar({ kind, label }: { kind: 'rectangle' | 'skyscraper'; label: string }) {
+  const aspect = kind === 'rectangle' ? '300 / 250' : '160 / 600';
+  return (
+    <div>
+      <div className="text-center text-[10px] uppercase tracking-widest text-black/45 mb-1.5">
+        {label}
+      </div>
+      <div className="w-full bg-black/[0.04] border border-dashed border-black/20 flex items-center justify-center text-black/40 text-xs uppercase tracking-widest"
+        style={{ aspectRatio: aspect }}>
+        Anuncio {kind === 'rectangle' ? '300×250' : '160×600'}
+      </div>
+    </div>
   );
 }

@@ -6,6 +6,8 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { storefrontOrigin, truncate } from '@/lib/seo/meta';
 import { fetchArticlesForTenant } from '@/lib/demo-pool/queries';
 import { ArticleSidebar } from '@/components/storefront/blog/ArticleSidebar';
+import { AdSquaresPair } from '@/components/storefront/blog/AdSlot';
+import { inlineAdHtml } from '@/components/storefront/blog/AdSlot';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,22 +124,21 @@ export async function generateMetadata({
 }
 
 /**
- * Inserta un card "Te puede interesar" en medio del body_html.
- * Encuentra el N-ésimo tag </p> (default 3ro) y mete el card ahí.
- * Si no hay suficientes párrafos, lo pone al final.
+ * Inserta un HTML snippet en medio del body_html después del N-ésimo </p>.
+ * Si hay menos párrafos, lo pone al final.
  */
-function insertInterestCard(bodyHtml: string, cardHtml: string, afterNthParagraph = 3): string {
+function insertAfterNthParagraph(bodyHtml: string, snippet: string, n: number): string {
   const closeTag = '</p>';
   let count = 0;
   let idx = -1;
-  while (count < afterNthParagraph) {
+  while (count < n) {
     idx = bodyHtml.indexOf(closeTag, idx + 1);
     if (idx === -1) break;
     count++;
   }
-  if (idx === -1) return bodyHtml + cardHtml;
+  if (idx === -1) return bodyHtml + snippet;
   const cut = idx + closeTag.length;
-  return bodyHtml.slice(0, cut) + cardHtml + bodyHtml.slice(cut);
+  return bodyHtml.slice(0, cut) + snippet + bodyHtml.slice(cut);
 }
 
 export default async function ArticlePublicPage({
@@ -197,13 +198,28 @@ export default async function ArticlePublicPage({
       </aside>`
     : '';
 
-  const bodyWithCard = interestCardHtml
-    ? insertInterestCard(article.body_html, interestCardHtml, 3)
-    : article.body_html;
+  // Inyectamos varias cosas dentro del body_html en orden:
+  //   1er banner de ad → después del 2do párrafo
+  //   te puede interesar → después del 3er párrafo
+  //   rectangle ad     → después del 5to párrafo
+  //
+  // Se insertan en orden inverso (últimos primero) para que las
+  // posiciones de los primeros no se corran al agregar los siguientes.
+  let bodyWithExtras = article.body_html;
+  const inlineRectAd = inlineAdHtml('rectangle');
+  const inlineBannerAd = inlineAdHtml('banner');
+  bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, inlineRectAd, 5);
+  if (interestCardHtml) {
+    bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, interestCardHtml, 3);
+  }
+  bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, inlineBannerAd, 2);
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      {/* Layout 2 columnas: contenido a la izquierda, sidebar a la derecha */}
+      {/* Layout 2 columnas: contenido (article + últimas noticias) a la
+          izquierda, sidebar a la derecha. Al meter Últimas Noticias
+          DENTRO del grid, la aside crece más y el sticky de
+          "Te Recomendamos" acompaña el scroll hasta abajo de Últimas. */}
       <div className="grid lg:grid-cols-[1fr_320px] gap-10">
         {/* ── COLUMNA PRINCIPAL ── */}
         <article className="min-w-0">
@@ -229,7 +245,7 @@ export default async function ArticlePublicPage({
 
           <div
             className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:underline"
-            dangerouslySetInnerHTML={{ __html: bodyWithCard }}
+            dangerouslySetInnerHTML={{ __html: bodyWithExtras }}
           />
 
           {/* Compartir + separator */}
@@ -239,6 +255,9 @@ export default async function ArticlePublicPage({
             <ShareLink kind="whatsapp" href={`https://wa.me/?text=${encodeURIComponent(article.title + ' — ' + storefrontOrigin(tenant.slug) + '/blog/' + slug)}`} />
             <ShareLink kind="twitter" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(`${storefrontOrigin(tenant.slug)}/blog/${slug}`)}&text=${encodeURIComponent(article.title)}`} />
           </div>
+
+          {/* Par de squares de ads — típico ubicación post-share */}
+          <AdSquaresPair />
 
           {/* Seguir leyendo */}
           {seguirLeyendo.length > 0 && (
@@ -277,6 +296,40 @@ export default async function ArticlePublicPage({
               </div>
             </section>
           )}
+
+          {/* ── ÚLTIMAS NOTICIAS antes del footer ── */}
+          {/* Vive dentro del <article> (columna izq) para que el sticky
+              del sidebar acompañe hasta abajo y se despegue recién cuando
+              termina esta sección. */}
+          {ultimasNoticias.length > 0 && (
+            <section className="mt-16 pt-8 border-t-2 border-black">
+              <h2 className="font-serif text-2xl font-bold mb-6">Últimas Noticias</h2>
+              <div className="grid md:grid-cols-2 gap-x-8 gap-y-5">
+                {ultimasNoticias.map((a) => (
+                  <Link key={a.slug} href={`/blog/${a.slug}`}
+                    className="flex gap-4 group items-start border-b border-black/5 pb-4">
+                    <div className="flex-1 min-w-0">
+                      {a.category_name && (
+                        <div className="text-[10px] uppercase tracking-widest text-black/45 mb-1">
+                          {a.category_name}
+                        </div>
+                      )}
+                      <h3 className="font-serif font-bold text-[15px] leading-snug group-hover:underline">
+                        {a.title}
+                      </h3>
+                      {a.excerpt && (
+                        <p className="text-xs text-black/55 mt-1 line-clamp-2">{a.excerpt}</p>
+                      )}
+                    </div>
+                    {a.cover_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={a.cover_url} alt="" className="w-24 h-20 object-cover shrink-0" />
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </article>
 
         {/* ── SIDEBAR (sticky con "Te recomendamos") ── */}
@@ -290,37 +343,6 @@ export default async function ArticlePublicPage({
           />
         </aside>
       </div>
-
-      {/* ── ÚLTIMAS NOTICIAS antes del footer (grid grande + sidebar corto) ── */}
-      {ultimasNoticias.length > 0 && (
-        <section className="mt-16 pt-8 border-t-2 border-black">
-          <h2 className="font-serif text-2xl font-bold mb-6">Últimas Noticias</h2>
-          <div className="grid md:grid-cols-2 gap-x-8 gap-y-5">
-            {ultimasNoticias.map((a) => (
-              <Link key={a.slug} href={`/blog/${a.slug}`}
-                className="flex gap-4 group items-start border-b border-black/5 pb-4">
-                <div className="flex-1 min-w-0">
-                  {a.category_name && (
-                    <div className="text-[10px] uppercase tracking-widest text-black/45 mb-1">
-                      {a.category_name}
-                    </div>
-                  )}
-                  <h3 className="font-serif font-bold text-[15px] leading-snug group-hover:underline">
-                    {a.title}
-                  </h3>
-                  {a.excerpt && (
-                    <p className="text-xs text-black/55 mt-1 line-clamp-2">{a.excerpt}</p>
-                  )}
-                </div>
-                {a.cover_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={a.cover_url} alt="" className="w-24 h-20 object-cover shrink-0" />
-                )}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
