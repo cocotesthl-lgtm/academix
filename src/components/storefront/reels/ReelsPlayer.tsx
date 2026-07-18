@@ -42,6 +42,20 @@ export function ReelsPlayer({
       ? initialSlug
       : videos[0]?.slug ?? ''
   );
+  // Mute preference PERSISTENTE en toda la sesión. Cuando el usuario
+  // desmutea uno, los siguientes vienen desmuteados también. Se restaura
+  // desde localStorage para persistir entre navegaciones dentro del sitio.
+  const [globalMuted, setGlobalMuted] = useState(true);
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('reels-muted');
+      if (saved === 'false') setGlobalMuted(false);
+    } catch { /* localStorage bloqueado */ }
+  }, []);
+  const setMutedPersist = useCallback((v: boolean) => {
+    setGlobalMuted(v);
+    try { window.localStorage.setItem('reels-muted', String(v)); } catch { /* ignore */ }
+  }, []);
 
   // Scroll al video inicial al mount
   useEffect(() => {
@@ -124,6 +138,8 @@ export function ReelsPlayer({
             key={v.slug}
             video={v}
             isActive={activeSlug === v.slug}
+            globalMuted={globalMuted}
+            setGlobalMuted={setMutedPersist}
           />
         ))}
       </div>
@@ -136,29 +152,33 @@ export function ReelsPlayer({
   );
 }
 
-function ReelSection({ video, isActive }: { video: ReelVideo; isActive: boolean }) {
+function ReelSection({
+  video, isActive, globalMuted, setGlobalMuted
+}: {
+  video: ReelVideo;
+  isActive: boolean;
+  globalMuted: boolean;
+  setGlobalMuted: (v: boolean) => void;
+}) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
   const [shareOk, setShareOk] = useState(false);
 
-  // Cuando el video se activa: mount iframe. Cuando deja de ser activo:
-  // desmount (evita audio en el background).
   const shouldRenderIframe = isActive;
 
-  // URL del embed: controls=0 (sin controles nativos), autoplay=1&mute=1
-  // (chrome permite autoplay muted), enablejsapi=1 para postMessage.
+  // URL del embed. La mute inicial depende de globalMuted (persiste sesión).
   const embedSrc = useMemo(() => {
     if (!shouldRenderIframe) return '';
-    return `https://www.youtube.com/embed/${video.youtube_id}?autoplay=1&mute=1&playsinline=1&loop=1&playlist=${video.youtube_id}&controls=0&modestbranding=1&rel=0&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1`;
-  }, [shouldRenderIframe, video.youtube_id]);
+    const mute = globalMuted ? '1' : '0';
+    // autoplay=1 con mute=0 sólo funciona si browser YA tiene consent
+    // (user interactuó). Como globalMuted arranca true por default,
+    // el primer video siempre autoplaya muted → siempre funciona.
+    return `https://www.youtube.com/embed/${video.youtube_id}?autoplay=1&mute=${mute}&playsinline=1&loop=1&playlist=${video.youtube_id}&controls=0&modestbranding=1&rel=0&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1`;
+  }, [shouldRenderIframe, video.youtube_id, globalMuted]);
 
-  // Reset estado local cuando cambia de video activo (nuevo mount)
+  // Reset paused cuando cambia de video (empieza reproduciendo)
   useEffect(() => {
-    if (isActive) {
-      setMuted(true);
-      setPaused(false);
-    }
+    if (isActive) setPaused(false);
   }, [isActive, video.slug]);
 
   // Helper para mandar comandos al iframe via postMessage
@@ -172,13 +192,13 @@ function ReelSection({ video, isActive }: { video: ReelVideo; isActive: boolean 
   }, []);
 
   function toggleMute() {
-    if (muted) {
+    if (globalMuted) {
       sendCommand('unMute');
       sendCommand('setVolume', [100]);
-      setMuted(false);
+      setGlobalMuted(false);
     } else {
       sendCommand('mute');
-      setMuted(true);
+      setGlobalMuted(true);
     }
   }
 
@@ -226,6 +246,13 @@ function ReelSection({ video, isActive }: { video: ReelVideo; isActive: boolean 
               allowFullScreen={false}
               frameBorder="0"
             />
+            {/* Overlays opacos que tapan el chrome de YouTube shorts:
+                - Top: canal + título flotante (~72px)
+                - Bottom: "Watch on YouTube" + logo (~50px)
+                Sin estos overlays se ve el profile "Dev_gabo" y el título
+                superpuesto que el owner reportó. */}
+            <div className="absolute top-0 left-0 right-0 h-[72px] bg-black pointer-events-none z-[5]" />
+            <div className="absolute bottom-0 left-0 right-0 h-[50px] bg-black pointer-events-none z-[5]" />
             {/* Overlay tap-area: click centro = play/pause. pointer-events-auto
                 encima del iframe para intercepar clicks (iframe está en
                 pointer-events-none para no interferir). */}
@@ -269,9 +296,9 @@ function ReelSection({ video, isActive }: { video: ReelVideo; isActive: boolean 
               type="button"
               onClick={toggleMute}
               className="w-11 h-11 rounded-full bg-black/50 backdrop-blur hover:bg-black/70 flex items-center justify-center transition"
-              aria-label={muted ? 'Activar sonido' : 'Silenciar'}
+              aria-label={globalMuted ? 'Activar sonido' : 'Silenciar'}
             >
-              {muted ? (
+              {globalMuted ? (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
                   <line x1="23" y1="9" x2="17" y2="15"/>

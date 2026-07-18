@@ -346,7 +346,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     // El click en un thumb va a /reels?v=<slug> con player fullscreen
     // vertical autoplay.
     c.sections.videos_reel.enabled = true;
-    c.sections.videos_reel.title = 'Videos de hoy';
+    c.sections.videos_reel.title = 'Videos destacados';
     c.sections.videos_reel.count = 5;
     // Suscripción/membresía tipo NYT/WSJ/The Times: 3 planes con distintas
     // periodicidades. El owner conecta los precios y el link con el

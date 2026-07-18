@@ -54,6 +54,7 @@ export type VideoRow = {
   category_slug?: string | null;
   category_name?: string | null;
   position: number;
+  is_featured?: boolean;
   is_demo?: boolean;
 };
 
@@ -219,27 +220,38 @@ export async function fetchVideosForTenant(
   const out: VideoRow[] = [];
 
   const realDemoRefs = new Set<string>();
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (svc.from('videos') as any)
-      .select('id, slug, title, description, youtube_id, position, demo_ref')
-      .eq('tenant_id', tenantId)
-      .order('position', { ascending: true })
-      .limit(limit);
-    for (const v of ((data ?? []) as Array<VideoRow & { demo_ref: string | null }>)) {
-      out.push({ ...v, is_demo: false });
-      if (v.demo_ref) realDemoRefs.add(v.demo_ref);
-    }
-  } catch { /* migration 0071 pendiente */ }
+  // Query defensiva — is_featured requiere migration 0073, retry sin él
+  async function selectVideosWithFallback(tbl: string, tenantFilter: boolean): Promise<VideoRow[]> {
+    const baseCols = 'id, slug, title, description, youtube_id, position';
+    const extraCols = tenantFilter ? ', demo_ref, is_featured' : ', category_slug, is_featured';
+    // Primer intento con is_featured
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q: any = (svc.from(tbl) as any).select(baseCols + extraCols);
+      if (tenantFilter) q = q.eq('tenant_id', tenantId);
+      const r = await q.order('is_featured', { ascending: false }).order('position', { ascending: true }).limit(limit);
+      if (!r.error) return (r.data ?? []) as VideoRow[];
+    } catch { /* fallthrough */ }
+    // Retry sin is_featured
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q: any = (svc.from(tbl) as any).select(baseCols + (tenantFilter ? ', demo_ref' : ', category_slug'));
+      if (tenantFilter) q = q.eq('tenant_id', tenantId);
+      const r = await q.order('position', { ascending: true }).limit(limit);
+      return (r.data ?? []) as VideoRow[];
+    } catch { return []; }
+  }
+
+  const realVideos = await selectVideosWithFallback('videos', true);
+  for (const v of realVideos as Array<VideoRow & { demo_ref: string | null }>) {
+    out.push({ ...v, is_demo: false });
+    if (v.demo_ref) realDemoRefs.add(v.demo_ref);
+  }
 
   try {
     const hiddenSet = await getHiddenSet(tenantId, 'video');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: demos } = await (svc.from('demo_videos') as any)
-      .select('id, slug, title, description, youtube_id, category_slug, position')
-      .order('position', { ascending: true })
-      .limit(limit);
-    for (const d of ((demos ?? []) as VideoRow[])) {
+    const demos = await selectVideosWithFallback('demo_videos', false);
+    for (const d of demos) {
       if (hiddenSet.has(d.slug)) continue;
       if (realDemoRefs.has(d.slug)) continue;
       out.push({
