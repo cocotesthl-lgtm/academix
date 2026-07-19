@@ -410,10 +410,13 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     // matchean los accent_color del seed de categorías (ver seed-news.ts).
     c.sections.category_showcase.enabled = true;
     c.sections.category_showcase.blocks = [
-      { id: 'cs-mundo',     title: 'Mundo',     category_slug: 'mundo',     accent_color: '#0891b2', count: 7 },
-      { id: 'cs-deportes',  title: 'Deportes',  category_slug: 'deportes',  accent_color: '#16a34a', count: 7 },
-      { id: 'cs-economia',  title: 'Economía',  category_slug: 'economia',  accent_color: '#ca8a04', count: 7 },
-      { id: 'cs-lifestyle', title: 'Lifestyle', category_slug: 'lifestyle', accent_color: '#db2777', count: 7 }
+      { id: 'cs-mundo',      title: 'Mundo',      category_slug: 'mundo',      accent_color: '#0891b2', count: 5 },
+      { id: 'cs-politica',   title: 'Política',   category_slug: 'politica',   accent_color: '#7c3aed', count: 5 },
+      { id: 'cs-economia',   title: 'Economía',   category_slug: 'economia',   accent_color: '#ca8a04', count: 5 },
+      { id: 'cs-deportes',   title: 'Deportes',   category_slug: 'deportes',   accent_color: '#16a34a', count: 5 },
+      { id: 'cs-negocios',   title: 'Negocios',   category_slug: 'negocios',   accent_color: '#0d9488', count: 5 },
+      { id: 'cs-policiales', title: 'Policiales', category_slug: 'policiales', accent_color: '#991b1b', count: 5 },
+      { id: 'cs-lifestyle',  title: 'Lifestyle',  category_slug: 'lifestyle',  accent_color: '#db2777', count: 5 }
     ];
     // Portada en layout newspaper: 1 gran artículo + 2 laterales + fila de 3.
     // Total 6 artículos organizados con jerarquía tipo NYT.

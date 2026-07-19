@@ -1428,9 +1428,11 @@ export default async function StorefrontHome({
                 style={{ background: bg ?? undefined }}>
                 <div className="max-w-6xl mx-auto space-y-12">
                   {blocks.map((block) => {
-                    // 1 grande + 6 chicos = 7 total (default). El owner puede cambiar
-                    // en el editor entre 5 (1+4), 7 (1+6, recomendado), 9 (1+8).
-                    const total = Math.max(3, Math.min(9, block.count ?? 7));
+                    // 1 grande + 4 chicos en cuadrícula 2×2 = 5 total. El
+                    // block.count histórico podía llegar a 7 o 9; se clampa
+                    // a 5 en el render para forzar el layout NYT correcto
+                    // (uniforme entre tenants, sin importar la config vieja).
+                    const total = 5;
                     const items = allArticles
                       .filter((a) => !block.category_slug || a.category_slug === block.category_slug)
                       .slice(0, total);
@@ -1502,8 +1504,8 @@ export default async function StorefrontHome({
                             )}
                           </Link>
 
-                          {/* Columna derecha: grid 3×2 de chicos (6 items) */}
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-5">
+                          {/* Columna derecha: cuadrícula 2×2 de chicos (4 items) */}
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-5">
                             {smalls.map((a) => (
                               <Link key={a.id} href={`/blog/${a.slug}`} className="group block">
                                 {a.cover_url && (
