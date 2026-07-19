@@ -115,6 +115,7 @@ export type SectionKey =
   | 'blog_preview'
   | 'article_list'
   | 'category_showcase'
+  | 'featured_event'   // strip destacado para un evento (Mundial, elecciones, gran pelea, etc)
   | 'videos_reel'
   | 'products'
   | 'cta_final';
@@ -358,6 +359,21 @@ export type SiteConfig = {
         count?: number;             // total de artículos (default 5 = 1 grande + 4 chicos)
       }>;
     };
+    /**
+     * Strip destacado para un evento puntual — Mundial de fútbol,
+     * elecciones, gran pelea, terremoto, huracán, cumbre. Se
+     * distingue del category_showcase en que agrupa artículos por
+     * TAG (no por categoría) y no tiene featured grande — sólo una
+     * fila horizontal de 4 tarjetas bajo un título gigante en serif.
+     * Look: "Mundial de fútbol de 2026" del NYT / Clarín.
+     */
+    featured_event: SectionBase & {
+      title: string;                // "Mundial de fútbol 2030"
+      subtitle?: string;            // línea secundaria opcional
+      tag: string;                  // filtra artículos que tengan este tag
+      count?: number;               // default 4 (recomendado para caber en 1 fila desktop)
+      accent_color?: string;        // color del kicker de cada tarjeta
+    };
     products: SectionBase & {
       title: string;
       subtitle: string;
@@ -421,6 +437,7 @@ export const DEFAULT_ORDER: SectionKey[] = [
   'products',        // grid completo de productos físicos
   'blog_preview',    // preview del blog antes del contacto
   'article_list',    // multi-columnas de headlines (sitios editoriales)
+  'featured_event',    // strip destacado de un evento puntual (arriba, alto contraste)
   'category_showcase', // vitrinas por categoría estilo NYT / The Times
   'videos_reel',       // strip de shorts + player /reels
   'contact',
@@ -662,6 +679,14 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     category_showcase: {
       enabled: false,
       blocks: []
+    },
+    featured_event: {
+      enabled: false,       // sólo se activa en el template news
+      title: 'Mundial de fútbol 2030',
+      subtitle: '',
+      tag: 'mundial-2030',
+      count: 4,
+      accent_color: '#7c3aed'
     },
     videos_reel: {
       enabled: false,

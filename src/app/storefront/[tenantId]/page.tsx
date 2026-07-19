@@ -169,6 +169,7 @@ export default async function StorefrontHome({
     category_slug?: string | null;
     category_name?: string | null;
     youtube_video_id?: string | null;
+    tags?: string[] | null;
   };
   let blogPreviewArticles: BlogPreviewArticle[] = [];
   // Universo total de artículos que puede necesitar la página (blog_preview
@@ -178,7 +179,8 @@ export default async function StorefrontHome({
   const blogPreviewCfg = cfg.sections.blog_preview;
   const articleListCfg = cfg.sections.article_list;
   const categoryShowcaseCfg = cfg.sections.category_showcase;
-  const needsArticles = blogPreviewCfg?.enabled || articleListCfg?.enabled || categoryShowcaseCfg?.enabled;
+  const featuredEventCfg = cfg.sections.featured_event;
+  const needsArticles = blogPreviewCfg?.enabled || articleListCfg?.enabled || categoryShowcaseCfg?.enabled || featuredEventCfg?.enabled;
   if (needsArticles) {
     // Usa el helper del pool: devuelve union de articles reales del tenant
     // + demos globales visibles (menos hidden + menos ya customizados por
@@ -192,6 +194,13 @@ export default async function StorefrontHome({
     if (categoryShowcaseCfg?.enabled && Array.isArray(categoryShowcaseCfg.blocks)) {
       needed += categoryShowcaseCfg.blocks.length * 5;
     }
+    // featured_event necesita que las notas con su tag estén en el universo
+    // cargado. Como el filter es por tag y no por posición, sumamos margen
+    // para que los ~4 items del evento (que pueden ser viejos) entren en la
+    // ventana del fetch.
+    if (featuredEventCfg?.enabled) {
+      needed += Math.max(4, Math.min(6, featuredEventCfg.count ?? 4)) * 3;
+    }
     needed = Math.min(80, Math.max(3, needed));
     const { fetchArticlesForTenant } = await import('@/lib/demo-pool/queries');
     const merged = await fetchArticlesForTenant(tenantId, { limit: needed });
@@ -199,7 +208,8 @@ export default async function StorefrontHome({
       id: r.id, slug: r.slug, title: r.title, excerpt: r.excerpt,
       cover_url: r.cover_url, author_name: r.author_name, published_at: r.published_at,
       category_slug: r.category_slug ?? null, category_name: r.category_name ?? null,
-      youtube_video_id: r.youtube_video_id ?? null
+      youtube_video_id: r.youtube_video_id ?? null,
+      tags: Array.isArray(r.tags) ? r.tags : null
     }));
     if (blogPreviewCfg?.enabled) {
       const count = Math.max(1, Math.min(12, blogPreviewCfg.count || 3));
@@ -1405,6 +1415,56 @@ export default async function StorefrontHome({
                         </div>
                         <h3 className="mt-3 font-serif text-[15px] font-bold leading-snug group-hover:underline">
                           {v.title}
+                        </h3>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            );
+          }
+
+          case 'featured_event': {
+            // Strip destacado para un evento puntual (Mundial, elecciones,
+            // gran pelea, cumbre, terremoto). Look "Mundial de fútbol 2026"
+            // del NYT: título gigante en serif arriba + fila horizontal de
+            // 4 tarjetas (cover 4:3 + kicker de categoría + headline).
+            //
+            // Filtra por TAG (no por categoría) para permitir agrupar notas
+            // de distintas secciones bajo un mismo evento.
+            const c = cfg.sections.featured_event;
+            if (!c?.tag || allArticles.length === 0) return null;
+            const count = Math.max(2, Math.min(6, c.count ?? 4));
+            const items = allArticles
+              .filter((a) => Array.isArray(a.tags) && a.tags.includes(c.tag))
+              .slice(0, count);
+            if (items.length === 0) return null;
+            const accent = c.accent_color || '#7c3aed';
+            return (
+              <section key={key} {...dt} id={key} className="px-6 py-10"
+                style={{ background: bg ?? undefined }}>
+                <div className="max-w-6xl mx-auto">
+                  <h2 className="font-serif text-3xl md:text-5xl font-extrabold leading-tight mb-6">
+                    {c.title}
+                  </h2>
+                  {c.subtitle && (
+                    <p className="text-sm text-black/60 -mt-4 mb-6">{c.subtitle}</p>
+                  )}
+                  <div className={`grid gap-x-6 gap-y-8 grid-cols-1 sm:grid-cols-2 ${items.length >= 4 ? 'lg:grid-cols-4' : items.length === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
+                    {items.map((a) => (
+                      <Link key={a.id} href={`/blog/${a.slug}`} className="group block">
+                        {a.cover_url && (
+                          <div className="aspect-[4/3] overflow-hidden bg-zinc-100 mb-3">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={a.cover_url} alt={a.title}
+                              className="w-full h-full object-cover group-hover:scale-[1.02] transition" />
+                          </div>
+                        )}
+                        <div className="text-[11px] font-semibold mb-1" style={{ color: accent }}>
+                          {a.category_name || 'Nota'}
+                        </div>
+                        <h3 className="font-serif text-lg md:text-xl font-bold leading-snug group-hover:underline">
+                          {a.title}
                         </h3>
                       </Link>
                     ))}

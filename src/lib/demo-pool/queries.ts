@@ -31,6 +31,8 @@ export type ArticleRow = {
   category_name?: string | null;
   /** YouTube video ID opcional que reemplaza la cover en posiciones featured. */
   youtube_video_id?: string | null;
+  /** Tags libres — usados por featured_event para agrupar notas de un evento. */
+  tags?: string[] | null;
   /** True cuando la row viene del pool global (no del tenant). */
   is_demo?: boolean;
   /** El slug del demo original (para tracking / copy-on-edit). */
@@ -144,12 +146,13 @@ export async function fetchArticlesForTenant(
   const catById = new Map(cats.map((c) => [c.id, c]));
   const targetCat = opts.categorySlug ? catBySlug.get(opts.categorySlug) : null;
 
-  // 1. Reales del tenant — query defensiva por columna youtube_video_id
-  //    (migration 0074 puede no estar corrida todavía)
+  // 1. Reales del tenant — query defensiva por columnas youtube_video_id
+  //    y tags (migrations 0074 / 0069 pueden no estar corridas todavía).
+  //    Prueba en cascada: (all cols) → (sin tags) → (sin ambos).
   const realDemoRefs = new Set<string>();
-  async function selectRealArticles(): Promise<Array<{ id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; author_name: string | null; published_at: string; category_id: string | null; demo_ref: string | null; youtube_video_id?: string | null }>> {
+  async function selectRealArticles(): Promise<Array<{ id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; author_name: string | null; published_at: string; category_id: string | null; demo_ref: string | null; youtube_video_id?: string | null; tags?: string[] | null }>> {
     const baseCols = 'id, slug, title, excerpt, cover_url, author_name, published_at, category_id, demo_ref';
-    for (const cols of [`${baseCols}, youtube_video_id`, baseCols]) {
+    for (const cols of [`${baseCols}, youtube_video_id, tags`, `${baseCols}, youtube_video_id`, `${baseCols}, tags`, baseCols]) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let q: any = (svc.from('articles') as any).select(cols)
@@ -170,17 +173,18 @@ export async function fetchArticlesForTenant(
       published_at: a.published_at, category_id: a.category_id,
       category_slug: cat?.slug ?? null, category_name: cat?.name ?? null,
       youtube_video_id: a.youtube_video_id ?? null,
+      tags: Array.isArray(a.tags) ? a.tags : null,
       is_demo: false
     });
     if (a.demo_ref) realDemoRefs.add(a.demo_ref);
   }
 
-  // 2. Demos globales — misma query defensiva por youtube_video_id
+  // 2. Demos globales — misma query defensiva por youtube_video_id + tags
   try {
     const hiddenSet = await getHiddenSet(tenantId, 'article');
     const baseColsDemo = 'id, slug, title, excerpt, cover_url, author_name, published_at, category_slug';
-    let demos: Array<{ id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; author_name: string | null; published_at: string; category_slug: string | null; youtube_video_id?: string | null }> = [];
-    for (const cols of [`${baseColsDemo}, youtube_video_id`, baseColsDemo]) {
+    let demos: Array<{ id: string; slug: string; title: string; excerpt: string | null; cover_url: string | null; author_name: string | null; published_at: string; category_slug: string | null; youtube_video_id?: string | null; tags?: string[] | null }> = [];
+    for (const cols of [`${baseColsDemo}, youtube_video_id, tags`, `${baseColsDemo}, youtube_video_id`, `${baseColsDemo}, tags`, baseColsDemo]) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let q: any = (svc.from('demo_articles') as any).select(cols)
@@ -204,6 +208,7 @@ export async function fetchArticlesForTenant(
         category_slug: d.category_slug,
         category_name: cat?.name ?? null,
         youtube_video_id: d.youtube_video_id ?? null,
+        tags: Array.isArray(d.tags) ? d.tags : null,
         is_demo: true,
         demo_slug: d.slug
       });

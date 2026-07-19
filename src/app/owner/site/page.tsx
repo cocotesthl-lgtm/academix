@@ -84,6 +84,7 @@ const SECTION_META: Record<SectionKey, { title: string; desc: string }> = {
   blog_preview: { title: "📰 Últimas del blog", desc: "Grid con los últimos artículos publicados en tu blog. Link para ver todo." },
   article_list: { title: "📑 Columnas de headlines", desc: "Múltiples listas de artículos lado a lado (Últimas, Tendencias, etc). Para sitios editoriales tipo NYT/The Times." },
   category_showcase: { title: "🗞️ Vitrinas por categoría", desc: "Un bloque por cada categoría (Deportes, Cultura, etc): 1 artículo grande + 4 chicos en grid. Estilo NYT 'Life & Style' / The Times." },
+  featured_event: { title: "🏆 Evento destacado", desc: "Strip horizontal con 4 notas de un evento puntual (Mundial, elecciones, gran pelea, cumbre). Filtra por tag para agrupar notas de distintas categorías bajo un mismo evento." },
   videos_reel: { title: "🎬 Strip de shorts (YouTube)", desc: "Fila horizontal de videos verticales tipo NYT 'Watch Today's Videos'. Click abre /reels con navegación TikTok-style + autoplay." },
   products:     { title: "📦 Tienda / Productos físicos", desc: "Grid con productos publicados. Link para ver toda la tienda." },
   cta_final:    { title: "🎯 CTA final", desc: "Cierre de la página con llamado a la acción." }

@@ -341,7 +341,16 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     // no tiene eso en la portada. El "hero" es el masthead del header,
     // y sobre eso va directo la portada + columnas de headlines +
     // vitrinas por categoría + newsletter.
-    enableOnly(c, ['blog_preview', 'article_list', 'videos_reel', 'category_showcase', 'pricing', 'newsletter']);
+    enableOnly(c, ['blog_preview', 'article_list', 'videos_reel', 'featured_event', 'category_showcase', 'pricing', 'newsletter']);
+    // Strip destacado de un evento puntual (por default Mundial 2030).
+    // El owner puede cambiar título/tag desde el editor para cubrir
+    // elecciones, cumbres, grandes peleas, terremotos, etc.
+    c.sections.featured_event.enabled = true;
+    c.sections.featured_event.title = 'Mundial de fútbol 2030';
+    c.sections.featured_event.subtitle = '';
+    c.sections.featured_event.tag = 'mundial-2030';
+    c.sections.featured_event.count = 4;
+    c.sections.featured_event.accent_color = '#0891b2';
     // Strip de shorts (YouTube) tipo NYT "Watch Today's Videos".
     // El click en un thumb va a /reels?v=<slug> con player fullscreen
     // vertical autoplay.
