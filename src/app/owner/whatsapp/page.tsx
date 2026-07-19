@@ -17,10 +17,13 @@ type Conversation = {
 };
 
 type Config = {
+  provider: 'cloud_api' | 'qr' | null;
   phone_number_id: string | null;
   display_phone: string | null;
   bot_enabled: boolean;
   connected_at: string | null;
+  qr_status: string | null;
+  evolution_instance: string | null;
 };
 
 export default async function WhatsAppInboxPage() {
@@ -30,7 +33,7 @@ export default async function WhatsAppInboxPage() {
   const [{ data: cfg }, { data: convsRaw }] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (svc.from('whatsapp_config') as any)
-      .select('phone_number_id, display_phone, bot_enabled, connected_at')
+      .select('provider, phone_number_id, display_phone, bot_enabled, connected_at, qr_status, evolution_instance')
       .eq('tenant_id', tenant.id).limit(1).maybeSingle(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (svc.from('whatsapp_conversations') as any)
@@ -42,7 +45,15 @@ export default async function WhatsAppInboxPage() {
 
   const config = cfg as Config | null;
   const conversations = (convsRaw as Conversation[] | null) || [];
-  const notConnected = !config?.phone_number_id;
+  // Un tenant está conectado si:
+  //  - provider=cloud_api con phone_number_id, o
+  //  - provider=qr con qr_status='connected'
+  const cloudReady = config?.provider === 'cloud_api' && !!config.phone_number_id;
+  const qrReady = config?.provider === 'qr' && config.qr_status === 'connected';
+  const notConnected = !cloudReady && !qrReady;
+  const providerLabel = config?.provider === 'qr'
+    ? `QR · ${config.evolution_instance || 'instancia'}`
+    : config?.display_phone || config?.phone_number_id || '';
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -52,7 +63,7 @@ export default async function WhatsAppInboxPage() {
           <p className="text-sm text-black/60 mt-1">
             {notConnected
               ? 'Conectá tu número para recibir mensajes y activar el bot.'
-              : `${conversations.length} conversaciones · ${config?.display_phone || config?.phone_number_id}`}
+              : `${conversations.length} conversaciones · ${providerLabel}`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -62,7 +73,8 @@ export default async function WhatsAppInboxPage() {
           <Link href="/owner/whatsapp/templates" className="text-sm px-3 py-2 rounded border hover:bg-black/5">
             📋 Templates
           </Link>
-          <Link href="/owner/whatsapp/config" className="text-sm px-3 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700">
+          <Link href={notConnected ? '/owner/whatsapp/connect' : (config?.provider === 'qr' ? '/owner/whatsapp/qr' : '/owner/whatsapp/config')}
+            className="text-sm px-3 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700">
             {notConnected ? 'Conectar' : 'Configuración'}
           </Link>
         </div>
@@ -76,7 +88,7 @@ export default async function WhatsAppInboxPage() {
             Conectá tu número de WhatsApp Business y empezá a recibir mensajes automáticos,
             responder desde acá, y setear reglas de auto-respuesta por keyword.
           </p>
-          <Link href="/owner/whatsapp/config" className="inline-block px-4 py-2 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700">
+          <Link href="/owner/whatsapp/connect" className="inline-block px-4 py-2 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700">
             Empezar
           </Link>
         </div>

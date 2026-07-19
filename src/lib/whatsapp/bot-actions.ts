@@ -4,8 +4,11 @@ import { revalidatePath } from 'next/cache';
 import { randomBytes } from 'crypto';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
-import { sendText, sendMedia, sendTemplate, listApprovedTemplates } from '@/lib/whatsapp/meta-api';
+import { sendTemplate, listApprovedTemplates } from '@/lib/whatsapp/meta-api';
+import { unifiedSendText, unifiedSendMedia, type UnifiedConfig } from '@/lib/whatsapp/sender';
+import { createInstance, fetchQr, fetchConnectionState, logoutInstance } from '@/lib/whatsapp/evolution-api';
 import { encryptSecret, decryptSecret } from '@/lib/crypto/secrets';
+import { headers } from 'next/headers';
 
 // ── Config ─────────────────────────────────────────────────────────
 
@@ -126,6 +129,32 @@ export async function deleteBotRuleAction(formData: FormData): Promise<void> {
 
 // ── Inbox: enviar respuesta manual + toggle pause ─────────────────
 
+// Helper: mapea un row de whatsapp_config a UnifiedConfig, desencriptando
+// los tokens sensibles. Usado por todos los caminos de envío.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toUnified(cfg: any): UnifiedConfig {
+  return {
+    provider: (cfg.provider as 'cloud_api' | 'qr') || 'cloud_api',
+    phone_number_id: cfg.phone_number_id ?? null,
+    access_token: cfg.access_token ? decryptSecret(cfg.access_token) : null,
+    evolution_url: cfg.evolution_url ?? null,
+    evolution_instance: cfg.evolution_instance ?? null,
+    evolution_api_key: cfg.evolution_api_key ? decryptSecret(cfg.evolution_api_key) : null
+  };
+}
+
+function ensureReady(cfg: { provider?: string; phone_number_id?: string | null; evolution_url?: string | null; evolution_instance?: string | null } | null): void {
+  if (!cfg) throw new Error('WhatsApp no está conectado');
+  if (cfg.provider === 'qr') {
+    if (!cfg.evolution_url || !cfg.evolution_instance) throw new Error('QR: Evolution API no configurado');
+  } else if (!cfg.phone_number_id) {
+    throw new Error('Cloud API: número no configurado');
+  }
+}
+
+const WA_CFG_FULL_COLS =
+  'provider, phone_number_id, access_token, evolution_url, evolution_instance, evolution_api_key';
+
 export async function sendManualReplyAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
   const conversationId = String(formData.get('conversation_id') ?? '');
@@ -139,15 +168,11 @@ export async function sendManualReplyAction(formData: FormData): Promise<void> {
   if (!conv || conv.tenant_id !== tenant.id) return;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: cfg } = await (svc.from('whatsapp_config') as any)
-    .select('phone_number_id, access_token').eq('tenant_id', tenant.id).limit(1).maybeSingle();
-  if (!cfg?.phone_number_id || !cfg?.access_token) throw new Error('WhatsApp no está conectado');
+    .select(WA_CFG_FULL_COLS).eq('tenant_id', tenant.id).limit(1).maybeSingle();
+  ensureReady(cfg);
 
-  const res = await sendText({
-    phoneNumberId: cfg.phone_number_id,
-    accessToken: decryptSecret(cfg.access_token),
-    to: conv.wa_customer_id,
-    body
-  });
+  const unified = toUnified(cfg);
+  const res = await unifiedSendText(unified, conv.wa_customer_id, body);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('whatsapp_messages') as any).insert({
     tenant_id: tenant.id,
@@ -216,8 +241,8 @@ export async function sendMediaReplyAction(formData: FormData): Promise<void> {
   if (!conv || conv.tenant_id !== tenant.id) return;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: cfg } = await (svc.from('whatsapp_config') as any)
-    .select('phone_number_id, access_token').eq('tenant_id', tenant.id).limit(1).maybeSingle();
-  if (!cfg?.phone_number_id || !cfg?.access_token) throw new Error('WhatsApp no está conectado');
+    .select(WA_CFG_FULL_COLS).eq('tenant_id', tenant.id).limit(1).maybeSingle();
+  ensureReady(cfg);
 
   // Upload al bucket público whatsapp-media (path: {tenantId}/{yyyy-mm}/{ts}_{name})
   const now = new Date();
@@ -242,15 +267,14 @@ export async function sendMediaReplyAction(formData: FormData): Promise<void> {
     mime.startsWith('video/') ? 'video' :
     'document';
 
-  const res = await sendMedia({
-    phoneNumberId: cfg.phone_number_id,
-    accessToken: decryptSecret(cfg.access_token),
-    to: conv.wa_customer_id,
+  const res = await unifiedSendMedia(
+    toUnified(cfg),
+    conv.wa_customer_id,
     mediaType,
     mediaUrl,
-    caption: caption || undefined,
-    filename: mediaType === 'document' ? file.name : undefined
-  });
+    caption || undefined,
+    mediaType === 'document' ? file.name : undefined
+  );
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('whatsapp_messages') as any).insert({
     tenant_id: tenant.id,
@@ -377,6 +401,111 @@ export async function sendTemplateAction(formData: FormData): Promise<void> {
 }
 
 // ── IA config ──────────────────────────────────────────────────────
+
+// ── QR mode (Evolution API) ─────────────────────────────────────────
+
+/**
+ * Conecta el tenant en modo QR con una instancia Evolution API.
+ * Recibe URL de la Evolution + api_key global + nombre de instancia
+ * (o lo generamos desde el slug del tenant). Crea la instancia
+ * remoto vía POST /instance/create con el webhook apuntando a
+ * nuestro endpoint /api/whatsapp/evolution-webhook.
+ */
+export async function connectQrAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const evolution_url = String(formData.get('evolution_url') ?? '').trim().replace(/\/+$/, '');
+  const evolution_api_key = String(formData.get('evolution_api_key') ?? '').trim();
+  const requestedInstance = String(formData.get('evolution_instance') ?? '').trim();
+  const evolution_instance = requestedInstance || `tenant_${tenant.id.replace(/-/g, '').slice(0, 12)}`;
+
+  if (!evolution_url || !evolution_api_key) {
+    throw new Error('URL de Evolution API y api key son requeridos');
+  }
+
+  // Armar webhook URL para que Evolution nos avise
+  const h = await headers();
+  const host = h.get('host') || 'bzseguridad.store';
+  const proto = host.includes('localhost') ? 'http' : 'https';
+  const webhookUrl = `${proto}://${host}/api/whatsapp/evolution-webhook`;
+
+  // Crear la instancia (idempotente: si ya existía Evolution devuelve 409)
+  const created = await createInstance(
+    { url: evolution_url, apiKey: evolution_api_key, instance: evolution_instance },
+    webhookUrl
+  );
+  if (!created.ok) throw new Error(created.error || 'No se pudo crear la instancia');
+
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('whatsapp_config') as any).upsert({
+    tenant_id: tenant.id,
+    provider: 'qr',
+    evolution_url,
+    evolution_instance,
+    evolution_api_key: encryptSecret(evolution_api_key),
+    qr_status: 'pending_qr',
+    connected_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'tenant_id' });
+
+  revalidatePath('/owner/whatsapp/connect');
+  revalidatePath('/owner/whatsapp/qr');
+}
+
+/**
+ * Trae el QR actual (base64) para mostrarlo en la UI. Se llama desde
+ * la página /owner/whatsapp/qr con auto-refresh cada N segundos hasta
+ * que el estado sea 'open'.
+ */
+export async function fetchQrDataAction(): Promise<{ qrBase64?: string; state: string }> {
+  const { tenant } = await requireOwner();
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: cfg } = await (svc.from('whatsapp_config') as any)
+    .select('provider, evolution_url, evolution_instance, evolution_api_key')
+    .eq('tenant_id', tenant.id).limit(1).maybeSingle();
+  if (!cfg || cfg.provider !== 'qr' || !cfg.evolution_url || !cfg.evolution_instance) {
+    return { state: 'disconnected' };
+  }
+  const evoOpts = {
+    url: cfg.evolution_url,
+    apiKey: decryptSecret(cfg.evolution_api_key),
+    instance: cfg.evolution_instance
+  };
+  const state = await fetchConnectionState(evoOpts);
+  // Sólo pedimos el QR si aún no está conectado (evita polls inútiles)
+  if (state === 'open') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('whatsapp_config') as any)
+      .update({ qr_status: 'connected' }).eq('tenant_id', tenant.id);
+    return { state: 'open' };
+  }
+  const qr = await fetchQr(evoOpts);
+  return { qrBase64: qr.base64, state: qr.status || state };
+}
+
+export async function disconnectQrAction(): Promise<void> {
+  const { tenant } = await requireOwner();
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: cfg } = await (svc.from('whatsapp_config') as any)
+    .select('evolution_url, evolution_instance, evolution_api_key')
+    .eq('tenant_id', tenant.id).limit(1).maybeSingle();
+  if (cfg?.evolution_url && cfg?.evolution_instance) {
+    await logoutInstance({
+      url: cfg.evolution_url,
+      apiKey: decryptSecret(cfg.evolution_api_key),
+      instance: cfg.evolution_instance
+    });
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('whatsapp_config') as any)
+    .update({ qr_status: 'disconnected', connected_at: null })
+    .eq('tenant_id', tenant.id);
+  revalidatePath('/owner/whatsapp');
+}
+
+// ── AI ─────────────────────────────────────────────────────────────
 
 export async function updateAiConfigAction(formData: FormData): Promise<void> {
   const { tenant } = await requireOwner();
