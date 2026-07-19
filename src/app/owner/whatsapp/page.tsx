@@ -59,6 +59,9 @@ export default async function WhatsAppInboxPage() {
           <Link href="/owner/whatsapp/bot" className="text-sm px-3 py-2 rounded border hover:bg-black/5">
             🤖 Reglas del bot
           </Link>
+          <Link href="/owner/whatsapp/templates" className="text-sm px-3 py-2 rounded border hover:bg-black/5">
+            📋 Templates
+          </Link>
           <Link href="/owner/whatsapp/config" className="text-sm px-3 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700">
             {notConnected ? 'Conectar' : 'Configuración'}
           </Link>

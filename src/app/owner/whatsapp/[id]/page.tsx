@@ -5,7 +5,9 @@ import { getServiceClient } from '@/lib/supabase/service';
 import {
   sendManualReplyAction,
   toggleBotPausedAction,
-  markConversationReadAction
+  markConversationReadAction,
+  sendMediaReplyAction,
+  sendTemplateAction
 } from '@/lib/whatsapp/bot-actions';
 
 export const dynamic = 'force-dynamic';
@@ -56,6 +58,20 @@ export default async function ConversationPage(
     .order('created_at', { ascending: true })
     .limit(500);
   const messages = (msgsRaw as Msg[] | null) || [];
+
+  // Ventana de 24hs: si el último mensaje IN del cliente tiene más de 24h,
+  // Meta bloquea texto plano y sólo acepta templates aprobados. Mostramos
+  // aviso en el compose + botón para usar template.
+  const lastIn = [...messages].reverse().find((m) => m.direction === 'in');
+  const outsideWindow = lastIn ? (Date.now() - new Date(lastIn.created_at).getTime()) > 24 * 60 * 60 * 1000 : true;
+
+  // Templates disponibles del tenant (para el modal)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: tplsRaw } = await (svc.from('whatsapp_templates') as any)
+    .select('name, language, body, params_count, category')
+    .eq('tenant_id', tenant.id)
+    .order('last_used_at', { ascending: false, nullsFirst: false });
+  const templates = (tplsRaw as Array<{ name: string; language: string; body: string; params_count: number; category: string | null }> | null) || [];
 
   // Marca como leída al server (silencioso: no bloquea)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -130,22 +146,82 @@ export default async function ConversationPage(
         })}
       </div>
 
-      {/* Compose */}
-      <form action={sendManualReplyAction}
-        className="border-t p-3 bg-white flex gap-2 flex-shrink-0">
-        <input type="hidden" name="conversation_id" value={conv.id} />
-        <textarea name="body" required maxLength={4000}
-          placeholder="Escribí tu respuesta..."
-          className="flex-1 border rounded px-3 py-2 text-sm resize-none min-h-[42px] max-h-[120px]"
-          rows={1} />
-        <button type="submit"
-          className="px-4 py-2 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700">
-          Enviar
-        </button>
-      </form>
+      {/* Aviso ventana 24hs */}
+      {outsideWindow && (
+        <div className="border-t bg-amber-50 px-4 py-2 text-xs text-amber-800">
+          ⏳ El último mensaje del cliente fue hace más de 24hs. Meta requiere que uses un template aprobado para responder.
+          <Link href="/owner/whatsapp/templates" className="ml-2 underline">Gestionar templates →</Link>
+        </div>
+      )}
 
-      {/* Marca leído (form invisible con action explícita — sin auto-submit para
-          evitar loops; se disparó ya server-side arriba al cargar la página) */}
+      {/* Compose: texto + adjunto + template */}
+      <div className="border-t bg-white flex-shrink-0">
+        {/* Texto libre */}
+        <form action={sendManualReplyAction} className="p-3 flex gap-2">
+          <input type="hidden" name="conversation_id" value={conv.id} />
+          <textarea name="body" required maxLength={4000}
+            placeholder={outsideWindow ? 'Fuera de ventana 24hs — usá un template' : 'Escribí tu respuesta...'}
+            disabled={outsideWindow}
+            className="flex-1 border rounded px-3 py-2 text-sm resize-none min-h-[42px] max-h-[120px] disabled:bg-zinc-100"
+            rows={1} />
+          <button type="submit" disabled={outsideWindow}
+            className="px-4 py-2 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
+            Enviar
+          </button>
+        </form>
+
+        {/* Media picker */}
+        <form action={sendMediaReplyAction} className="px-3 pb-3 flex items-center gap-2 border-t pt-2"
+          encType="multipart/form-data">
+          <input type="hidden" name="conversation_id" value={conv.id} />
+          <label className="flex items-center gap-2 text-xs text-black/70 flex-shrink-0">
+            📎 Adjuntar
+            <input type="file" name="file" required accept="image/*,application/pdf,audio/*,video/*"
+              className="text-xs" />
+          </label>
+          <input type="text" name="caption" placeholder="Caption opcional"
+            className="flex-1 border rounded px-2 py-1 text-xs" />
+          <button type="submit"
+            className="text-xs px-3 py-1.5 rounded border border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+            Enviar adjunto
+          </button>
+        </form>
+
+        {/* Templates (solo si hay al menos 1 disponible) */}
+        {templates.length > 0 && (
+          <details className="border-t px-3 py-2">
+            <summary className="text-xs font-semibold text-black/70 cursor-pointer">
+              📋 Enviar template ({templates.length} aprobados)
+            </summary>
+            <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+              {templates.map((t) => (
+                <form key={`${t.name}:${t.language}`} action={sendTemplateAction}
+                  className="p-2 rounded border bg-zinc-50 space-y-1.5">
+                  <input type="hidden" name="conversation_id" value={conv.id} />
+                  <input type="hidden" name="template_name" value={t.name} />
+                  <input type="hidden" name="language" value={t.language} />
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-semibold">{t.name}</span>
+                    <span className="text-black/50">· {t.language} · {t.category}</span>
+                  </div>
+                  <div className="text-[11px] text-black/60 line-clamp-2">{t.body}</div>
+                  {t.params_count > 0 && (
+                    <input name="body_params" required
+                      placeholder={`Variables separadas por | (${t.params_count} en total)`}
+                      className="w-full border rounded px-2 py-1 text-xs" />
+                  )}
+                  <button type="submit"
+                    className="text-[11px] px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700">
+                    Enviar este template
+                  </button>
+                </form>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+
+      {/* Marca leído — form invisible; también corrimos el update server-side arriba */}
       <form action={markConversationReadAction} style={{ display: 'none' }}>
         <input type="hidden" name="conversation_id" value={conv.id} />
       </form>

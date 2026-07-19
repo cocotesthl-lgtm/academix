@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { sendText, verifyWebhookSignature } from '@/lib/whatsapp/meta-api';
 import { resolveReply, isWithinAwayWindow, type BotRule } from '@/lib/whatsapp/bot-engine';
+import { decryptSecret } from '@/lib/crypto/secrets';
+import { maybeCreateCrmLead } from '@/lib/whatsapp/crm-integration';
+import { resolveAiReply } from '@/lib/whatsapp/ai';
 
 /**
  * Webhook único de WhatsApp Cloud API. Meta llama con:
@@ -101,11 +104,22 @@ export async function POST(req: NextRequest) {
             status: 'open',
             updated_at: new Date().toISOString()
           }, { onConflict: 'tenant_id,wa_customer_id' })
-          .select('id, bot_paused, unread_count')
+          .select('id, bot_paused, unread_count, crm_lead_id, created_at')
           .single();
         if (!conv) continue;
 
         const isFirstMessage = !conv.unread_count || conv.unread_count === 0;
+
+        // Auto-crear lead en el CRM la PRIMERA vez que llega esta persona.
+        // El puente es silencioso ante error para no bloquear el webhook.
+        if (!conv.crm_lead_id) {
+          await maybeCreateCrmLead(svc, tenantId, {
+            id: conv.id,
+            wa_customer_id: m.from,
+            customer_name: contactName,
+            crm_lead_id: conv.crm_lead_id
+          });
+        }
 
         const body = m.text?.body || m.image?.caption || m.document?.caption || null;
         const mediaUrl = m.image?.link || m.document?.link || null;
@@ -166,6 +180,34 @@ export async function POST(req: NextRequest) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (svc.from('whatsapp_bot_rules') as any)
               .update({ hit_count: next }).eq('id', reply.rule.id);
+          } else if (cfgRow.ai_enabled) {
+            // Fallback IA: si no matcheó ninguna regla y el owner activó
+            // IA, mandamos el mensaje a Claude con el historial de la
+            // conversación como contexto. Silencioso ante error.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: histRaw } = await (svc.from('whatsapp_messages') as any)
+              .select('direction, body')
+              .eq('conversation_id', conv.id)
+              .not('body', 'is', null)
+              .order('created_at', { ascending: true })
+              .limit(20);
+            // El último mensaje (el actual) ya lo insertamos arriba — lo
+            // excluimos del historial porque va como turno "user" final.
+            const history = ((histRaw as Array<{ direction: string; body: string }> | null) || [])
+              .slice(0, -1)
+              .map((h) => ({
+                role: (h.direction === 'in' ? 'user' : 'assistant') as 'user' | 'assistant',
+                content: h.body
+              }));
+            const aiReply = await resolveAiReply(
+              { enabled: true, system_prompt: cfgRow.ai_system_prompt, model: cfgRow.ai_model },
+              body,
+              history,
+              { customerName: contactName }
+            );
+            if (aiReply) {
+              await sendAndLog(svc, tenantId, conv.id, cfgRow, m.from, aiReply, true);
+            }
           }
         }
       }
@@ -201,7 +243,7 @@ async function sendAndLog(
 ): Promise<void> {
   const res = await sendText({
     phoneNumberId: cfg.phone_number_id,
-    accessToken: cfg.access_token,
+    accessToken: decryptSecret(cfg.access_token),
     to,
     body
   });

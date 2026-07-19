@@ -5,7 +5,8 @@ import { getServiceClient } from '@/lib/supabase/service';
 import {
   connectWhatsAppBotAction,
   updateBotSettingsAction,
-  disconnectWhatsAppBotAction
+  disconnectWhatsAppBotAction,
+  updateAiConfigAction
 } from '@/lib/whatsapp/bot-actions';
 
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,9 @@ type Config = {
   away_start: string | null;
   away_end: string | null;
   connected_at: string | null;
+  ai_enabled: boolean;
+  ai_system_prompt: string | null;
+  ai_model: string | null;
 };
 
 export default async function WhatsAppConfigPage() {
@@ -158,6 +162,45 @@ export default async function WhatsAppConfigPage() {
           <button type="submit"
             className="px-4 py-2 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700">
             Guardar cambios
+          </button>
+        </form>
+      )}
+
+      {/* IA (Claude) fallback */}
+      {cfg?.phone_number_id && (
+        <form action={updateAiConfigAction} className="border rounded-lg p-5 space-y-4 bg-white">
+          <h2 className="font-semibold flex items-center gap-2">
+            🧠 Respuestas con IA (fallback)
+          </h2>
+          <p className="text-xs text-black/60">
+            Si el mensaje del cliente no matchea ninguna regla, la IA (Claude) responde con contexto de los últimos 10 turnos de la conversación. Requiere que la plataforma tenga <code>ANTHROPIC_API_KEY</code> configurada.
+          </p>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="ai_enabled" defaultChecked={cfg.ai_enabled} />
+            <span>Activar IA como fallback</span>
+          </label>
+
+          <label className="block">
+            <span className="text-xs font-semibold text-black/70">System prompt (personalidad + info del negocio)</span>
+            <textarea name="ai_system_prompt" rows={5} maxLength={4000}
+              defaultValue={cfg.ai_system_prompt ?? ''}
+              className="mt-1 w-full border rounded px-3 py-2 text-sm font-mono"
+              placeholder="Sos el asistente de {nombre del negocio}. Vendemos {productos}. Nuestro horario es {horario}. Respondé breve en español, no inventes precios ni prometas descuentos. Si te preguntan por catálogo, mandá el link https://..." />
+          </label>
+
+          <label className="block">
+            <span className="text-xs font-semibold text-black/70">Modelo</span>
+            <select name="ai_model" defaultValue={cfg.ai_model ?? 'claude-haiku-4-5-20251001'}
+              className="mt-1 w-full border rounded px-3 py-2 text-sm">
+              <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (rápido y barato — recomendado para WA)</option>
+              <option value="claude-sonnet-5">Claude Sonnet 5 (más caro pero más inteligente)</option>
+            </select>
+          </label>
+
+          <button type="submit"
+            className="px-4 py-2 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700">
+            Guardar IA
           </button>
         </form>
       )}
