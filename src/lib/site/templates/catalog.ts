@@ -458,6 +458,19 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     ];
     c.nav.show_my_courses = false;
     c.nav.show_affiliates = false;
+    // Paywall soft por default: los medios editoriales típicamente
+    // dejan leer los primeros párrafos gratis + banner recomendando
+    // suscribirse. El owner puede cambiar a 'hard' (bloqueante) o
+    // 'off' (sin paywall) desde el editor de /owner/site.
+    c.paywall = {
+      mode: 'soft',
+      free_paragraphs: 3,
+      title: 'Seguí leyendo esta nota exclusiva',
+      message: 'Suscribite y accedé sin límites a todas las notas, análisis, podcasts y newsletters exclusivos.',
+      cta_label: 'Suscribirme ahora',
+      cta_href: '#pricing',
+      dismiss_label: 'Seguir leyendo por ahora'
+    };
     return {
       id: 'news',
       name: 'Sitio de noticias',

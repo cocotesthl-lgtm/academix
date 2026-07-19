@@ -27,6 +27,35 @@ import {
   type ManualCard
 } from '@/lib/site/types';
 
+/**
+ * Update del paywall del blog. Recibe form con mode + free_paragraphs
+ * + títulos/CTA. Ownership vía requireOwner.
+ */
+export async function updatePaywallAction(formData: FormData): Promise<void> {
+  const { requireOwner } = await import('@/lib/auth/guards');
+  const { tenant } = await requireOwner();
+  const mode = String(formData.get('mode') ?? 'off');
+  const validMode = (['off', 'soft', 'hard'] as const).includes(mode as 'off') ? mode : 'off';
+  const free_paragraphs = Math.max(1, Math.min(10, Number(formData.get('free_paragraphs') ?? 3)));
+  const title = String(formData.get('title') ?? '').trim().slice(0, 120) || undefined;
+  const message = String(formData.get('message') ?? '').trim().slice(0, 500) || undefined;
+  const cta_label = String(formData.get('cta_label') ?? '').trim().slice(0, 60) || undefined;
+  const cta_href = String(formData.get('cta_href') ?? '').trim().slice(0, 200) || undefined;
+  const dismiss_label = String(formData.get('dismiss_label') ?? '').trim().slice(0, 60) || undefined;
+
+  const cfg = await loadConfig(tenant.id);
+  cfg.paywall = {
+    ...(cfg.paywall || {}),
+    mode: validMode as 'off' | 'soft' | 'hard',
+    free_paragraphs,
+    title, message, cta_label, cta_href, dismiss_label
+  };
+  await saveConfig(tenant.id, cfg);
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/owner/site');
+  revalidatePath('/blog', 'layout');
+}
+
 async function loadConfig(tenantId: string): Promise<SiteConfig> {
   const svc = getServiceClient();
   const { data } = await svc

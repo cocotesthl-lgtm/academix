@@ -408,6 +408,30 @@ export type SiteConfig = {
     style?: 'default' | 'masthead';
   };
   footer: { text: string; socials: SocialLink[]; links: NavLink[] };
+  /**
+   * Paywall del blog/news. Controla cuánto ve un visitante NO suscripto
+   * al abrir una nota. Los suscriptores activos (buyers con plan
+   * pagado) siempre ven todo, no importa el modo.
+   *
+   * - 'off'  → sin paywall, todos ven la nota completa (comportamiento
+   *   histórico previo a este campo).
+   * - 'soft' → muestra los primeros N párrafos + fade + CTA suscribirse
+   *   con opción "Seguir leyendo igual" que cierra el CTA y libera el
+   *   resto (paywall recomendatorio, no bloqueante).
+   * - 'hard' → oculta todo el body después del párrafo N + modal
+   *   bloqueante centrado con CTA obligatoria. No hay forma de leer
+   *   sin suscribirse desde la UI (obvio, con view-source siempre se
+   *   puede — pero el paywall es principalmente UX + señal a Google).
+   */
+  paywall?: {
+    mode: 'off' | 'soft' | 'hard';
+    free_paragraphs?: number;    // cuántos <p> se ven gratis antes del corte (default 3)
+    title?: string;               // "Seguí leyendo esta nota"
+    message?: string;             // texto persuasivo debajo del título
+    cta_label?: string;           // "Suscribirme ahora"
+    cta_href?: string;            // '#pricing' por default (scroll a la sección)
+    dismiss_label?: string;       // texto del botón "cerrar" en modo soft (default: "Seguir leyendo igual")
+  };
 };
 
 export const DEFAULT_ORDER: SectionKey[] = [
@@ -744,6 +768,17 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     text: 'Hecho con dedicación. Cualquier consulta escribinos.',
     socials: [],
     links: []
+  },
+  // Default paywall off para no romper sitios existentes. El template
+  // news lo enciende en 'soft' (recomendación con opción de cerrar).
+  paywall: {
+    mode: 'off',
+    free_paragraphs: 3,
+    title: 'Seguí leyendo esta nota',
+    message: 'Suscribite y accedé sin límites a todas nuestras notas, análisis y podcasts.',
+    cta_label: 'Suscribirme ahora',
+    cta_href: '#pricing',
+    dismiss_label: 'Seguir leyendo igual'
   }
 };
 
@@ -795,6 +830,9 @@ export function mergeConfig(stored: any): SiteConfig {
     base.footer = { ...base.footer, ...stored.footer };
     if (!Array.isArray(base.footer.socials)) base.footer.socials = [];
     if (!Array.isArray(base.footer.links)) base.footer.links = [];
+  }
+  if (stored.paywall && typeof stored.paywall === 'object') {
+    base.paywall = { ...(base.paywall || {}), ...stored.paywall } as SiteConfig['paywall'];
   }
   return base;
 }

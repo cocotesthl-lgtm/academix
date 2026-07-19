@@ -8,6 +8,12 @@ import { fetchArticlesForTenant } from '@/lib/demo-pool/queries';
 import { ArticleSidebar } from '@/components/storefront/blog/ArticleSidebar';
 import { AdSquaresPair } from '@/components/storefront/blog/AdSlot';
 import { inlineAdHtml } from '@/components/storefront/blog/AdSlot';
+import { PaywallSoft } from '@/components/storefront/paywall/PaywallSoft';
+import { PaywallHard } from '@/components/storefront/paywall/PaywallHard';
+import { splitBodyAtParagraph } from '@/lib/paywall/split-body';
+import { isUserSubscribedToTenant } from '@/lib/paywall/check';
+import { mergeConfig } from '@/lib/site/types';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -214,6 +220,34 @@ export default async function ArticlePublicPage({
   }
   bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, inlineBannerAd, 2);
 
+  // ── Paywall ──────────────────────────────────────────────────────
+  // Cargamos site_config para leer el modo. Owner del tenant y
+  // buyers con suscripción activa BYPASSEAN el paywall siempre.
+  const svcCfg = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: tRow } = await (svcCfg.from('tenants') as any)
+    .select('site_config_published, site_config').eq('id', tenantId).single();
+  const cfg = mergeConfig(tRow?.site_config_published ?? tRow?.site_config);
+  const paywallCfg = cfg.paywall || { mode: 'off' };
+
+  let userId: string | null = null;
+  if (paywallCfg.mode !== 'off') {
+    try {
+      const sb = await createSupabaseServerClient();
+      const { data: { user } } = await sb.auth.getUser();
+      userId = user?.id ?? null;
+    } catch { /* anon visitor */ }
+  }
+  const bypass = paywallCfg.mode === 'off'
+    ? true
+    : await isUserSubscribedToTenant(userId, tenantId);
+
+  // Split body al párrafo N si vamos a aplicar paywall
+  const freeParas = Math.max(1, Math.min(10, paywallCfg.free_paragraphs ?? 3));
+  const { free: bodyFree, rest: bodyRest } = (!bypass && paywallCfg.mode !== 'off')
+    ? splitBodyAtParagraph(bodyWithExtras, freeParas)
+    : { free: bodyWithExtras, rest: '' };
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
       {/* Layout 2 columnas: contenido (article + últimas noticias) a la
@@ -243,10 +277,32 @@ export default async function ArticlePublicPage({
             </div>
           )}
 
+          {/* Cuerpo del artículo con paywall opcional. Bypass si owner
+              o suscriptor activo. Modo 'off' == bypass. */}
           <div
             className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:underline"
-            dangerouslySetInnerHTML={{ __html: bodyWithExtras }}
+            dangerouslySetInnerHTML={{ __html: bodyFree }}
           />
+          {!bypass && paywallCfg.mode === 'soft' && bodyRest && (
+            <PaywallSoft
+              restHtml={bodyRest}
+              title={paywallCfg.title || 'Seguí leyendo esta nota'}
+              message={paywallCfg.message || 'Suscribite y accedé sin límites.'}
+              ctaLabel={paywallCfg.cta_label || 'Suscribirme'}
+              ctaHref={paywallCfg.cta_href || '#pricing'}
+              dismissLabel={paywallCfg.dismiss_label || 'Seguir leyendo igual'}
+              primaryColor={primary}
+            />
+          )}
+          {!bypass && paywallCfg.mode === 'hard' && bodyRest && (
+            <PaywallHard
+              title={paywallCfg.title || 'Contenido para suscriptores'}
+              message={paywallCfg.message || 'Suscribite para leer la nota completa.'}
+              ctaLabel={paywallCfg.cta_label || 'Suscribirme'}
+              ctaHref={paywallCfg.cta_href || '#pricing'}
+              primaryColor={primary}
+            />
+          )}
 
           {/* Compartir + separator */}
           <div className="mt-10 pt-6 border-t border-black/10 flex items-center justify-center gap-3 text-sm text-black/60">
