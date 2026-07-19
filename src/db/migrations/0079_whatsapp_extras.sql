@@ -41,10 +41,10 @@ drop policy if exists wa_tpl_owner on public.whatsapp_templates;
 create policy wa_tpl_owner on public.whatsapp_templates
   for all using (
     exists (select 1 from public.tenants t
-      where t.id = tenant_id and t.owner_id = auth.uid())
+      where t.id = tenant_id and t.owner_user_id = auth.uid())
   ) with check (
     exists (select 1 from public.tenants t
-      where t.id = tenant_id and t.owner_id = auth.uid())
+      where t.id = tenant_id and t.owner_user_id = auth.uid())
   );
 
 -- ── 3) Storage bucket para adjuntos ───────────────────────────────────
@@ -72,7 +72,7 @@ create policy wa_media_write on storage.objects
       exists (
         select 1 from public.tenants t
         where t.id::text = split_part(name, '/', 1)
-          and t.owner_id = auth.uid()
+          and t.owner_user_id = auth.uid()
       )
     )
   );
@@ -84,7 +84,7 @@ create policy wa_media_delete on storage.objects
     and exists (
       select 1 from public.tenants t
       where t.id::text = split_part(name, '/', 1)
-        and t.owner_id = auth.uid()
+        and t.owner_user_id = auth.uid()
     )
   );
 

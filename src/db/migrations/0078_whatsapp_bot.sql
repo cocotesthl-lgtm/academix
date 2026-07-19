@@ -40,10 +40,10 @@ drop policy if exists wa_config_owner on public.whatsapp_config;
 create policy wa_config_owner on public.whatsapp_config
   for all using (
     exists (select 1 from public.tenants t
-      where t.id = tenant_id and t.owner_id = auth.uid())
+      where t.id = tenant_id and t.owner_user_id = auth.uid())
   ) with check (
     exists (select 1 from public.tenants t
-      where t.id = tenant_id and t.owner_id = auth.uid())
+      where t.id = tenant_id and t.owner_user_id = auth.uid())
   );
 
 -- ── CONVERSATIONS ────────────────────────────────────────────────────
@@ -72,10 +72,10 @@ drop policy if exists wa_conv_owner on public.whatsapp_conversations;
 create policy wa_conv_owner on public.whatsapp_conversations
   for all using (
     exists (select 1 from public.tenants t
-      where t.id = tenant_id and t.owner_id = auth.uid())
+      where t.id = tenant_id and t.owner_user_id = auth.uid())
   ) with check (
     exists (select 1 from public.tenants t
-      where t.id = tenant_id and t.owner_id = auth.uid())
+      where t.id = tenant_id and t.owner_user_id = auth.uid())
   );
 
 -- ── MESSAGES ─────────────────────────────────────────────────────────
@@ -102,10 +102,10 @@ drop policy if exists wa_msg_owner on public.whatsapp_messages;
 create policy wa_msg_owner on public.whatsapp_messages
   for all using (
     exists (select 1 from public.tenants t
-      where t.id = tenant_id and t.owner_id = auth.uid())
+      where t.id = tenant_id and t.owner_user_id = auth.uid())
   ) with check (
     exists (select 1 from public.tenants t
-      where t.id = tenant_id and t.owner_id = auth.uid())
+      where t.id = tenant_id and t.owner_user_id = auth.uid())
   );
 
 -- ── BOT RULES ────────────────────────────────────────────────────────
@@ -129,8 +129,8 @@ drop policy if exists wa_rules_owner on public.whatsapp_bot_rules;
 create policy wa_rules_owner on public.whatsapp_bot_rules
   for all using (
     exists (select 1 from public.tenants t
-      where t.id = tenant_id and t.owner_id = auth.uid())
+      where t.id = tenant_id and t.owner_user_id = auth.uid())
   ) with check (
     exists (select 1 from public.tenants t
-      where t.id = tenant_id and t.owner_id = auth.uid())
+      where t.id = tenant_id and t.owner_user_id = auth.uid())
   );
