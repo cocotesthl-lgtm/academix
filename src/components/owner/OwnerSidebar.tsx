@@ -176,6 +176,7 @@ const NAV: NavEntry[] = [
         { label: 'Blog', href: '/blog', moduleKey: 'blog' },
         { label: 'Formularios', href: '/forms', moduleKey: 'forms' },
         { label: 'Mensajes', href: '/mensajes' },
+        { label: 'WhatsApp', href: '/whatsapp' },
         { label: 'Afiliados', href: '/affiliates', moduleKey: 'affiliates' }
       ]
     }
