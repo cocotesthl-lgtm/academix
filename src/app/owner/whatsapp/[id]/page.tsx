@@ -7,7 +7,11 @@ import {
   toggleBotPausedAction,
   markConversationReadAction,
   sendMediaReplyAction,
-  sendTemplateAction
+  sendTemplateAction,
+  addConversationTagAction,
+  removeConversationTagAction,
+  toggleConversationStatusAction,
+  scheduleMessageAction
 } from '@/lib/whatsapp/bot-actions';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +34,8 @@ type Conv = {
   customer_name: string | null;
   status: string;
   bot_paused: boolean;
+  tags: string[] | null;
+  crm_lead_id: string | null;
 };
 
 export default async function ConversationPage(
@@ -41,7 +47,7 @@ export default async function ConversationPage(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: convRaw } = await (svc.from('whatsapp_conversations') as any)
-    .select('id, wa_customer_id, customer_name, status, bot_paused, tenant_id')
+    .select('id, wa_customer_id, customer_name, status, bot_paused, tenant_id, tags, crm_lead_id')
     .eq('id', id).limit(1).maybeSingle();
   if (!convRaw || convRaw.tenant_id !== tenant.id) notFound();
   const conv = convRaw as Conv & { tenant_id: string };
@@ -81,29 +87,67 @@ export default async function ConversationPage(
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="border-b p-4 flex items-center gap-3 bg-white flex-shrink-0">
-        <Link href="/owner/whatsapp" className="text-sm text-black/60 hover:underline">
-          ← Volver
-        </Link>
-        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold">
-          {(conv.customer_name || conv.wa_customer_id).slice(0, 2).toUpperCase()}
+      <div className="border-b bg-white flex-shrink-0">
+        <div className="p-4 flex items-center gap-3">
+          <Link href="/owner/whatsapp" className="text-sm text-black/60 hover:underline">
+            ← Volver
+          </Link>
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold">
+            {(conv.customer_name || conv.wa_customer_id).slice(0, 2).toUpperCase()}
+          </div>
+          <div className="flex-1">
+            <div className="font-semibold">{conv.customer_name || conv.wa_customer_id}</div>
+            <div className="text-xs text-black/60">+{conv.wa_customer_id}</div>
+          </div>
+          <form action={toggleConversationStatusAction} className="flex items-center gap-1">
+            <input type="hidden" name="conversation_id" value={conv.id} />
+            <select name="status" defaultValue={conv.status}
+              className="text-xs border rounded px-2 py-1 bg-white">
+              <option value="open">🟢 Abierta</option>
+              <option value="closed">🔴 Cerrada</option>
+              <option value="archived">📦 Archivada</option>
+            </select>
+            <button type="submit" className="text-[11px] px-2 py-1 border rounded hover:bg-black/5">
+              OK
+            </button>
+          </form>
+          <form action={toggleBotPausedAction}>
+            <input type="hidden" name="conversation_id" value={conv.id} />
+            <input type="hidden" name="paused" value={conv.bot_paused ? 'off' : 'on'} />
+            <button type="submit"
+              className={`text-xs px-3 py-1.5 rounded border transition ${
+                conv.bot_paused
+                  ? 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'
+                  : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
+              }`}>
+              {conv.bot_paused ? '⏸ Bot pausado' : '🤖 Bot activo'}
+            </button>
+          </form>
         </div>
-        <div className="flex-1">
-          <div className="font-semibold">{conv.customer_name || conv.wa_customer_id}</div>
-          <div className="text-xs text-black/60">+{conv.wa_customer_id}</div>
+        {/* Tags row */}
+        <div className="px-4 pb-3 flex items-center gap-2 flex-wrap">
+          {(conv.tags || []).map((t) => (
+            <form key={t} action={removeConversationTagAction} className="inline-flex">
+              <input type="hidden" name="conversation_id" value={conv.id} />
+              <input type="hidden" name="tag" value={t} />
+              <button type="submit"
+                className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition">
+                #{t} ✕
+              </button>
+            </form>
+          ))}
+          <form action={addConversationTagAction} className="inline-flex items-center gap-1">
+            <input type="hidden" name="conversation_id" value={conv.id} />
+            <input name="tag" placeholder="+ etiqueta" maxLength={40}
+              className="text-[11px] border rounded-full px-2 py-0.5 w-24 focus:w-32 transition-all" />
+          </form>
+          {conv.crm_lead_id && (
+            <Link href={`/owner/crm`}
+              className="text-[11px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full hover:bg-blue-100">
+              🎯 Lead CRM
+            </Link>
+          )}
         </div>
-        <form action={toggleBotPausedAction}>
-          <input type="hidden" name="conversation_id" value={conv.id} />
-          <input type="hidden" name="paused" value={conv.bot_paused ? 'off' : 'on'} />
-          <button type="submit"
-            className={`text-xs px-3 py-1.5 rounded border transition ${
-              conv.bot_paused
-                ? 'bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100'
-                : 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100'
-            }`}>
-            {conv.bot_paused ? '⏸ Bot pausado — reactivar' : '🤖 Bot activo — pausar'}
-          </button>
-        </form>
       </div>
 
       {/* Messages */}
@@ -169,6 +213,31 @@ export default async function ConversationPage(
             Enviar
           </button>
         </form>
+
+        {/* Agendar mensaje */}
+        <details className="border-t px-3 py-2">
+          <summary className="text-xs font-semibold text-black/70 cursor-pointer">
+            ⏰ Agendar mensaje
+          </summary>
+          <form action={scheduleMessageAction} className="mt-2 space-y-2">
+            <input type="hidden" name="conversation_id" value={conv.id} />
+            <textarea name="body" required rows={2} maxLength={4000}
+              placeholder="Mensaje a enviar..."
+              className="w-full border rounded px-2 py-1 text-xs" />
+            <div className="flex items-center gap-2">
+              <input name="send_at" type="datetime-local" required
+                min={new Date().toISOString().slice(0, 16)}
+                className="border rounded px-2 py-1 text-xs" />
+              <button type="submit"
+                className="text-xs px-3 py-1.5 rounded border border-blue-300 text-blue-700 hover:bg-blue-50">
+                Agendar
+              </button>
+              <Link href="/owner/whatsapp/scheduled" className="text-[11px] text-black/60 hover:underline ml-auto">
+                Ver todos →
+              </Link>
+            </div>
+          </form>
+        </details>
 
         {/* Media picker */}
         <form action={sendMediaReplyAction} className="px-3 pb-3 flex items-center gap-2 border-t pt-2"

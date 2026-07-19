@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/debt-enforcement",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/whatsapp/cron",
+      "schedule": "*/1 * * * *"
     }
   ]
 }

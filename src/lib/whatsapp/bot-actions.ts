@@ -402,6 +402,58 @@ export async function sendTemplateAction(formData: FormData): Promise<void> {
 
 // ── IA config ──────────────────────────────────────────────────────
 
+// ── Tags por conversación ──────────────────────────────────────────
+
+export async function addConversationTagAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const conversationId = String(formData.get('conversation_id') ?? '');
+  const tag = String(formData.get('tag') ?? '').trim().toLowerCase().slice(0, 40);
+  if (!conversationId || !tag) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: conv } = await (svc.from('whatsapp_conversations') as any)
+    .select('tags').eq('id', conversationId).eq('tenant_id', tenant.id).limit(1).maybeSingle();
+  if (!conv) return;
+  const current = Array.isArray(conv.tags) ? conv.tags : [];
+  if (current.includes(tag)) return; // dedup
+  const next = [...current, tag].slice(0, 20);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('whatsapp_conversations') as any).update({ tags: next })
+    .eq('id', conversationId).eq('tenant_id', tenant.id);
+  revalidatePath('/owner/whatsapp');
+  revalidatePath(`/owner/whatsapp/${conversationId}`);
+}
+
+export async function removeConversationTagAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const conversationId = String(formData.get('conversation_id') ?? '');
+  const tag = String(formData.get('tag') ?? '').trim().toLowerCase();
+  if (!conversationId || !tag) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: conv } = await (svc.from('whatsapp_conversations') as any)
+    .select('tags').eq('id', conversationId).eq('tenant_id', tenant.id).limit(1).maybeSingle();
+  if (!conv) return;
+  const next = (Array.isArray(conv.tags) ? conv.tags : []).filter((t: string) => t !== tag);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('whatsapp_conversations') as any).update({ tags: next })
+    .eq('id', conversationId).eq('tenant_id', tenant.id);
+  revalidatePath('/owner/whatsapp');
+  revalidatePath(`/owner/whatsapp/${conversationId}`);
+}
+
+export async function toggleConversationStatusAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const conversationId = String(formData.get('conversation_id') ?? '');
+  const status = String(formData.get('status') ?? 'open');
+  const valid = ['open', 'closed', 'archived'].includes(status) ? status : 'open';
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('whatsapp_conversations') as any).update({ status: valid })
+    .eq('id', conversationId).eq('tenant_id', tenant.id);
+  revalidatePath('/owner/whatsapp');
+}
+
 // ── QR mode (Evolution API) ─────────────────────────────────────────
 
 /**
@@ -503,6 +555,127 @@ export async function disconnectQrAction(): Promise<void> {
     .update({ qr_status: 'disconnected', connected_at: null })
     .eq('tenant_id', tenant.id);
   revalidatePath('/owner/whatsapp');
+}
+
+// ── Broadcasts (envío masivo) ──────────────────────────────────────
+
+/**
+ * Crea un broadcast + N jobs (uno por destinatario). Los jobs se
+ * marcan con scheduled_at escalonado (throttling suave) para no
+ * gatillar el detector de spam de Meta ni de Baileys.
+ *
+ * Selección de destinatarios: por tags (contains any) o por lista
+ * explícita de conversation_ids. Si no se pasa nada, aborta.
+ */
+export async function createBroadcastAction(formData: FormData): Promise<void> {
+  const { tenant, userId } = await requireOwner();
+  const name = String(formData.get('name') ?? '').trim().slice(0, 100);
+  const body = String(formData.get('body') ?? '').trim().slice(0, 4000);
+  const tagsRaw = String(formData.get('tags') ?? '').trim();
+  const targetTags = tagsRaw ? tagsRaw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean) : [];
+  const targetIdsRaw = String(formData.get('conversation_ids') ?? '').trim();
+  const targetIds = targetIdsRaw ? targetIdsRaw.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const throttleSecs = Math.max(3, Math.min(60, Number(formData.get('throttle_secs') ?? 8)));
+
+  if (!name || !body) throw new Error('Nombre y mensaje requeridos');
+  if (targetTags.length === 0 && targetIds.length === 0) {
+    throw new Error('Elegí destinatarios: por tag o seleccionando conversaciones');
+  }
+
+  const svc = getServiceClient();
+  // Resolver destinatarios
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q = (svc.from('whatsapp_conversations') as any)
+    .select('id, wa_customer_id').eq('tenant_id', tenant.id);
+  if (targetTags.length > 0) q = q.overlaps('tags', targetTags);
+  if (targetIds.length > 0) q = q.in('id', targetIds);
+  const { data: convs } = await q;
+  const targets = (convs as Array<{ id: string; wa_customer_id: string }> | null) || [];
+  if (targets.length === 0) throw new Error('Ningún destinatario matchea el filtro');
+
+  // Crear el broadcast
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: bcast } = await (svc.from('whatsapp_broadcasts') as any).insert({
+    tenant_id: tenant.id,
+    name, message_body: body,
+    total_recipients: targets.length,
+    status: 'sending',
+    created_by: userId,
+    started_at: new Date().toISOString()
+  }).select('id').single();
+  if (!bcast) throw new Error('No se pudo crear el broadcast');
+
+  // Crear jobs escalonados con delay
+  const now = Date.now();
+  const jobs = targets.map((t, i) => ({
+    broadcast_id: bcast.id,
+    tenant_id: tenant.id,
+    conversation_id: t.id,
+    wa_customer_id: t.wa_customer_id,
+    scheduled_at: new Date(now + i * throttleSecs * 1000).toISOString()
+  }));
+  // Insert en batches de 100 para evitar payloads gigantes
+  for (let i = 0; i < jobs.length; i += 100) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('whatsapp_broadcast_jobs') as any).insert(jobs.slice(i, i + 100));
+  }
+
+  revalidatePath('/owner/whatsapp/broadcast');
+}
+
+export async function cancelBroadcastAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const svc = getServiceClient();
+  // Marcar el broadcast como cancelled + los jobs pending como cancelled
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('whatsapp_broadcasts') as any)
+    .update({ status: 'cancelled', completed_at: new Date().toISOString() })
+    .eq('id', id).eq('tenant_id', tenant.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('whatsapp_broadcast_jobs') as any)
+    .update({ status: 'failed', error_message: 'Broadcast cancelado' })
+    .eq('broadcast_id', id).eq('status', 'pending');
+  revalidatePath('/owner/whatsapp/broadcast');
+}
+
+// ── Scheduled messages ─────────────────────────────────────────────
+
+export async function scheduleMessageAction(formData: FormData): Promise<void> {
+  const { tenant, userId } = await requireOwner();
+  const conversationId = String(formData.get('conversation_id') ?? '');
+  const body = String(formData.get('body') ?? '').trim().slice(0, 4000);
+  const sendAt = String(formData.get('send_at') ?? '');
+  if (!conversationId || !body || !sendAt) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: conv } = await (svc.from('whatsapp_conversations') as any)
+    .select('id, wa_customer_id, tenant_id').eq('id', conversationId).limit(1).maybeSingle();
+  if (!conv || conv.tenant_id !== tenant.id) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('whatsapp_scheduled_messages') as any).insert({
+    tenant_id: tenant.id,
+    conversation_id: conv.id,
+    wa_customer_id: conv.wa_customer_id,
+    body,
+    send_at: new Date(sendAt).toISOString(),
+    created_by: userId
+  });
+  revalidatePath('/owner/whatsapp/scheduled');
+  revalidatePath(`/owner/whatsapp/${conversationId}`);
+}
+
+export async function cancelScheduledMessageAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const id = String(formData.get('id') ?? '');
+  if (!id) return;
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('whatsapp_scheduled_messages') as any)
+    .update({ status: 'cancelled' })
+    .eq('id', id).eq('tenant_id', tenant.id).eq('status', 'pending');
+  revalidatePath('/owner/whatsapp/scheduled');
 }
 
 // ── AI ─────────────────────────────────────────────────────────────
