@@ -841,7 +841,7 @@ function Section({
       {locked ? (
         // Estado bloqueado: reemplaza el editor por un CTA para activar la app.
         // El link va a /modulos?open=<key> — el AppMarket auto-abre ese modal
-        // (mismo patrón que "Activar app" desde Mis ofertas).
+        // (mismo patrón que "Activar app" desde Mis publicaciones).
         <div className="p-6 text-center space-y-3">
           <p className="text-sm text-white/70">
             Esta sección requiere la app{' '}

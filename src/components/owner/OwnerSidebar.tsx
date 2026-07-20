@@ -61,10 +61,10 @@ type NavEntry =
 // el árbol para que grupos tengan coherencia semántica.
 const NAV: NavEntry[] = [
   { kind: 'item', icon: 'home', item: { label: 'Inicio', href: '/dashboard' } },
-  // Mis ofertas: hub central donde el owner ve TODAS sus apps agrupadas
+  // Mis publicaciones: hub central donde el owner ve TODAS sus apps agrupadas
   // y las puede activar. Siempre visible como baseline — sino el owner
   // sin apps activas no tiene entrada al hub para activar ninguna.
-  { kind: 'item', icon: 'shopping-bag', item: { label: 'Mis ofertas', href: '/courses' } },
+  { kind: 'item', icon: 'shopping-bag', item: { label: 'Mis publicaciones', href: '/courses' } },
   // Apps (App Market) también baseline — es el segundo lugar clave para
   // el owner y tenerlo escondido bajo "Mi sitio > Apps" (un grupo
   // colapsable) generaba fricción para activar/desactivar features.
@@ -133,7 +133,7 @@ const NAV: NavEntry[] = [
     group: {
       label: 'Catálogo', icon: 'shopping-bag', moduleKey: 'catalog',
       items: [
-        // "Publicaciones" (Mis ofertas) subió a baseline arriba de Ventas —
+        // "Mis publicaciones" subió a baseline arriba de Ventas —
         // sacado de acá para no duplicar.
         { label: 'Productos físicos', href: '/products', moduleKey: 'ecommerce' },
         { label: 'Contenido VIP', href: '/vip', moduleKey: 'vip' },

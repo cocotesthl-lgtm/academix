@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
  * físico y redirige al editor. createProductAction ya hace el redirect
  * a /products/[id] internamente.
  *
- * Es un endpoint "acción como página" para que "+ Nuevo" en Mis ofertas
+ * Es un endpoint "acción como página" para que "+ Nuevo" en Mis publicaciones
  * pueda ser un Link normal en vez de un form. Idempotente vía slug
  * autogenerado ("nuevo-producto", "nuevo-producto-2", …).
  */

@@ -42,7 +42,7 @@ type BundleRow = {
 type ExtraLink = { label: string; href: string; emoji?: string };
 
 /**
- * Sección "Mis ofertas" reorganizada por app.
+ * Sección "Mis publicaciones" reorganizada por app.
  *
  * Cada app instalable tiene su bloque con:
  *   - Header con emoji + nombre + chip de estado (activa / desactivada)
@@ -172,7 +172,7 @@ export default async function CoursesIndex() {
   return (
     <div className="max-w-5xl space-y-6">
       <PageHeader
-        title="Mis ofertas"
+        title="Mis publicaciones"
         description="Cada app te habilita un tipo de venta distinto. Instalá las que necesites desde Mi sitio → Apps."
       />
 

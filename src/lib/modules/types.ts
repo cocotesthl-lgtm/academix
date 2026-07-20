@@ -118,7 +118,7 @@ export const MODULE_META: Record<ModuleKey, {
   // ── SUB de Catálogo ──────────────────────────────────────
   courses: {
     label: 'Cursos & publicaciones',
-    description: 'Cursos online, mentorías, eventos, servicios — todo lo que se crea desde "Crear oferta".',
+    description: 'Cursos online, mentorías, eventos, servicios — todo lo que se crea desde "Crear publicación".',
     longDescription: 'Vendé conocimiento, servicios y productos digitales con landing pages profesionales. Ideal para academias, coaches, consultores y creators.',
     sidebarGroup: 'Catálogo',
     emoji: '🎓',

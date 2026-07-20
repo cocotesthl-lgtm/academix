@@ -193,7 +193,7 @@ export default async function OwnerDashboard() {
     },
     {
       id: 'publish',
-      title: 'Publicá al menos una oferta',
+      title: 'Creá tu primera publicación',
       description: 'Los borradores no aparecen en tu sitio público.',
       href: '/courses',
       done: totalPublished > 0
