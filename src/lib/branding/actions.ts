@@ -52,6 +52,12 @@ export async function updateBrandingAction(
 
   const name = String(formData.get('name') ?? '').trim();
   const primary = String(formData.get('primary_color') ?? '').trim();
+  // primary_gradient es opcional — un string CSS "linear-gradient(...)"
+  // o vacío si el owner quiere el hex sólido. Se guarda en su propia
+  // columna (no dentro de brand) porque muchos lugares del código
+  // asumen que brand.primary_color es hex y no queremos que un
+  // gradient rompa esos consumers legacy.
+  const primaryGradient = String(formData.get('primary_gradient') ?? '').trim();
   const accent = String(formData.get('accent_color') ?? '').trim();
   const logoLayoutRaw = String(formData.get('logo_layout') ?? '').trim();
   const logoUrl = String(formData.get('logo_url') ?? '').trim();
@@ -82,12 +88,21 @@ export async function updateBrandingAction(
   // Tagline corta que enriquece el <title> hasta 50-60 chars ideales de SEO.
   brand.tagline = tagline.slice(0, 80) || null;
 
-  const updatePayload = { name, brand, updated_at: new Date().toISOString() };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: updErr } = await (svc.from('tenants') as any)
-    .update(updatePayload)
-    .eq('id', tenantId);
+  // primary_gradient viaja como columna dedicada. Intento con la
+  // columna primero; si la migration 0083 no corrió aún, retry sin
+  // ella (silencioso — el owner ve el hex solo hasta que corra).
+  const basePayload = { name, brand, updated_at: new Date().toISOString() };
+  const withGradient: Record<string, unknown> = {
+    ...basePayload,
+    primary_gradient: primaryGradient || null
+  };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let updErr = (await (svc.from('tenants') as any).update(withGradient).eq('id', tenantId)).error;
+  if (updErr && /primary_gradient/.test(String(updErr.message || ''))) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updErr = (await (svc.from('tenants') as any).update(basePayload).eq('id', tenantId)).error;
+  }
   if (updErr) return { ok: false, error: updErr.message };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -10,6 +10,7 @@ type Brand = {
   logo_text?: string | null;
   logo_layout?: 'square' | 'horizontal' | null;
   primary_color?: string;
+  primary_gradient?: string | null;
   accent_color?: string;
   og_image_url?: string | null;
   tagline?: string | null;
@@ -31,6 +32,7 @@ export function BrandingForm({
     null
   );
   const [primary, setPrimary] = useState(initialBrand.primary_color ?? '#f97316');
+  const [primaryGradient, setPrimaryGradient] = useState<string>(initialBrand.primary_gradient ?? '');
   const [accent, setAccent] = useState(initialBrand.accent_color ?? '#22d3ee');
   const [layout, setLayout] = useState<'square' | 'horizontal'>(
     initialBrand.logo_layout === 'horizontal' ? 'horizontal' : 'square'
@@ -156,24 +158,47 @@ export function BrandingForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm mb-1.5 text-white/70">Color primario</label>
+          <label className="block text-sm mb-1.5 text-white/70">
+            Color primario {primaryGradient && <span className="text-emerald-400 text-xs">· gradient activo</span>}
+          </label>
           <div className="flex items-center gap-2">
-            <input
-              name="primary_color"
-              type="color"
-              value={primary}
-              onChange={(e) => setPrimary(e.target.value)}
-              className="w-12 h-10 rounded-md bg-transparent border border-white/15 cursor-pointer"
-            />
-            <span className="text-sm text-white/60 font-mono">{primary}</span>
+            {primaryGradient ? (
+              <div
+                className="w-12 h-10 rounded-md border border-white/15"
+                style={{ background: primaryGradient }}
+                title="Gradient activo — click ✕ para volver al sólido"
+              />
+            ) : (
+              <input
+                name="primary_color"
+                type="color"
+                value={primary}
+                onChange={(e) => setPrimary(e.target.value)}
+                className="w-12 h-10 rounded-md bg-transparent border border-white/15 cursor-pointer"
+              />
+            )}
+            {/* Siempre enviamos el hex — primary_gradient viaja aparte
+                para que el fallback funcione en cualquier lugar que no
+                soporte gradient CSS (SVG stroke, alpha mixing, íconos). */}
+            {primaryGradient && <input type="hidden" name="primary_color" value={primary} />}
+            <input type="hidden" name="primary_gradient" value={primaryGradient} />
+            <span className="text-sm text-white/60 font-mono">
+              {primaryGradient ? 'gradient' : primary}
+            </span>
+            {primaryGradient && (
+              <button type="button" onClick={() => setPrimaryGradient('')}
+                className="text-xs text-white/50 hover:text-red-300 underline">
+                quitar
+              </button>
+            )}
           </div>
-          {/* Presets curados — sólidos únicamente porque el brand color
-              de un tenant se pinta en 200 lugares (botones chicos, íconos,
-              badges) donde un gradiente no aplica limpio. */}
           <div className="mt-2 p-2 rounded border border-white/10 bg-white/[0.02]">
             <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5">Temas rápidos</div>
-            <ThemePresets mode="solids" currentValue={primary} compact
-              onPick={(hex) => setPrimary(hex)} />
+            <ThemePresets mode="all" currentValue={primaryGradient || primary} compact
+              onPick={(hex, grad) => {
+                setPrimary(hex);
+                setPrimaryGradient(grad || '');
+              }} />
           </div>
         </div>
         <div>

@@ -24,6 +24,7 @@ export async function createTenantAction(
   const slug = String(formData.get('slug') ?? '').trim().toLowerCase();
   const name = String(formData.get('name') ?? '').trim();
   const primaryColor = String(formData.get('primary_color') ?? '#0a0a0a').trim();
+  const primaryGradient = String(formData.get('primary_gradient') ?? '').trim();
   const templateId = String(formData.get('template_id') ?? '').trim() || null;
 
   // Validate
@@ -73,6 +74,10 @@ export async function createTenantAction(
     site_config: siteConfig,
     modules: initialModules
   };
+  // primary_gradient viaja en columna dedicada. Si el owner eligió un
+  // gradient preset, lo guardamos; sino queda null y el sitio usa el
+  // hex sólido de brand.primary_color.
+  if (primaryGradient) tenantPayload.primary_gradient = primaryGradient;
   // Ecommerce → habilitar carrito automáticamente en el registro también
   // (no solo desde /owner/templates). Sin carrito no hay tienda.
   if (isEcommerce) {
@@ -87,8 +92,10 @@ export async function createTenantAction(
     .select('id, slug')
     .single<{ id: string; slug: string }>();
   if (insertErr) {
-    // Reintento defensivo por migrations pendientes: primero sin cart_*
-    // (migration 0034), después sin modules (migration 0045).
+    // Reintento defensivo por migrations pendientes: primero sin
+    // primary_gradient (0083), después sin cart_* (0034), después
+    // sin modules (0045).
+    delete tenantPayload.primary_gradient;
     delete tenantPayload.cart_enabled;
     delete tenantPayload.cart_position;
     delete tenantPayload.cart_display;

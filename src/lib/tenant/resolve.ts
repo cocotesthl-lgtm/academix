@@ -19,6 +19,14 @@ export type Tenant = {
   name: string;
   status: 'active' | 'suspended' | 'closed';
   brand: TenantBrand;
+  /**
+   * CSS gradient string (linear-gradient(...)) opcional que reemplaza
+   * al brand.primary_color en superficies grandes (botones CTA, bandas
+   * de header, ribbons). Se aplica como `--brand-bg` en el storefront;
+   * los consumers usan var(--brand-bg, var(--brand)) para caer al hex
+   * sólido si el owner no configuró gradient.
+   */
+  primaryGradient?: string | null;
 };
 
 export async function resolveTenantIdBySlug(slug: string): Promise<string | null> {
@@ -71,21 +79,29 @@ type TenantRow = {
   name: string;
   status: Tenant['status'];
   brand: TenantBrand | null;
+  primary_gradient?: string | null;
 };
 
 export async function getTenantById(id: string): Promise<Tenant | null> {
   const sb = getServiceClient();
-  const { data } = await sb
-    .from('tenants')
-    .select('id, slug, name, status, brand')
-    .eq('id', id)
-    .maybeSingle<TenantRow>();
+  // Query defensiva por primary_gradient (migration 0083 puede no
+  // haber corrido). Intenta con la columna; si falla, retry sin ella.
+  const cols = 'id, slug, name, status, brand, primary_gradient';
+  const fallback = 'id, slug, name, status, brand';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let res: any = await sb.from('tenants').select(cols).eq('id', id).maybeSingle();
+  if (res.error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    res = await sb.from('tenants').select(fallback).eq('id', id).maybeSingle();
+  }
+  const data = res.data as TenantRow | null;
   if (!data) return null;
   return {
     id: data.id,
     slug: data.slug,
     name: data.name,
     status: data.status,
-    brand: data.brand ?? {}
+    brand: data.brand ?? {},
+    primaryGradient: data.primary_gradient ?? null
   };
 }

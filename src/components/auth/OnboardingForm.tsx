@@ -45,6 +45,7 @@ export function OnboardingForm({
   const [name, setName] = useState('');
   const [templateId, setTemplateId] = useState<string>('');
   const [primaryColor, setPrimaryColor] = useState<string>('#f97316');
+  const [primaryGradient, setPrimaryGradient] = useState<string>('');
   const slug = slugify(name);
   const chosenTemplate = SITE_TEMPLATES.find((t) => t.id === templateId);
 
@@ -103,16 +104,32 @@ export function OnboardingForm({
           2. Color principal de marca
         </label>
         <div className="flex gap-3 items-center">
-          <input
-            id="primary_color"
-            name="primary_color"
-            type="color"
-            value={primaryColor}
-            onChange={(e) => setPrimaryColor(e.target.value)}
-            className="w-14 h-11 rounded-md bg-transparent border border-neutral-300 cursor-pointer"
-          />
+          {primaryGradient ? (
+            <>
+              <div className="w-14 h-11 rounded-md border border-neutral-300"
+                style={{ background: primaryGradient }}
+                title="Gradient elegido" />
+              <input type="hidden" name="primary_color" value={primaryColor} />
+              <button type="button" onClick={() => setPrimaryGradient('')}
+                className="text-xs text-neutral-500 hover:text-red-600 underline">
+                usar color sólido
+              </button>
+            </>
+          ) : (
+            <input
+              id="primary_color"
+              name="primary_color"
+              type="color"
+              value={primaryColor}
+              onChange={(e) => setPrimaryColor(e.target.value)}
+              className="w-14 h-11 rounded-md bg-transparent border border-neutral-300 cursor-pointer"
+            />
+          )}
+          <input type="hidden" name="primary_gradient" value={primaryGradient} />
           <span className="text-sm text-neutral-500">
-            {chosenTemplate ? 'Sugerido por el template — cambialo si querés.' : 'Lo podés cambiar después en Identidad.'}
+            {primaryGradient
+              ? 'Gradient activo — se aplica en botones y ribbons.'
+              : chosenTemplate ? 'Sugerido por el template — cambialo si querés.' : 'Lo podés cambiar después en Identidad.'}
           </span>
         </div>
         {/* Presets curados — atajo rápido para no tener que abrir la
@@ -122,8 +139,11 @@ export function OnboardingForm({
             O elegí un tema pre-armado
           </div>
           <div className="[&_.bg-white\/10]:bg-neutral-200 [&_.bg-white\/10]:text-neutral-700 [&_.hover\:bg-white\/20:hover]:bg-neutral-300">
-            <ThemePresets mode="solids" currentValue={primaryColor} compact
-              onPick={(hex) => setPrimaryColor(hex)} />
+            <ThemePresets mode="all" currentValue={primaryGradient || primaryColor} compact
+              onPick={(hex, grad) => {
+                setPrimaryColor(hex);
+                setPrimaryGradient(grad || '');
+              }} />
           </div>
         </div>
       </div>

@@ -81,6 +81,10 @@ export default async function StorefrontLayout({
   const brand = tenant.brand ?? {};
   const primary = brand.primary_color ?? '#0a0a0a';
   const accent = brand.accent_color ?? primary;
+  // Gradient opcional que reemplaza al hex en superficies grandes
+  // (botones CTA, bandas de header, ribbons). Fallback al hex si el
+  // owner no configuró gradient.
+  const primaryGradient = tenant.primaryGradient || primary;
   const logoLayout: 'square' | 'horizontal' =
     (brand as { logo_layout?: string }).logo_layout === 'horizontal' ? 'horizontal' : 'square';
   const logoText = (brand as { logo_text?: string | null }).logo_text ?? null;
@@ -214,7 +218,7 @@ export default async function StorefrontLayout({
           div), y CSS vars solo cascadean hacia ABAJO. Sin este style
           tag el bar y el spinner quedaban naranjas fijos. */}
       <style dangerouslySetInnerHTML={{
-        __html: `:root{--cp-brand-primary:${primary};--cp-brand-secondary:${accent};}`
+        __html: `:root{--cp-brand-primary:${primary};--cp-brand-secondary:${accent};--brand-bg:${primaryGradient};}`
       }} />
     <div
       className="min-h-screen bg-white text-black"
@@ -222,7 +226,12 @@ export default async function StorefrontLayout({
         ['--brand-primary' as string]: primary,
         ['--brand-accent' as string]: accent,
         ['--cp-brand-primary' as string]: primary,
-        ['--cp-brand-secondary' as string]: accent
+        ['--cp-brand-secondary' as string]: accent,
+        // --brand-bg: gradient si el owner lo configuró, hex sólido
+        // como fallback. Los consumers grandes (botones CTA, ribbons)
+        // usan `background: var(--brand-bg)` y automáticamente
+        // funcionan con ambos casos.
+        ['--brand-bg' as string]: primaryGradient
       }}
     >
       {isAffiliate && !affBarHidden && (

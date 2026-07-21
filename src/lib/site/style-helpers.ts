@@ -94,12 +94,21 @@ type ButtonStyleInput = {
 };
 
 export function buttonStyle(s: ButtonStyleInput, accent: string): CSSProperties {
+  // Si el owner NO override el bg del botón desde el editor de sección,
+  // usamos la CSS var --brand-bg (que puede ser gradient o hex según lo
+  // que haya configurado en Identidad). Si el owner sí override, respetamos
+  // su valor exacto — no queremos que un gradient global pise una decisión
+  // por-sección.
+  const useBrandVar = !s.button_bg_color && !s.accent_color;
   const bg = s.button_bg_color ?? s.accent_color ?? accent;
+  const bgValue = useBrandVar ? `var(--brand-bg, ${accent})` : bg;
   const text = s.button_text_color ?? '#ffffff';
   const border = s.button_border_color ?? bg;
+  // El glow usa el hex sólido (accent) porque box-shadow no acepta
+  // gradients directamente.
   const glow = s.button_glow ? `0 0 18px ${bg}80, 0 0 36px ${bg}40` : undefined;
   return {
-    background: bg,
+    background: bgValue,
     color: text,
     border: `1px solid ${border}`,
     boxShadow: glow
