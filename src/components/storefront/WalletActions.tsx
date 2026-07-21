@@ -107,7 +107,7 @@ export function WalletActions({
           </label>
           <button type="submit" disabled={pending}
             className="w-full rounded py-2 text-sm font-semibold text-white disabled:opacity-50"
-            style={{ background: primary }}>
+            style={{ background: `var(--brand-bg, ${primary})` }}>
             {pending ? 'Enviando…' : 'Transferir'}
           </button>
         </form>
@@ -147,7 +147,7 @@ export function WalletActions({
           </label>
           <button type="submit" disabled={pending}
             className="w-full rounded py-2 text-sm font-semibold text-white disabled:opacity-50"
-            style={{ background: primary }}>
+            style={{ background: `var(--brand-bg, ${primary})` }}>
             {pending ? 'Enviando…' : 'Solicitar retiro'}
           </button>
         </form>

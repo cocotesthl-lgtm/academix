@@ -36,7 +36,7 @@ export function WorkWithUsCTA({
     return (
       <a href="/login?next=/%23workwithus"
         className="inline-block rounded-md px-8 py-4 font-bold shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition text-lg"
-        style={{ background: primary, color: '#fff' }}>
+        style={{ background: `var(--brand-bg, ${primary})`, color: '#fff' }}>
         {labelLoggedOut} →
       </a>
     );
@@ -81,7 +81,7 @@ export function WorkWithUsCTA({
     <div className="space-y-3">
       <button type="button" onClick={apply} disabled={pending}
         className="inline-block rounded-md px-8 py-4 font-bold shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition text-lg disabled:opacity-60"
-        style={{ background: primary, color: '#fff' }}>
+        style={{ background: `var(--brand-bg, ${primary})`, color: '#fff' }}>
         {pending ? 'Enviando…' : `${labelLoggedIn} →`}
       </button>
       {errMsg && <p className="text-sm text-rose-300">{errMsg}</p>}

@@ -46,7 +46,7 @@ export function StorefrontUserMenu({
       <a
         href={loginHref}
         className="rounded-md text-sm font-medium px-4 py-2 text-white whitespace-nowrap"
-        style={{ background: primary }}
+        style={{ background: `var(--brand-bg, ${primary})` }}
       >
         Iniciar sesión
       </a>
@@ -65,7 +65,7 @@ export function StorefrontUserMenu({
       >
         <div
           className="w-9 h-9 rounded-full grid place-items-center text-white font-bold text-sm shrink-0"
-          style={{ background: primary }}
+          style={{ background: `var(--brand-bg, ${primary})` }}
         >
           {initial}
         </div>

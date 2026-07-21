@@ -112,7 +112,7 @@ export function TipButton({
         onClick={submit}
         disabled={submitting}
         className="w-full rounded-md px-4 py-3 font-bold text-white shadow hover:shadow-lg transition disabled:opacity-60"
-        style={{ background: primary }}
+        style={{ background: `var(--brand-bg, ${primary})` }}
       >
         {submitting ? 'Procesando…' : `💸 Enviar tip de $${(custom ? parseInt(custom, 10) : amount).toLocaleString('es-AR')}`}
       </button>

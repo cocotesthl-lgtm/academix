@@ -87,7 +87,7 @@ export function VipPackLanding({
         <div className="absolute inset-x-0 bottom-0 p-6 md:p-10 max-w-5xl mx-auto">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded"
-              style={{ background: primary, color: 'white' }}>
+              style={{ background: `var(--brand-bg, ${primary})`, color: 'white' }}>
               🔒 Contenido VIP
             </span>
             {isUnlocked && (

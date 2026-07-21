@@ -554,7 +554,7 @@ function VslMultiStepForm({
           onClick={next}
           disabled={submitting}
           className="flex-1 rounded-lg py-3 text-white font-bold text-base disabled:opacity-50"
-          style={{ background: primary }}
+          style={{ background: `var(--brand-bg, ${primary})` }}
         >
           {submitting ? 'Enviando…' : isLast ? '✓ Finalizar y continuar' : 'Siguiente →'}
         </button>

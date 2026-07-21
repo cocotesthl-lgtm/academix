@@ -255,7 +255,7 @@ export function TicketPicker({
               type="submit"
               disabled={!dataReady}
               className="w-full rounded-md py-3 px-4 font-semibold text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              style={{ background: primary }}
+              style={{ background: `var(--brand-bg, ${primary})` }}
             >
               <span>🎫</span>
               <span>

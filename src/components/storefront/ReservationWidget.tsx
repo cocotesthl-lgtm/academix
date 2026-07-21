@@ -248,7 +248,7 @@ export function ReservationWidget({
 
       <button type="submit" disabled={submitting || (slots !== null && slots.length === 0 && !!date)}
         className="w-full rounded-lg text-white font-semibold py-3 disabled:opacity-50"
-        style={{ background: primary }}>
+        style={{ background: `var(--brand-bg, ${primary})` }}>
         {submitting ? 'Procesando…' : paymentMode === 'none' ? ctaText : `${ctaText} y pagar`}
       </button>
       <p className="text-[10px] text-black/45 text-center">
