@@ -301,6 +301,7 @@ export default async function SiteBuilderPage() {
             isLast={isLast}
             position={idx + 1}
             total={cfg.order.length}
+            brandHex={primary}
           >
             {key === 'hero' && (
               <HeroEditor
@@ -767,7 +768,7 @@ function PaywallEditor({ cfg }: { cfg: import('@/lib/site/types').SiteConfig['pa
 }
 
 function Section({
-  title, desc, enabled, sectionKey, requiresModule, bgColor, textColor, styles, children, isFirst, isLast, position, total
+  title, desc, enabled, sectionKey, requiresModule, bgColor, textColor, styles, children, isFirst, isLast, position, total, brandHex
 }: {
   title: string; desc: string; enabled: boolean; sectionKey: string;
   /** Si la sección depende de una app off, se pasa este objeto y la sección aparece bloqueada. */
@@ -779,6 +780,10 @@ function Section({
     font_family: string | null; title_weight: string | null;
   };
   children: React.ReactNode; isFirst: boolean; isLast: boolean; position: number; total: number;
+  /** Hex del brand del tenant — se propaga a ColorAutoSave y desde ahí
+   *  a ThemePresets para mostrar el swatch "Usar el color/gradient de
+   *  mi sitio". */
+  brandHex?: string;
 }) {
   const locked = !!requiresModule;
   return (
@@ -824,6 +829,7 @@ function Section({
               sectionKey={sectionKey}
               initial={bgColor}
               action={setSectionBgColorAction}
+              brandHex={brandHex}
             />
             <SectionStyleEditor sectionKey={sectionKey} initial={styles} />
             <form action={toggleSectionAction}>

@@ -23,7 +23,9 @@ export function ThemePresets({
   mode = 'all',
   currentValue,
   compact = false,
-  theme = 'dark'
+  theme = 'dark',
+  showBrandSwatch = false,
+  brandHex
 }: {
   onPick: (color: string, gradient?: string) => void;
   mode?: 'all' | 'solids' | 'gradients';
@@ -33,6 +35,15 @@ export function ThemePresets({
    * Onboarding en fondo blanco. Cambia los colores del + custom, tabs
    * y textos para que se vean con contraste en cada contexto. */
   theme?: 'dark' | 'light';
+  /** Si true, arriba de las tabs muestra un swatch "Usar brand del sitio"
+   * que aplica literalmente la CSS var --brand-bg. Al elegirlo, el fondo/
+   * botón de la sección hereda automáticamente lo que el owner tenga
+   * configurado en /owner/branding (hex o gradient). Si después cambia
+   * el brand, todo lo marcado como "brand" se actualiza solo. */
+  showBrandSwatch?: boolean;
+  /** Hex del brand actual — se usa como preview del swatch y como
+   *  fallback en el CSS var. Requerido si showBrandSwatch=true. */
+  brandHex?: string;
 }) {
   const [activeTab, setActiveTab] = useState<ThemePreset['category']>(
     mode === 'gradients' ? 'gradientes' : 'sólidos'
@@ -70,6 +81,26 @@ export function ThemePresets({
 
   return (
     <div className={compact ? 'space-y-1.5' : 'space-y-2'}>
+      {/* Swatch "brand del sitio" — guarda literal var(--brand-bg) para
+          que el color/gradient elegido en /owner/branding se propague
+          automáticamente. Cuando el owner cambie el brand, todo lo que
+          marcó como "mi brand" se actualiza sin re-editar. */}
+      {showBrandSwatch && brandHex && (
+        <button type="button"
+          onClick={() => onPick(brandHex, `var(--brand-bg, ${brandHex})`)}
+          className={`w-full flex items-center gap-2 p-2 rounded border transition text-xs ${
+            currentValue?.includes('--brand-bg')
+              ? isDark ? 'border-white bg-white/10' : 'border-neutral-900 bg-neutral-100'
+              : isDark ? 'border-white/20 hover:bg-white/5' : 'border-neutral-300 hover:bg-neutral-50'
+          }`}>
+          <span className="w-6 h-6 rounded border border-black/10 shrink-0"
+            style={{ background: `var(--brand-bg, ${brandHex})` }} />
+          <span className={isDark ? 'text-white/80' : 'text-neutral-700'}>
+            Usar el color/gradient de mi sitio
+          </span>
+        </button>
+      )}
+
       {/* Tabs de categorías (solo si hay >1) */}
       {availableCats.length > 1 && (
         <div className="flex gap-1 text-xs">

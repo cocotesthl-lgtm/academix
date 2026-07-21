@@ -22,13 +22,17 @@ export function ColorAutoSave({
   fieldName,
   sectionKey,
   initial,
-  action
+  action,
+  brandHex
 }: {
   label: string;
   fieldName: 'bg_color' | 'text_color';
   sectionKey: string;
   initial: string | null;
   action: (fd: FormData) => Promise<void>;
+  /** Hex del brand color del tenant. Se usa para mostrar el swatch
+   *  "Usar el color/gradient de mi sitio" arriba de los presets. */
+  brandHex?: string;
 }) {
   const [value, setValue] = useState(initial ?? defaultForField(fieldName));
   const [pending, start] = useTransition();
@@ -125,6 +129,8 @@ export function ColorAutoSave({
             mode={supportsGradient ? 'all' : 'solids'}
             currentValue={value}
             compact
+            showBrandSwatch={!!brandHex && supportsGradient}
+            brandHex={brandHex}
             onPick={(hex, grad) => {
               const applied = supportsGradient && grad ? grad : hex;
               handlePick(applied);
