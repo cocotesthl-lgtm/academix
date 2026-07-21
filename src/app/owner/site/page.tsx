@@ -104,7 +104,15 @@ const SECTION_REQUIRES_MODULE: Partial<Record<SectionKey, { key: ModuleKey; labe
   workwithus:     { key: 'affiliates', label: 'Programa de afiliados' }
 };
 
-export default async function SiteBuilderPage() {
+export default async function SiteBuilderPage({
+  searchParams
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  // Filtro de secciones (server-side via query param). 'all' default.
+  // 'active' esconde secciones con toggle off O app requerida off.
+  const sp = await searchParams;
+  const filterMode: 'all' | 'active' = sp.filter === 'active' ? 'active' : 'all';
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
   const modules = await getTenantModules(tenant.id);
@@ -217,28 +225,48 @@ export default async function SiteBuilderPage() {
         que aparezca en tu sitio. Podés descartar cambios sin publicar en cualquier momento.
       </p>
 
+      {/* Filtro de secciones — link-based (server-side, sin JS). "Todas"
+          muestra tal cual; "Solo activas" oculta las que tienen toggle
+          off o app requerida desactivada — reduce el ruido cuando el
+          owner ya sabe qué secciones tiene armadas. */}
+      <div className="flex items-center gap-2 text-xs">
+        <span className="text-white/50 uppercase tracking-wider font-semibold">Filtro:</span>
+        <Link
+          href="/owner/site"
+          className={`px-3 py-1 rounded transition ${filterMode === 'all' ? 'bg-white text-black font-semibold' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
+          Todas
+        </Link>
+        <Link
+          href="/owner/site?filter=active"
+          className={`px-3 py-1 rounded transition ${filterMode === 'active' ? 'bg-white text-black font-semibold' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
+          Solo activas
+        </Link>
+      </div>
+
       {/* Las plantillas pre-armadas se movieron a la sección Templates
           (/owner/templates) que tiene un catálogo completo por vertical.
           El bloque viejo fue eliminado de acá porque duplicaba esa entrada
           de menú y confundía. */}
 
-      {/* Botón flotante de WhatsApp */}
-      <div className="rounded-xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-emerald-500/[0.02] p-5">
-        <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+      {/* Botón flotante de WhatsApp — colapsado por default para no
+          consumir espacio visual (typical un owner lo configura una vez
+          y no lo toca más). <details> HTML nativo. */}
+      <details className="group rounded-xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-emerald-500/[0.02]">
+        <summary className="cursor-pointer select-none p-5 flex items-start justify-between gap-3 flex-wrap list-none [&::-webkit-details-marker]:hidden">
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-2">
+              <span className="inline-block transition-transform group-open:rotate-90">▸</span>
               💬 Botón flotante de WhatsApp
               {waNumber && (
                 <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Activo</span>
               )}
             </h2>
-            <p className="text-sm text-white/60 mt-1">
-              Aparece en tu sitio abajo a la derecha (o izquierda). Al clickearlo
-              abre WhatsApp Web / la app con un mensaje pre-cargado.
+            <p className="text-sm text-white/60 mt-1 ml-6">
+              Aparece en tu sitio abajo a la derecha (o izquierda). Click para configurar.
             </p>
           </div>
-        </div>
-        <form action={setWhatsAppConfigAction} className="grid sm:grid-cols-2 gap-3">
+        </summary>
+        <form action={setWhatsAppConfigAction} className="grid sm:grid-cols-2 gap-3 p-5 border-t border-emerald-500/15">
           <label className="block sm:col-span-2">
             <span className="text-xs uppercase tracking-wider text-white/55 font-semibold">Número de WhatsApp</span>
             <input name="whatsapp_number" defaultValue={waNumber}
@@ -268,7 +296,7 @@ export default async function SiteBuilderPage() {
             </button>
           </div>
         </form>
-      </div>
+      </details>
 
       {cfg.order.map((key, idx) => {
         const meta = SECTION_META[key];
@@ -278,6 +306,11 @@ export default async function SiteBuilderPage() {
         const requiresModule = req && modules[req.key] === false
           ? { key: req.key, label: req.label }
           : null;
+        // Modo "Solo activas" oculta secciones desactivadas por toggle
+        // o bloqueadas por app off. En modo "Todas" siempre se muestra.
+        if (filterMode === 'active' && (!cfg.sections[key].enabled || requiresModule)) {
+          return null;
+        }
         return (
           <Section
             key={key}
