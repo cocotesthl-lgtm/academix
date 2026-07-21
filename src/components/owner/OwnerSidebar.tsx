@@ -385,7 +385,8 @@ export function OwnerSidebar({
                 ›
               </span>
             </button>
-            {isOpen && (() => {
+            <div className="cp-menu-collapse" data-open={isOpen}>
+            {(() => {
               // ── Agrupamiento por sub-módulo (Wix-style) ──
               // Items sin moduleKey → "Base" (siempre visibles arriba).
               // Items con moduleKey → agrupados por su sub-módulo, mostrados
@@ -443,6 +444,7 @@ export function OwnerSidebar({
                 </div>
               );
             })()}
+            </div>
           </div>
         );
       })}

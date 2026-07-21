@@ -57,6 +57,26 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+/* ───── Animación del sidebar (grupos expandibles) ──────────────
+   Usa el "grid trick": grid-template-rows 0fr ↔ 1fr es animable en
+   todos los browsers modernos, a diferencia de height:auto. El
+   children queda siempre en el DOM (SEO + no re-mount de state).
+*/
+.cp-menu-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 220ms ease, opacity 180ms ease;
+  opacity: 0;
+}
+.cp-menu-collapse[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.cp-menu-collapse > * {
+  overflow: hidden;
+  min-height: 0;
+}
+
 /* ───── Animación de <details> expandibles ─────────────────────────
    HTML nativo <details> no anima por default: el content aparece/
    desaparece instantáneamente. Opt-in vía clase .cp-collapse:
