@@ -115,15 +115,23 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
   /* 2. Restaurante / Gastronomía */
   (() => {
     const c = clone();
-    enableOnly(c, ['hero', 'about', 'gallery', 'features', 'testimonials', 'faq', 'map', 'contact']);
+    // catalog = grid de publicaciones. El owner crea publicaciones tipo
+    // "Reserva de mesa" desde /owner/courses (product_type=reservation)
+    // y aparecen automáticamente acá con el ReservationWidget adentro.
+    enableOnly(c, ['hero', 'about', 'gallery', 'catalog', 'features', 'testimonials', 'faq', 'map', 'contact']);
     c.sections.hero.layout = 'centered';
     c.sections.hero.eyebrow = 'Cocina de autor · Desde 1978';
     c.sections.hero.title = 'Donde la pasta se hace a mano';
     c.sections.hero.subtitle = 'Recetas de tres generaciones en el corazón de Palermo. Reservá tu mesa o pasá a almorzar de martes a domingo.';
     c.sections.hero.cta_label = 'Reservar mesa';
-    c.sections.hero.cta_href = '#contact';
+    c.sections.hero.cta_href = '#catalog';
     c.sections.hero.cta_label_2 = 'Ver la carta';
     c.sections.hero.cta_href_2 = '#gallery';
+    c.sections.catalog.enabled = true;
+    // El owner crea una publicación "Mesa para 2/4/6" con calendario y
+    // aparece con el widget de reserva integrado (fecha + hora + venue).
+    // Si todavía no armó publicaciones, el catálogo muestra empty state
+    // con CTA "Crear la primera" desde el link "Aquí" del builder.
     c.sections.hero.image_url = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1800&auto=format&fit=crop&q=80';
     c.sections.about.title = 'Nuestra historia';
     c.sections.about.body = 'Nonna Rosa abrió la primera trattoria en 1978 con tres mesas y una receta secreta de rigatoni al ragù. Casi 50 años después, seguimos amasando la pasta cada mañana con la misma harina italiana y respetamos cada receta al pie de la letra. Somos un restaurante familiar en el que se come como en casa.';
@@ -160,8 +168,8 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       { id: 'q4', q: '¿Cuál es el horario?', a: 'Martes a jueves de 12 a 15hs y de 20 a 24hs. Viernes y sábado de 12 a 16hs y de 20hs a 1am. Domingo solo mediodía. Cerramos lunes.' },
       { id: 'q5', q: '¿Se puede pedir para llevar?', a: 'Sí. Pedidos por WhatsApp o desde la app. Envíos por Rappi y PedidosYa.' }
     ];
-    c.sections.contact.title = 'Reservá tu mesa';
-    c.sections.contact.subtitle = 'Contanos día, horario y cuántos son. Te confirmamos por WhatsApp en el momento.';
+    c.sections.contact.title = 'Consultas generales';
+    c.sections.contact.subtitle = 'Para reservas de mesa usá el módulo de arriba. Este form es para eventos privados, consultas o quejas.';
     c.nav.show_my_courses = false;
     c.nav.show_affiliates = false;
     c.nav.my_courses_label = 'Mis reservas';
@@ -181,13 +189,16 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
   /* 3. Multi-sede experiencia (tiro, escape, paintball, kart) */
   (() => {
     const c = clone();
-    enableOnly(c, ['hero', 'stats', 'features', 'gallery', 'testimonials', 'faq', 'pricing', 'map', 'cta_final']);
+    // catalog es donde el owner cuelga cada experiencia (Kart 20 min /
+    // Escape room X / Paintball 2hs) como publicaciones tipo reservation.
+    // Cada card lleva al detalle con ReservationWidget (sede + día + hora).
+    enableOnly(c, ['hero', 'stats', 'features', 'catalog', 'gallery', 'testimonials', 'faq', 'pricing', 'map', 'cta_final']);
     c.sections.hero.layout = 'centered';
     c.sections.hero.eyebrow = 'Adrenalina sin límites · 4 sedes';
     c.sections.hero.title = 'Una experiencia que no vas a olvidar';
     c.sections.hero.subtitle = 'Kart en pista profesional, paintball outdoor y escape rooms temáticos. Equipamiento incluido, apto desde 8 años.';
-    c.sections.hero.cta_label = 'Reservar ahora';
-    c.sections.hero.cta_href = '#pricing';
+    c.sections.hero.cta_label = 'Reservar experiencia';
+    c.sections.hero.cta_href = '#catalog';
     c.sections.hero.cta_label_2 = 'Ver galería';
     c.sections.hero.cta_href_2 = '#gallery';
     c.sections.hero.image_url = 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=1800&auto=format&fit=crop&q=80';
@@ -226,7 +237,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
         description: '2 tandas de 10 minutos · Ranking',
         features: ['Briefing de seguridad', '20 minutos de pista', 'Cronómetro individual', 'Foto del podio', 'Casco y guantes incluidos'],
         cta_label: 'Reservar karting',
-        cta_href: '#contact'
+        cta_href: '#catalog'
       },
       {
         id: 'p2', name: 'Combo Doble',
@@ -234,7 +245,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
         description: 'Karting + Escape room',
         features: ['20 min de karting', '60 min de escape room', 'Cerveza o gaseosa incluida', 'Foto grupal', 'Ideal para 2-4 personas'],
         cta_label: 'Reservar combo',
-        cta_href: '#contact',
+        cta_href: '#catalog',
         highlighted: true
       },
       {
@@ -243,7 +254,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
         description: '3 actividades · 3 horas',
         features: ['Karting + Paintball + VR', 'Almuerzo o merienda', 'Ranking del día', 'Regalo temático', 'Foto profesional'],
         cta_label: 'Reservar full',
-        cta_href: '#contact'
+        cta_href: '#catalog'
       }
     ];
     c.sections.testimonials.title = 'Historias reales';
@@ -281,13 +292,16 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
   /* 4. Estética / Belleza (uñas, peluquería, spa) */
   (() => {
     const c = clone();
-    enableOnly(c, ['hero', 'about', 'features', 'gallery', 'testimonials', 'pricing', 'faq', 'contact']);
+    // catalog para colgar servicios como publicaciones con reserva de
+    // turno (fecha + hora + profesional). El pricing queda como tabla
+    // comparativa; los clientes reservan desde catalog.
+    enableOnly(c, ['hero', 'about', 'features', 'catalog', 'gallery', 'testimonials', 'pricing', 'faq', 'contact']);
     c.sections.hero.layout = 'centered';
     c.sections.hero.eyebrow = 'Salón de belleza · Palermo Soho';
     c.sections.hero.title = 'Tu momento de pausa';
     c.sections.hero.subtitle = 'Servicios profesionales en un ambiente pensado para vos. Reservá tu turno online en menos de 1 minuto.';
     c.sections.hero.cta_label = 'Reservar turno';
-    c.sections.hero.cta_href = '#pricing';
+    c.sections.hero.cta_href = '#catalog';
     c.sections.hero.cta_label_2 = 'Ver trabajos';
     c.sections.hero.cta_href_2 = '#gallery';
     c.sections.hero.image_url = 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1800&auto=format&fit=crop&q=80';
@@ -323,7 +337,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
         description: 'Manicura y pedicura',
         features: ['Manicura completa · $ 8.900', 'Semipermanente · $ 12.900', 'Esculpidas · $ 18.900', 'Pedicura spa · $ 11.900'],
         cta_label: 'Reservar turno',
-        cta_href: '#contact'
+        cta_href: '#catalog'
       },
       {
         id: 'p2', name: 'Peluquería',
@@ -331,7 +345,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
         description: 'Corte + brushing + tratamiento',
         features: ['Corte + brushing · $ 12.900', 'Color completo · $ 24.900', 'Mechas californianas · $ 34.900', 'Tratamiento Kérastase · $ 16.900'],
         cta_label: 'Reservar turno',
-        cta_href: '#contact',
+        cta_href: '#catalog',
         highlighted: true
       },
       {
@@ -340,7 +354,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
         description: 'Faciales y depilación',
         features: ['Limpieza facial · $ 15.900', 'Radiofrecuencia · $ 22.900', 'Diseño de cejas · $ 6.900', 'Peeling químico · $ 28.900'],
         cta_label: 'Reservar turno',
-        cta_href: '#contact'
+        cta_href: '#catalog'
       }
     ];
     c.sections.testimonials.title = 'Nuestras clientas cuentan';
@@ -378,7 +392,9 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
   /* 5. Gimnasio / Estudio fitness */
   (() => {
     const c = clone();
-    enableOnly(c, ['hero', 'stats', 'features', 'gallery', 'instructor', 'pricing', 'testimonials', 'faq', 'cta_final']);
+    // catalog para las membresías (publicaciones tipo suscripción) y
+    // reservas de clase individuales (publicaciones tipo reservation).
+    enableOnly(c, ['hero', 'stats', 'features', 'gallery', 'instructor', 'catalog', 'pricing', 'testimonials', 'faq', 'cta_final']);
     c.sections.hero.layout = 'centered';
     c.sections.hero.eyebrow = 'Gimnasio 24/7 · Sin excusas';
     c.sections.hero.title = 'Entrená duro, vivas como vivas';
@@ -431,7 +447,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
         description: 'Acceso libre a la sala',
         features: ['Acceso 24/7 con huella', 'Sala de musculación completa', 'Vestuarios y duchas', 'App con rutinas', 'Sin permanencia'],
         cta_label: 'Empezar',
-        cta_href: '#contact'
+        cta_href: '#catalog'
       },
       {
         id: 'p2', name: 'Full',
@@ -439,7 +455,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
         description: 'Todo el gimnasio + clases',
         features: ['Musculación + todas las clases', 'Nutricionista incluida', 'App con rutinas + tracking', 'Toallas + lockers', 'Sin permanencia · 1a semana gratis'],
         cta_label: 'Probar 7 días gratis',
-        cta_href: '#contact',
+        cta_href: '#catalog',
         highlighted: true
       },
       {
@@ -685,7 +701,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
         description: 'Sesión de 15-20 fotos',
         features: ['Estudio + iluminación', 'Escenografía + estilismo', '15-20 fotos finales editadas', 'Entrega en 5 días', 'Uso comercial ilimitado'],
         cta_label: 'Consultar disponibilidad',
-        cta_href: '#contact'
+        cta_href: '#catalog'
       },
       {
         id: 'p2', name: 'Contenido mensual',
@@ -693,7 +709,7 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
         description: 'Pack redes sociales',
         features: ['1 día de producción al mes', '30 fotos + 6 reels + 12 stories', 'Calendario editorial', 'Edición y textos incluidos', 'Formato optimizado por red'],
         cta_label: 'Reservar mi mes',
-        cta_href: '#contact',
+        cta_href: '#catalog',
         highlighted: true
       },
       {
