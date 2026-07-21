@@ -166,7 +166,7 @@ export function FunnelLanding({
       <LandingChrome hideNav={config.hide_nav} hideFooter={config.hide_footer} />
       {/* URGENCIA BAR */}
       {offerText && (
-        <div className="sticky top-0 z-40 text-center text-sm font-semibold py-2 px-4 text-white" style={{ background: primary }}>
+        <div className="sticky top-0 z-40 text-center text-sm font-semibold py-2 px-4 text-white" style={{ background: `var(--brand-bg, ${primary})` }}>
           {offerText}
         </div>
       )}
@@ -238,7 +238,7 @@ export function FunnelLanding({
             <ul className="space-y-3">
               {learnPoints.map((p, i) => (
                 <li key={i} className="flex items-start gap-3 rounded-xl border border-black/10 p-4 hover:border-black/30 transition">
-                  <span className="shrink-0 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center text-white font-bold" style={{ background: primary }}>✓</span>
+                  <span className="shrink-0 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center text-white font-bold" style={{ background: `var(--brand-bg, ${primary})` }}>✓</span>
                   <span className="text-black/80 leading-relaxed">{p}</span>
                 </li>
               ))}
@@ -275,7 +275,7 @@ export function FunnelLanding({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={t.photo_url} alt={t.name} className="w-12 h-12 rounded-full object-cover" />
                     ) : (
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style={{ background: primary }}>
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style={{ background: `var(--brand-bg, ${primary})` }}>
                         {t.name.slice(0, 1).toUpperCase()}
                       </div>
                     )}
@@ -327,7 +327,7 @@ export function FunnelLanding({
                     <p className="text-sm text-black/65 mt-1">{b.description}</p>
                   </div>
                   {b.value && (
-                    <div className="shrink-0 text-xs font-bold px-3 py-2 rounded text-white whitespace-nowrap" style={{ background: primary }}>
+                    <div className="shrink-0 text-xs font-bold px-3 py-2 rounded text-white whitespace-nowrap" style={{ background: `var(--brand-bg, ${primary})` }}>
                       {b.value}
                     </div>
                   )}

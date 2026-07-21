@@ -157,7 +157,7 @@ export function HotmartLanding({
               <ul className="grid sm:grid-cols-2 gap-3">
                 {learnPoints.map((p, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm leading-relaxed">
-                    <span className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: primary }}>✓</span>
+                    <span className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: `var(--brand-bg, ${primary})` }}>✓</span>
                     <span className="text-black/80">{p}</span>
                   </li>
                 ))}
@@ -240,7 +240,7 @@ export function HotmartLanding({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={t.photo_url} alt={t.name} className="w-9 h-9 rounded-full object-cover" />
                       ) : (
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: primary }}>
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: `var(--brand-bg, ${primary})` }}>
                           {t.name.slice(0, 1).toUpperCase()}
                         </div>
                       )}
@@ -268,7 +268,7 @@ export function HotmartLanding({
                       <p className="text-sm text-black/65 mt-1">{b.description}</p>
                     </div>
                     {b.value && (
-                      <div className="shrink-0 text-xs font-bold px-2.5 py-1.5 rounded text-white" style={{ background: primary }}>
+                      <div className="shrink-0 text-xs font-bold px-2.5 py-1.5 rounded text-white" style={{ background: `var(--brand-bg, ${primary})` }}>
                         {b.value}
                       </div>
                     )}

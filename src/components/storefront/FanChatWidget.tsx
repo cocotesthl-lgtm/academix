@@ -54,7 +54,7 @@ export function FanChatWidget({
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-6 right-6 z-40 rounded-full w-14 h-14 shadow-2xl flex items-center justify-center text-2xl text-white font-bold hover:scale-105 transition"
-        style={{ background: primary }}
+        style={{ background: `var(--brand-bg, ${primary})` }}
         aria-label="Chat con el creador"
       >
         {open ? '✕' : '💬'}
@@ -112,7 +112,7 @@ export function FanChatWidget({
               onClick={send}
               disabled={pending || !text.trim()}
               className="rounded text-white text-sm font-semibold px-3 disabled:opacity-40"
-              style={{ background: primary }}
+              style={{ background: `var(--brand-bg, ${primary})` }}
             >
               {pending ? '…' : '↑'}
             </button>

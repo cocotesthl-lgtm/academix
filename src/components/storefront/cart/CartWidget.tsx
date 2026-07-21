@@ -143,7 +143,7 @@ export function CartWidget({
   const buttonCls = isFloating
     ? 'flex items-center justify-center w-14 h-14 rounded-full shadow-2xl hover:scale-105 transition'
     : 'relative inline-flex items-center justify-center rounded-full p-2 hover:bg-black/5 transition';
-  const buttonStyle = isFloating ? { background: primary, color: 'white' } : undefined;
+  const buttonStyle = isFloating ? { background: `var(--brand-bg, ${primary})`, color: 'white' } : undefined;
   const buttonTitle = count === 0 ? 'Carrito vacío' : `${count} ${count === 1 ? 'producto' : 'productos'} en el carrito`;
 
   const inner = (
@@ -201,7 +201,7 @@ export function CartWidget({
           >
             {/* Header */}
             <div className="px-5 py-4 border-b border-black/10 flex items-center justify-between shrink-0"
-              style={{ background: primary, color: 'white' }}>
+              style={{ background: `var(--brand-bg, ${primary})`, color: 'white' }}>
               <div>
                 <div className="font-bold text-base flex items-center gap-2">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -304,7 +304,7 @@ export function CartWidget({
                 <a
                   href="/tienda/checkout"
                   className="w-full rounded-lg py-3.5 font-bold text-white shadow hover:shadow-lg transition flex items-center justify-center gap-2"
-                  style={{ background: primary }}
+                  style={{ background: `var(--brand-bg, ${primary})` }}
                 >
                   Iniciar compra →
                 </a>

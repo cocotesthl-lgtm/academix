@@ -160,7 +160,7 @@ export function CartFullPage({ tenantId, primary }: { tenantId: string; primary:
           </label>
           <button type="button" onClick={checkout} disabled={submitting}
             className="w-full rounded-md py-3 font-bold text-white shadow hover:shadow-lg transition disabled:opacity-60"
-            style={{ background: primary }}>
+            style={{ background: `var(--brand-bg, ${primary})` }}>
             {submitting ? 'Procesando…' : '💳 Pagar con MercadoPago'}
           </button>
           <p className="text-[10px] text-center text-black/40">

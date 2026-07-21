@@ -188,7 +188,7 @@ export function CouponInput({
         <button
           type="submit"
           className="w-full rounded-md py-3 font-semibold text-white"
-          style={{ background: primary }}
+          style={{ background: `var(--brand-bg, ${primary})` }}
         >
           {freeLabel}
         </button>
@@ -203,7 +203,7 @@ export function CouponInput({
             type="button"
             onClick={() => { setPaymentChoice('full'); setExpanded(true); }}
             className="w-full rounded-md py-3 font-semibold text-white"
-            style={{ background: primary }}
+            style={{ background: `var(--brand-bg, ${primary})` }}
           >
             {ctaText} · ${(priceCents / 100).toLocaleString('es-AR')} {currency}
           </button>
@@ -404,7 +404,7 @@ export function CouponInput({
             type="submit"
             disabled={!dataReady}
             className="w-full rounded-md py-3 font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ background: primary }}
+            style={{ background: `var(--brand-bg, ${primary})` }}
           >
             {ctaText} · ${(effectiveChargeCents / 100).toLocaleString('es-AR')} {currency}
           </button>

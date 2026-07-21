@@ -128,7 +128,7 @@ export function CategoriesMegaMenu({
                       className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between ${
                         isActive ? 'text-white' : 'text-neutral-300 hover:text-white hover:bg-white/5'
                       }`}
-                      style={isActive ? { background: primary } : undefined}
+                      style={isActive ? { background: `var(--brand-bg, ${primary})` } : undefined}
                     >
                       <span className="truncate">{r.name}</span>
                       {(childrenByParent.get(r.id)?.length ?? 0) > 0 && (

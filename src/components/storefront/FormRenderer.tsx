@@ -83,7 +83,7 @@ export function FormRenderer({ form, primary = '#f97316', compact = false }: {
             type="submit"
             disabled={pending}
             className="w-full rounded-md px-4 py-3 font-semibold text-white shadow hover:shadow-lg transition disabled:opacity-60"
-            style={{ background: primary }}
+            style={{ background: `var(--brand-bg, ${primary})` }}
           >
             {pending ? 'Enviando…' : (form.submit_label || 'Enviar')}
           </button>
