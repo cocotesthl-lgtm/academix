@@ -22,12 +22,17 @@ export function ThemePresets({
   onPick,
   mode = 'all',
   currentValue,
-  compact = false
+  compact = false,
+  theme = 'dark'
 }: {
   onPick: (color: string, gradient?: string) => void;
   mode?: 'all' | 'solids' | 'gradients';
   currentValue?: string | null;
   compact?: boolean;
+  /** 'dark' (default) para BrandingForm en fondo oscuro; 'light' para
+   * Onboarding en fondo blanco. Cambia los colores del + custom, tabs
+   * y textos para que se vean con contraste en cada contexto. */
+  theme?: 'dark' | 'light';
 }) {
   const [activeTab, setActiveTab] = useState<ThemePreset['category']>(
     mode === 'gradients' ? 'gradientes' : 'sólidos'
@@ -48,6 +53,21 @@ export function ThemePresets({
 
   const gridCls = compact ? 'grid-cols-8' : 'grid-cols-6';
 
+  // Palette-aware clases: en fondo oscuro (BrandingForm) usamos white
+  // para tabs / borders / + button; en fondo claro (Onboarding) usamos
+  // black. Sin esto, el + queda invisible en el onboarding.
+  const isDark = theme === 'dark';
+  const tabIdle = isDark ? 'bg-white/10 text-white/60 hover:bg-white/20' : 'bg-neutral-200 text-neutral-600 hover:bg-neutral-300';
+  const tabActive = isDark ? 'bg-white text-black font-semibold' : 'bg-neutral-900 text-white font-semibold';
+  const plusIdle = isDark
+    ? 'border-white/30 hover:border-white/60 hover:bg-white/5 text-white/60 hover:text-white'
+    : 'border-neutral-400 hover:border-neutral-700 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900';
+  const plusActive = isDark
+    ? 'border-white bg-white/10 text-white'
+    : 'border-neutral-900 bg-neutral-100 text-neutral-900';
+  const swatchActiveBorder = isDark ? 'border-white' : 'border-neutral-900';
+  const swatchHoverBorder = isDark ? 'hover:border-white/40' : 'hover:border-neutral-500';
+
   return (
     <div className={compact ? 'space-y-1.5' : 'space-y-2'}>
       {/* Tabs de categorías (solo si hay >1) */}
@@ -58,11 +78,7 @@ export function ThemePresets({
               key={cat}
               type="button"
               onClick={() => { setActiveTab(cat); setShowGradientBuilder(false); }}
-              className={`px-2 py-0.5 rounded transition ${
-                activeTab === cat
-                  ? 'bg-white text-black font-semibold'
-                  : 'bg-white/10 text-white/60 hover:bg-white/20'
-              }`}>
+              className={`px-2 py-0.5 rounded transition ${activeTab === cat ? tabActive : tabIdle}`}>
               {cat}
             </button>
           ))}
@@ -81,21 +97,21 @@ export function ThemePresets({
               title={p.name}
               onClick={() => onPick(p.primary, p.gradient)}
               className={`aspect-square rounded transition border-2 hover:scale-110 ${
-                isActive ? 'border-white shadow-lg' : 'border-transparent hover:border-white/40'
+                isActive ? `${swatchActiveBorder} shadow-lg` : `border-transparent ${swatchHoverBorder}`
               }`}
               style={{ background: bg }}
             />
           );
         })}
 
-        {/* Tarjeta "+" custom */}
+        {/* Tarjeta "+" custom — visible en dark + light theme */}
         {activeTab === 'sólidos' ? (
           <>
             <button
               type="button"
               title="Color custom"
               onClick={() => customColorRef.current?.click()}
-              className="aspect-square rounded border-2 border-dashed border-white/30 hover:border-white/60 hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white text-xl font-light transition"
+              className={`aspect-square rounded border-2 border-dashed flex items-center justify-center text-xl font-light transition ${plusIdle}`}
             >
               +
             </button>
@@ -113,9 +129,7 @@ export function ThemePresets({
             title="Gradient custom"
             onClick={() => setShowGradientBuilder((v) => !v)}
             className={`aspect-square rounded border-2 border-dashed flex items-center justify-center text-xl font-light transition ${
-              showGradientBuilder
-                ? 'border-white bg-white/10 text-white'
-                : 'border-white/30 hover:border-white/60 hover:bg-white/5 text-white/60 hover:text-white'
+              showGradientBuilder ? plusActive : plusIdle
             }`}
           >
             +

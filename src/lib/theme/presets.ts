@@ -117,6 +117,152 @@ export const THEME_PRESETS: ThemePreset[] = [
     // Rediseñado: celeste claro → cyan → índigo profundo
     gradient: 'linear-gradient(135deg, #7dd3fc 0%, #0284c7 50%, #312e81 100%)',
     category: 'gradientes'
+  },
+
+  // ── Segundo lote: gradientes más elaborados ──────────────
+  {
+    id: 'grad-miami',      name: 'Miami',
+    primary: '#ec4899',
+    gradient: 'linear-gradient(135deg, #22d3ee 0%, #ec4899 50%, #f97316 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-tropical',   name: 'Tropical',
+    primary: '#14b8a6',
+    gradient: 'linear-gradient(135deg, #fef08a 0%, #22c55e 50%, #0891b2 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-berry',      name: 'Berry',
+    primary: '#a21caf',
+    gradient: 'linear-gradient(135deg, #dc2626 0%, #a21caf 50%, #1e40af 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-purple-rain',name: 'Purple Rain',
+    primary: '#a855f7',
+    gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-vintage',    name: 'Vintage',
+    primary: '#a16207',
+    gradient: 'linear-gradient(135deg, #fef3c7 0%, #a16207 50%, #7c2d12 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-neon',       name: 'Neón',
+    primary: '#a3e635',
+    gradient: 'linear-gradient(135deg, #a3e635 0%, #06b6d4 50%, #d946ef 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-northern',   name: 'Aurora Boreal',
+    primary: '#22d3ee',
+    gradient: 'linear-gradient(135deg, #4ade80 0%, #22d3ee 50%, #a855f7 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-cosmic',     name: 'Cósmico',
+    primary: '#7c3aed',
+    gradient: 'linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #ec4899 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-autumn',     name: 'Otoño',
+    primary: '#c2410c',
+    gradient: 'linear-gradient(135deg, #fbbf24 0%, #c2410c 50%, #7c2d12 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-winter',     name: 'Invierno',
+    primary: '#0284c7',
+    gradient: 'linear-gradient(135deg, #f0f9ff 0%, #7dd3fc 50%, #0369a1 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-ocean-sunset', name: 'Sunset marino',
+    primary: '#f97316',
+    gradient: 'linear-gradient(135deg, #1e40af 0%, #ec4899 50%, #f97316 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-emerald-sky', name: 'Esmeralda',
+    primary: '#059669',
+    gradient: 'linear-gradient(135deg, #d1fae5 0%, #059669 50%, #164e63 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-rose-gold',  name: 'Rosé Gold',
+    primary: '#d97706',
+    gradient: 'linear-gradient(135deg, #fbcfe8 0%, #d97706 50%, #831843 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-peach',      name: 'Durazno',
+    primary: '#fb923c',
+    gradient: 'linear-gradient(135deg, #fef3c7 0%, #fb923c 50%, #dc2626 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-galaxy',     name: 'Galaxia',
+    primary: '#6d28d9',
+    gradient: 'linear-gradient(135deg, #020617 0%, #6d28d9 40%, #f472b6 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-tequila',    name: 'Tequila Sunrise',
+    primary: '#dc2626',
+    gradient: 'linear-gradient(135deg, #fef08a 0%, #f97316 40%, #dc2626 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-jade',       name: 'Jade',
+    primary: '#0d9488',
+    gradient: 'linear-gradient(135deg, #a7f3d0 0%, #0d9488 50%, #134e4a 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-fire',       name: 'Llamas',
+    primary: '#dc2626',
+    gradient: 'linear-gradient(135deg, #dc2626 0%, #ea580c 50%, #fbbf24 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-caribbean',  name: 'Caribe',
+    primary: '#06b6d4',
+    gradient: 'linear-gradient(135deg, #a7f3d0 0%, #06b6d4 50%, #1d4ed8 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-mocha',      name: 'Mocha',
+    primary: '#78350f',
+    gradient: 'linear-gradient(135deg, #fef3c7 0%, #92400e 50%, #451a03 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-electric',   name: 'Eléctrico',
+    primary: '#2563eb',
+    gradient: 'linear-gradient(135deg, #06b6d4 0%, #2563eb 50%, #7c3aed 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-flamingo',   name: 'Flamingo',
+    primary: '#f43f5e',
+    gradient: 'linear-gradient(135deg, #fda4af 0%, #f43f5e 50%, #9f1239 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-radial-sun', name: 'Radial Sol',
+    primary: '#f59e0b',
+    gradient: 'radial-gradient(circle at center, #fef08a 0%, #f59e0b 50%, #b45309 100%)',
+    category: 'gradientes'
+  },
+  {
+    id: 'grad-conic-rainbow', name: 'Arcoíris',
+    primary: '#8b5cf6',
+    gradient: 'conic-gradient(from 90deg at 50% 50%, #ef4444, #f59e0b, #10b981, #06b6d4, #8b5cf6, #ec4899, #ef4444)',
+    category: 'gradientes'
   }
 ];
 

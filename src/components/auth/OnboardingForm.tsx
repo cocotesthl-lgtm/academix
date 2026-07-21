@@ -138,13 +138,11 @@ export function OnboardingForm({
           <div className="text-[10px] uppercase tracking-wider text-neutral-500 mb-2 font-semibold">
             O elegí un tema pre-armado
           </div>
-          <div className="[&_.bg-white\/10]:bg-neutral-200 [&_.bg-white\/10]:text-neutral-700 [&_.hover\:bg-white\/20:hover]:bg-neutral-300">
-            <ThemePresets mode="all" currentValue={primaryGradient || primaryColor} compact
-              onPick={(hex, grad) => {
-                setPrimaryColor(hex);
-                setPrimaryGradient(grad || '');
-              }} />
-          </div>
+          <ThemePresets mode="all" theme="light" currentValue={primaryGradient || primaryColor} compact
+            onPick={(hex, grad) => {
+              setPrimaryColor(hex);
+              setPrimaryGradient(grad || '');
+            }} />
         </div>
       </div>
 
