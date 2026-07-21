@@ -101,7 +101,7 @@ export default async function CheckoutPage({
         Este sitio todavía no configuró un método de pago. Contactá al vendedor para completar tu compra.
       </p>
       <a href="/" className="inline-block rounded-md px-6 py-3 text-white font-semibold"
-        style={{ background: primary }}>
+        style={{ background: `var(--brand-bg, ${primary})` }}>
         Volver al catálogo
       </a>
     </article>

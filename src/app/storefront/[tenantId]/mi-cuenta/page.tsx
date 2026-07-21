@@ -208,7 +208,7 @@ export default async function MiCuentaPage({ params }: { params: Promise<{ tenan
             Explorá el catálogo y cuando compres algo aparece acá.
           </p>
           <Link href="/" className="inline-block mt-3 rounded-md px-4 py-2 text-white text-sm font-semibold"
-            style={{ background: primary }}>
+            style={{ background: `var(--brand-bg, ${primary})` }}>
             Ver catálogo
           </Link>
         </div>
@@ -384,7 +384,7 @@ export default async function MiCuentaPage({ params }: { params: Promise<{ tenan
         const status = PLAN_STATUS[plan.status] ?? { label: plan.status };
         return (
           <section key={plan.id} className="rounded-2xl border border-black/10 overflow-hidden bg-white">
-            <div className="p-6 text-white" style={{ background: primary }}>
+            <div className="p-6 text-white" style={{ background: `var(--brand-bg, ${primary})` }}>
               <div className="flex items-start justify-between flex-wrap gap-3">
                 <div>
                   <div className="text-xs uppercase tracking-widest opacity-80">💳 Plan contratado</div>
@@ -455,7 +455,7 @@ export default async function MiCuentaPage({ params }: { params: Promise<{ tenan
                             <div className="mt-1.5">
                               <Link href={`/mi-cuenta/pagar/${inv.id}`}
                                 className="inline-block text-[11px] px-3 py-1.5 rounded font-semibold text-white"
-                                style={{ background: primary }}>
+                                style={{ background: `var(--brand-bg, ${primary})` }}>
                                 💳 Pagar
                               </Link>
                             </div>

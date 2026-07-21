@@ -1237,7 +1237,7 @@ export default async function StorefrontHome({
                     {m.show_directions_cta && (
                       <a href={directionsUrl} target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold text-white shadow hover:shadow-md transition"
-                        style={{ background: primary }}>
+                        style={{ background: `var(--brand-bg, ${primary})` }}>
                         🗺 Cómo llegar
                       </a>
                     )}
@@ -1853,7 +1853,7 @@ export default async function StorefrontHome({
                             {it.cta_label && (
                               <div className="mt-4">
                                 <span className="inline-block rounded-md text-xs md:text-sm font-semibold px-5 py-2.5"
-                                  style={{ background: primary, color: '#fff' }}>
+                                  style={{ background: `var(--brand-bg, ${primary})`, color: '#fff' }}>
                                   {it.cta_label}
                                 </span>
                               </div>
@@ -1910,7 +1910,7 @@ export default async function StorefrontHome({
                             {it.cta_label && (
                               <div className="mt-3">
                                 <span className="inline-block rounded-md text-xs md:text-sm font-semibold px-4 py-2"
-                                  style={{ background: primary, color: '#fff' }}>
+                                  style={{ background: `var(--brand-bg, ${primary})`, color: '#fff' }}>
                                   {it.cta_label}
                                 </span>
                               </div>
@@ -2269,7 +2269,7 @@ function BannerHCard({ card, primary }: { card: StoreCard; primary: string }) {
         <h3 className="text-xl md:text-3xl font-bold leading-tight max-w-xl">{card.title}</h3>
         {card.body && <p className="text-sm md:text-base mt-2 opacity-90 max-w-xl line-clamp-2">{card.body}</p>}
         {hasButton && (
-          <span className="mt-4 inline-block w-fit text-sm font-semibold px-5 py-2.5 rounded-md text-white" style={{ background: primary }}>
+          <span className="mt-4 inline-block w-fit text-sm font-semibold px-5 py-2.5 rounded-md text-white" style={{ background: `var(--brand-bg, ${primary})` }}>
             {card.cta_text} →
           </span>
         )}
@@ -2302,7 +2302,7 @@ function BannerVCard({ card, primary }: { card: StoreCard; primary: string }) {
         <h3 className="text-lg font-bold leading-tight">{card.title}</h3>
         {card.body && <p className="text-xs mt-1.5 opacity-90 line-clamp-2">{card.body}</p>}
         {hasButton && (
-          <span className="mt-3 inline-block text-xs font-semibold px-3 py-1.5 rounded text-white" style={{ background: primary }}>
+          <span className="mt-3 inline-block text-xs font-semibold px-3 py-1.5 rounded text-white" style={{ background: `var(--brand-bg, ${primary})` }}>
             {card.cta_text} →
           </span>
         )}

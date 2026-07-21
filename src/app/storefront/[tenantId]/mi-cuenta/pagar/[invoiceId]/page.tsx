@@ -105,7 +105,7 @@ export default async function PagarInvoicePage({
 
         <button type="submit"
           className="w-full rounded-md py-3 font-semibold text-white mt-2"
-          style={{ background: primary }}>
+          style={{ background: `var(--brand-bg, ${primary})` }}>
           💳 Pagar {invoice.currency} {(invoice.amount_cents / 100).toLocaleString('es-AR')} con MercadoPago
         </button>
         <p className="text-[10px] text-black/45 text-center">

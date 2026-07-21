@@ -400,7 +400,7 @@ export default async function StorefrontLayout({
                   ) : (
                     <div
                       className="h-9 w-9 rounded-lg flex items-center justify-center text-white font-bold"
-                      style={{ background: primary }}
+                      style={{ background: `var(--brand-bg, ${primary})` }}
                     >
                       {tenant.name.slice(0, 1).toUpperCase()}
                     </div>

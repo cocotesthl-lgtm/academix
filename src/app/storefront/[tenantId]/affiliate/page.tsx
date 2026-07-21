@@ -155,7 +155,7 @@ export default async function AffiliateDashboard({
           <a
             href="/affiliate/validar"
             className="rounded-lg px-4 py-2.5 text-white text-sm font-semibold whitespace-nowrap"
-            style={{ background: primary }}
+            style={{ background: `var(--brand-bg, ${primary})` }}
           >
             🎟️ Validar entradas
           </a>
@@ -272,7 +272,7 @@ export default async function AffiliateDashboard({
                     target="_blank"
                     rel="noopener"
                     className="block text-center text-xs rounded text-white px-3 py-1.5 font-semibold"
-                    style={{ background: primary }}
+                    style={{ background: `var(--brand-bg, ${primary})` }}
                   >
                     Ver / descargar
                   </a>
@@ -381,7 +381,7 @@ function AffiliateJoin({ tenantId, tenantName, primary }: { tenantId: string; te
         <input type="hidden" name="tenant_id" value={tenantId} />
         <button
           className="rounded-lg px-6 py-3 font-semibold text-white"
-          style={{ background: primary }}
+          style={{ background: `var(--brand-bg, ${primary})` }}
         >
           ✅ Quiero ser afiliado
         </button>

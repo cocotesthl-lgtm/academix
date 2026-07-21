@@ -133,7 +133,7 @@ export default async function CourseDetailPage({
           vos podés verlo. Cuando lo publiques, va a aparecer acá para tus visitantes.
         </p>
         <div className="pt-4">
-          <a href="/courses" className="inline-block rounded-md text-white font-semibold px-6 py-3" style={{ background: primary }}>
+          <a href="/courses" className="inline-block rounded-md text-white font-semibold px-6 py-3" style={{ background: `var(--brand-bg, ${primary})` }}>
             Ir al panel a publicarlo →
           </a>
         </div>

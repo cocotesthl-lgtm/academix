@@ -54,7 +54,7 @@ export default async function StudentLearn({
           <Link
             href="/"
             className="inline-block rounded-md px-5 py-2.5 font-semibold text-white"
-            style={{ background: primary }}
+            style={{ background: `var(--brand-bg, ${primary})` }}
           >
             Ver catálogo
           </Link>
@@ -74,7 +74,7 @@ export default async function StudentLearn({
                 )}
                 <span
                   className="inline-block text-xs font-medium px-2 py-1 rounded text-white"
-                  style={{ background: primary }}
+                  style={{ background: `var(--brand-bg, ${primary})` }}
                 >
                   Continuar →
                 </span>

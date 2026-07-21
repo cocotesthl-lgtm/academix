@@ -125,7 +125,7 @@ export default async function BundlePublicPage({ params }: {
             {items.length > 0 && items[0].courses?.slug && (
               <Link href={`/c/${items[0].courses.slug}`}
                 className="block w-full text-center rounded-md py-3 font-semibold text-white"
-                style={{ background: primary }}>
+                style={{ background: `var(--brand-bg, ${primary})` }}>
                 Empezar por el primero →
               </Link>
             )}
