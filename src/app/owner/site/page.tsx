@@ -862,7 +862,20 @@ function Section({
           </Link>
         </div>
       ) : enabled ? (
-        <div className="p-5" data-sec-editor={sectionKey}>{children}</div>
+        // Editor colapsado por default para reducir la avalancha visual
+        // al abrir /owner/site. <details> HTML nativo — click en summary
+        // expande/contrae. Sin JS, sin state, persiste en el DOM.
+        // El chevron ▾/▸ lo animamos con CSS al [open].
+        <details className="group" data-sec-editor={sectionKey}>
+          <summary className="cursor-pointer select-none px-5 py-3 border-t border-white/5 text-xs uppercase tracking-wider font-semibold text-white/60 hover:text-white hover:bg-white/[0.02] transition flex items-center gap-2 list-none [&::-webkit-details-marker]:hidden">
+            <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+            <span>Editar contenido</span>
+            <span className="ml-auto text-white/30 normal-case tracking-normal font-normal">
+              click para {' '}<span className="group-open:hidden">expandir</span><span className="hidden group-open:inline">colapsar</span>
+            </span>
+          </summary>
+          <div className="p-5 border-t border-white/5">{children}</div>
+        </details>
       ) : null}
     </div>
   );
