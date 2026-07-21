@@ -26,10 +26,10 @@ export default async function TemplatePreviewPage({
   searchParams
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ embedded?: string; primary?: string }>;
+  searchParams: Promise<{ embedded?: string; primary?: string; gradient?: string }>;
 }) {
   const { id } = await params;
-  const { embedded, primary: primaryOverride } = await searchParams;
+  const { embedded, primary: primaryOverride, gradient: gradientOverride } = await searchParams;
   const t = SITE_TEMPLATES.find((x) => x.id === id);
   if (!t) notFound();
 
@@ -41,6 +41,16 @@ export default async function TemplatePreviewPage({
   const primary = primaryOverride && HEX_RE.test(primaryOverride)
     ? primaryOverride
     : t.suggestedPrimary;
+  // ?gradient=linear-gradient(...) — el onboarding también manda el
+  // gradient CSS si el owner eligió uno. Se aplica como CSS var
+  // --brand-bg en el wrapper del preview, así los CTA con
+  // `var(--brand-bg, primary)` lo agarran automáticamente.
+  // Validación: solo aceptar linear-/radial-/conic-gradient para
+  // evitar CSS injection via url() u otros valores.
+  const GRAD_RE = /^(linear|radial|conic)-gradient\([^)]*(?:\([^)]*\)[^)]*)*\)$/i;
+  const brandGradient = gradientOverride && GRAD_RE.test(gradientOverride)
+    ? gradientOverride
+    : null;
   const key = contentKey(t.id);
   const content = key ? DEMO_CONTENT[key] : null;
 
@@ -56,6 +66,7 @@ export default async function TemplatePreviewPage({
       templateName={t.name}
       templateEmoji={t.emoji}
       primary={primary}
+      brandGradient={brandGradient}
       config={cfg}
       content={content}
       embedded={isEmbedded}

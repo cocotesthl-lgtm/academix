@@ -34,12 +34,16 @@ function slugify(input: string): string {
 export function OnboardingForm({
   rootDomain,
   onTemplateChange,
-  onColorChange
+  onColorChange,
+  onGradientChange
 }: {
   rootDomain: string;
   onTemplateChange?: (templateId: string) => void;
   /** Emite el color primario elegido para que el parent lo pinte en el preview. */
   onColorChange?: (color: string) => void;
+  /** Emite el gradient CSS elegido ('' si no hay gradient) — para propagar
+   *  al iframe del preview vía query param. */
+  onGradientChange?: (gradient: string) => void;
 }) {
   const [state, formAction, pending] = useActionState<OnboardingResult | null, FormData>(createTenantAction, null);
   const [name, setName] = useState('');
@@ -65,6 +69,10 @@ export function OnboardingForm({
   useEffect(() => {
     onColorChange?.(primaryColor);
   }, [primaryColor, onColorChange]);
+
+  useEffect(() => {
+    onGradientChange?.(primaryGradient);
+  }, [primaryGradient, onGradientChange]);
 
   // Cuando elegís template, sugerimos su color primario si no lo cambiaste manualmente
   function selectTemplate(id: string) {

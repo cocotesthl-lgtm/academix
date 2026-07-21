@@ -12,13 +12,17 @@ import type { DemoContent, DemoItem } from '@/lib/site/templates/demo-content';
  * mensaje de éxito en modo demo).
  */
 export function PreviewInteractive({
-  templateId, templateName, templateEmoji, primary, config, content,
+  templateId, templateName, templateEmoji, primary, brandGradient, config, content,
   embedded = false
 }: {
   templateId: string;
   templateName: string;
   templateEmoji: string;
   primary: string;
+  /** CSS gradient opcional que reemplaza al hex en CTA + bandas.
+   *  Se aplica como --brand-bg en el wrapper — los CTA con var()
+   *  lo agarran automático. Null = usar solo el hex. */
+  brandGradient?: string | null;
   config: SiteConfig;
   content: DemoContent | null;
   /**
@@ -73,8 +77,15 @@ export function PreviewInteractive({
 
   const siteTitle = templateName;
 
+  // brand-bg CSS var — gradient si el owner lo eligió, hex si no. Todos
+  // los CTA importantes deberían usar `var(--brand-bg, primary)` en
+  // sus estilos inline; el fallback los mantiene funcionando aunque
+  // no haya gradient.
+  const brandBg = brandGradient || primary;
+
   return (
-    <div className="min-h-screen bg-white text-neutral-900">
+    <div className="min-h-screen bg-white text-neutral-900"
+      style={{ ['--brand-bg' as string]: brandBg }}>
       {/* Barra superior — banner "En modo demo". Se oculta cuando el
           preview está embebido en el iframe del onboarding (el user ya
           está creando su sitio, no necesita el CTA "Usar este template"
@@ -104,7 +115,7 @@ export function PreviewInteractive({
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-lg shrink-0"
-              style={{ background: primary }}>
+              style={{ background: `var(--brand-bg, ${primary})` }}>
               {templateEmoji}
             </div>
             <span className="font-bold truncate">{siteTitle}</span>
@@ -124,7 +135,7 @@ export function PreviewInteractive({
                 </svg>
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 text-[10px] rounded-full w-4 h-4 flex items-center justify-center text-white font-bold"
-                    style={{ background: primary }}>
+                    style={{ background: `var(--brand-bg, ${primary})` }}>
                     {cartCount}
                   </span>
                 )}
@@ -133,7 +144,7 @@ export function PreviewInteractive({
             <button type="button"
               onClick={() => showToast('En modo demo — el login funciona en el sitio real')}
               className="text-sm text-white px-4 py-1.5 rounded-md font-semibold hover:opacity-90"
-              style={{ background: primary }}>
+              style={{ background: `var(--brand-bg, ${primary})` }}>
               {heroCfg?.cta_label || 'Empezar'}
             </button>
           </div>
@@ -160,7 +171,7 @@ export function PreviewInteractive({
             <div className="flex gap-3 justify-center flex-wrap">
               {heroCfg.cta_label && (
                 <a href="#items" className="rounded-md px-6 py-3 text-sm font-semibold text-white shadow-lg hover:opacity-90 transition"
-                  style={{ background: primary }}>
+                  style={{ background: `var(--brand-bg, ${primary})` }}>
                   {heroCfg.cta_label}
                 </a>
               )}
@@ -238,7 +249,7 @@ export function PreviewInteractive({
               {(featuresCfg.items || []).slice(0, 6).map((f, i) => (
                 <div key={i} className="text-center">
                   <div className="w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-xl"
-                    style={{ background: primary }}>
+                    style={{ background: `var(--brand-bg, ${primary})` }}>
                     {f.icon || '✓'}
                   </div>
                   <div className="font-bold mb-1">{f.title}</div>
@@ -269,7 +280,7 @@ export function PreviewInteractive({
                   className="flex-1 rounded-md border border-neutral-300 px-4 py-2.5 focus:outline-none focus:border-neutral-900" />
                 <button type="submit"
                   className="text-white font-semibold rounded-md px-5 hover:opacity-90 transition"
-                  style={{ background: primary }}>
+                  style={{ background: `var(--brand-bg, ${primary})` }}>
                   Suscribirme
                 </button>
               </form>
@@ -300,7 +311,7 @@ export function PreviewInteractive({
                   className="w-full rounded-md border border-neutral-300 px-4 py-2.5 bg-white focus:outline-none focus:border-neutral-900" />
                 <button type="submit"
                   className="w-full text-white font-semibold rounded-md py-3 hover:opacity-90 transition"
-                  style={{ background: primary }}>
+                  style={{ background: `var(--brand-bg, ${primary})` }}>
                   Enviar mensaje
                 </button>
               </form>
@@ -311,7 +322,7 @@ export function PreviewInteractive({
 
       {/* CTA final */}
       {ctaFinalCfg?.enabled && (
-        <section className="px-6 py-20 text-center text-white" style={{ background: primary }}>
+        <section className="px-6 py-20 text-center text-white" style={{ background: `var(--brand-bg, ${primary})` }}>
           <div className="max-w-2xl mx-auto">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">
               {ctaFinalCfg.title || '¿Empezamos?'}
@@ -434,7 +445,7 @@ function ItemsGrid({
                 ) : <span />}
                 <button type="button" onClick={() => onClick(it)}
                   className="text-sm text-white rounded px-3 py-1.5 font-semibold hover:opacity-90"
-                  style={{ background: primary }}>
+                  style={{ background: `var(--brand-bg, ${primary})` }}>
                   {ctaLabel} →
                 </button>
               </div>
@@ -460,7 +471,7 @@ function ItemsGrid({
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             {it.subtitle && (
               <span className="absolute top-2 left-2 text-[10px] uppercase font-bold text-white px-2 py-0.5 rounded"
-                style={{ background: primary }}>
+                style={{ background: `var(--brand-bg, ${primary})` }}>
                 {it.subtitle}
               </span>
             )}
@@ -481,7 +492,7 @@ function ItemsGrid({
                 <button type="button"
                   onClick={(e) => { e.stopPropagation(); onAddToCart(it); }}
                   className="text-white text-xs rounded-md px-2.5 py-1.5 font-semibold hover:opacity-90"
-                  style={{ background: primary }}>
+                  style={{ background: `var(--brand-bg, ${primary})` }}>
                   + Agregar
                 </button>
               )}
@@ -521,7 +532,7 @@ function ItemModal({
         <div className="p-6">
           {item.subtitle && (
             <span className="text-[10px] uppercase font-bold text-white px-2 py-0.5 rounded"
-              style={{ background: primary }}>
+              style={{ background: `var(--brand-bg, ${primary})` }}>
               {item.subtitle}
             </span>
           )}
@@ -536,7 +547,7 @@ function ItemModal({
             ) : <span />}
             <button type="button" onClick={onAction}
               className="text-white rounded-md px-6 py-2.5 font-semibold hover:opacity-90"
-              style={{ background: primary }}>
+              style={{ background: `var(--brand-bg, ${primary})` }}>
               {showsPrice ? '+ Agregar al carrito' : ctaLabel}
             </button>
           </div>

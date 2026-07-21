@@ -18,24 +18,31 @@ import { SITE_TEMPLATES } from '@/lib/site/templates/catalog';
 export function OnboardingWithPreview({ rootDomain }: { rootDomain: string }) {
   const [templateId, setTemplateId] = useState<string>('');
   const [color, setColor] = useState<string>('');
+  const [gradient, setGradient] = useState<string>('');
   const [debouncedColor, setDebouncedColor] = useState<string>('');
+  const [debouncedGradient, setDebouncedGradient] = useState<string>('');
   const chosen = SITE_TEMPLATES.find((t) => t.id === templateId);
 
-  // Debounce del color: recargar el iframe en cada onChange del color picker
-  // haría flicker feo al arrastrar. Esperamos 400ms sin cambios antes de
-  // propagar el color a la src del iframe.
+  // Debounce de color + gradient: recargar el iframe en cada onChange
+  // haría flicker feo al arrastrar el color picker. Esperamos 400ms sin
+  // cambios antes de propagar los overrides a la src del iframe.
   useEffect(() => {
     const t = setTimeout(() => setDebouncedColor(color), 400);
     return () => clearTimeout(t);
   }, [color]);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedGradient(gradient), 400);
+    return () => clearTimeout(t);
+  }, [gradient]);
 
-  // Armamos la src del iframe con el color como query param. El componente
-  // de preview lo lee y overridea el suggestedPrimary del template.
-  // Encode con encodeURIComponent porque el color trae # (ej. #f97316).
+  // Armamos la src del iframe con color + gradient como query params.
+  // El componente de preview lee ambos y los inyecta en el wrapper
+  // como CSS vars — los CTA con var(--brand-bg) ven el cambio en vivo.
   function previewSrc(id: string): string {
-    const base = `/preview/${id}?embedded=1`;
-    if (!debouncedColor) return base;
-    return `${base}&primary=${encodeURIComponent(debouncedColor)}`;
+    const params = new URLSearchParams({ embedded: '1' });
+    if (debouncedColor) params.set('primary', debouncedColor);
+    if (debouncedGradient) params.set('gradient', debouncedGradient);
+    return `/preview/${id}?${params.toString()}`;
   }
 
   return (
@@ -54,6 +61,7 @@ export function OnboardingWithPreview({ rootDomain }: { rootDomain: string }) {
             rootDomain={rootDomain}
             onTemplateChange={setTemplateId}
             onColorChange={setColor}
+            onGradientChange={setGradient}
           />
         </div>
       </div>
