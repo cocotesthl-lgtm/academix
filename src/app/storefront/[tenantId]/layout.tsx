@@ -272,7 +272,9 @@ export default async function StorefrontLayout({
               to { opacity: 1; transform: translateX(0); }
             }
           `}} />
-          <header data-storefront-header className="cp-masthead bg-[#0d1114] text-white sticky top-0 z-50 border-b border-white/10 h-14 flex items-center">
+          <header data-storefront-header
+            className="cp-masthead text-white sticky top-0 z-50 border-b border-white/10 h-14 flex items-center"
+            style={{ background: `var(--brand-bg, #0d1114)` }}>
             <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between gap-3 w-full">
               <div className="flex items-center gap-1">
                 <button aria-label="Menú" className="w-9 h-9 rounded hover:bg-white/10 flex items-center justify-center">

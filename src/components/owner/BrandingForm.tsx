@@ -158,9 +158,7 @@ export function BrandingForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm mb-1.5 text-white/70">
-            Color primario {primaryGradient && <span className="text-emerald-400 text-xs">· gradient activo</span>}
-          </label>
+          <label className="block text-sm mb-1.5 text-white/70">Color primario</label>
           <div className="flex items-center gap-2">
             {primaryGradient ? (
               <div

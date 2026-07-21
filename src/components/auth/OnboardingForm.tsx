@@ -126,11 +126,11 @@ export function OnboardingForm({
             />
           )}
           <input type="hidden" name="primary_gradient" value={primaryGradient} />
-          <span className="text-sm text-neutral-500">
-            {primaryGradient
-              ? 'Gradient activo — se aplica en botones y ribbons.'
-              : chosenTemplate ? 'Sugerido por el template — cambialo si querés.' : 'Lo podés cambiar después en Identidad.'}
-          </span>
+          {!primaryGradient && (
+            <span className="text-sm text-neutral-500">
+              {chosenTemplate ? 'Sugerido por el template — cambialo si querés.' : 'Lo podés cambiar después en Identidad.'}
+            </span>
+          )}
         </div>
         {/* Presets curados — atajo rápido para no tener que abrir la
             rueda de colores del OS y elegir a ojo. */}

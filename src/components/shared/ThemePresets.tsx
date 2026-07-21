@@ -1,23 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { THEME_PRESETS, type ThemePreset } from '@/lib/theme/presets';
+import { GradientBuilder } from './GradientBuilder';
 
 /**
- * Grid de presets clickeables agrupados por categoría. Se muestra
- * arriba de un color picker existente.
+ * Grid de swatches clickeables agrupados por categoría. Se muestra
+ * arriba/abajo de un color picker existente.
+ *
+ * En cada tab hay una tarjeta "+" al final:
+ *   - En sólidos: abre el input color RGB nativo (color custom)
+ *   - En gradientes: expande un GradientBuilder inline con controles
+ *     de tipo (linear/radial/conic), ángulo y 2-3 colores
  *
  * onPick recibe:
  *   - color: hex del primary del preset (para inputs type="color")
  *   - gradient: string CSS opcional (los sólidos no tienen)
- * El consumer decide qué usar según el contexto:
- *   - Brand color / input type="color": usa color
- *   - Bg de sección que soporta gradientes: prefiere gradient, cae a color
- *
- * `mode` filtra qué presets mostrar:
- *   - 'all': todo (default)
- *   - 'solids': sólo colores puros — para pickers que sólo aceptan hex
- *   - 'gradients': sólo gradientes — para picker de fondos de sección
+ * El consumer decide qué usar según el contexto.
  */
 export function ThemePresets({
   onPick,
@@ -33,9 +32,9 @@ export function ThemePresets({
   const [activeTab, setActiveTab] = useState<ThemePreset['category']>(
     mode === 'gradients' ? 'gradientes' : 'sólidos'
   );
+  const [showGradientBuilder, setShowGradientBuilder] = useState(false);
+  const customColorRef = useRef<HTMLInputElement>(null);
 
-  // 2 categorías reales: Sólidos y Gradientes. Simple, sin ruido.
-  // El input color RGB nativo cubre el caso "custom" (cualquier hex).
   const availableCats: ThemePreset['category'][] =
     mode === 'solids' ? ['sólidos'] :
     mode === 'gradients' ? ['gradientes'] :
@@ -47,6 +46,8 @@ export function ThemePresets({
     return p.category === activeTab;
   });
 
+  const gridCls = compact ? 'grid-cols-8' : 'grid-cols-6';
+
   return (
     <div className={compact ? 'space-y-1.5' : 'space-y-2'}>
       {/* Tabs de categorías (solo si hay >1) */}
@@ -56,7 +57,7 @@ export function ThemePresets({
             <button
               key={cat}
               type="button"
-              onClick={() => setActiveTab(cat)}
+              onClick={() => { setActiveTab(cat); setShowGradientBuilder(false); }}
               className={`px-2 py-0.5 rounded transition ${
                 activeTab === cat
                   ? 'bg-white text-black font-semibold'
@@ -68,8 +69,8 @@ export function ThemePresets({
         </div>
       )}
 
-      {/* Grid de swatches */}
-      <div className={`grid gap-1.5 ${compact ? 'grid-cols-8' : 'grid-cols-6'}`}>
+      {/* Grid de swatches + tarjeta "+" al final */}
+      <div className={`grid gap-1.5 ${gridCls}`}>
         {visible.map((p) => {
           const bg = p.gradient || p.primary;
           const isActive = currentValue === (p.gradient || p.primary);
@@ -86,7 +87,52 @@ export function ThemePresets({
             />
           );
         })}
+
+        {/* Tarjeta "+" custom */}
+        {activeTab === 'sólidos' ? (
+          <>
+            <button
+              type="button"
+              title="Color custom"
+              onClick={() => customColorRef.current?.click()}
+              className="aspect-square rounded border-2 border-dashed border-white/30 hover:border-white/60 hover:bg-white/5 flex items-center justify-center text-white/60 hover:text-white text-xl font-light transition"
+            >
+              +
+            </button>
+            <input
+              ref={customColorRef}
+              type="color"
+              className="sr-only"
+              defaultValue={typeof currentValue === 'string' && /^#/.test(currentValue) ? currentValue : '#f97316'}
+              onChange={(e) => onPick(e.target.value)}
+            />
+          </>
+        ) : (
+          <button
+            type="button"
+            title="Gradient custom"
+            onClick={() => setShowGradientBuilder((v) => !v)}
+            className={`aspect-square rounded border-2 border-dashed flex items-center justify-center text-xl font-light transition ${
+              showGradientBuilder
+                ? 'border-white bg-white/10 text-white'
+                : 'border-white/30 hover:border-white/60 hover:bg-white/5 text-white/60 hover:text-white'
+            }`}
+          >
+            +
+          </button>
+        )}
       </div>
+
+      {/* Gradient builder inline (solo cuando + está activo en tab gradientes) */}
+      {activeTab === 'gradientes' && showGradientBuilder && (
+        <GradientBuilder
+          initial={typeof currentValue === 'string' && /^(linear|radial|conic)-gradient/.test(currentValue) ? currentValue : undefined}
+          onApply={(gradient, primary) => {
+            onPick(primary, gradient);
+            setShowGradientBuilder(false);
+          }}
+        />
+      )}
     </div>
   );
 }
