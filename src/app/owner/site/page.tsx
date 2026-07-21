@@ -251,7 +251,7 @@ export default async function SiteBuilderPage({
       {/* Botón flotante de WhatsApp — colapsado por default para no
           consumir espacio visual (typical un owner lo configura una vez
           y no lo toca más). <details> HTML nativo. */}
-      <details className="group rounded-xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-emerald-500/[0.02]">
+      <details className="cp-collapse group rounded-xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-emerald-500/[0.02]">
         <summary className="cursor-pointer select-none p-5 flex items-start justify-between gap-3 flex-wrap list-none [&::-webkit-details-marker]:hidden">
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -899,7 +899,7 @@ function Section({
         // al abrir /owner/site. <details> HTML nativo — click en summary
         // expande/contrae. Sin JS, sin state, persiste en el DOM.
         // El chevron ▾/▸ lo animamos con CSS al [open].
-        <details className="group" data-sec-editor={sectionKey}>
+        <details className="cp-collapse group" data-sec-editor={sectionKey}>
           <summary className="cursor-pointer select-none px-5 py-3 border-t border-white/5 text-xs uppercase tracking-wider font-semibold text-white/60 hover:text-white hover:bg-white/[0.02] transition flex items-center gap-2 list-none [&::-webkit-details-marker]:hidden">
             <span className="inline-block transition-transform group-open:rotate-90">▸</span>
             <span>Editar contenido</span>

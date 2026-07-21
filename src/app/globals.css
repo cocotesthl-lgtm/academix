@@ -57,6 +57,39 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+/* ───── Animación de <details> expandibles ─────────────────────────
+   HTML nativo <details> no anima por default: el content aparece/
+   desaparece instantáneamente. Opt-in vía clase .cp-collapse:
+   - Chrome/Firefox recientes (2024+): usa interpolate-size para animar
+     block-size 0 ↔ auto suavemente (entrada + salida).
+   - Browsers viejos: caen al keyframe de entrada (fade + slide);
+     salida sigue siendo instantánea pero es aceptable para el use case.
+   Un solo lugar controla la animación de todos los <details> del
+   editor (WA button + sections del site builder).
+*/
+details.cp-collapse {
+  interpolate-size: allow-keywords;
+}
+details.cp-collapse > summary ~ * {
+  animation: cp-collapse-in 220ms ease-out;
+}
+@keyframes cp-collapse-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* En browsers con soporte de ::details-content (Chrome 131+), animamos
+   también el cierre. En otros, el bloque completo se ignora. */
+@supports selector(::details-content) {
+  details.cp-collapse::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition: block-size 260ms ease, content-visibility 260ms allow-discrete;
+  }
+  details.cp-collapse[open]::details-content {
+    block-size: auto;
+  }
+}
+
 /* ───── Sidebar colapsado (desktop): ocultar todo lo marcado con
    .cp-collapse-hide. Sólo los icons quedan visibles. ───── */
 @media (min-width: 1024px) {
