@@ -7,11 +7,11 @@
  *   - name: nombre visible
  *   - primary: hex del color dominante (para brand color, botones)
  *   - gradient: string CSS opcional (para fondos de sección, headers)
- *   - category: para agrupar en la UI ('sólidos' | 'gradientes' | ...)
+ *   - category: 'sólidos' | 'gradientes' (2 tabs — sólido o gradiente)
  *
  * La idea: al hacer click en un preset, el consumer decide qué usar
  * (para brand → primary; para bg de sección → gradient si existe,
- * sino primary).
+ * sino primary). El input color RGB nativo cubre el caso "custom".
  */
 
 export type ThemePreset = {
@@ -19,11 +19,11 @@ export type ThemePreset = {
   name: string;
   primary: string;
   gradient?: string;
-  category: 'sólidos' | 'gradientes' | 'oscuros' | 'pasteles';
+  category: 'sólidos' | 'gradientes';
 };
 
 export const THEME_PRESETS: ThemePreset[] = [
-  // ── SÓLIDOS: colores puros y vibrantes ─────────────────────
+  // ── SÓLIDOS: 12 colores vibrantes ────────────────────────────
   { id: 'orange',    name: 'Naranja',    primary: '#f97316', category: 'sólidos' },
   { id: 'red',       name: 'Rojo',       primary: '#dc2626', category: 'sólidos' },
   { id: 'pink',      name: 'Rosa',       primary: '#db2777', category: 'sólidos' },
@@ -35,25 +35,12 @@ export const THEME_PRESETS: ThemePreset[] = [
   { id: 'emerald',   name: 'Esmeralda',  primary: '#059669', category: 'sólidos' },
   { id: 'lime',      name: 'Lima',       primary: '#65a30d', category: 'sólidos' },
   { id: 'amber',     name: 'Ámbar',      primary: '#d97706', category: 'sólidos' },
-  { id: 'stone',     name: 'Piedra',     primary: '#57534e', category: 'sólidos' },
+  { id: 'black',     name: 'Negro',      primary: '#0a0a0a', category: 'sólidos' },
 
-  // ── PASTELES: colores suaves ──────────────────────────────
-  { id: 'pastel-pink',    name: 'Rosé',       primary: '#f9a8d4', category: 'pasteles' },
-  { id: 'pastel-mint',    name: 'Menta',      primary: '#86efac', category: 'pasteles' },
-  { id: 'pastel-sky',     name: 'Cielo',      primary: '#93c5fd', category: 'pasteles' },
-  { id: 'pastel-lavender',name: 'Lavanda',    primary: '#c4b5fd', category: 'pasteles' },
-  { id: 'pastel-peach',   name: 'Durazno',    primary: '#fdba74', category: 'pasteles' },
-  { id: 'pastel-butter',  name: 'Mantequilla',primary: '#fef08a', category: 'pasteles' },
-
-  // ── OSCUROS: base para looks premium ──────────────────────
-  { id: 'dark-slate',     name: 'Pizarra',    primary: '#1e293b', category: 'oscuros' },
-  { id: 'dark-black',     name: 'Negro',      primary: '#0a0a0a', category: 'oscuros' },
-  { id: 'dark-wine',      name: 'Vino',       primary: '#581c1c', category: 'oscuros' },
-  { id: 'dark-forest',    name: 'Bosque',     primary: '#14532d', category: 'oscuros' },
-  { id: 'dark-navy',      name: 'Marino',     primary: '#0c1e3d', category: 'oscuros' },
-  { id: 'dark-plum',      name: 'Ciruela',    primary: '#3b0764', category: 'oscuros' },
-
-  // ── GRADIENTES: para fondos de sección o hero ─────────────
+  // ── GRADIENTES: 12 gradientes con alto contraste real ────────
+  // Diseñados para que el degradé se NOTE. Cada uno mezcla tonos
+  // suficientemente distintos como para que el usuario pueda ver
+  // que es gradient y no un color plano.
   {
     id: 'grad-ocaso',      name: 'Ocaso',
     primary: '#ec4899',
@@ -63,7 +50,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: 'grad-oceano',     name: 'Océano',
     primary: '#0ea5e9',
-    gradient: 'linear-gradient(135deg, #06b6d4 0%, #0ea5e9 50%, #3b82f6 100%)',
+    gradient: 'linear-gradient(135deg, #22d3ee 0%, #0ea5e9 50%, #1e3a8a 100%)',
     category: 'gradientes'
   },
   {
@@ -81,13 +68,14 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: 'grad-selva',      name: 'Selva',
     primary: '#059669',
-    gradient: 'linear-gradient(135deg, #84cc16 0%, #22c55e 50%, #059669 100%)',
+    gradient: 'linear-gradient(135deg, #a3e635 0%, #22c55e 50%, #065f46 100%)',
     category: 'gradientes'
   },
   {
-    id: 'grad-lavanda',    name: 'Lavanda',
-    primary: '#a855f7',
-    gradient: 'linear-gradient(135deg, #f0abfc 0%, #c084fc 50%, #a855f7 100%)',
+    id: 'grad-rosa',       name: 'Rosa',
+    primary: '#db2777',
+    // Rediseñado con más contraste: rosa fuerte → magenta → púrpura oscuro
+    gradient: 'linear-gradient(135deg, #f472b6 0%, #db2777 50%, #7e22ce 100%)',
     category: 'gradientes'
   },
   {
@@ -99,31 +87,35 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: 'grad-noche',      name: 'Noche',
     primary: '#1e1b4b',
-    gradient: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #4c1d95 100%)',
+    gradient: 'linear-gradient(135deg, #020617 0%, #4c1d95 50%, #db2777 100%)',
     category: 'gradientes'
   },
   {
-    id: 'grad-menta',      name: 'Menta fresca',
+    id: 'grad-menta',      name: 'Menta',
     primary: '#14b8a6',
-    gradient: 'linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 50%, #14b8a6 100%)',
+    // Rediseñado: menta muy claro → verde agua → azul oscuro
+    gradient: 'linear-gradient(135deg, #6ee7b7 0%, #14b8a6 50%, #0c4a6e 100%)',
     category: 'gradientes'
   },
   {
     id: 'grad-atardecer',  name: 'Atardecer',
     primary: '#f59e0b',
-    gradient: 'linear-gradient(135deg, #fecaca 0%, #fdba74 50%, #f59e0b 100%)',
+    // Rediseñado: coral → naranja → rojo oscuro
+    gradient: 'linear-gradient(135deg, #fca5a5 0%, #f97316 50%, #991b1b 100%)',
     category: 'gradientes'
   },
   {
     id: 'grad-oro',        name: 'Oro',
     primary: '#ca8a04',
-    gradient: 'linear-gradient(135deg, #fef08a 0%, #eab308 50%, #a16207 100%)',
+    // Rediseñado: amarillo brillante → oro → marrón oscuro
+    gradient: 'linear-gradient(135deg, #fde047 0%, #d97706 50%, #78350f 100%)',
     category: 'gradientes'
   },
   {
-    id: 'grad-hielo',      name: 'Hielo',
-    primary: '#0ea5e9',
-    gradient: 'linear-gradient(135deg, #e0f2fe 0%, #7dd3fc 50%, #0284c7 100%)',
+    id: 'grad-cielo',      name: 'Cielo',
+    primary: '#0284c7',
+    // Rediseñado: celeste claro → cyan → índigo profundo
+    gradient: 'linear-gradient(135deg, #7dd3fc 0%, #0284c7 50%, #312e81 100%)',
     category: 'gradientes'
   }
 ];

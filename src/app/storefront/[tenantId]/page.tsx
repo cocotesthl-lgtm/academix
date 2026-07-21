@@ -1021,7 +1021,7 @@ export default async function StorefrontHome({
                         <a
                           href={t.cta_href}
                           className={`mt-6 block text-center rounded-md py-2.5 font-semibold ${t.highlighted ? 'text-white' : 'border-2'}`}
-                          style={t.highlighted ? { background: primary } : { borderColor: primary, color: primary }}
+                          style={t.highlighted ? { background: `var(--brand-bg, ${primary})` } : { borderColor: primary, color: primary }}
                         >
                           {t.cta_label}
                         </a>
@@ -1096,7 +1096,7 @@ export default async function StorefrontHome({
                       className="flex-1 rounded-md border border-black/15 px-4 py-2.5 bg-white" />
                     <button type="submit"
                       className="rounded-md px-5 py-2.5 font-semibold text-white whitespace-nowrap"
-                      style={{ background: primary }}>
+                      style={{ background: `var(--brand-bg, ${primary})` }}>
                       {n.cta_label || 'Suscribirme'}
                     </button>
                   </form>
@@ -1138,7 +1138,7 @@ export default async function StorefrontHome({
                         {cb.cta_label && (
                           <a href={cb.cta_href || '#'}
                             className="mt-6 inline-block rounded-md px-6 py-3 font-semibold text-white shadow-md"
-                            style={{ background: primary }}>
+                            style={{ background: `var(--brand-bg, ${primary})` }}>
                             {cb.cta_label}
                           </a>
                         )}
@@ -1179,7 +1179,7 @@ export default async function StorefrontHome({
                       </div>
                       <button type="submit"
                         className="w-full rounded-md py-3 font-semibold text-white shadow-md hover:shadow-lg transition"
-                        style={{ background: primary }}>
+                        style={{ background: `var(--brand-bg, ${primary})` }}>
                         {ct.submit_label}
                       </button>
                       {!ct.email && <p className="text-xs text-center text-black/40">⚠ Configurá el email destino en el editor.</p>}

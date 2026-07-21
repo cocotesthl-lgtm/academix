@@ -34,10 +34,12 @@ export function ThemePresets({
     mode === 'gradients' ? 'gradientes' : 'sólidos'
   );
 
+  // 2 categorías reales: Sólidos y Gradientes. Simple, sin ruido.
+  // El input color RGB nativo cubre el caso "custom" (cualquier hex).
   const availableCats: ThemePreset['category'][] =
-    mode === 'solids' ? ['sólidos', 'pasteles', 'oscuros'] :
+    mode === 'solids' ? ['sólidos'] :
     mode === 'gradients' ? ['gradientes'] :
-    ['sólidos', 'pasteles', 'oscuros', 'gradientes'];
+    ['sólidos', 'gradientes'];
 
   const visible = THEME_PRESETS.filter((p) => {
     if (mode === 'solids' && p.category === 'gradientes') return false;
