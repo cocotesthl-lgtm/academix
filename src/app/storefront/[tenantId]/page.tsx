@@ -469,7 +469,7 @@ export default async function StorefrontHome({
                     ) : (
                       <div
                         className="absolute inset-0 flex items-center justify-center"
-                        style={{ background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }}
+                        style={{ background: `var(--brand-bg, linear-gradient(135deg, ${primary} 0%, ${primary}99 100%))` }}
                       >
                         <div className="text-center text-white/70 px-6">
                           <div className="text-6xl opacity-50">🖼️</div>
@@ -658,7 +658,7 @@ export default async function StorefrontHome({
                         objectPosition: p.photo_position ?? 'center'
                       }} />
                   ) : (
-                    <div className={`${compact ? 'w-24 h-24 text-3xl' : 'w-36 h-36 text-5xl'} rounded-full mx-auto flex items-center justify-center font-bold text-white shadow-xl ring-4 ring-white`} style={{ background: `linear-gradient(135deg, ${primary}, ${primary}aa)` }}>
+                    <div className={`${compact ? 'w-24 h-24 text-3xl' : 'w-36 h-36 text-5xl'} rounded-full mx-auto flex items-center justify-center font-bold text-white shadow-xl ring-4 ring-white`} style={{ background: `var(--brand-bg, linear-gradient(135deg, ${primary}, ${primary}aa))` }}>
                       {p.name.slice(0, 1).toUpperCase() || '👤'}
                     </div>
                   )}
@@ -968,7 +968,7 @@ export default async function StorefrontHome({
             return (
               <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-3xl mx-auto rounded-2xl text-center text-white p-10"
-                  style={{ background: `linear-gradient(135deg, ${primary}, ${primary}cc)` }}>
+                  style={{ background: `var(--brand-bg, linear-gradient(135deg, ${primary}, ${primary}cc))` }}>
                   <h2 className="text-2xl md:text-3xl font-bold"
                     dangerouslySetInnerHTML={richHtml(o.title)} />
                   {o.subtitle && <p className="mt-2 opacity-90">{o.subtitle}</p>}
@@ -1949,9 +1949,13 @@ export default async function StorefrontHome({
 
           case 'cta_final': {
             const c = cfg.sections.cta_final;
+            // Background: preferimos el gradient del brand (var --brand-bg)
+            // si el owner lo configuró, sino el fake-gradient de 2 tonos
+            // del primary. El bg override del section editor gana sobre
+            // ambos (respetamos la decisión manual del owner).
             return (
               <section key={key} {...dt} id={key} className="px-6 py-24 text-center"
-                style={{ background: bg ?? `linear-gradient(135deg, ${primary}, ${primary}dd)` }}>
+                style={{ background: bg ?? `var(--brand-bg, linear-gradient(135deg, ${primary}, ${primary}dd))` }}>
                 <FadeIn>
                   <div className="max-w-2xl mx-auto text-white">
                     <h2 className="text-3xl md:text-5xl font-bold mb-5"
@@ -2036,7 +2040,7 @@ function CourseCard({
 }) {
   return (
     <Link href={`/c/${c.slug}`} className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
-      <div className="h-40 relative" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }}>
+      <div className="h-40 relative" style={{ background: `var(--brand-bg, linear-gradient(135deg, ${primary}, ${primary}88))` }}>
         {c.cover_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={c.cover_url} alt={c.title} className="absolute inset-0 w-full h-full object-cover" />
@@ -2207,7 +2211,7 @@ function StandardCard({ card, primary }: { card: StoreCard; primary: string }) {
 
   return (
     <CardLinkWrap href={href} className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
-      <div className="h-40 relative" style={{ background: `linear-gradient(135deg, ${primary}, ${primary}88)` }}>
+      <div className="h-40 relative" style={{ background: `var(--brand-bg, linear-gradient(135deg, ${primary}, ${primary}88))` }}>
         {card.image_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={card.image_url} alt={card.title} className="absolute inset-0 w-full h-full object-cover" />
