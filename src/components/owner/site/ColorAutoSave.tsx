@@ -1,6 +1,8 @@
 'use client';
 
 import { useTransition, useState, useEffect, useRef } from 'react';
+import { ThemePresets } from '@/components/shared/ThemePresets';
+import { isGradient } from '@/lib/theme/presets';
 
 /**
  * Color picker que auto-aplica al elegir, con DEBOUNCE.
@@ -31,7 +33,11 @@ export function ColorAutoSave({
   const [value, setValue] = useState(initial ?? defaultForField(fieldName));
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [showPresets, setShowPresets] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // El bg_color de sección acepta gradientes CSS; text_color debe ser hex sólido.
+  const supportsGradient = fieldName === 'bg_color';
+  const valueIsGradient = isGradient(value);
 
   // Si el server re-renderiza con otro initial (después de un save), sync.
   useEffect(() => {
@@ -72,26 +78,60 @@ export function ColorAutoSave({
   }
 
   return (
-    <div className="flex items-center gap-1.5">
-      <label className="text-xs text-white/50">{label}:</label>
-      <input
-        type="color"
-        value={value}
-        onChange={(e) => handlePick(e.target.value)}
-        className="w-7 h-7 rounded bg-transparent border border-white/15 cursor-pointer"
-      />
-      {pending && <span className="text-[10px] text-white/40">…</span>}
-      {saved && !pending && <span className="text-[10px] text-emerald-300">✓</span>}
-      {initial && (
+    <div className="relative">
+      <div className="flex items-center gap-1.5">
+        <label className="text-xs text-white/50">{label}:</label>
+        {/* Swatch: si es gradiente, mostramos un div con la preview
+            porque <input type="color"> sólo acepta hex sólido. */}
+        {valueIsGradient ? (
+          <div
+            className="w-7 h-7 rounded border border-white/15 cursor-pointer"
+            style={{ background: value }}
+            onClick={() => setShowPresets((v) => !v)}
+            title="Abrir presets"
+          />
+        ) : (
+          <input
+            type="color"
+            value={value}
+            onChange={(e) => handlePick(e.target.value)}
+            className="w-7 h-7 rounded bg-transparent border border-white/15 cursor-pointer"
+          />
+        )}
         <button
           type="button"
-          onClick={reset}
-          disabled={pending}
-          className="text-[10px] px-1.5 py-0.5 rounded border border-white/15 hover:bg-white/5 text-white/50 disabled:opacity-50"
-          title={`Quitar ${label.toLowerCase()}`}
-        >
-          ✕
+          onClick={() => setShowPresets((v) => !v)}
+          className="text-[10px] px-1.5 py-0.5 rounded border border-white/15 hover:bg-white/5 text-white/60"
+          title="Elegir de un tema">
+          🎨
         </button>
+        {pending && <span className="text-[10px] text-white/40">…</span>}
+        {saved && !pending && <span className="text-[10px] text-emerald-300">✓</span>}
+        {initial && (
+          <button
+            type="button"
+            onClick={reset}
+            disabled={pending}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-white/15 hover:bg-white/5 text-white/50 disabled:opacity-50"
+            title={`Quitar ${label.toLowerCase()}`}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+      {showPresets && (
+        <div className="absolute z-20 top-full mt-1 p-2 rounded-lg border border-white/15 bg-neutral-900 shadow-2xl min-w-[260px]">
+          <ThemePresets
+            mode={supportsGradient ? 'all' : 'solids'}
+            currentValue={value}
+            compact
+            onPick={(hex, grad) => {
+              const applied = supportsGradient && grad ? grad : hex;
+              handlePick(applied);
+              setShowPresets(false);
+            }}
+          />
+        </div>
       )}
     </div>
   );

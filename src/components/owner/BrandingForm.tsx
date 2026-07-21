@@ -3,6 +3,7 @@
 import { useActionState, useState, useEffect } from 'react';
 import { updateBrandingAction, type BrandingResult } from '@/lib/branding/actions';
 import { showToast } from './ToastBus';
+import { ThemePresets } from '@/components/shared/ThemePresets';
 
 type Brand = {
   logo_url?: string | null;
@@ -166,6 +167,14 @@ export function BrandingForm({
             />
             <span className="text-sm text-white/60 font-mono">{primary}</span>
           </div>
+          {/* Presets curados — sólidos únicamente porque el brand color
+              de un tenant se pinta en 200 lugares (botones chicos, íconos,
+              badges) donde un gradiente no aplica limpio. */}
+          <div className="mt-2 p-2 rounded border border-white/10 bg-white/[0.02]">
+            <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5">Temas rápidos</div>
+            <ThemePresets mode="solids" currentValue={primary} compact
+              onPick={(hex) => setPrimary(hex)} />
+          </div>
         </div>
         <div>
           <label className="block text-sm mb-1.5 text-white/70">Color acento</label>
@@ -178,6 +187,11 @@ export function BrandingForm({
               className="w-12 h-10 rounded-md bg-transparent border border-white/15 cursor-pointer"
             />
             <span className="text-sm text-white/60 font-mono">{accent}</span>
+          </div>
+          <div className="mt-2 p-2 rounded border border-white/10 bg-white/[0.02]">
+            <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5">Temas rápidos</div>
+            <ThemePresets mode="solids" currentValue={accent} compact
+              onPick={(hex) => setAccent(hex)} />
           </div>
         </div>
       </div>

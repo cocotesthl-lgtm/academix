@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from 'react';
 import { createTenantAction, type OnboardingResult } from '@/lib/tenant/actions';
 import { SITE_TEMPLATES } from '@/lib/site/templates/catalog';
+import { ThemePresets } from '@/components/shared/ThemePresets';
 
 /** Slugifica el nombre de un sitio para usarlo como subdominio:
  *  pasa a lowercase, saca acentos, reemplaza espacios por guiones,
@@ -113,6 +114,17 @@ export function OnboardingForm({
           <span className="text-sm text-neutral-500">
             {chosenTemplate ? 'Sugerido por el template — cambialo si querés.' : 'Lo podés cambiar después en Identidad.'}
           </span>
+        </div>
+        {/* Presets curados — atajo rápido para no tener que abrir la
+            rueda de colores del OS y elegir a ojo. */}
+        <div className="mt-3 p-3 rounded-lg border border-neutral-200 bg-neutral-50">
+          <div className="text-[10px] uppercase tracking-wider text-neutral-500 mb-2 font-semibold">
+            O elegí un tema pre-armado
+          </div>
+          <div className="[&_.bg-white\/10]:bg-neutral-200 [&_.bg-white\/10]:text-neutral-700 [&_.hover\:bg-white\/20:hover]:bg-neutral-300">
+            <ThemePresets mode="solids" currentValue={primaryColor} compact
+              onPick={(hex) => setPrimaryColor(hex)} />
+          </div>
         </div>
       </div>
 
