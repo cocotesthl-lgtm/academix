@@ -69,24 +69,23 @@ const NAV: NavEntry[] = [
   // el owner y tenerlo escondido bajo "Mi sitio > Apps" (un grupo
   // colapsable) generaba fricción para activar/desactivar features.
   { kind: 'item', icon: 'settings', item: { label: 'Apps', href: '/modulos' } },
-  // Usuarios — clientes del tenant. Universal (todos los tenants
-  // tienen buyers), así que baseline top-level. Antes vivía en
-  // Personas pero ese grupo depende del macro `team` — si estaba
-  // off, "Usuarios" quedaba escondido sin motivo.
-  { kind: 'item', icon: 'users', item: { label: 'Usuarios', href: '/usuarios' } },
-
   // ── BASELINE (siempre visibles cuando su macro está prendido) ────
   // Estos grupos no tienen apps instalables — son features estructurales
   // del panel. No van bajo la sección "APPS".
 
-  // Solo gente que trabaja con vos (staff / instructores)
+  // Toda persona relacionada al negocio: usuarios/compradores, clientes
+  // del CRM, afiliados que promueven, y el equipo interno. Grupo siempre
+  // visible; los items con moduleKey se ocultan si su app está off.
   {
     kind: 'group',
     group: {
-      label: 'Personas', icon: 'users', moduleKey: 'team',
+      label: 'Personas', icon: 'users',
       items: [
-        { label: 'Equipo', href: '/equipo' },
-        { label: 'Instructores', href: '/instructors' }
+        { label: 'Usuarios', href: '/usuarios' },
+        { label: 'Clientes', href: '/clientes' },
+        { label: 'Afiliados', href: '/affiliates', moduleKey: 'affiliates' },
+        { label: 'Equipo', href: '/equipo', moduleKey: 'team' },
+        { label: 'Instructores', href: '/instructors', moduleKey: 'team' }
       ]
     }
   },
@@ -172,11 +171,9 @@ const NAV: NavEntry[] = [
       label: 'CRM & Marketing', icon: 'megaphone', moduleKey: 'crm',
       items: [
         { label: 'Leads', href: '/crm' },
-        { label: 'Clientes', href: '/clientes' },
         { label: 'Formularios', href: '/forms', moduleKey: 'forms' },
         { label: 'Mensajes', href: '/mensajes' },
-        { label: 'WhatsApp', href: '/whatsapp' },
-        { label: 'Afiliados', href: '/affiliates', moduleKey: 'affiliates' }
+        { label: 'WhatsApp', href: '/whatsapp' }
       ]
     }
   },
