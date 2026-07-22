@@ -92,13 +92,47 @@ export async function setAffiliateModeAction(formData: FormData): Promise<void> 
     }
   }
 
+  // ── Estructura de comisiones (single-level o multinivel L1/L2/L3) ──
+  // Guardamos como fracción (0.20 = 20%). Motor: accrueAffiliateCommissionsForSale.
+  // Si structure='single', L2 y L3 quedan en 0 (nadie cobra por invitar afiliados).
+  const structure = String(formData.get('commission_structure') ?? 'single');
+  function pctToFrac(name: string, def: number): number {
+    const raw = String(formData.get(name) ?? '').trim();
+    if (!raw) return def;
+    const n = parseFloat(raw.replace(',', '.'));
+    if (isNaN(n) || n < 0 || n > 100) return def;
+    return n > 1 ? n / 100 : n;
+  }
+  let split: { l1: number; l2: number; l3: number } | null = null;
+  if (structure === 'multi') {
+    split = {
+      l1: pctToFrac('split_l1', 0.20),
+      l2: pctToFrac('split_l2', 0.10),
+      l3: pctToFrac('split_l3', 0.05)
+    };
+  } else if (structure === 'single') {
+    // L2 y L3 en 0 fuerzan comportamiento single-level en el motor
+    const l1 = pctToFrac('split_l1', rate ?? 0.20);
+    split = { l1, l2: 0, l3: 0 };
+  }
+
   const svc = getServiceClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (svc.from('tenants') as any).update({
+  const patch: any = {
     affiliate_mode: mode,
     affiliate_commission_rate: rate,
     affiliate_terms: terms
-  }).eq('id', tenant.id);
+  };
+  if (split) patch.affiliate_split = split;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (svc.from('tenants') as any).update(patch).eq('id', tenant.id);
+  // Defensivo: si la columna affiliate_split todavía no existe (migration
+  // 0004+ pendiente), reintentamos sin ella.
+  if (error?.message?.includes('affiliate_split')) {
+    delete patch.affiliate_split;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('tenants') as any).update(patch).eq('id', tenant.id);
+  }
   revalidatePath('/owner/affiliates');
 }
 

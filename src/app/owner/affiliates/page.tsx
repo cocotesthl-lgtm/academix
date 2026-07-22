@@ -30,15 +30,28 @@ export default async function OwnerAffiliates() {
   let affMode: 'disabled' | '1click' | 'approval' = 'disabled';
   let affCommissionRate: number | null = null;
   let affTerms: string | null = null;
+  let affSplit: { l1?: number; l2?: number; l3?: number } | null = null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: t } = await (svc.from('tenants') as any)
-      .select('affiliate_mode, affiliate_commission_rate, affiliate_terms').eq('id', tenant.id).maybeSingle();
-    const r = t as { affiliate_mode?: string; affiliate_commission_rate?: number | null; affiliate_terms?: string | null } | null;
+      .select('affiliate_mode, affiliate_commission_rate, affiliate_terms, affiliate_split').eq('id', tenant.id).maybeSingle();
+    const r = t as {
+      affiliate_mode?: string;
+      affiliate_commission_rate?: number | null;
+      affiliate_terms?: string | null;
+      affiliate_split?: { l1?: number; l2?: number; l3?: number } | null;
+    } | null;
     if (r?.affiliate_mode === '1click' || r?.affiliate_mode === 'approval') affMode = r.affiliate_mode;
     affCommissionRate = r?.affiliate_commission_rate ?? null;
     affTerms = r?.affiliate_terms ?? null;
+    affSplit = r?.affiliate_split ?? null;
   } catch { /* migration pendiente */ }
+
+  // Multinivel: si L2 o L3 > 0, el owner tiene estructura multi. Sino single.
+  const isMulti = (affSplit?.l2 ?? 0) > 0 || (affSplit?.l3 ?? 0) > 0;
+  const l1Pct = ((affSplit?.l1 ?? affCommissionRate ?? 0.20) * 100).toFixed(1).replace(/\.0$/, '');
+  const l2Pct = ((affSplit?.l2 ?? 0.10) * 100).toFixed(1).replace(/\.0$/, '');
+  const l3Pct = ((affSplit?.l3 ?? 0.05) * 100).toFixed(1).replace(/\.0$/, '');
 
   // Solicitudes pending
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -163,6 +176,72 @@ export default async function OwnerAffiliates() {
               className="mt-1 w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
             <span className="text-[10px] text-white/40">Vacío = usar comisión global.</span>
           </label>
+          {/* Estructura de comisiones — single vs multinivel L1/L2/L3.
+              La col-span 3 hace que ocupe toda la fila. Usa <details> para
+              que arranque colapsado cuando el owner no necesita configurarlo. */}
+          <details className="sm:col-span-3 rounded-lg border border-white/10 bg-white/[0.02] p-4" open={isMulti}>
+            <summary className="cursor-pointer text-xs uppercase tracking-wider text-white/55 font-semibold list-none flex items-center justify-between">
+              <span>🌳 Estructura de comisiones</span>
+              <span className="text-[10px] text-white/40 normal-case tracking-normal font-normal">
+                {isMulti ? `Multinivel · L1 ${l1Pct}% · L2 ${l2Pct}% · L3 ${l3Pct}%` : `Solo directo · ${l1Pct}%`}
+              </span>
+            </summary>
+            <div className="mt-4 space-y-3">
+              <div className="flex gap-4 flex-wrap">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input type="radio" name="commission_structure" value="single" defaultChecked={!isMulti} className="mt-1" />
+                  <div className="text-sm">
+                    <div className="font-medium">Solo directo (L1)</div>
+                    <div className="text-[11px] text-white/50">Se le paga sólo al afiliado que trajo la venta.</div>
+                  </div>
+                </label>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input type="radio" name="commission_structure" value="multi" defaultChecked={isMulti} className="mt-1" />
+                  <div className="text-sm">
+                    <div className="font-medium">Multinivel (L1 / L2 / L3)</div>
+                    <div className="text-[11px] text-white/50">
+                      También pagás a quien invitó al afiliado (L2) y a quien invitó a ese (L3). Incentiva reclutamiento.
+                    </div>
+                  </div>
+                </label>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-2 pt-2 border-t border-white/5">
+                <label className="block">
+                  <span className="text-[10px] uppercase tracking-wider text-white/50">L1 · Afiliado directo</span>
+                  <div className="mt-1 flex items-center gap-1">
+                    <input name="split_l1" type="number" min={0} max={100} step={0.5}
+                      defaultValue={l1Pct}
+                      className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                    <span className="text-xs text-white/40">%</span>
+                  </div>
+                </label>
+                <label className="block">
+                  <span className="text-[10px] uppercase tracking-wider text-white/50">L2 · Quien lo invitó</span>
+                  <div className="mt-1 flex items-center gap-1">
+                    <input name="split_l2" type="number" min={0} max={100} step={0.5}
+                      defaultValue={l2Pct}
+                      className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                    <span className="text-xs text-white/40">%</span>
+                  </div>
+                  <span className="text-[10px] text-white/40">Ignorado si elegís "Solo directo"</span>
+                </label>
+                <label className="block">
+                  <span className="text-[10px] uppercase tracking-wider text-white/50">L3 · Nivel superior</span>
+                  <div className="mt-1 flex items-center gap-1">
+                    <input name="split_l3" type="number" min={0} max={100} step={0.5}
+                      defaultValue={l3Pct}
+                      className="w-full rounded bg-white/5 border border-white/15 px-3 py-2 text-sm" />
+                    <span className="text-xs text-white/40">%</span>
+                  </div>
+                  <span className="text-[10px] text-white/40">Ignorado si elegís "Solo directo"</span>
+                </label>
+              </div>
+              <p className="text-[11px] text-white/50">
+                💡 En multinivel, el árbol se arma automáticamente vía <code className="text-white/70 font-mono">referred_by_user_id</code> en profiles: cuando un afiliado se suma con el link de otro, queda linkeado. Anti-fraud: el buyer no puede estar en su propio árbol.
+              </p>
+            </div>
+          </details>
+
           <div className="sm:col-span-3">
             <label className="block">
               <span className="text-xs uppercase tracking-wider text-white/55 font-semibold">Términos (opcional)</span>
