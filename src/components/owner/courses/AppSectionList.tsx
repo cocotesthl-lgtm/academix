@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useTransition } from 'react';
 import { Sparkline } from '@/components/owner/Sparkline';
+import { bulkDeleteItemsAction, duplicateItemAction } from '@/lib/items/actions';
 
 /**
  * Lista genérica dentro de cada AppSection en /owner/courses.
@@ -58,6 +59,40 @@ export function AppSectionList({
   const [query, setQuery] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [revealed, setRevealed] = useState(!dimmed);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [pending, startTransition] = useTransition();
+
+  function toggleOne(id: string) {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  }
+  function clearSelection() { setSelected(new Set()); }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    if (!confirm(`¿Eliminar ${ids.length} ${ids.length === 1 ? 'item' : 'items'}? Esta acción no se puede deshacer.`)) return;
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set('kind', kind);
+      fd.set('ids', ids.join(','));
+      await bulkDeleteItemsAction(fd);
+      clearSelection();
+    });
+  }
+
+  async function handleDuplicate() {
+    if (selected.size !== 1) return;
+    const [id] = Array.from(selected);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set('kind', kind);
+      fd.set('id', id);
+      await duplicateItemAction(fd);
+      clearSelection();
+    });
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -103,10 +138,52 @@ export function AppSectionList({
         </div>
       )}
 
+      {/* Bulk action bar — visible cuando hay al menos 1 seleccionado */}
+      {selected.size > 0 && (
+        <div className="px-5 py-2 border-b border-white/10 bg-emerald-500/[0.06] flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-emerald-200 font-medium">
+            {selected.size} seleccionado{selected.size === 1 ? '' : 's'}
+          </span>
+          <div className="ml-auto flex items-center gap-1.5">
+            <button type="button" onClick={handleDuplicate}
+              disabled={pending || selected.size !== 1}
+              title={selected.size !== 1 ? 'Duplicar solo funciona con 1 seleccionado' : 'Duplicar item'}
+              className="text-xs px-2.5 py-1 rounded border border-white/15 hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed">
+              ⧉ Duplicar
+            </button>
+            <button type="button" onClick={handleBulkDelete} disabled={pending}
+              className="text-xs px-2.5 py-1 rounded border border-rose-500/40 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20 disabled:opacity-40">
+              🗑 Eliminar
+            </button>
+            <button type="button" onClick={clearSelection} disabled={pending}
+              className="text-xs px-2 py-1 text-white/50 hover:text-white">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
       <table className="w-full text-sm">
         <thead className="text-white/45 text-[10px] uppercase tracking-wider bg-white/[0.02]">
           <tr>
-            <th className="text-left px-5 py-2">Título</th>
+            <th className="text-left pl-5 pr-1 py-2 w-6">
+              <input
+                type="checkbox"
+                checked={visible.length > 0 && visible.every((r) => selected.has(r.id))}
+                onChange={(e) => {
+                  const next = new Set(selected);
+                  if (e.currentTarget.checked) {
+                    for (const r of visible) next.add(r.id);
+                  } else {
+                    for (const r of visible) next.delete(r.id);
+                  }
+                  setSelected(next);
+                }}
+                className="w-3.5 h-3.5 cursor-pointer align-middle"
+                title="Seleccionar todos los visibles"
+              />
+            </th>
+            <th className="text-left px-3 py-2">Título</th>
             <th className="text-left px-3 py-2">Estado</th>
             {kind !== 'articles' && <th className="text-left px-3 py-2">Precio</th>}
             {kind === 'courses' && (<>
@@ -126,14 +203,23 @@ export function AppSectionList({
         <tbody>
           {visible.length === 0 && (
             <tr>
-              <td colSpan={kind === 'courses' ? 7 : kind === 'articles' ? 4 : kind === 'paylinks' ? 6 : 5} className="px-5 py-6 text-center text-sm text-white/40">
+              <td colSpan={kind === 'courses' ? 8 : kind === 'articles' ? 5 : kind === 'paylinks' ? 7 : 6} className="px-5 py-6 text-center text-sm text-white/40">
                 No hay resultados para "{query}".
               </td>
             </tr>
           )}
           {visible.map((r) => (
-            <tr key={r.id} className="border-t border-white/5 hover:bg-white/[0.02]">
-              <td className="px-5 py-3">
+            <tr key={r.id} className={`border-t border-white/5 hover:bg-white/[0.02] ${selected.has(r.id) ? 'bg-emerald-500/[0.04]' : ''}`}>
+              <td className="pl-5 pr-1 py-3 align-middle">
+                <input
+                  type="checkbox"
+                  checked={selected.has(r.id)}
+                  onChange={() => toggleOne(r.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-3.5 h-3.5 cursor-pointer"
+                />
+              </td>
+              <td className="px-3 py-3">
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Thumbnail — 40x40, fallback a un placeholder gris cuando el producto no tiene foto */}
                   {r.cover_url ? (
