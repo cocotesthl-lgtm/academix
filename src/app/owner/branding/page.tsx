@@ -4,6 +4,7 @@ import { env } from "@/lib/env";
 import { BrandingForm } from "@/components/owner/BrandingForm";
 import { EmailBrandingForm } from "@/components/owner/EmailBrandingForm";
 import { PageHeader, HeaderSecondary } from "@/components/owner/PageHeader";
+import { DomainSection } from "@/components/owner/domain/DomainSection";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,13 @@ type BrandRow = {
   accent_color?: string;
 };
 
-export default async function BrandingPage() {
+export default async function BrandingPage({
+  searchParams
+}: {
+  searchParams: Promise<{ error?: string; msg?: string; ok?: string }>;
+}) {
   const { tenant } = await requireOwner();
+  const sp = await searchParams;
   const svc = getServiceClient();
 
   // Defensivo: si migration 0021 no corrió, las columnas email_* no existen.
@@ -38,12 +44,12 @@ export default async function BrandingPage() {
   return (
     <div className="space-y-10 max-w-5xl">
       <PageHeader
-        title="Identidad"
-        description="Logo, color principal y branding de tus emails. Todo lo que ven tus clientes."
+        title="Identidad y dominio"
+        description="Logo, colores, branding de emails y tu URL — todo lo que hace a tu marca en un solo lugar."
         actions={<HeaderSecondary href="/site">Editar páginas</HeaderSecondary>}
       />
 
-      <section>
+      <section id="marca">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-white/55 mb-4">Marca visual</h2>
         <BrandingForm
           initialName={tenant.name}
@@ -53,7 +59,7 @@ export default async function BrandingPage() {
         />
       </section>
 
-      <section className="pt-8 border-t border-white/10">
+      <section id="emails" className="pt-8 border-t border-white/10 scroll-mt-24">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-white/55 mb-2">Personalización de emails</h2>
         <p className="text-xs text-white/55 mb-4">
           Banners e info extra que se inyectan en los emails de confirmación de compra y tickets.
@@ -68,6 +74,16 @@ export default async function BrandingPage() {
           logoUrl={brand.logo_url ?? undefined}
         />
       </section>
+
+      <div className="pt-8 border-t border-white/10">
+        <DomainSection
+          tenantId={tenant.id}
+          tenantSlug={tenant.slug}
+          searchError={sp.error}
+          searchMsg={sp.msg}
+          searchOk={sp.ok}
+        />
+      </div>
     </div>
   );
 }

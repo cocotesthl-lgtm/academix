@@ -115,8 +115,7 @@ const NAV: NavEntry[] = [
         { label: 'Editor de páginas', href: '/site' },
         { label: 'Templates', href: '/templates' },
         // "Apps" subió a baseline arriba — sacado de acá para no duplicar.
-        { label: 'Identidad', href: '/branding' },
-        { label: 'Dominio', href: '/dominio' }
+        { label: 'Identidad y dominio', href: '/branding' }
       ]
     }
   },
