@@ -195,7 +195,7 @@ export default async function OwnerDashboard() {
       id: 'publish',
       title: 'Creá tu primera publicación',
       description: 'Los borradores no aparecen en tu sitio público.',
-      href: '/courses',
+      href: '/mis-publicaciones',
       done: totalPublished > 0
     }
   ];
