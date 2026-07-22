@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/owner/PageHeader";
 import { AppSectionList } from "@/components/owner/courses/AppSectionList";
 import { MisOfertasFilter } from "@/components/owner/courses/MisOfertasFilter";
 import type { ModuleKey } from "@/lib/modules/types";
+import { tenantOrigin } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,7 @@ type ExtraLink = { label: string; href: string; emoji?: string };
 export default async function CoursesIndex() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
+  const origin = tenantOrigin(tenant.slug);
 
   // ── Data loads ───────────────────────────────────────────────────
   const [
@@ -519,7 +521,7 @@ function AppSection({
                   price_cents: c.price_cents, currency: c.currency,
                   cover_url: c.cover_url,
                   clients: s?.clients ?? 0, revenue: s?.revenue ?? 0, trend: s?.trend,
-                  editHref: editHrefFor(c)
+                  editHref: editHrefFor(c), publicHref: `${origin}/c/${c.slug}`
                 };
               })}
             />
@@ -533,7 +535,7 @@ function AppSection({
                 price_cents: p.price_cents, currency: p.currency,
                 cover_url: p.cover_url, sku: p.sku,
                 stock_qty: p.stock_qty,
-                editHref: `/products/${p.id}`
+                editHref: `/products/${p.id}`, publicHref: `${origin}/p/${p.slug}`
               }))}
             />
           )}
@@ -545,7 +547,7 @@ function AppSection({
                 id: b.id, slug: b.slug, title: b.title, status: b.status,
                 price_cents: b.price_cents, currency: b.currency,
                 cover_url: b.cover_url,
-                editHref: `/bundles/${b.id}`
+                editHref: `/bundles/${b.id}`, publicHref: `${origin}/b/${b.slug}`
               }))}
             />
           )}
@@ -558,7 +560,7 @@ function AppSection({
                 price_cents: 0, currency: '',
                 cover_url: a.cover_url,
                 updated_at: a.updated_at,
-                editHref: `/blog/${a.id}`
+                editHref: `/blog/${a.id}`, publicHref: `${origin}/blog/${a.slug}`
               }))}
             />
           )}
@@ -571,7 +573,7 @@ function AppSection({
                 price_cents: p.amount_cents, currency: p.currency,
                 cover_url: p.cover_url,
                 clients: p.uses_count, revenue: p.revenue_cents,
-                editHref: `/pay-links/${p.id}`
+                editHref: `/pay-links/${p.id}`, publicHref: `${origin}/pay/${p.code}`
               }))}
             />
           )}
@@ -592,7 +594,7 @@ function AppSection({
               clients: s?.clients ?? 0,
               revenue: s?.revenue ?? 0,
               trend: s?.trend,
-              editHref: editHrefFor(c)
+              editHref: editHrefFor(c), publicHref: `${origin}/c/${c.slug}`
             };
           })}
         />
@@ -604,7 +606,7 @@ function AppSection({
             price_cents: p.price_cents, currency: p.currency,
             cover_url: p.cover_url, sku: p.sku,
             stock_qty: p.stock_qty,
-            editHref: `/products/${p.id}`
+            editHref: `/products/${p.id}`, publicHref: `${origin}/p/${p.slug}`
           }))}
         />
       ) : bundleItems ? (
@@ -614,7 +616,7 @@ function AppSection({
             id: b.id, slug: b.slug, title: b.title, status: b.status,
             price_cents: b.price_cents, currency: b.currency,
             cover_url: b.cover_url,
-            editHref: `/bundles/${b.id}`
+            editHref: `/bundles/${b.id}`, publicHref: `${origin}/b/${b.slug}`
           }))}
         />
       ) : articleItems ? (
@@ -625,7 +627,7 @@ function AppSection({
             price_cents: 0, currency: '',
             cover_url: a.cover_url,
             updated_at: a.updated_at,
-            editHref: `/blog/${a.id}`
+            editHref: `/blog/${a.id}`, publicHref: `${origin}/blog/${a.slug}`
           }))}
         />
       ) : payLinkItems ? (
@@ -636,7 +638,7 @@ function AppSection({
             price_cents: p.amount_cents, currency: p.currency,
             cover_url: p.cover_url,
             clients: p.uses_count, revenue: p.revenue_cents,
-            editHref: `/pay-links/${p.id}`
+            editHref: `/pay-links/${p.id}`, publicHref: `${origin}/pay/${p.code}`
           }))}
         />
       ) : null}

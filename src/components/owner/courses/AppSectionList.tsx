@@ -34,7 +34,13 @@ type Row = {
   updated_at?: string | null;
   /** href a donde ir al hacer click en el título / editar */
   editHref: string;
+  /** URL pública compartible del item (para el botón "Copiar link").
+   *  Ej. https://mytenant.bzseguridad.store/c/mi-curso */
+  publicHref?: string;
 };
+
+type SortKey = 'title' | 'status' | 'price' | 'clients' | 'revenue' | 'stock' | 'updated' | null;
+type SortDir = 'asc' | 'desc';
 
 const INITIAL_ROWS = 5;
 
@@ -61,6 +67,37 @@ export function AppSectionList({
   const [revealed, setRevealed] = useState(!dimmed);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
+  const [sortKey, setSortKey] = useState<SortKey>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  function toggleSort(k: NonNullable<SortKey>) {
+    if (sortKey === k) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(k);
+      setSortDir('asc');
+    }
+  }
+
+  async function copyLink(row: Row) {
+    if (!row.publicHref) return;
+    try {
+      await navigator.clipboard.writeText(row.publicHref);
+      setCopiedId(row.id);
+      setTimeout(() => setCopiedId((c) => (c === row.id ? null : c)), 1500);
+    } catch { /* clipboard bloqueado */ }
+  }
+
+  async function deleteOne(id: string, title: string) {
+    if (!confirm(`¿Eliminar "${title}"? Esta acción no se puede deshacer.`)) return;
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set('kind', kind);
+      fd.set('ids', id);
+      await bulkDeleteItemsAction(fd);
+    });
+  }
 
   function toggleOne(id: string) {
     const next = new Set(selected);
@@ -96,13 +133,32 @@ export function AppSectionList({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) =>
-      r.title.toLowerCase().includes(q) ||
-      r.slug.toLowerCase().includes(q) ||
-      (r.sku ? r.sku.toLowerCase().includes(q) : false)
-    );
-  }, [rows, query]);
+    const base = q
+      ? rows.filter((r) =>
+          r.title.toLowerCase().includes(q) ||
+          r.slug.toLowerCase().includes(q) ||
+          (r.sku ? r.sku.toLowerCase().includes(q) : false)
+        )
+      : rows;
+    if (!sortKey) return base;
+    const dir = sortDir === 'asc' ? 1 : -1;
+    const getter: Record<NonNullable<SortKey>, (r: Row) => string | number> = {
+      title:   (r) => r.title.toLowerCase(),
+      status:  (r) => r.status,
+      price:   (r) => r.price_cents,
+      clients: (r) => r.clients ?? 0,
+      revenue: (r) => r.revenue ?? 0,
+      stock:   (r) => r.stock_qty ?? 0,
+      updated: (r) => r.updated_at ? new Date(r.updated_at).getTime() : 0
+    };
+    const get = getter[sortKey];
+    return [...base].sort((a, b) => {
+      const va = get(a); const vb = get(b);
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+  }, [rows, query, sortKey, sortDir]);
 
   const visible = showAll ? filtered : filtered.slice(0, INITIAL_ROWS);
   const hiddenCount = filtered.length - visible.length;
@@ -183,19 +239,25 @@ export function AppSectionList({
                 title="Seleccionar todos los visibles"
               />
             </th>
-            <th className="text-left px-3 py-2">Título</th>
-            <th className="text-left px-3 py-2">Estado</th>
-            {kind !== 'articles' && <th className="text-left px-3 py-2">Precio</th>}
+            <SortableTh label="Título" sortKey="title" align="left" cur={sortKey} dir={sortDir} onClick={toggleSort} />
+            <SortableTh label="Estado" sortKey="status" align="left" cur={sortKey} dir={sortDir} onClick={toggleSort} />
+            {kind !== 'articles' && (
+              <SortableTh label="Precio" sortKey="price" align="left" cur={sortKey} dir={sortDir} onClick={toggleSort} />
+            )}
             {kind === 'courses' && (<>
-              <th className="text-right px-3 py-2">Clientes</th>
-              <th className="text-right px-3 py-2">Recaudado</th>
+              <SortableTh label="Clientes" sortKey="clients" align="right" cur={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableTh label="Recaudado" sortKey="revenue" align="right" cur={sortKey} dir={sortDir} onClick={toggleSort} />
               <th className="text-right px-3 py-2">Últ. 30d</th>
             </>)}
-            {kind === 'physical' && <th className="text-right px-3 py-2">Stock</th>}
-            {kind === 'articles' && <th className="text-right px-3 py-2">Última edición</th>}
+            {kind === 'physical' && (
+              <SortableTh label="Stock" sortKey="stock" align="right" cur={sortKey} dir={sortDir} onClick={toggleSort} />
+            )}
+            {kind === 'articles' && (
+              <SortableTh label="Última edición" sortKey="updated" align="right" cur={sortKey} dir={sortDir} onClick={toggleSort} />
+            )}
             {kind === 'paylinks' && (<>
-              <th className="text-right px-3 py-2">Pagos</th>
-              <th className="text-right px-3 py-2">Recaudado</th>
+              <SortableTh label="Pagos" sortKey="clients" align="right" cur={sortKey} dir={sortDir} onClick={toggleSort} />
+              <SortableTh label="Recaudado" sortKey="revenue" align="right" cur={sortKey} dir={sortDir} onClick={toggleSort} />
             </>)}
             <th className="text-right px-5 py-2"></th>
           </tr>
@@ -274,8 +336,25 @@ export function AppSectionList({
                     : <span className="text-white/30">—</span>}
                 </td>
               </>)}
-              <td className="px-5 py-3 text-right">
-                <Link href={r.editHref} className="text-xs text-white/60 hover:text-white">Editar →</Link>
+              <td className="px-5 py-3 text-right whitespace-nowrap">
+                <div className="inline-flex items-center gap-1">
+                  {r.publicHref && (
+                    <button type="button" onClick={() => copyLink(r)}
+                      title={copiedId === r.id ? '¡Copiado!' : 'Copiar link al portapapeles'}
+                      className={`text-xs px-1.5 py-1 rounded hover:bg-white/5 ${
+                        copiedId === r.id ? 'text-emerald-300' : 'text-white/50 hover:text-white'
+                      }`}>
+                      {copiedId === r.id ? '✓' : '🔗'}
+                    </button>
+                  )}
+                  <Link href={r.editHref} className="text-xs text-white/60 hover:text-white px-1">Editar →</Link>
+                  <button type="button" onClick={() => deleteOne(r.id, r.title)}
+                    disabled={pending}
+                    title="Eliminar"
+                    className="text-xs px-1.5 py-1 rounded text-white/40 hover:text-rose-300 hover:bg-rose-500/10 disabled:opacity-40">
+                    🗑
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -305,6 +384,33 @@ export function AppSectionList({
         </div>
       )}
     </div>
+  );
+}
+
+/** Header de columna clickeable con indicador de sort asc/desc. Reusa
+ *  la misma tipografía del thead del listado. */
+function SortableTh({
+  label, sortKey, cur, dir, onClick, align = 'left'
+}: {
+  label: string;
+  sortKey: NonNullable<SortKey>;
+  cur: SortKey;
+  dir: SortDir;
+  onClick: (k: NonNullable<SortKey>) => void;
+  align?: 'left' | 'right';
+}) {
+  const active = cur === sortKey;
+  const arrow = active ? (dir === 'asc' ? '↑' : '↓') : '↕';
+  return (
+    <th className={`px-3 py-2 ${align === 'right' ? 'text-right' : 'text-left'}`}>
+      <button type="button" onClick={() => onClick(sortKey)}
+        className={`inline-flex items-center gap-1 uppercase tracking-wider text-[10px] font-inherit hover:text-white transition ${
+          active ? 'text-white/80' : 'text-white/45'
+        }`}>
+        <span>{label}</span>
+        <span className={`text-[10px] ${active ? 'opacity-100' : 'opacity-30'}`}>{arrow}</span>
+      </button>
+    </th>
   );
 }
 
