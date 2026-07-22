@@ -147,6 +147,11 @@ export async function signupAction(_prev: ActionResult | null, formData: FormDat
   if (error) return { ok: false, error: error.message };
 
   if (data.session && data.user) {
+    // Captura referrer platform-wide para el árbol multinivel (L1→L2→L3).
+    // Idempotente y silent — no rompe el signup si falla.
+    const { capturePendingReferral } = await import('@/lib/affiliates/referral-capture');
+    await capturePendingReferral(data.user.id);
+
     // Si hay next explícito (ej: viene del flow afiliado), respetarlo —
     // no pasar por postAuthRedirect que lo mandaría a /onboarding.
     if (next) return { ok: true, redirectTo: postAuthPath };

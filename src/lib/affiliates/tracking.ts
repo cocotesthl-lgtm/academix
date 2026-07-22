@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createHash } from 'node:crypto';
 import { getServiceClient } from '@/lib/supabase/service';
 import { signAffiliateCookie, cookieName, COOKIE_MAX_AGE_SECONDS, type AffiliatePayload } from '@/lib/affiliates/cookie';
+import { setPlatformRefCookie } from '@/lib/affiliates/referral-capture';
 
 export type AffiliateLink = {
   id: string;
@@ -126,6 +127,10 @@ export async function trackClick(opts: {
   } catch (e) {
     console.warn('[trackClick] cookies.set failed (RSC context?)', e);
   }
+
+  // Cookie platform-wide para el multinivel — se lee al signup para armar
+  // profiles.referred_by_user_id. Sin esto, L2/L3 nunca acredita.
+  await setPlatformRefCookie(link.affiliate_user_id);
 
   return { ok: true, payload };
 }

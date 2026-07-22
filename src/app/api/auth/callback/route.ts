@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { resolvePostAuthRedirect } from '@/lib/auth/actions';
+import { capturePendingReferral } from '@/lib/affiliates/referral-capture';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,11 @@ export async function GET(req: NextRequest) {
   if (!userId) {
     return NextResponse.redirect(new URL('/onboarding', req.url));
   }
+
+  // Captura referrer para el multinivel (L1→L2→L3). Cubre los flows que
+  // no pasan por signupAction: email confirm delayed, OAuth (Google), magic
+  // link. Idempotente — si ya fue capturado no hace nada.
+  await capturePendingReferral(userId);
 
   const dest = await resolvePostAuthRedirect(userId);
   // dest puede ser absolute URL (cross-subdomain a app.<root>) o path
