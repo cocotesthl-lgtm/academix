@@ -72,7 +72,11 @@ type ExtraLink = { label: string; href: string; emoji?: string };
 export default async function CoursesIndex() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
-  const origin = tenantOrigin(tenant.slug);
+  // tenantOrigin puede fallar si NEXT_PUBLIC_APP_URL no está bien seteado
+  // en un env — no queremos que eso rompa el listado entero, sólo pierde
+  // el link "copiar" de las rows.
+  let origin = '';
+  try { origin = tenantOrigin(tenant.slug); } catch { origin = ''; }
 
   // ── Data loads ───────────────────────────────────────────────────
   const [
@@ -116,23 +120,30 @@ export default async function CoursesIndex() {
           .order("updated_at", { ascending: false });
       } catch { return { data: [] }; }
     })(),
-    // pay_links idem — módulo opcional (migration 0084)
+    // pay_links idem — módulo opcional (migration 0084). Si la tabla no
+    // existe o supabase-js explota por schema mismatch, devolvemos [] y
+    // el AppSection se ve vacío sin romper el listado entero.
     (async () => {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return await (svc.from("pay_links") as any)
+        const res = await (svc.from("pay_links") as any)
           .select("id, code, title, status, amount_cents, currency, uses_count, revenue_cents, cover_url")
           .eq("tenant_id", tenant.id)
           .is("parent_link_id", null)
           .order("created_at", { ascending: false });
-      } catch { return { data: [] }; }
+        if (res.error) return { data: [] };
+        return res;
+      } catch (e) {
+        console.warn('[courses] pay_links query failed:', e);
+        return { data: [] };
+      }
     })()
   ]);
   const courses = (coursesRaw ?? []) as CourseRow[];
-  const physicalProducts = (physicalRaw.data ?? []) as PhysRow[];
-  const bundles = (bundlesRaw.data ?? []) as BundleRow[];
-  const articles = (articlesRaw.data ?? []) as ArticleRow[];
-  const payLinks = (payLinksRaw.data ?? []) as PayLinkRow[];
+  const physicalProducts = (physicalRaw?.data ?? []) as PhysRow[];
+  const bundles = (bundlesRaw?.data ?? []) as BundleRow[];
+  const articles = (articlesRaw?.data ?? []) as ArticleRow[];
+  const payLinks = (payLinksRaw?.data ?? []) as PayLinkRow[];
 
   const modules = await getTenantModules(tenant.id);
 
