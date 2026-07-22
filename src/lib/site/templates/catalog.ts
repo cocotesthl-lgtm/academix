@@ -893,6 +893,156 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       // Blog + forms de contacto + planes de suscripción premium
       modules: ['crm', 'blog', 'forms', 'catalog', 'plans']
     };
+  })(),
+
+  /* 10. Dropshipping — tienda enfocada en revender productos del marketplace
+        wholesaler de OfferNow. Estilo más "urgent / social proof" que el
+        ecommerce estándar: hero con producto estrella + beneficios de envío
+        + timer + demo en video + testimonials + FAQ de envíos internacionales.
+        Sin about ni "sobre nosotros" — a nadie le importa la marca en
+        dropshipping, importan el producto y el precio. */
+  (() => {
+    const c = clone();
+    enableOnly(c, [
+      'hero',
+      'benefits_bar',
+      'offer',
+      'video',
+      'products_strip',
+      'category_cards',
+      'features',
+      'before_after',
+      'testimonials',
+      'products',
+      'faq',
+      'cta_final'
+    ]);
+
+    // Hero split con producto estrella + CTA agresivo
+    c.sections.hero.layout = 'split';
+    c.sections.hero.eyebrow = '🔥 #1 EN TENDENCIA · ENVÍO GRATIS';
+    c.sections.hero.title = 'El gadget que se agotó 3 veces en 2 semanas';
+    c.sections.hero.subtitle = 'Comprado por más de 12.400 personas en Argentina. Envío a todo el país en 24-72hs. Garantía de devolución 30 días — si no te gusta, te devolvemos el 100%.';
+    c.sections.hero.cta_label = '🛒 Comprar ahora — 40% OFF';
+    c.sections.hero.cta_href = '#products_strip';
+    c.sections.hero.cta_label_2 = 'Ver reviews de clientes';
+    c.sections.hero.cta_href_2 = '#testimonials';
+    c.sections.hero.image_url = 'https://images.unsplash.com/photo-1585123334904-845d60e97b29?w=1400&auto=format&fit=crop&q=80';
+
+    // Cinta de beneficios: envío + garantía + pago + trending
+    c.sections.benefits_bar.enabled = true;
+    c.sections.benefits_bar.variant = 'dark';
+
+    // Offer con countdown — típico dropshipping para urgency
+    c.sections.offer.title = '⏰ Oferta por lanzamiento — 40% OFF';
+    c.sections.offer.subtitle = 'Sólo por 48 horas. Después vuelve al precio normal.';
+    c.sections.offer.cta_label = 'Aprovechar ahora';
+    c.sections.offer.cta_href = '#products_strip';
+    // 48hs desde ahora — el owner puede ajustar en el editor
+    const in48h = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    c.sections.offer.ends_at = in48h.toISOString();
+
+    // Video demo del producto
+    c.sections.video.enabled = true;
+    c.sections.video.title = 'Mirá cómo funciona en 60 segundos';
+    c.sections.video.subtitle = 'Reemplazá este video en el editor por el tuyo. Un video del producto en uso te vende 3-5x mejor que fotos.';
+    c.sections.video.provider = 'youtube';
+    c.sections.video.video_id = 'dQw4w9WgXcQ'; // placeholder — cambiar en editor
+
+    // Categorías del catálogo dropship
+    c.sections.category_cards.enabled = true;
+    c.sections.category_cards.title = 'Explorá por categoría';
+    c.sections.category_cards.subtitle = '';
+    c.sections.category_cards.layout = 'squares';
+    c.sections.category_cards.items = [
+      { id: 'cc1', span: 1, eyebrow: 'HOME', label: 'Hogar inteligente', subtitle: '', cta_label: 'Ver todo', cta_href: '/tienda?cat=hogar', image_url: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.4 },
+      { id: 'cc2', span: 1, eyebrow: 'TECH', label: 'Gadgets tech', subtitle: '', cta_label: 'Ver todo', cta_href: '/tienda?cat=tecnologia', image_url: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.4 },
+      { id: 'cc3', span: 1, eyebrow: 'FIT', label: 'Deportes & fit', subtitle: '', cta_label: 'Ver todo', cta_href: '/tienda?cat=deportes', image_url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.4 },
+      { id: 'cc4', span: 1, eyebrow: 'BEAUTY', label: 'Belleza & skincare', subtitle: '', cta_label: 'Ver todo', cta_href: '/tienda?cat=belleza', image_url: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&auto=format&fit=crop&q=80', text_color: '#ffffff', overlay: 0.4 }
+    ];
+
+    // Cinta horizontal de productos destacados (los "winning products")
+    c.sections.products_strip.enabled = true;
+    c.sections.products_strip.title = '🚀 Los más vendidos esta semana';
+    c.sections.products_strip.source = 'featured';
+    c.sections.products_strip.count = 12;
+
+    // Features: por qué comprar acá (garantías, envío, atención)
+    c.sections.features.title = '¿Por qué comprarnos a nosotros?';
+    c.sections.features.items = [
+      { id: 'f1', icon: '📦', title: 'Envío rápido nacional', body: '24-72hs a todo el país. Preparación al día siguiente de tu compra. Seguimiento por WhatsApp.' },
+      { id: 'f2', icon: '💰', title: 'Garantía 30 días', body: 'Si no te gusta el producto o no funciona como esperabas, te devolvemos el 100% del dinero.' },
+      { id: 'f3', icon: '🎁', title: 'Envío gratis desde $ 15.000', body: 'Sumás varios productos y el envío queda gratis. En efectivo, transferencia o 3 cuotas sin interés.' },
+      { id: 'f4', icon: '💬', title: 'Atención por WhatsApp', body: 'Respondemos en menos de 1 hora en horario comercial. Ante cualquier problema con tu compra, escribinos.' },
+      { id: 'f5', icon: '🔒', title: 'Pago 100% seguro', body: 'MercadoPago, tarjetas de crédito/débito, transferencia. Tus datos nunca los vemos ni guardamos.' },
+      { id: 'f6', icon: '⭐', title: 'Miles de clientes felices', body: '4.8/5 en más de 3.200 reviews reales. Podés leerlas todas más abajo.' }
+    ];
+
+    // Before/After — típico en dropshipping de belleza / fitness / hogar
+    c.sections.before_after.enabled = true;
+    c.sections.before_after.title = 'Antes y después';
+    c.sections.before_after.before_label = 'Sin el producto';
+    c.sections.before_after.after_label = 'Con el producto';
+    c.sections.before_after.before_image_url = 'https://images.unsplash.com/photo-1552693673-1bf958298935?w=900&auto=format&fit=crop&q=80';
+    c.sections.before_after.after_image_url = 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=900&auto=format&fit=crop&q=80';
+    c.sections.before_after.before_body = 'El problema típico — desorganización, tiempo perdido, resultados mediocres.';
+    c.sections.before_after.after_body = 'Resultado real después de 2 semanas usando el producto. Testimonios sin filtros abajo.';
+
+    // Testimonials — social proof
+    c.sections.testimonials.title = '⭐ 4.8/5 en 3.200+ reviews';
+    c.sections.testimonials.items = [
+      { id: 't1', name: 'Camila R.', role: 'Compradora verificada', rating: 5, photo_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&auto=format&fit=crop&q=80', text: 'Llegó al día siguiente en CABA, súper bien empaquetado. Funciona igual o mejor que lo que muestran en TikTok. Ya recomendé a mis amigas.' },
+      { id: 't2', name: 'Nicolás M.', role: 'Comprador verificado', rating: 5, photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&auto=format&fit=crop&q=80', text: 'Estaba dudando por el precio y por si sería lo que mostraban las fotos, pero terminó siendo mejor. Muy buena atención por WhatsApp cuando pregunté.' },
+      { id: 't3', name: 'Julieta A.', role: 'Compradora verificada', rating: 5, photo_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&auto=format&fit=crop&q=80', text: 'Pedí a Córdoba y llegó en 48hs. Todo perfecto — el producto es lo que esperaba y el packaging cuida el detalle. Repito seguro.' }
+    ];
+
+    // Grid completo del catálogo
+    c.sections.products.enabled = true;
+    c.sections.products.title = 'Explorá todo el catálogo';
+    c.sections.products.count = 24;
+
+    // FAQ enfocado en las preguntas típicas de dropshipping
+    c.sections.faq.title = 'Preguntas frecuentes';
+    c.sections.faq.items = [
+      { id: 'q1', q: '¿Cuánto tarda el envío?', a: 'CABA y GBA: 24-72hs. Interior: 3-5 días hábiles. Recibís código de seguimiento por email y WhatsApp apenas despachamos el paquete.' },
+      { id: 'q2', q: '¿Qué pasa si el producto no me llega o llega roto?', a: 'Te devolvemos el 100% del dinero o te enviamos uno nuevo — vos elegís. Nunca perdés lo que pagaste. Escribinos por WhatsApp con una foto y lo resolvemos en el día.' },
+      { id: 'q3', q: '¿Puedo devolverlo si no me gusta?', a: 'Sí. Tenés 30 días desde que lo recibís para devolverlo (siempre que esté sin usar y en su embalaje original). Nosotros nos hacemos cargo del envío de vuelta.' },
+      { id: 'q4', q: '¿Cómo puedo pagar?', a: 'Aceptamos MercadoPago (tarjeta / efectivo / transferencia), transferencia directa (con 10% de descuento extra) y hasta 3 cuotas sin interés en compras mayores a $ 20.000.' },
+      { id: 'q5', q: '¿Los productos son originales?', a: 'Sí. Trabajamos directo con proveedores mayoristas y hacemos control de calidad al recibir cada lote. Si algo llega defectuoso, lo reemplazamos.' },
+      { id: 'q6', q: '¿Hacen envíos internacionales?', a: 'Por ahora sólo enviamos dentro de Argentina. Si estás afuera, contactanos por WhatsApp y evaluamos caso por caso.' }
+    ];
+
+    // CTA final agresivo
+    c.sections.cta_final.title = '🔥 Sumate a los 12.400+ compradores felices';
+    c.sections.cta_final.body = 'Envío gratis desde $ 15.000 · Garantía 30 días · Pago 100% seguro';
+    c.sections.cta_final.cta_label = 'Comprar ahora con 40% OFF';
+    c.sections.cta_final.cta_href = '#products_strip';
+
+    // Nav ecommerce
+    c.nav.links = [
+      { id: '00000000-0000-0000-0000-000000000d01', label: 'Ofertas', href: '/tienda?cat=promo' },
+      { id: '00000000-0000-0000-0000-000000000d02', label: 'Más vendidos', href: '#products_strip' },
+      { id: '00000000-0000-0000-0000-000000000d03', label: 'Reviews', href: '#testimonials' }
+    ];
+    c.nav.show_my_courses = true;
+    c.nav.my_courses_label = 'Mis compras';
+    c.nav.show_affiliates = false;
+    c.nav.show_categories_mega = true;
+    c.nav.categories_mega_label = 'Categorías';
+
+    c.footer.text = 'Envío gratis desde $ 15.000 · Garantía 30 días · Atención por WhatsApp · Pagos seguros por MercadoPago';
+
+    return {
+      id: 'dropshipping',
+      name: 'Tienda dropshipping',
+      category: 'Comercio',
+      emoji: '📦',
+      shortDesc: 'Tienda de reventa con productos del marketplace mayorista de OfferNow. Hero agresivo, timer, video demo y reviews.',
+      longDesc: 'Template pensado para revendedores que usan el marketplace mayorista integrado. Trae los elementos que convierten en dropshipping: hero con producto estrella, cinta de beneficios (envío/garantía/pago), timer de urgencia, video demo, cinta de más vendidos, before/after, testimonials con foto y FAQ de envíos y devoluciones. Prende automáticamente las apps de Tienda + Dropshipping + Promociones + CRM.',
+      suggestedPrimary: '#ea580c',
+      config: c,
+      modules: ['catalog', 'ecommerce', 'dropshipping', 'promotions', 'crm']
+    };
   })()
 ];
 
