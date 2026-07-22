@@ -57,13 +57,15 @@ export async function createTenantAction(
     ? chosenTemplate.suggestedPrimary
     : primaryColor;
   const isEcommerce = chosenTemplate?.id === 'ecommerce';
+  const isDropshipping = chosenTemplate?.id === 'dropshipping';
+  const isProductStore = isEcommerce || isDropshipping;
   // Módulos iniciales del tenant según template elegido.
   // Ecommerce template → preset ecommerce (solo tienda + crm + sales + site).
   // Academia y otros → todos prendidos (retrocompat / owner puede apagar
   // desde /owner/modulos después). Un tenant con TODO prendido no molesta,
   // apagarlos es fácil; empezar sin nada es frustrante.
-  const initialModules: Modules = isEcommerce
-    ? { ...MODULE_PRESETS.ecommerce.modules }
+  const initialModules: Modules = isProductStore
+    ? { ...MODULE_PRESETS.ecommerce.modules, dropshipping: isDropshipping }
     : { ...ALL_MODULES_ON };
   const tenantPayload: Record<string, unknown> = {
     slug,
@@ -80,7 +82,7 @@ export async function createTenantAction(
   if (primaryGradient) tenantPayload.primary_gradient = primaryGradient;
   // Ecommerce → habilitar carrito automáticamente en el registro también
   // (no solo desde /owner/templates). Sin carrito no hay tienda.
-  if (isEcommerce) {
+  if (isProductStore) {
     tenantPayload.cart_enabled = true;
     tenantPayload.cart_position = 'header';
     tenantPayload.cart_display = 'dropdown';
@@ -230,11 +232,11 @@ export async function createTenantAction(
   // así el owner ve el catálogo cargado en /owner/products y /owner/categories
   // (solo tiene que editar título/precio/foto de cada uno).
   // Wrapped en try/catch para no romper el onboarding si algo falla.
-  if (isEcommerce) {
+  if (isProductStore) {
     try {
       await seedEcommerceDemoData(tenant.id);
     } catch (e) {
-      console.error('[createTenant] seed ecommerce fallo (no critico):', e);
+      console.error('[createTenant] seed productos fallo (no critico):', e);
     }
   }
 

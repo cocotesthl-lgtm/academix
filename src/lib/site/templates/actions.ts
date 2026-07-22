@@ -58,10 +58,11 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
     patch.brand = { ...(tRow?.brand ?? {}), primary_color: tpl.suggestedPrimary };
   }
 
-  // Ecommerce template → habilitar carrito automáticamente (sin cart no hay
-  // tienda). El owner puede seguir apagándolo desde /owner/checkout si
-  // realmente no lo quiere. Defensivo por si la migration 0034 está pendiente.
-  if (tpl.id === 'ecommerce') {
+  // Templates de tienda (ecommerce + dropshipping) → habilitar carrito
+  // automáticamente. Sin cart no hay tienda. Defensivo por si la migration
+  // 0034 está pendiente.
+  const isProductStore = tpl.id === 'ecommerce' || tpl.id === 'dropshipping';
+  if (isProductStore) {
     patch.cart_enabled = true;
     patch.cart_position = 'header';
     patch.cart_display = 'dropdown';
@@ -97,21 +98,24 @@ export async function applySiteTemplateAction(formData: FormData): Promise<void>
     }
   }
 
-  // ── Ya no seedeamos data per-tenant ────────────────────────────────
-  // Migration 0067 introdujo el pool demo global (demo_articles,
-  // demo_course_categories, demo_physical_products). Los templates
-  // ahora solo modifican site_config; el contenido demo vive UNA VEZ
-  // en el pool global y los queries de storefront hacen UNION real +
-  // pool visible (queries en src/lib/demo-pool/queries.ts).
+  // ── Pool demo global vs seed real de productos ──────────────────
+  // Blog + cursos usan el pool demo global (demo_articles, demo_courses)
+  // que el storefront queryea via UNION real + pool visible. Ventaja:
+  // no duplica 40k rows para 1000 tenants con template noticias.
   //
-  // Ventaja: 1000 tenants con template Noticias = ~40 rows GLOBALES
-  // en vez de 40.000 duplicadas. Cuando el owner edita un demo, se
-  // materializa (copy-on-edit) via helpers en demo-pool/mutations.ts.
-  //
-  // Los seed-*.ts viejos quedan como referencia pero ya no se ejecutan
-  // desde el flow de aplicar template. Sirven para poblar el pool
-  // demo (una sola vez, via migration 0068_populate_demo_pool.sql).
-  void seedEcommerceDemoData; void seedNewsDemoData;
+  // Productos físicos NO usan pool demo (el storefront va directo a
+  // physical_products del tenant) — sin productos reales el hero de la
+  // tienda queda vacío. Entonces para templates ecommerce/dropshipping
+  // seedeamos físicos reales acá mismo. Idempotente: seedEcommerceDemoData
+  // detecta si ya hay productos y skippea sin tocar nada.
+  if (isProductStore) {
+    try {
+      await seedEcommerceDemoData(tenant.id);
+    } catch (e) {
+      console.error('[applySiteTemplate] seed productos fallo (no critico):', e);
+    }
+  }
+  void seedNewsDemoData;
 
   revalidatePath('/owner/site');
   revalidatePath('/owner/templates');
