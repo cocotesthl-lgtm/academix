@@ -1,10 +1,10 @@
-import Link from 'next/link';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { createArticleAction } from '@/lib/articles/actions';
 import { PageHeader } from '@/components/owner/PageHeader';
-import { relativeTime } from '@/lib/time';
 import { fetchArticlesForTenant } from '@/lib/demo-pool/queries';
+import { AppSectionList } from '@/components/owner/courses/AppSectionList';
+import { tenantOrigin } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +22,7 @@ type Row = {
 export default async function BlogListPage() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
+  const origin = tenantOrigin(tenant.slug);
 
   // Reales del tenant + demos visibles del pool. Los demos tienen id
   // sintético "demo:{slug}" y aparecen con badge "Demo".
@@ -77,41 +78,22 @@ export default async function BlogListPage() {
           <div className="text-xs text-white/50">
             {rows.length} artículo{rows.length === 1 ? '' : 's'} · {publishedCount} publicado{publishedCount === 1 ? '' : 's'}
           </div>
-          <div className="rounded-xl border border-white/10 divide-y divide-white/5 overflow-hidden">
-            {rows.map((r) => (
-              <Link key={r.id} href={`/blog/${r.id}`} className="flex items-center gap-4 p-4 hover:bg-white/[0.03] transition">
-                <div className="w-14 h-14 rounded bg-white/5 shrink-0 overflow-hidden">
-                  {r.cover_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={r.cover_url} alt="" className="w-full h-full object-cover" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate flex items-center gap-2">
-                    <span className="truncate">{r.title || 'Sin título'}</span>
-                    {r.is_demo && (
-                      <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 shrink-0">
-                        Demo
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-white/45 mt-0.5 truncate">
-                    /blog/{r.slug}
-                    {r.is_demo
-                      ? ' · del pool global (editá para personalizarlo)'
-                      : ` · última edición ${relativeTime(r.updated_at)}`
-                    }
-                  </div>
-                </div>
-                <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded ${
-                  r.status === 'published'
-                    ? 'bg-emerald-500/15 text-emerald-300'
-                    : 'bg-amber-500/15 text-amber-300'
-                }`}>
-                  {r.status === 'published' ? 'publicado' : 'borrador'}
-                </span>
-              </Link>
-            ))}
+          <div className="rounded-xl border border-white/10 overflow-hidden">
+            <AppSectionList
+              kind="articles"
+              rows={rows.map((r) => ({
+                id: r.id,
+                slug: r.slug,
+                title: r.title || 'Sin título',
+                status: r.status,
+                price_cents: 0,
+                currency: '',
+                cover_url: r.cover_url,
+                updated_at: r.updated_at,
+                editHref: `/blog/${r.id}`,
+                publicHref: `${origin}/blog/${r.slug}`
+              }))}
+            />
           </div>
         </>
       )}

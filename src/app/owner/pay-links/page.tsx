@@ -1,8 +1,9 @@
-import Link from 'next/link';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { PageHeader } from '@/components/owner/PageHeader';
 import { createPayLinkAction } from '@/lib/pay-links/actions';
+import { AppSectionList } from '@/components/owner/courses/AppSectionList';
+import { tenantOrigin } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,26 +17,22 @@ type Row = {
   uses_count: number;
   max_uses: number | null;
   views_count: number;
-  clicks_count: number;
   revenue_cents: number;
-  allow_affiliates: boolean;
-  expires_at: string | null;
-  created_at: string;
-  creator_role: string;
+  cover_url: string | null;
 };
 
 export default async function PayLinksPage() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
+  const origin = tenantOrigin(tenant.slug);
 
   let rows: Row[] = [];
   let migrationMissing = false;
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (svc.from('pay_links') as any)
-      .select('id, code, title, amount_cents, currency, status, uses_count, max_uses, views_count, clicks_count, revenue_cents, allow_affiliates, expires_at, created_at, creator_role')
+      .select('id, code, title, amount_cents, currency, status, uses_count, max_uses, views_count, revenue_cents, cover_url')
       .eq('tenant_id', tenant.id)
-      // El owner ve sólo los suyos y de su staff, no las variantes de afiliados
       .is('parent_link_id', null)
       .order('created_at', { ascending: false });
     if (error) migrationMissing = true;
@@ -95,43 +92,23 @@ export default async function PayLinksPage() {
           </form>
         </div>
       ) : (
-        <div className="rounded-xl border border-white/10 divide-y divide-white/5 overflow-hidden">
-          {rows.map((r) => (
-            <Link key={r.id} href={`/owner/pay-links/${r.id}`}
-              className="grid grid-cols-12 gap-3 items-center px-4 py-3 hover:bg-white/[0.03] transition">
-              <div className="col-span-12 sm:col-span-5 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="font-medium text-sm truncate">{r.title}</div>
-                  <StatusChip s={r.status} />
-                  {r.allow_affiliates && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-300 border border-orange-500/30">
-                      afiliados
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-white/40 mt-0.5 font-mono truncate">
-                  /pay/{r.code}
-                  {r.expires_at && <span className="ml-2 text-amber-300/60">
-                    vence {new Date(r.expires_at).toLocaleDateString('es-AR')}
-                  </span>}
-                </div>
-              </div>
-              <div className="col-span-4 sm:col-span-2 text-sm">
-                {(r.amount_cents / 100).toLocaleString('es-AR')} <span className="text-white/40 text-xs">{r.currency}</span>
-              </div>
-              <div className="col-span-4 sm:col-span-2 text-xs text-white/60">
-                {r.uses_count}{r.max_uses ? ` / ${r.max_uses}` : ''} pagos
-              </div>
-              <div className="col-span-4 sm:col-span-3 text-xs text-white/60 text-right">
-                <span className="text-emerald-300 font-mono">
-                  {r.revenue_cents > 0 ? `$${(r.revenue_cents / 100).toLocaleString('es-AR')}` : '—'}
-                </span>
-                <span className="text-white/30 ml-2">
-                  {r.views_count} vistas
-                </span>
-              </div>
-            </Link>
-          ))}
+        <div className="rounded-xl border border-white/10 overflow-hidden">
+          <AppSectionList
+            kind="paylinks"
+            rows={rows.map((r) => ({
+              id: r.id,
+              slug: r.code,
+              title: r.title,
+              status: r.status,
+              price_cents: r.amount_cents,
+              currency: r.currency,
+              cover_url: r.cover_url,
+              clients: r.uses_count,
+              revenue: r.revenue_cents,
+              editHref: `/pay-links/${r.id}`,
+              publicHref: `${origin}/pay/${r.code}`
+            }))}
+          />
         </div>
       )}
     </div>
@@ -145,17 +122,4 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="text-lg font-bold mt-0.5">{value}</div>
     </div>
   );
-}
-
-function StatusChip({ s }: { s: Row['status'] }) {
-  const map: Record<Row['status'], string> = {
-    active: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-    paused: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-    expired: 'border-white/15 text-white/40',
-    used_up: 'border-white/15 text-white/40'
-  };
-  const labels: Record<Row['status'], string> = {
-    active: 'activo', paused: 'pausado', expired: 'vencido', used_up: 'agotado'
-  };
-  return <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded border ${map[s]}`}>{labels[s]}</span>;
 }
