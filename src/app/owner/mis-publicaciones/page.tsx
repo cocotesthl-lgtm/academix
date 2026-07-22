@@ -235,6 +235,7 @@ export default async function CoursesIndex() {
 
       {/* Publicaciones — siempre visible (courses macro está prendido default) */}
       <AppSection
+        origin={origin}
         moduleActive={modules.courses !== false}
         moduleKey="courses"
         emoji="🎓"
@@ -249,6 +250,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.blog !== false}
         moduleKey="blog"
         emoji="📝"
@@ -260,6 +262,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.pay_links !== false}
         moduleKey="pay_links"
         emoji="🔗"
@@ -271,6 +274,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.ecommerce !== false}
         moduleKey="ecommerce"
         emoji="🛒"
@@ -288,6 +292,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.vip !== false}
         moduleKey="vip"
         emoji="💎"
@@ -303,6 +308,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.events !== false}
         moduleKey="events"
         emoji="🎫"
@@ -319,6 +325,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.reservations !== false}
         moduleKey="reservations"
         emoji="📅"
@@ -335,6 +342,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.bundles !== false}
         moduleKey="bundles"
         emoji="🎁"
@@ -346,6 +354,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.wallets !== false}
         moduleKey="wallets"
         emoji="💰"
@@ -360,6 +369,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.plans !== false}
         moduleKey="plans"
         emoji="💳"
@@ -379,6 +389,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.promotions !== false}
         moduleKey="promotions"
         emoji="🎯"
@@ -394,6 +405,7 @@ export default async function CoursesIndex() {
       />
 
       <AppSection
+        origin={origin}
         moduleActive={modules.dropshipping !== false}
         moduleKey="dropshipping"
         emoji="🚛"
@@ -424,7 +436,8 @@ function AppSection({
   moduleActive, moduleKey, emoji, title, subtitle,
   newHref, newLabel = '+ Nuevo',
   items, physicalItems, bundleItems, articleItems, payLinkItems, stats,
-  extras = []
+  extras = [],
+  origin
 }: {
   moduleActive: boolean;
   moduleKey: ModuleKey;
@@ -441,6 +454,8 @@ function AppSection({
   stats?: Map<string, { clients: number; revenue: number; trend: number[] }>;
   /** Shortcuts extra específicos de la app (envíos, escaneo, categorías, etc). */
   extras?: ExtraLink[];
+  /** Origin público del tenant (para armar publicHref por row). */
+  origin: string;
 }) {
   const hasCourses = (items?.length ?? 0) > 0;
   const hasPhys = (physicalItems?.length ?? 0) > 0;
