@@ -436,28 +436,41 @@ function AppSection({
   const hasPayLinks = (payLinkItems?.length ?? 0) > 0;
   const isEmpty = !hasCourses && !hasPhys && !hasBundles && !hasArticles && !hasPayLinks;
 
+  const totalCount = (items?.length ?? 0) + (physicalItems?.length ?? 0) +
+    (bundleItems?.length ?? 0) + (articleItems?.length ?? 0) + (payLinkItems?.length ?? 0);
+
   return (
-    <section
+    <details
+      open
       data-mod-active={moduleActive ? 'true' : 'false'}
-      className={`rounded-xl border overflow-hidden ${moduleActive ? 'border-white/10' : 'border-white/5 opacity-90'}`}
+      className={`cp-collapse group rounded-xl border overflow-hidden ${moduleActive ? 'border-white/10' : 'border-white/5 opacity-90'}`}
     >
-      <header className="flex items-start justify-between gap-3 px-5 py-4 bg-white/[0.02] border-b border-white/10">
-        <div className="min-w-0">
-          <h2 className="text-lg font-semibold flex items-center gap-2 flex-wrap">
-            <span>{emoji}</span>
-            <span>{title}</span>
-            <span className={`text-[10px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded ${
-              moduleActive
-                ? 'bg-emerald-500/15 text-emerald-300'
-                : 'bg-white/10 text-white/50'
-            }`}>
-              {moduleActive ? 'Activa' : 'Off'}
-            </span>
-          </h2>
-          <p className="text-xs text-white/55 mt-0.5">{subtitle}</p>
-          {/* Extras: chips con shortcuts a features relacionadas de la app */}
+      {/* Summary sólo con título + chevron + count. Los CTAs viven abajo
+          — sino un click accidental en "+Nuevo" cierra la tarjeta y se
+          pierde el afinamiento del <details> nativo. */}
+      <summary className="cursor-pointer list-none flex items-center justify-between gap-3 px-5 py-4 bg-white/[0.02] border-b border-white/10 hover:bg-white/[0.04] transition select-none">
+        <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+          <span className="text-lg">{emoji}</span>
+          <h2 className="text-lg font-semibold truncate">{title}</h2>
+          <span className={`text-[10px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded ${
+            moduleActive ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/10 text-white/50'
+          }`}>
+            {moduleActive ? 'Activa' : 'Off'}
+          </span>
+          {totalCount > 0 && (
+            <span className="text-[10px] text-white/40">· {totalCount} {totalCount === 1 ? 'ítem' : 'ítems'}</span>
+          )}
+        </div>
+        <span className="text-white/30 text-xs group-open:rotate-180 transition-transform">▾</span>
+      </summary>
+
+      {/* Sub-header con subtitle + extras + CTA. Fuera del summary para
+          no interferir con el toggle. */}
+      <div className="flex items-start justify-between gap-3 px-5 py-3 bg-white/[0.01] border-b border-white/10">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-white/55">{subtitle}</p>
           {extras.length > 0 && (
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {extras.map((x) => (
                 <Link key={x.href} href={x.href}
                   className="inline-flex items-center gap-1 text-[11px] rounded-full border border-white/15 bg-white/[0.03] hover:bg-white/[0.08] px-2.5 py-1 text-white/75 hover:text-white transition">
@@ -475,20 +488,13 @@ function AppSection({
               {newLabel}
             </Link>
           ) : (
-            <>
-              <Link href={`/modulos?open=${moduleKey}`}
-                className="rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 text-sm px-3 py-1.5 hover:bg-emerald-500/20">
-                ⚡ Activar app
-              </Link>
-              {!isEmpty && (
-                <span className="text-[10px] text-white/40">
-                  {(items?.length ?? 0) + (physicalItems?.length ?? 0) + (bundleItems?.length ?? 0) + (articleItems?.length ?? 0) + (payLinkItems?.length ?? 0)} ítems guardados
-                </span>
-              )}
-            </>
+            <Link href={`/modulos?open=${moduleKey}`}
+              className="rounded-md border border-emerald-500/40 bg-emerald-500/10 text-emerald-200 text-sm px-3 py-1.5 hover:bg-emerald-500/20">
+              ⚡ Activar app
+            </Link>
           )}
         </div>
-      </header>
+      </div>
 
       {/* Cuando la app está off: si igual hay productos guardados de antes,
           los mostramos con un banner (evita "perder" data). Si no hay
@@ -634,7 +640,7 @@ function AppSection({
           }))}
         />
       ) : null}
-    </section>
+    </details>
   );
 }
 
