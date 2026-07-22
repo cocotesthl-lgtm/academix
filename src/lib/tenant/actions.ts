@@ -252,6 +252,87 @@ export async function createTenantAction(
   return { ok: true, tenantId: tenant.id, slug: tenant.slug, redirectTo };
 }
 
+/**
+ * Renombra el tenant (sólo el owner). Actualiza tenants.name — el slug
+ * NO se toca porque cambiarlo rompe todos los links compartidos, SEO,
+ * webhooks configurados en MP, etc.
+ */
+export async function renameTenantAction(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'No autenticado' };
+
+  const tenantId = String(formData.get('tenant_id') ?? '');
+  const newName = String(formData.get('name') ?? '').trim().slice(0, 100);
+  if (!tenantId || !newName) return { ok: false, error: 'Nombre requerido' };
+
+  const svc = getServiceClient();
+  // Verificar que el user es owner de este tenant
+  const { data: mem } = await svc
+    .from('memberships').select('id')
+    .eq('tenant_id', tenantId).eq('user_id', user.id).eq('role', 'owner').eq('status', 'active')
+    .maybeSingle<{ id: string }>();
+  if (!mem) return { ok: false, error: 'No sos owner de este sitio' };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (svc.from('tenants') as any)
+    .update({ name: newName, updated_at: new Date().toISOString() }).eq('id', tenantId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Elimina completamente un tenant y toda su data (cursos, ventas,
+ * suscripciones, links de pago, todo). Requiere:
+ *  - user es owner del tenant
+ *  - el user tipeó el slug exacto para confirmar (safeguard anti-click)
+ *
+ * ON DELETE CASCADE en las FK se encarga del resto. La cookie
+ * `owner_tenant_id` se limpia si apuntaba al tenant borrado.
+ */
+export async function deleteTenantAction(formData: FormData): Promise<{ ok: boolean; error?: string; redirectTo?: string }> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'No autenticado' };
+
+  const tenantId = String(formData.get('tenant_id') ?? '');
+  const confirmSlug = String(formData.get('confirm_slug') ?? '').trim().toLowerCase();
+  if (!tenantId || !confirmSlug) return { ok: false, error: 'Datos incompletos' };
+
+  const svc = getServiceClient();
+  // Cargar tenant + verificar ownership + confirmar slug tipeado
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: t } = await (svc.from('tenants') as any)
+    .select('id, slug').eq('id', tenantId).maybeSingle();
+  if (!t) return { ok: false, error: 'Sitio no encontrado' };
+  if (t.slug !== confirmSlug) return { ok: false, error: 'El slug tipeado no coincide' };
+
+  const { data: mem } = await svc
+    .from('memberships').select('id')
+    .eq('tenant_id', tenantId).eq('user_id', user.id).eq('role', 'owner').eq('status', 'active')
+    .maybeSingle<{ id: string }>();
+  if (!mem) return { ok: false, error: 'No sos owner de este sitio' };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (svc.from('tenants') as any).delete().eq('id', tenantId);
+  if (error) return { ok: false, error: error.message };
+
+  // Limpiar cookie de workspace activo si apuntaba al tenant borrado
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  if (cookieStore.get('owner_tenant_id')?.value === tenantId) {
+    cookieStore.delete('owner_tenant_id');
+  }
+
+  // Redirect al primer tenant restante o a onboarding
+  const { data: remaining } = await svc
+    .from('memberships').select('tenant_id')
+    .eq('user_id', user.id).eq('role', 'owner').eq('status', 'active').limit(1)
+    .maybeSingle<{ tenant_id: string }>();
+  const redirectTo = remaining ? '/owner/mis-sitios' : '/onboarding';
+  return { ok: true, redirectTo };
+}
+
 export async function redirectToOwnerDashboard(): Promise<never> {
   const appUrl = new URL(env.appUrl);
   const isLocal = appUrl.hostname === 'localhost' || appUrl.hostname.endsWith('.localhost');

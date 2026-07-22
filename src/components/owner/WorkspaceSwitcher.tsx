@@ -120,6 +120,13 @@ export function WorkspaceSwitcher({
 
           <div className="border-t border-white/10">
             <a
+              href="/mis-sitios"
+              className="flex items-center gap-2 px-3 py-2.5 hover:bg-white/5 text-sm transition"
+            >
+              <span className="w-7 h-7 rounded grid place-items-center border border-white/25 text-white/50 shrink-0">⚙</span>
+              <span>Gestionar mis sitios</span>
+            </a>
+            <a
               href={onboardingUrl}
               className="flex items-center gap-2 px-3 py-2.5 hover:bg-white/5 text-sm transition"
             >
