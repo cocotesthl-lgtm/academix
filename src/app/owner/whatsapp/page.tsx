@@ -19,13 +19,10 @@ type Conversation = {
 };
 
 type Config = {
-  provider: 'cloud_api' | 'qr' | null;
   phone_number_id: string | null;
   display_phone: string | null;
   bot_enabled: boolean;
   connected_at: string | null;
-  qr_status: string | null;
-  evolution_instance: string | null;
 };
 
 type SearchParams = { q?: string; filter?: string; tag?: string };
@@ -44,15 +41,11 @@ export default async function WhatsAppInboxPage(
   // Config
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: cfg } = await (svc.from('whatsapp_config') as any)
-    .select('provider, phone_number_id, display_phone, bot_enabled, connected_at, qr_status, evolution_instance')
+    .select('phone_number_id, display_phone, bot_enabled, connected_at')
     .eq('tenant_id', tenant.id).limit(1).maybeSingle();
   const config = cfg as Config | null;
-  const cloudReady = config?.provider === 'cloud_api' && !!config.phone_number_id;
-  const qrReady = config?.provider === 'qr' && config.qr_status === 'connected';
-  const notConnected = !cloudReady && !qrReady;
-  const providerLabel = config?.provider === 'qr'
-    ? `QR · ${config.evolution_instance || 'instancia'}`
-    : config?.display_phone || config?.phone_number_id || '';
+  const notConnected = !config?.phone_number_id;
+  const providerLabel = config?.display_phone || config?.phone_number_id || '';
 
   // Conversaciones + filtros server-side
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,7 +116,7 @@ export default async function WhatsAppInboxPage(
           <Link href="/owner/whatsapp/templates" className="text-sm px-3 py-2 rounded border hover:bg-black/5">
             📋 Templates
           </Link>
-          <Link href={notConnected ? '/owner/whatsapp/connect' : (config?.provider === 'qr' ? '/owner/whatsapp/qr' : '/owner/whatsapp/config')}
+          <Link href="/owner/whatsapp/config"
             className="text-sm px-3 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700">
             {notConnected ? 'Conectar' : 'Configuración'}
           </Link>
@@ -135,10 +128,10 @@ export default async function WhatsAppInboxPage(
           <div className="text-4xl mb-3">💬</div>
           <h2 className="font-semibold mb-2">Bot de WhatsApp aún no conectado</h2>
           <p className="text-sm text-black/60 max-w-md mx-auto mb-4">
-            Conectá tu número — hay 2 modos, uno simple con QR (2 min) y otro con la API oficial de Meta.
+            Conectá tu número con la API oficial de Meta (WhatsApp Cloud API). Es gratis hasta 1000 conversaciones/mes.
           </p>
-          <Link href="/owner/whatsapp/connect" className="inline-block px-4 py-2 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700">
-            Empezar
+          <Link href="/owner/whatsapp/config" className="inline-block px-4 py-2 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700">
+            Conectar con Meta
           </Link>
         </div>
       ) : (

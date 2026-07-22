@@ -166,16 +166,12 @@ async function runCron() {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadCfg(svc: any, tenantId: string): Promise<UnifiedConfig | null> {
   const { data: cfg } = await svc.from('whatsapp_config')
-    .select('provider, phone_number_id, access_token, evolution_url, evolution_instance, evolution_api_key')
+    .select('phone_number_id, access_token')
     .eq('tenant_id', tenantId).limit(1).maybeSingle();
   if (!cfg) return null;
   return {
-    provider: (cfg.provider as 'cloud_api' | 'qr') || 'cloud_api',
     phone_number_id: cfg.phone_number_id ?? null,
-    access_token: cfg.access_token ? decryptSecret(cfg.access_token) : null,
-    evolution_url: cfg.evolution_url ?? null,
-    evolution_instance: cfg.evolution_instance ?? null,
-    evolution_api_key: cfg.evolution_api_key ? decryptSecret(cfg.evolution_api_key) : null
+    access_token: cfg.access_token ? decryptSecret(cfg.access_token) : null
   };
 }
 
