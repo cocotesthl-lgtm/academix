@@ -39,7 +39,9 @@ export const MODULE_KEYS = [
   // Submódulos de Agenda (F2.b)
   'events', 'reservations',
   // Submódulos de CRM (F2.b)
-  'blog', 'forms', 'affiliates'
+  'blog', 'forms', 'affiliates',
+  // Submódulos de Ventas (F2.b)
+  'pay_links'
 ] as const;
 export type ModuleKey = (typeof MODULE_KEYS)[number];
 export type Modules = Record<ModuleKey, boolean>;
@@ -49,7 +51,8 @@ export const ALL_MODULES_ON: Modules = {
   catalog: true, calendar: true, crm: true, team: true, sales: true, site: true,
   courses: true, ecommerce: true, vip: true, bundles: true, promotions: true, dropshipping: true, plans: true, wallets: true,
   events: true, reservations: true,
-  blog: true, forms: true, affiliates: true
+  blog: true, forms: true, affiliates: true,
+  pay_links: true
 };
 
 /**
@@ -60,7 +63,8 @@ export const ALL_MODULES_ON: Modules = {
 export const MODULE_TREE: Partial<Record<ModuleKey, ModuleKey[]>> = {
   catalog:  ['courses', 'ecommerce', 'vip', 'bundles', 'promotions', 'dropshipping', 'plans', 'wallets'],
   calendar: ['events', 'reservations'],
-  crm:      ['blog', 'forms', 'affiliates']
+  crm:      ['blog', 'forms', 'affiliates'],
+  sales:    ['pay_links']
 };
 
 /**
@@ -71,7 +75,8 @@ export const MODULE_LEVEL: Record<ModuleKey, 'macro' | 'sub'> = {
   catalog: 'macro', calendar: 'macro', crm: 'macro', team: 'macro', sales: 'macro', site: 'macro',
   courses: 'sub', ecommerce: 'sub', vip: 'sub', bundles: 'sub', promotions: 'sub', dropshipping: 'sub', plans: 'sub', wallets: 'sub',
   events: 'sub', reservations: 'sub',
-  blog: 'sub', forms: 'sub', affiliates: 'sub'
+  blog: 'sub', forms: 'sub', affiliates: 'sub',
+  pay_links: 'sub'
 };
 
 export const MODULE_META: Record<ModuleKey, {
@@ -297,6 +302,21 @@ export const MODULE_META: Record<ModuleKey, {
       'Multi-nivel (afiliado que trae afiliados)',
       'Dashboard del afiliado con ventas y saldo',
       'Payout via MP o transferencia manual'
+    ]
+  },
+  // ── SUB de Ventas ────────────────────────────────────────
+  pay_links: {
+    label: 'Links de pago',
+    description: 'Cobrá con un link corto — para servicios, adelantos, cualquier monto custom.',
+    longDescription: 'Generá una URL /pay/abc123 con monto, título y descripción. Compartila por WhatsApp / mail / DM y el cliente paga con MP en segundos. Sin necesidad de crear un curso o producto. Si tenés afiliados prendidos, ellos pueden compartir el mismo link con su ref y llevarse comisión.',
+    sidebarGroup: 'Ventas',
+    emoji: '🔗',
+    features: [
+      'Link corto compartible /pay/<code>',
+      'Monto, título, descripción y foto opcional',
+      'Reglas: expiración, cupo máximo, campos requeridos al buyer',
+      'Analytics por link: vistas, clicks, ventas',
+      'Los afiliados pueden generar sus variantes con ref (si la app de afiliados está on)'
     ]
   }
 };

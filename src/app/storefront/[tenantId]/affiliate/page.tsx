@@ -9,6 +9,8 @@ import { buildCourseUrl } from "@/lib/affiliates/url";
 import { tenantOrigin } from "@/lib/env";
 import { getUserWorkspaces } from "@/lib/workspaces/queries";
 import { AffiliateWorkspaceHeader } from "@/components/affiliate/AffiliateWorkspaceHeader";
+import { PayLinksAffiliateSection } from "@/components/storefront/affiliate/PayLinksSection";
+import { getTenantModules } from "@/lib/modules/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +134,13 @@ export default async function AffiliateDashboard({
 
   // F6.1: header con switcher de workspaces — reutilizado del owner sidebar.
   const workspaces = await getUserWorkspaces(user.id);
+
+  // Módulos del tenant + comisión % default — para el bloque de pay-links.
+  const tenantMods = await getTenantModules(tenantId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: tenantRow } = await (svc.from('tenants') as any)
+    .select('affiliate_budget_pct').eq('id', tenantId).maybeSingle();
+  const globalCommissionPct = Number((tenantRow?.affiliate_budget_pct ?? 0.30)) * 100;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
@@ -352,6 +361,16 @@ export default async function AffiliateDashboard({
           </div>
         )}
       </section>
+
+      {/* Pay-links promocionables (si la app está on en el tenant) */}
+      {tenantMods.pay_links !== false && (
+        <PayLinksAffiliateSection
+          tenantId={tenantId}
+          tenantSlug={tenant!.slug}
+          userId={user.id}
+          tenantCommissionPct={globalCommissionPct}
+        />
+      )}
     </div>
   );
 }

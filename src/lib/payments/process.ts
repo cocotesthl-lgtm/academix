@@ -48,6 +48,86 @@ export async function processMpPayment(opts: {
   const buyerEmail = payment.payer?.email ?? null;
   const courseIdFromMeta = (payment.metadata?.course_id as string | undefined) ?? null;
 
+  // ─── Branch: si external_reference es "paylink:<payment_row_id>", procesar como pay link.
+  //     Marca el pay_link_payments row como paid, incrementa uses_count del link,
+  //     acredita revenue, y si venía con affiliate_user_id + commission_pct
+  //     calcula y guarda la comisión (que después el owner settlea).
+  if (payment.external_reference && String(payment.external_reference).startsWith('paylink:')) {
+    const plId = String(payment.external_reference).slice(8);
+    const isPaid = payment.status === 'approved';
+    const status = isPaid ? 'paid'
+      : payment.status === 'refunded' ? 'refunded'
+      : payment.status === 'pending' ? 'pending'
+      : 'failed';
+    try {
+      // Cargar el pay_link_payment + su link parent
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: pll } = await (svc.from('pay_link_payments') as any)
+        .select('id, pay_link_id, tenant_id, amount_cents, affiliate_user_id, status')
+        .eq('id', plId).eq('tenant_id', opts.tenantId).maybeSingle();
+      if (!pll) return { ok: false, error: 'pll_not_found' };
+
+      // Resolver buyer_user_id desde email si aplica
+      let buyerId: string | null = null;
+      if (buyerEmail) {
+        const { data: prof } = await svc.from('profiles').select('id')
+          .eq('email', buyerEmail).maybeSingle<{ id: string }>();
+        buyerId = prof?.id ?? null;
+      }
+
+      // Traer el link para saber commission_pct override (o usar el tenant default)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: link } = await (svc.from('pay_links') as any)
+        .select('id, uses_count, revenue_cents, max_uses, affiliate_commission_pct, allow_affiliates')
+        .eq('id', pll.pay_link_id).maybeSingle();
+
+      // Calcular comisión afiliado (solo si aplica)
+      let affCommissionCents = 0;
+      if (isPaid && pll.affiliate_user_id && link) {
+        let pct = link.affiliate_commission_pct as number | null;
+        if (pct === null || pct === undefined) {
+          const { data: t } = await svc.from('tenants').select('affiliate_budget_pct')
+            .eq('id', opts.tenantId).maybeSingle<{ affiliate_budget_pct: number }>();
+          // affiliate_budget_pct viene como fraction 0.30; convertimos a pct 30
+          pct = Number(t?.affiliate_budget_pct ?? 0.30) * 100;
+        }
+        affCommissionCents = Math.round(pll.amount_cents * (pct / 100));
+      }
+
+      // Update payment row (idempotente vía UNIQUE external_provider+external_id — si
+      // ya hay una row con este external_id, saldrá error duplicate. Le pasamos por
+      // .update() en vez de .insert() porque esta row ya existe con status pending).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (svc.from('pay_link_payments') as any).update({
+        status,
+        external_id: String(payment.id),
+        paid_at: isPaid ? (payment.date_approved ?? new Date().toISOString()) : null,
+        affiliate_commission_cents: affCommissionCents,
+        buyer_user_id: buyerId,
+        updated_at: new Date().toISOString()
+      }).eq('id', plId);
+
+      // Si fue paid y no había sido paid antes: bumpear uses_count + revenue del link
+      if (isPaid && pll.status !== 'paid' && link) {
+        const newUses = (link.uses_count ?? 0) + 1;
+        const patch: Record<string, unknown> = {
+          uses_count: newUses,
+          revenue_cents: (link.revenue_cents ?? 0) + pll.amount_cents,
+          updated_at: new Date().toISOString()
+        };
+        // Si tiene max_uses y llegó al tope, marcar used_up
+        if (link.max_uses !== null && newUses >= link.max_uses) {
+          patch.status = 'used_up';
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (svc.from('pay_links') as any).update(patch).eq('id', pll.pay_link_id);
+      }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : 'paylink_processing_failed' };
+    }
+    return { ok: true, saleId: null, reused: false };
+  }
+
   // ─── Branch: si external_reference es "invoice:<id>", marcar factura como pagada.
   if (payment.external_reference && String(payment.external_reference).startsWith('invoice:')) {
     const invId = String(payment.external_reference).slice(8);
