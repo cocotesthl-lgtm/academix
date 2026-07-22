@@ -70,10 +70,20 @@ export default async function CrmPage({ searchParams }: {
 
   if (selectedPipeline) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stagesRes = await (svc.from('crm_stages') as any)
-      .select('id, name, color, position, is_won, is_lost')
+    // Defensivo: si migration 0085 no corrió, `approver_user_ids` no existe
+    // y toda la query falla. Retry sin esa columna.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let stagesRes = await (svc.from('crm_stages') as any)
+      .select('id, name, color, position, is_won, is_lost, approver_user_ids')
       .eq('pipeline_id', selectedPipeline.id)
       .order('position');
+    if (stagesRes.error?.message?.includes('approver_user_ids')) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      stagesRes = await (svc.from('crm_stages') as any)
+        .select('id, name, color, position, is_won, is_lost')
+        .eq('pipeline_id', selectedPipeline.id)
+        .order('position');
+    }
     stages = (stagesRes.data ?? []) as Stage[];
 
     if (stages.length > 0) {

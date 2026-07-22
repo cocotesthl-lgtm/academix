@@ -101,6 +101,58 @@ export async function renamePipelineAction(formData: FormData): Promise<void> {
   revalidatePath('/owner/crm');
 }
 
+/* ===== Stage: approvers ===== */
+
+/**
+ * Chequea si un user puede mover leads HACIA un stage. Un stage tiene
+ * approver_user_ids: array de user_ids autorizados. Vacío = todos.
+ * Owners del tenant siempre pueden (bypass del gate).
+ */
+async function canApproveStage(stageId: string, userId: string, tenantId: string): Promise<boolean> {
+  const svc = getServiceClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (svc.from('crm_stages') as any)
+    .select('approver_user_ids').eq('id', stageId).maybeSingle();
+  const approvers = (data?.approver_user_ids ?? []) as string[];
+  if (approvers.length === 0) return true;
+  if (approvers.includes(userId)) return true;
+  // Owner siempre puede — bypass del gate para no lockearse afuera
+  const { data: mem } = await svc
+    .from('memberships').select('id')
+    .eq('tenant_id', tenantId).eq('user_id', userId).eq('role', 'owner').eq('status', 'active')
+    .maybeSingle<{ id: string }>();
+  return !!mem;
+}
+
+/**
+ * Setea la lista de aprobadores de un stage. Sólo owners/admins deberían
+ * usarlo — el enforcement de eso lo hace requireOwner (que ya requiere
+ * ese role). Vacío = quita el gate (cualquiera puede).
+ */
+export async function setStageApproversAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const stageId = String(formData.get('stage_id') ?? '');
+  const raw = String(formData.get('approver_user_ids') ?? '');
+  const approvers = raw
+    ? raw.split(',').map((s) => s.trim()).filter((s) => /^[0-9a-f-]{36}$/i.test(s))
+    : [];
+  if (!stageId) return;
+  const svc = getServiceClient();
+
+  // Verificar que el stage pertenece a un pipeline del tenant (defensivo)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: stage } = await (svc.from('crm_stages') as any)
+    .select('pipeline_id, crm_pipelines!inner(tenant_id)')
+    .eq('id', stageId).maybeSingle();
+  if (!stage || stage.crm_pipelines?.tenant_id !== tenant.id) return;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('crm_stages') as any)
+    .update({ approver_user_ids: approvers })
+    .eq('id', stageId);
+  revalidatePath('/owner/crm');
+}
+
 /* ===== Stage CRUD ===== */
 
 export async function addStageAction(formData: FormData): Promise<void> {
@@ -152,11 +204,14 @@ export async function updateStageAction(formData: FormData): Promise<void> {
 /* ===== Lead CRUD ===== */
 
 export async function createLeadAction(formData: FormData): Promise<void> {
-  const { tenant } = await requireOwner();
+  const { tenant, userId } = await requireOwner();
   const pipelineId = String(formData.get('pipeline_id') ?? '');
   const stageId = String(formData.get('stage_id') ?? '');
   const name = String(formData.get('name') ?? '').trim();
   if (!pipelineId || !stageId || !name) return;
+  if (!(await canApproveStage(stageId, userId, tenant.id))) {
+    throw new Error('No tenés permiso para crear leads en esta etapa (gated por aprobadores).');
+  }
 
   const svc = getServiceClient();
   const id = randomUUID();
@@ -215,7 +270,7 @@ export async function deleteLeadAction(formData: FormData): Promise<void> {
  * Mueve un lead a otra etapa (drag&drop). Si stageId no cambia, actualiza position.
  */
 export async function moveLeadAction(formData: FormData): Promise<void> {
-  const { tenant } = await requireOwner();
+  const { tenant, userId } = await requireOwner();
   const id = String(formData.get('id') ?? '');
   const stageId = String(formData.get('stage_id') ?? '');
   if (!id || !stageId) return;
@@ -224,6 +279,14 @@ export async function moveLeadAction(formData: FormData): Promise<void> {
   const { data: currentRaw } = await (svc.from('crm_leads') as any)
     .select('stage_id').eq('id', id).eq('tenant_id', tenant.id).maybeSingle();
   const current = currentRaw as { stage_id: string } | null;
+
+  // Sólo gatea si efectivamente cambia de stage (drag dentro de la misma
+  // columna para reorder no requiere aprobación).
+  if (current && current.stage_id !== stageId) {
+    if (!(await canApproveStage(stageId, userId, tenant.id))) {
+      throw new Error('Esta etapa requiere aprobación de otro miembro para admitir el lead.');
+    }
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (svc.from('crm_leads') as any).update({

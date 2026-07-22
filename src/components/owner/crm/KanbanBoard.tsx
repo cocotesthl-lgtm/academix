@@ -6,6 +6,7 @@ import {
   addStageAction, deleteStageAction, updateStageAction, addLeadCommentAction,
   assignLeadAction
 } from '@/lib/crm/actions';
+import { StageApproversPopover } from './StageApproversPopover';
 
 export type TeamMember = {
   user_id: string;
@@ -21,6 +22,9 @@ export type Stage = {
   position: number;
   is_won: boolean;
   is_lost: boolean;
+  /** Miembros autorizados a mover leads HACIA esta etapa. Vacío = todos.
+   *  Owner del tenant siempre puede como bypass. */
+  approver_user_ids?: string[];
 };
 
 export type Lead = {
@@ -165,7 +169,13 @@ export function KanbanBoard({
                       </h3>
                       <span className="text-[10px] text-white/40 flex-shrink-0">{stageLeads.length}</span>
                     </div>
-                    <div className="flex gap-0.5 flex-shrink-0">
+                    <div className="flex gap-0.5 flex-shrink-0 items-center">
+                      <StageApproversPopover
+                        stageId={stage.id}
+                        stageName={stage.name}
+                        team={team}
+                        initialApprovers={stage.approver_user_ids ?? []}
+                      />
                       <button
                         onClick={() => setEditingStageId(stage.id)}
                         className="text-[10px] text-white/40 hover:text-white px-1 py-0.5 rounded hover:bg-white/5"
