@@ -387,8 +387,10 @@ export function OwnerSidebar({
               // Items sin moduleKey → "Base" (siempre visibles arriba).
               // Items con moduleKey → agrupados por su sub-módulo, mostrados
               // en el orden de MODULE_TREE del macro.
+              // Grupos sin macroKey (ej. Personas) igual dejan aparecer sus
+              // items con moduleKey — usamos como orden los keys en el orden
+              // que aparecen en el array de items.
               const macroKey = entry.group.moduleKey;
-              const subKeys: ModuleKey[] = macroKey ? (MODULE_TREE[macroKey] ?? []) : [];
               const baseItems = entry.group.items.filter((it) => !it.moduleKey);
               const bySubKey = new Map<ModuleKey, typeof entry.group.items>();
               for (const it of entry.group.items) {
@@ -397,6 +399,9 @@ export function OwnerSidebar({
                 arr.push(it);
                 bySubKey.set(it.moduleKey, arr);
               }
+              const subKeys: ModuleKey[] = macroKey
+                ? (MODULE_TREE[macroKey] ?? [])
+                : Array.from(bySubKey.keys());
 
               function renderItem(item: NavItem) {
                 const active = isActive(item.href);
