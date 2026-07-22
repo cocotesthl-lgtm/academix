@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
-import { ensureDefaultPipeline, createPipelineAction, renamePipelineAction, deletePipelineAction } from '@/lib/crm/actions';
+import { ensureDefaultPipeline, createPipelineAction, renamePipelineAction } from '@/lib/crm/actions';
 import { KanbanBoard, type Stage, type Lead, type ActivityRow, type TeamMember } from '@/components/owner/crm/KanbanBoard';
 import { SegmentedTabs, CONTACTS_TABS } from '@/components/owner/SegmentedTabs';
+import { DeletePipelineButton } from '@/components/owner/crm/DeletePipelineButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -172,19 +173,7 @@ export default async function CrmPage({ searchParams }: {
             </details>
 
             {selectedPipeline && pipelines.length > 1 && (
-              <form action={deletePipelineAction} className="ml-auto">
-                <input type="hidden" name="id" value={selectedPipeline.id} />
-                <button
-                  className="text-xs text-rose-300 hover:text-rose-200 px-2 py-1 rounded border border-rose-500/30 hover:bg-rose-500/10"
-                  onClick={(e) => {
-                    if (!confirm(`¿Eliminar el pipeline "${selectedPipeline.name}" y todos sus leads?`)) {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  Eliminar pipeline
-                </button>
-              </form>
+              <DeletePipelineButton id={selectedPipeline.id} name={selectedPipeline.name} />
             )}
           </div>
 
