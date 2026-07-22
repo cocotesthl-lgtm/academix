@@ -44,8 +44,9 @@ export function AppSectionList({
 }: {
   rows: Row[];
   /** 'courses' muestra clientes+revenue+sparkline; 'physical' muestra stock;
-   *  'articles' muestra "Última edición" en vez de precio/stats. */
-  kind: 'courses' | 'physical' | 'bundles' | 'articles';
+   *  'articles' muestra "Última edición" en vez de precio/stats;
+   *  'paylinks' muestra pagos + recaudado. */
+  kind: 'courses' | 'physical' | 'bundles' | 'articles' | 'paylinks';
   /**
    * Cuando true (app desactivada), la lista arranca oculta detrás de un
    * botón "Mostrar contenido guardado" y cada row muestra el chip como
@@ -115,13 +116,17 @@ export function AppSectionList({
             </>)}
             {kind === 'physical' && <th className="text-right px-3 py-2">Stock</th>}
             {kind === 'articles' && <th className="text-right px-3 py-2">Última edición</th>}
+            {kind === 'paylinks' && (<>
+              <th className="text-right px-3 py-2">Pagos</th>
+              <th className="text-right px-3 py-2">Recaudado</th>
+            </>)}
             <th className="text-right px-5 py-2"></th>
           </tr>
         </thead>
         <tbody>
           {visible.length === 0 && (
             <tr>
-              <td colSpan={kind === 'courses' ? 7 : kind === 'articles' ? 4 : 5} className="px-5 py-6 text-center text-sm text-white/40">
+              <td colSpan={kind === 'courses' ? 7 : kind === 'articles' ? 4 : kind === 'paylinks' ? 6 : 5} className="px-5 py-6 text-center text-sm text-white/40">
                 No hay resultados para "{query}".
               </td>
             </tr>
@@ -175,6 +180,14 @@ export function AppSectionList({
                   {r.updated_at ? new Date(r.updated_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                 </td>
               )}
+              {kind === 'paylinks' && (<>
+                <td className="px-3 py-3 text-right font-medium">{r.clients ?? 0}</td>
+                <td className="px-3 py-3 text-right font-mono">
+                  {(r.revenue ?? 0) > 0
+                    ? <span className="text-emerald-300">${((r.revenue ?? 0) / 100).toLocaleString('es-AR')}</span>
+                    : <span className="text-white/30">—</span>}
+                </td>
+              </>)}
               <td className="px-5 py-3 text-right">
                 <Link href={r.editHref} className="text-xs text-white/60 hover:text-white">Editar →</Link>
               </td>

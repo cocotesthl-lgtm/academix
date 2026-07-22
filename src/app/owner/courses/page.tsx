@@ -46,6 +46,14 @@ type ArticleRow = {
   updated_at: string;
 };
 
+type PayLinkRow = {
+  id: string; code: string; title: string;
+  status: 'active' | 'paused' | 'expired' | 'used_up';
+  amount_cents: number; currency: string;
+  uses_count: number; revenue_cents: number;
+  cover_url: string | null;
+};
+
 type ExtraLink = { label: string; href: string; emoji?: string };
 
 /**
@@ -69,7 +77,8 @@ export default async function CoursesIndex() {
     { data: coursesRaw },
     physicalRaw,
     bundlesRaw,
-    articlesRaw
+    articlesRaw,
+    payLinksRaw
   ] = await Promise.all([
     svc.from("courses")
       .select("id, slug, title, status, price_cents, currency, product_type, cover_url, created_at")
@@ -104,12 +113,24 @@ export default async function CoursesIndex() {
           .eq("tenant_id", tenant.id)
           .order("updated_at", { ascending: false });
       } catch { return { data: [] }; }
+    })(),
+    // pay_links idem — módulo opcional (migration 0084)
+    (async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return await (svc.from("pay_links") as any)
+          .select("id, code, title, status, amount_cents, currency, uses_count, revenue_cents, cover_url")
+          .eq("tenant_id", tenant.id)
+          .is("parent_link_id", null)
+          .order("created_at", { ascending: false });
+      } catch { return { data: [] }; }
     })()
   ]);
   const courses = (coursesRaw ?? []) as CourseRow[];
   const physicalProducts = (physicalRaw.data ?? []) as PhysRow[];
   const bundles = (bundlesRaw.data ?? []) as BundleRow[];
   const articles = (articlesRaw.data ?? []) as ArticleRow[];
+  const payLinks = (payLinksRaw.data ?? []) as PayLinkRow[];
 
   const modules = await getTenantModules(tenant.id);
 
@@ -223,6 +244,17 @@ export default async function CoursesIndex() {
         newHref="/blog"
         newLabel="Ir al blog"
         articleItems={articles}
+      />
+
+      <AppSection
+        moduleActive={modules.pay_links !== false}
+        moduleKey="pay_links"
+        emoji="🔗"
+        title="Links de pago"
+        subtitle="Cobrá por WhatsApp / mail / DM con una URL corta. Sin crear cursos ni productos."
+        newHref="/pay-links"
+        newLabel="Ver / crear"
+        payLinkItems={payLinks}
       />
 
       <AppSection
@@ -378,7 +410,7 @@ export default async function CoursesIndex() {
 function AppSection({
   moduleActive, moduleKey, emoji, title, subtitle,
   newHref, newLabel = '+ Nuevo',
-  items, physicalItems, bundleItems, articleItems, stats,
+  items, physicalItems, bundleItems, articleItems, payLinkItems, stats,
   extras = []
 }: {
   moduleActive: boolean;
@@ -392,6 +424,7 @@ function AppSection({
   physicalItems?: PhysRow[];
   bundleItems?: BundleRow[];
   articleItems?: ArticleRow[];
+  payLinkItems?: PayLinkRow[];
   stats?: Map<string, { clients: number; revenue: number; trend: number[] }>;
   /** Shortcuts extra específicos de la app (envíos, escaneo, categorías, etc). */
   extras?: ExtraLink[];
@@ -400,7 +433,8 @@ function AppSection({
   const hasPhys = (physicalItems?.length ?? 0) > 0;
   const hasBundles = (bundleItems?.length ?? 0) > 0;
   const hasArticles = (articleItems?.length ?? 0) > 0;
-  const isEmpty = !hasCourses && !hasPhys && !hasBundles && !hasArticles;
+  const hasPayLinks = (payLinkItems?.length ?? 0) > 0;
+  const isEmpty = !hasCourses && !hasPhys && !hasBundles && !hasArticles && !hasPayLinks;
 
   return (
     <section
@@ -448,7 +482,7 @@ function AppSection({
               </Link>
               {!isEmpty && (
                 <span className="text-[10px] text-white/40">
-                  {(items?.length ?? 0) + (physicalItems?.length ?? 0) + (bundleItems?.length ?? 0) + (articleItems?.length ?? 0)} ítems guardados
+                  {(items?.length ?? 0) + (physicalItems?.length ?? 0) + (bundleItems?.length ?? 0) + (articleItems?.length ?? 0) + (payLinkItems?.length ?? 0)} ítems guardados
                 </span>
               )}
             </>
@@ -522,6 +556,19 @@ function AppSection({
               }))}
             />
           )}
+          {payLinkItems && (
+            <AppSectionList
+              kind="paylinks"
+              dimmed
+              rows={payLinkItems.map((p) => ({
+                id: p.id, slug: p.code, title: p.title, status: p.status,
+                price_cents: p.amount_cents, currency: p.currency,
+                cover_url: p.cover_url,
+                clients: p.uses_count, revenue: p.revenue_cents,
+                editHref: `/pay-links/${p.id}`
+              }))}
+            />
+          )}
         </>
       ) : isEmpty ? (
         <div className="px-5 py-6 text-sm text-white/45">
@@ -573,6 +620,17 @@ function AppSection({
             cover_url: a.cover_url,
             updated_at: a.updated_at,
             editHref: `/blog/${a.id}`
+          }))}
+        />
+      ) : payLinkItems ? (
+        <AppSectionList
+          kind="paylinks"
+          rows={payLinkItems.map((p) => ({
+            id: p.id, slug: p.code, title: p.title, status: p.status,
+            price_cents: p.amount_cents, currency: p.currency,
+            cover_url: p.cover_url,
+            clients: p.uses_count, revenue: p.revenue_cents,
+            editHref: `/pay-links/${p.id}`
           }))}
         />
       ) : null}
