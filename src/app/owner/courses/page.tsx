@@ -39,6 +39,13 @@ type BundleRow = {
   price_cents: number; currency: string; cover_url: string | null; created_at: string;
 };
 
+type ArticleRow = {
+  id: string; slug: string; title: string;
+  status: 'draft' | 'published';
+  cover_url: string | null;
+  updated_at: string;
+};
+
 type ExtraLink = { label: string; href: string; emoji?: string };
 
 /**
@@ -61,7 +68,8 @@ export default async function CoursesIndex() {
   const [
     { data: coursesRaw },
     physicalRaw,
-    bundlesRaw
+    bundlesRaw,
+    articlesRaw
   ] = await Promise.all([
     svc.from("courses")
       .select("id, slug, title, status, price_cents, currency, product_type, cover_url, created_at")
@@ -86,11 +94,22 @@ export default async function CoursesIndex() {
           .eq("tenant_id", tenant.id)
           .order("created_at", { ascending: false });
       } catch { return { data: [] }; }
+    })(),
+    // articles idem — módulo blog opcional
+    (async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return await (svc.from("articles") as any)
+          .select("id, slug, title, status, cover_url, updated_at")
+          .eq("tenant_id", tenant.id)
+          .order("updated_at", { ascending: false });
+      } catch { return { data: [] }; }
     })()
   ]);
   const courses = (coursesRaw ?? []) as CourseRow[];
   const physicalProducts = (physicalRaw.data ?? []) as PhysRow[];
   const bundles = (bundlesRaw.data ?? []) as BundleRow[];
+  const articles = (articlesRaw.data ?? []) as ArticleRow[];
 
   const modules = await getTenantModules(tenant.id);
 
@@ -193,6 +212,17 @@ export default async function CoursesIndex() {
         extras={[
           { emoji: '🗂️', label: 'Categorías', href: '/categories' }
         ]}
+      />
+
+      <AppSection
+        moduleActive={modules.blog !== false}
+        moduleKey="blog"
+        emoji="📝"
+        title="Blog / Artículos"
+        subtitle="Publicá artículos, noticias y guías. Cada artículo tiene su URL pública en /blog/<slug>."
+        newHref="/blog"
+        newLabel="Ir al blog"
+        articleItems={articles}
       />
 
       <AppSection
@@ -348,7 +378,7 @@ export default async function CoursesIndex() {
 function AppSection({
   moduleActive, moduleKey, emoji, title, subtitle,
   newHref, newLabel = '+ Nuevo',
-  items, physicalItems, bundleItems, stats,
+  items, physicalItems, bundleItems, articleItems, stats,
   extras = []
 }: {
   moduleActive: boolean;
@@ -361,6 +391,7 @@ function AppSection({
   items?: CourseRow[];
   physicalItems?: PhysRow[];
   bundleItems?: BundleRow[];
+  articleItems?: ArticleRow[];
   stats?: Map<string, { clients: number; revenue: number; trend: number[] }>;
   /** Shortcuts extra específicos de la app (envíos, escaneo, categorías, etc). */
   extras?: ExtraLink[];
@@ -368,7 +399,8 @@ function AppSection({
   const hasCourses = (items?.length ?? 0) > 0;
   const hasPhys = (physicalItems?.length ?? 0) > 0;
   const hasBundles = (bundleItems?.length ?? 0) > 0;
-  const isEmpty = !hasCourses && !hasPhys && !hasBundles;
+  const hasArticles = (articleItems?.length ?? 0) > 0;
+  const isEmpty = !hasCourses && !hasPhys && !hasBundles && !hasArticles;
 
   return (
     <section
@@ -416,7 +448,7 @@ function AppSection({
               </Link>
               {!isEmpty && (
                 <span className="text-[10px] text-white/40">
-                  {(items?.length ?? 0) + (physicalItems?.length ?? 0) + (bundleItems?.length ?? 0)} ítems guardados
+                  {(items?.length ?? 0) + (physicalItems?.length ?? 0) + (bundleItems?.length ?? 0) + (articleItems?.length ?? 0)} ítems guardados
                 </span>
               )}
             </>
@@ -477,6 +509,19 @@ function AppSection({
               }))}
             />
           )}
+          {articleItems && (
+            <AppSectionList
+              kind="articles"
+              dimmed
+              rows={articleItems.map((a) => ({
+                id: a.id, slug: a.slug, title: a.title, status: a.status,
+                price_cents: 0, currency: '',
+                cover_url: a.cover_url,
+                updated_at: a.updated_at,
+                editHref: `/blog/${a.id}`
+              }))}
+            />
+          )}
         </>
       ) : isEmpty ? (
         <div className="px-5 py-6 text-sm text-white/45">
@@ -517,6 +562,17 @@ function AppSection({
             price_cents: b.price_cents, currency: b.currency,
             cover_url: b.cover_url,
             editHref: `/bundles/${b.id}`
+          }))}
+        />
+      ) : articleItems ? (
+        <AppSectionList
+          kind="articles"
+          rows={articleItems.map((a) => ({
+            id: a.id, slug: a.slug, title: a.title, status: a.status,
+            price_cents: 0, currency: '',
+            cover_url: a.cover_url,
+            updated_at: a.updated_at,
+            editHref: `/blog/${a.id}`
           }))}
         />
       ) : null}

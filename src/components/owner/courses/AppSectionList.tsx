@@ -29,6 +29,8 @@ type Row = {
   clients?: number;
   revenue?: number;
   trend?: number[];
+  /** Solo para articles — timestamp ISO de última edición */
+  updated_at?: string | null;
   /** href a donde ir al hacer click en el título / editar */
   editHref: string;
 };
@@ -41,8 +43,9 @@ export function AppSectionList({
   dimmed = false
 }: {
   rows: Row[];
-  /** 'courses' muestra clientes+revenue+sparkline; 'physical' muestra stock. */
-  kind: 'courses' | 'physical' | 'bundles';
+  /** 'courses' muestra clientes+revenue+sparkline; 'physical' muestra stock;
+   *  'articles' muestra "Última edición" en vez de precio/stats. */
+  kind: 'courses' | 'physical' | 'bundles' | 'articles';
   /**
    * Cuando true (app desactivada), la lista arranca oculta detrás de un
    * botón "Mostrar contenido guardado" y cada row muestra el chip como
@@ -104,20 +107,21 @@ export function AppSectionList({
           <tr>
             <th className="text-left px-5 py-2">Título</th>
             <th className="text-left px-3 py-2">Estado</th>
-            <th className="text-left px-3 py-2">Precio</th>
+            {kind !== 'articles' && <th className="text-left px-3 py-2">Precio</th>}
             {kind === 'courses' && (<>
               <th className="text-right px-3 py-2">Clientes</th>
               <th className="text-right px-3 py-2">Recaudado</th>
               <th className="text-right px-3 py-2">Últ. 30d</th>
             </>)}
             {kind === 'physical' && <th className="text-right px-3 py-2">Stock</th>}
+            {kind === 'articles' && <th className="text-right px-3 py-2">Última edición</th>}
             <th className="text-right px-5 py-2"></th>
           </tr>
         </thead>
         <tbody>
           {visible.length === 0 && (
             <tr>
-              <td colSpan={kind === 'courses' ? 7 : 5} className="px-5 py-6 text-center text-sm text-white/40">
+              <td colSpan={kind === 'courses' ? 7 : kind === 'articles' ? 4 : 5} className="px-5 py-6 text-center text-sm text-white/40">
                 No hay resultados para "{query}".
               </td>
             </tr>
@@ -145,9 +149,11 @@ export function AppSectionList({
                 </div>
               </td>
               <td className="px-3 py-3"><StatusChip s={dimmed ? 'inactivo' : r.status} /></td>
-              <td className="px-3 py-3 text-white/80">
-                {r.price_cents === 0 ? 'Gratis' : `${(r.price_cents / 100).toLocaleString('es-AR')} ${r.currency}`}
-              </td>
+              {kind !== 'articles' && (
+                <td className="px-3 py-3 text-white/80">
+                  {r.price_cents === 0 ? 'Gratis' : `${(r.price_cents / 100).toLocaleString('es-AR')} ${r.currency}`}
+                </td>
+              )}
               {kind === 'courses' && (<>
                 <td className="px-3 py-3 text-right font-medium">{r.clients ?? 0}</td>
                 <td className="px-3 py-3 text-right font-mono">
@@ -163,6 +169,11 @@ export function AppSectionList({
               </>)}
               {kind === 'physical' && (
                 <td className="px-3 py-3 text-right text-white/70">{r.stock_qty ?? 0}</td>
+              )}
+              {kind === 'articles' && (
+                <td className="px-3 py-3 text-right text-white/50 text-xs">
+                  {r.updated_at ? new Date(r.updated_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                </td>
               )}
               <td className="px-5 py-3 text-right">
                 <Link href={r.editHref} className="text-xs text-white/60 hover:text-white">Editar →</Link>
