@@ -9,6 +9,7 @@ import {
 import { WEEKDAY_LABELS, minToHHMM, type AvailabilityRule } from "@/lib/calendar/types";
 import { ZonesEditor } from "@/components/owner/calendar/ZonesEditor";
 import { PageHeader, HeaderSecondary } from "@/components/owner/PageHeader";
+import { VenuesSection } from "@/components/owner/venues/VenuesSection";
 
 export const dynamic = "force-dynamic";
 
@@ -449,6 +450,9 @@ export default async function AvailabilityPage() {
           </div>
         )}
       </div>
+
+      {/* ─── Sedes / Sucursales (antes vivía en /owner/venues) ─── */}
+      <VenuesSection tenantId={tenant.id} />
 
       {/* ─── Bookings próximos ─── */}
       {bookings.length > 0 && (

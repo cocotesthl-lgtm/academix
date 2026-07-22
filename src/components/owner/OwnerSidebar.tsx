@@ -159,8 +159,7 @@ const NAV: NavEntry[] = [
         { label: 'Calendario', href: '/eventos/calendario' },
         { label: 'Reservas', href: '/reservas', moduleKey: 'reservations' },
         { label: 'Validar entradas', href: '/eventos/validar', moduleKey: 'events' },
-        { label: 'Asistencia', href: '/eventos/asistencia', moduleKey: 'events' },
-        { label: 'Sedes', href: '/venues' }
+        { label: 'Asistencia', href: '/eventos/asistencia', moduleKey: 'events' }
       ]
     }
   },

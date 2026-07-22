@@ -269,7 +269,7 @@ export default async function CoursesIndex() {
         extras={[
           { emoji: '📷', label: 'Escanear entradas', href: '/eventos/validar' },
           { emoji: '📋', label: 'Asistencia', href: '/eventos/asistencia' },
-          { emoji: '📍', label: 'Sedes', href: '/venues' }
+          { emoji: '📍', label: 'Sedes', href: '/eventos/calendario#sedes' }
         ]}
       />
 
@@ -284,7 +284,7 @@ export default async function CoursesIndex() {
         stats={stats}
         extras={[
           { emoji: '🗓️', label: 'Calendario', href: '/eventos/calendario' },
-          { emoji: '📍', label: 'Sedes', href: '/venues' },
+          { emoji: '📍', label: 'Sedes', href: '/eventos/calendario#sedes' },
           { emoji: '👤', label: 'Reservas', href: '/reservas' }
         ]}
       />
