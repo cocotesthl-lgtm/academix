@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireOwner } from "@/lib/auth/guards";
 import { getServiceClient } from "@/lib/supabase/service";
 import { inviteTeamMemberAction, removeTeamMemberAction } from "@/lib/team/actions";
@@ -23,7 +24,7 @@ export default async function TeamPage() {
     .from('memberships')
     .select('user_id, role, status, created_at, permissions, profiles ( id, email, display_name )')
     .eq('tenant_id', tenant.id)
-    .in('role', ['owner', 'admin', 'staff'])
+    .in('role', ['owner', 'admin', 'staff', 'instructor'])
     .eq('status', 'active')
     .order('created_at', { ascending: true });
 
@@ -66,6 +67,7 @@ export default async function TeamPage() {
           >
             <option value="staff">Staff (gestiona leads)</option>
             <option value="admin">Admin (puede invitar)</option>
+            <option value="instructor">Instructor (turnos y clases)</option>
           </select>
           <button className="rounded bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90">
             + Invitar
@@ -84,6 +86,7 @@ export default async function TeamPage() {
               const displayName = m.profiles?.display_name || email;
               const isOwner = m.role === 'owner';
               const isAlsoOwner = ownerEmails.has(email);
+              const isInstructor = m.role === 'instructor';
               const perms = normalizePermissions(m.permissions);
               return (
                 <li key={`${m.user_id}-${m.role}`} className="py-3 space-y-2">
@@ -107,11 +110,22 @@ export default async function TeamPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <MemberPermissionsEditor
-                        userId={m.user_id}
-                        initial={perms}
-                        disabled={isOwner || isAlsoOwner}
-                      />
+                      {isInstructor && (
+                        <Link
+                          href={`/owner/equipo/${m.user_id}/calendario`}
+                          className="text-xs px-2.5 py-1 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 whitespace-nowrap"
+                          title="Editar horas de trabajo, tiempos libres y francos"
+                        >
+                          📅 Calendario
+                        </Link>
+                      )}
+                      {!isInstructor && (
+                        <MemberPermissionsEditor
+                          userId={m.user_id}
+                          initial={perms}
+                          disabled={isOwner || isAlsoOwner}
+                        />
+                      )}
                       {!isOwner && !isAlsoOwner && (
                         <form action={removeTeamMemberAction}>
                           <input type="hidden" name="user_id" value={m.user_id} />
@@ -141,6 +155,7 @@ function roleColor(role: string): string {
     case 'owner': return '#f59e0b';
     case 'admin': return '#f97316';
     case 'staff': return '#3b82f6';
+    case 'instructor': return '#10b981';
     default: return '#888888';
   }
 }

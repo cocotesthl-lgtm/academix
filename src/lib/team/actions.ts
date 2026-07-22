@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { isTenantBlockedBy } from '@/lib/users/blocks';
+import { notifyInstructorAssigned } from '@/lib/emails/dispatch';
 
 /**
  * Gestión del equipo de trabajo de un tenant.
@@ -14,7 +15,7 @@ import { isTenantBlockedBy } from '@/lib/users/blocks';
  * El owner siempre tiene acceso total (role='owner').
  */
 
-const VALID_TEAM_ROLES = new Set(['staff', 'admin']);
+const VALID_TEAM_ROLES = new Set(['staff', 'admin', 'instructor']);
 
 /**
  * Invita a un usuario al equipo por email. El usuario tiene que existir ya
@@ -51,16 +52,34 @@ export async function inviteTeamMemberAction(formData: FormData): Promise<void> 
     .eq('role', role)
     .maybeSingle<{ id: string; status: string }>();
 
+  let isNewlyAssigned = false;
   if (existing) {
     if (existing.status !== 'active') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (svc.from('memberships') as any).update({ status: 'active' }).eq('id', existing.id);
+      isNewlyAssigned = true;
     }
   } else {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('memberships') as any).insert({
       tenant_id: tenant.id, user_id: profile.id, role, status: 'active'
     });
+    isNewlyAssigned = true;
+  }
+
+  // Email de bienvenida cuando el rol es instructor — el instructor no
+  // navega el panel del owner, así que necesita el link a /instructor.
+  if (role === 'instructor' && isNewlyAssigned) {
+    const { data: prof } = await svc
+      .from('profiles').select('email, full_name').eq('id', profile.id)
+      .maybeSingle<{ email: string | null; full_name: string | null }>();
+    if (prof?.email) {
+      await notifyInstructorAssigned({
+        tenantId: tenant.id,
+        instructorEmail: prof.email,
+        instructorName: prof.full_name
+      });
+    }
   }
 
   revalidatePath('/owner/equipo');
