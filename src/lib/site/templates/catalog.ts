@@ -186,6 +186,142 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     };
   })(),
 
+  /* 2.b Esmerald — gastro moderno elegante (esmeralda + dorado). Alternativa
+        más upscale al restaurant "clásico": más énfasis en la experiencia
+        (chef, historia, degustación), gallery grande de platos, mapa +
+        horarios, testimonios editorializados. */
+  (() => {
+    const c = clone();
+    enableOnly(c, [
+      'hero', 'about', 'features', 'gallery', 'pricing', 'stats',
+      'testimonials', 'video', 'faq', 'map', 'contact', 'cta_final'
+    ]);
+
+    // Hero split con foto de plato + CTA reservar
+    c.sections.hero.layout = 'split';
+    c.sections.hero.eyebrow = 'Cocina de autor · Buenos Aires';
+    c.sections.hero.title = 'Sabores que se recuerdan';
+    c.sections.hero.subtitle = 'Menú de estación, ingredientes locales y una cava seleccionada. Reservá tu mesa online y viví la experiencia.';
+    c.sections.hero.cta_label = 'Reservar mesa';
+    c.sections.hero.cta_href = '#contact';
+    c.sections.hero.cta_label_2 = 'Ver la carta';
+    c.sections.hero.cta_href_2 = '#features';
+    c.sections.hero.image_url = 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=1400&auto=format&fit=crop&q=80';
+
+    c.sections.about.title = 'Nuestra historia';
+    c.sections.about.body = 'Abrimos hace 9 años con la idea de traer a la mesa lo mejor de cada estación. Trabajamos con productores del interior, respetamos los tiempos de cada ingrediente y cambiamos la carta cuatro veces al año. Somos un equipo pequeño, obsesionado con el detalle y enamorado del oficio.';
+    c.sections.about.image_url = 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=1200&auto=format&fit=crop&q=80';
+
+    c.sections.stats.title = '';
+    c.sections.stats.items = [
+      { id: 'st1', number: '9', label: 'Años servido' },
+      { id: 'st2', number: '4', label: 'Cambios de carta al año' },
+      { id: 'st3', number: '120+', label: 'Etiquetas de vino' },
+      { id: 'st4', number: '4.9', label: 'Rating de clientes' }
+    ];
+
+    // "Menú" — usamos features con íconos elegantes para las categorías
+    c.sections.features.title = 'La experiencia';
+    c.sections.features.items = [
+      { id: 'f1', icon: '🌿', title: 'De estación', body: 'Vegetales, quesos y carnes de productores cercanos. Nunca congelado, siempre del día.' },
+      { id: 'f2', icon: '🍷', title: 'Cava curada', body: 'Más de 120 etiquetas argentinas e italianas seleccionadas por nuestro sommelier.' },
+      { id: 'f3', icon: '👨‍🍳', title: 'Cocina abierta', body: 'Podés ver el proceso de cada plato desde la barra o desde nuestra mesa del chef.' },
+      { id: 'f4', icon: '✨', title: 'Menú degustación', body: '7 pasos con maridaje opcional. Ideal para ocasiones especiales o descubrir toda la carta.' }
+    ];
+
+    // Gallery de platos — 6 fotos grid 3 col
+    c.sections.gallery.title = 'De la carta';
+    c.sections.gallery.subtitle = 'Una selección de lo que preparamos esta temporada.';
+    c.sections.gallery.columns = 3;
+    c.sections.gallery.items = [
+      { id: 'g1', image_url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80', caption: 'Bowl de vegetales asados' },
+      { id: 'g2', image_url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80', caption: 'Ribeye de pastura, papas rústicas' },
+      { id: 'g3', image_url: 'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=900&auto=format&fit=crop&q=80', caption: 'Ravioles de calabaza, salvia' },
+      { id: 'g4', image_url: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=900&auto=format&fit=crop&q=80', caption: 'Ceviche de pescado del día' },
+      { id: 'g5', image_url: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?w=900&auto=format&fit=crop&q=80', caption: 'Tiramisú de la casa' },
+      { id: 'g6', image_url: 'https://images.unsplash.com/photo-1481931098730-318b6f776db0?w=900&auto=format&fit=crop&q=80', caption: 'Tabla del huerto' }
+    ];
+
+    // Pricing tiers — experiencias / menús
+    c.sections.pricing.title = 'Menús cerrados';
+    c.sections.pricing.subtitle = 'Opciones pensadas para distintas ocasiones. También podés pedir a la carta.';
+    c.sections.pricing.tiers = [
+      {
+        id: 'p1', name: 'Menú del día',
+        price: '$ 18.900',
+        description: 'De martes a viernes al mediodía',
+        features: ['Entrada + principal + postre', 'Bebida sin alcohol incluida', 'Cambia cada semana', 'Ideal para almuerzos de trabajo'],
+        cta_label: 'Reservar',
+        cta_href: '#contact'
+      },
+      {
+        id: 'p2', name: 'Degustación 7 pasos',
+        price: '$ 42.000',
+        description: 'Nuestra carta más completa',
+        features: ['7 pasos del chef', 'Amuse bouche + petit fours', 'Maridaje opcional (+$ 18.000)', 'Duración aprox. 2:30hs'],
+        cta_label: 'Reservar experiencia',
+        cta_href: '#contact',
+        highlighted: true
+      },
+      {
+        id: 'p3', name: 'Eventos privados',
+        price: 'Desde $ 25.000/persona',
+        description: 'Cumpleaños, corporativos, íntimos',
+        features: ['Salón privado (hasta 30 personas)', 'Menú custom con el chef', 'Sommelier a disposición', 'Coordinador dedicado'],
+        cta_label: 'Consultar disponibilidad',
+        cta_href: '#contact'
+      }
+    ];
+
+    c.sections.video.title = 'Un vistazo al lugar';
+    c.sections.video.subtitle = 'Nuestro espacio, el equipo y un adelanto de la carta actual.';
+    c.sections.video.provider = 'youtube';
+    c.sections.video.video_id = 'dQw4w9WgXcQ'; // placeholder, cambiar en editor
+
+    c.sections.testimonials.title = 'Lo que dicen nuestros comensales';
+    c.sections.testimonials.items = [
+      { id: 't1', name: 'Carla D.', role: 'Cliente frecuente', rating: 5, photo_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&auto=format&fit=crop&q=80', text: 'Cada visita es una sorpresa. La atención, la comida, la cava. Volvemos cada 2-3 semanas hace años.' },
+      { id: 't2', name: 'Diego P.', role: 'Foodie', rating: 5, photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&auto=format&fit=crop&q=80', text: 'La degustación 7 pasos vale cada peso. El maridaje está impecable y el ritmo del servicio es perfecto.' },
+      { id: 't3', name: 'Sofía L.', role: 'Cliente hace 5 años', rating: 5, photo_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&auto=format&fit=crop&q=80', text: 'Hicimos el cumple de mi mamá acá. Salón privado, menú custom con el chef, todo salió redondo.' }
+    ];
+
+    c.sections.faq.title = 'Antes de venir';
+    c.sections.faq.items = [
+      { id: 'q1', q: '¿Necesito reservar?', a: 'Sí, especialmente los fines de semana. Podés reservar directo desde el botón de arriba o por WhatsApp. Confirmamos en el día.' },
+      { id: 'q2', q: '¿Tienen opciones sin TACC o vegetarianas?', a: 'Sí. Toda la carta indica claramente lo apto celíaco, vegetariano y vegano. Consultanos si tenés alguna restricción específica y adaptamos el menú.' },
+      { id: 'q3', q: '¿Cuánto suele durar una comida?', a: 'Un almuerzo del día lleva unos 60-75 min. La degustación 7 pasos, entre 2:00 y 2:30hs. Reservá con tiempo.' },
+      { id: 'q4', q: '¿Hasta cuántas personas por mesa?', a: 'Hasta 8 en salón principal. Para grupos más grandes usamos el salón privado (hasta 30 personas) — reservalo con al menos 5 días de anticipación.' },
+      { id: 'q5', q: '¿Aceptan tarjetas y transferencia?', a: 'Todas las tarjetas de crédito/débito y transferencia. En efectivo hacemos 10% de descuento sobre el total.' },
+      { id: 'q6', q: '¿Hay estacionamiento?', a: 'No propio, pero tenemos convenio con la playa de estacionamiento de enfrente — mostrá el ticket al pagar y el descuento es del 50%.' }
+    ];
+
+    c.sections.map.title = 'Cómo llegar';
+
+    c.sections.contact.title = 'Reservá tu mesa';
+    c.sections.contact.subtitle = 'Dejá tus datos y te confirmamos por WhatsApp en el día. Para grupos de 8+ personas contactanos directo.';
+
+    c.sections.cta_final.title = 'Reservá tu próxima experiencia';
+    c.sections.cta_final.body = 'Menú de estación · Cava curada · Salón privado disponible';
+    c.sections.cta_final.cta_label = 'Reservar ahora';
+    c.sections.cta_final.cta_href = '#contact';
+
+    c.nav.show_my_courses = false;
+    c.nav.show_affiliates = false;
+
+    return {
+      id: 'esmerald',
+      name: 'Esmerald',
+      category: 'Gastronomía',
+      emoji: '💚',
+      shortDesc: 'Gastro elegante con paleta esmeralda + dorado. Ideal para bistros, cocina de autor, wine bars.',
+      longDesc: 'Diseño refinado para restaurantes que quieren transmitir una experiencia. Trae historia del lugar, menús cerrados, cava, galería de platos grande, testimonios, mapa y form de reserva. Paleta esmeralda profunda (evocativa de vino tinto sobre lino verde). Ideal para propuestas gastro premium.',
+      suggestedPrimary: '#047857',
+      config: c,
+      // Reservas de mesa + calendario
+      modules: ['calendar', 'reservations']
+    };
+  })(),
+
   /* 3. Multi-sede experiencia (tiro, escape, paintball, kart) */
   (() => {
     const c = clone();

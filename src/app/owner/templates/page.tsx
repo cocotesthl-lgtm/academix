@@ -7,6 +7,14 @@ import { MODULE_META, type ModuleKey } from '@/lib/modules/types';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Flow de 2 pasos:
+ *   1. Sin `?cat=`  → grid de CATEGORÍAS (con emoji + count + preview del color).
+ *   2. Con `?cat=X` → grid de THEMES/templates de esa categoría.
+ *
+ * Es más manejable que la lista plana cuando hay muchos templates y
+ * cognitivamente más claro: primero el rubro, después el look.
+ */
 export default async function TemplatesPage({
   searchParams
 }: {
@@ -15,7 +23,7 @@ export default async function TemplatesPage({
   const { tenant } = await requireOwner();
   const { cat } = await searchParams;
 
-  // Para mostrar "actualmente este es tu sitio"
+  // Snapshot del sitio actual — se muestra en el warning al aplicar
   let currentSectionsCount = 0;
   try {
     const svc = getServiceClient();
@@ -27,61 +35,128 @@ export default async function TemplatesPage({
     currentSectionsCount = order.filter((k) => sections?.[k]?.enabled).length;
   } catch { /* */ }
 
-  const filtered = cat ? SITE_TEMPLATES.filter((t) => t.category === cat) : SITE_TEMPLATES;
+  // Vista de themes dentro de una categoría específica
+  if (cat) {
+    const themes = SITE_TEMPLATES.filter((t) => t.category === cat);
+    // Categoría inválida → volver al step 1
+    if (themes.length === 0) {
+      return (
+        <article className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+          <p className="text-sm text-black/60">La categoría no existe.</p>
+          <Link href="/templates" className="text-sm underline">← Ver todas las categorías</Link>
+        </article>
+      );
+    }
+    return (
+      <article className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        <div>
+          <Link href="/templates" className="text-xs text-black/50 hover:text-black">
+            ← Categorías
+          </Link>
+          <h1 className="text-3xl font-bold mt-2">Themes de {cat}</h1>
+          <p className="text-black/55 text-sm mt-1">
+            Elegí un look de partida. Aplicar un theme <strong>pisa</strong> tu sitio actual — podés seguir modificándolo desde el editor.
+          </p>
+        </div>
+
+        {currentSectionsCount > 0 && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            ⚠️ Tu sitio actual tiene <strong>{currentSectionsCount}</strong> secciones activas. Si aplicás un theme, se reemplazan.
+          </div>
+        )}
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {themes.map((tpl) => <TemplateCard key={tpl.id} tpl={tpl} />)}
+        </div>
+      </article>
+    );
+  }
+
+  // Step 1: categorías
+  const categoriesWithMeta = TEMPLATE_CATEGORIES.map((c) => {
+    const templates = SITE_TEMPLATES.filter((t) => t.category === c);
+    const primary = templates[0]?.suggestedPrimary ?? '#0a0a0a';
+    // Emojis pegados a cada categoría — no son parte del type, los inferimos
+    // del primer template. Si querés custom, mapealo abajo por categoría.
+    const emoji = CATEGORY_EMOJIS[c] ?? templates[0]?.emoji ?? '📄';
+    return { name: c, count: templates.length, primary, emoji, templates };
+  });
 
   return (
     <article className="max-w-7xl mx-auto px-6 py-8 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Templates</h1>
         <p className="text-black/55 text-sm mt-1">
-          Elegí un punto de partida para tu sitio. Aplicar un template <strong>pisa</strong> tu sitio
-          actual (podés volver al editor de páginas y seguir modificando).
+          Elegí primero el rubro de tu negocio. Después vas a ver los themes/looks disponibles para ese rubro.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-        ⚠️ Tu sitio actual tiene <strong>{currentSectionsCount}</strong> secciones activas.
-        Si aplicás un template, se reemplazan por las del template. Te recomendamos hacer este cambio
-        cuando estás empezando.
-      </div>
+      {currentSectionsCount > 0 && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+          ⚠️ Tu sitio actual tiene <strong>{currentSectionsCount}</strong> secciones activas. Aplicar un template las reemplaza.
+        </div>
+      )}
 
-      {/* Filtros por categoría */}
-      <div className="flex flex-wrap gap-2">
-        <FilterChip label="Todos" href="/templates" active={!cat} count={SITE_TEMPLATES.length} />
-        {TEMPLATE_CATEGORIES.map((c) => (
-          <FilterChip key={c}
-            label={c} href={`/templates?cat=${encodeURIComponent(c)}`} active={cat === c}
-            count={SITE_TEMPLATES.filter((t) => t.category === c).length} />
-        ))}
-      </div>
-
-      {/* Grid de templates */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filtered.map((tpl) => (
-          <TemplateCard key={tpl.id} tpl={tpl} />
+        {categoriesWithMeta.map((cat) => (
+          <CategoryCard key={cat.name} cat={cat} />
         ))}
       </div>
 
       <p className="text-xs text-black/40 pt-4 border-t border-black/5">
-        ¿No encontrás algo similar a tu negocio? Empezá con el más parecido y modificalo desde el{' '}
-        <Link href="/site" className="underline">editor de páginas</Link>. Si necesitás un template
-        nuevo, pedinos por <Link href="/support" className="underline">soporte</Link>.
+        ¿No encontrás tu rubro? Empezá con el más parecido y modificalo desde el{' '}
+        <Link href="/site" className="underline">editor de páginas</Link>.
       </p>
     </article>
   );
 }
 
-function FilterChip({ label, href, active, count }: {
-  label: string; href: string; active: boolean; count: number;
+/** Emoji por categoría — si no está mapeada, usa el emoji del primer template. */
+const CATEGORY_EMOJIS: Record<string, string> = {
+  Gastronomía: '🍽️',
+  Servicios: '💼',
+  Comercio: '🛒',
+  Educación: '🎓',
+  Experiencias: '🎯',
+  Editorial: '📰'
+};
+
+function CategoryCard({ cat }: {
+  cat: { name: string; count: number; primary: string; emoji: string; templates: SiteTemplate[] };
 }) {
+  const themeNames = cat.templates.slice(0, 3).map((t) => t.name).join(' · ');
+  const moreCount = cat.templates.length - 3;
+
   return (
-    <Link href={href}
-      className={`text-xs px-3 py-1.5 rounded-full border ${
-        active
-          ? 'bg-black text-white border-black'
-          : 'bg-white text-black/70 border-black/15 hover:border-black/40'
-      }`}>
-      {label} <span className="opacity-60">({count})</span>
+    <Link href={`/templates?cat=${encodeURIComponent(cat.name)}`}
+      className="rounded-2xl border border-black/10 bg-white p-6 hover:shadow-md hover:border-black/20 transition group">
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-14 h-14 rounded-xl grid place-items-center text-3xl"
+          style={{ background: `${cat.primary}15`, color: cat.primary }}>
+          {cat.emoji}
+        </div>
+        <span className="text-[10px] uppercase tracking-widest text-black/40 font-semibold">
+          {cat.count} {cat.count === 1 ? 'theme' : 'themes'}
+        </span>
+      </div>
+      <h2 className="text-xl font-bold mb-1">{cat.name}</h2>
+      <p className="text-xs text-black/55 leading-relaxed line-clamp-2">
+        {themeNames}
+        {moreCount > 0 && <span className="text-black/40"> + {moreCount} más</span>}
+      </p>
+      <div className="mt-4 pt-4 border-t border-black/5 flex items-center justify-between">
+        <div className="flex -space-x-1">
+          {cat.templates.slice(0, 4).map((t) => (
+            <span key={t.id}
+              className="w-4 h-4 rounded-full border-2 border-white shrink-0"
+              style={{ background: t.suggestedPrimary }}
+              title={t.name} />
+          ))}
+        </div>
+        <span className="text-xs text-black/50 group-hover:text-black transition font-medium">
+          Ver themes →
+        </span>
+      </div>
     </Link>
   );
 }
