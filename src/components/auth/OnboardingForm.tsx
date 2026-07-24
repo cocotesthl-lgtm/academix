@@ -181,7 +181,20 @@ export function OnboardingForm({
             </div>
           </button>
 
-          {SITE_TEMPLATES.map((t) => {
+          {(() => {
+            // En onboarding mostramos SOLO 1 template por categoría (el
+            // primero declarado). Los themes/variantes se eligen después
+            // desde /owner/templates con el flow de 2 pasos (categoría →
+            // theme). Sino mezclábamos "Estudio profesional" con "Esmerald"
+            // al mismo nivel y confundía — una es categoría, la otra un
+            // theme dentro de Gastronomía.
+            const seen = new Set<string>();
+            return SITE_TEMPLATES.filter((t) => {
+              if (seen.has(t.category)) return false;
+              seen.add(t.category);
+              return true;
+            });
+          })().map((t) => {
             const selected = templateId === t.id;
             return (
               <button
