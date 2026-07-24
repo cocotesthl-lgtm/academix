@@ -25,9 +25,11 @@ export default async function FormsListPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: tRow } = await (svc.from('tenants') as any)
       .select('site_config').eq('id', tenant.id).maybeSingle();
-    const contactCfg = tRow?.site_config?.sections?.contact ?? {};
-    const contactEnabled = contactCfg?.enabled === true;
-    if (contactEnabled) {
+    const sections = tRow?.site_config?.sections ?? {};
+
+    // Contacto
+    const contactCfg = sections.contact ?? {};
+    if (contactCfg?.enabled === true) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: existing } = await (svc.from('forms') as any)
         .select('id').eq('tenant_id', tenant.id).eq('slug', '_contact_section')
@@ -41,6 +43,25 @@ export default async function FormsListPage() {
           description: 'Form auto-generado desde la sección "Contacto" del editor. Los envíos que llegan por ese form aparecen acá.',
           submit_label: 'Enviar',
           notify_email: typeof contactCfg.email === 'string' && contactCfg.email ? contactCfg.email : null
+        });
+      }
+    }
+
+    // Newsletter
+    const nlCfg = sections.newsletter ?? {};
+    if (nlCfg?.enabled === true) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existing } = await (svc.from('forms') as any)
+        .select('id').eq('tenant_id', tenant.id).eq('slug', '_newsletter')
+        .maybeSingle();
+      if (!existing) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (svc.from('forms') as any).insert({
+          tenant_id: tenant.id,
+          slug: '_newsletter',
+          title: 'Newsletter (sección del sitio)',
+          description: 'Suscripciones al newsletter capturadas desde la sección "Newsletter" del editor. Exportá para importar a Mailchimp / Brevo cuando quieras.',
+          submit_label: 'Suscribirme'
         });
       }
     }

@@ -55,7 +55,7 @@ export default async function StorefrontHome({
   searchParams
 }: {
   params: Promise<{ tenantId: string }>;
-  searchParams: Promise<{ cat?: string; contact?: string }>;
+  searchParams: Promise<{ cat?: string; contact?: string; newsletter?: string }>;
 }) {
   const { tenantId } = await params;
   const sp = await searchParams;
@@ -1086,14 +1086,26 @@ export default async function StorefrontHome({
 
           case 'newsletter': {
             const n = cfg.sections.newsletter;
+            const nlStatus = (sp.newsletter === 'sent' || sp.newsletter === 'error') ? sp.newsletter : null;
             return (
               <section key={key} {...dt} id={key} className="px-6 py-16" style={{ background: bg ?? `${primary}10` }}>
                 <div className="max-w-2xl mx-auto text-center">
                   <h2 className="text-2xl md:text-3xl font-bold"
                     dangerouslySetInnerHTML={richHtml(n.title)} />
                   {n.subtitle && <p className="text-black/60 mt-2">{n.subtitle}</p>}
-                  <form className="mt-6 flex gap-2 max-w-md mx-auto" action="#" method="POST">
-                    <input type="email" required placeholder="tu@email.com"
+                  {nlStatus === 'sent' && (
+                    <div className="mt-4 mx-auto max-w-md rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm px-4 py-2">
+                      ✓ Suscripción confirmada. Vas a recibir novedades pronto.
+                    </div>
+                  )}
+                  {nlStatus === 'error' && (
+                    <div className="mt-4 mx-auto max-w-md rounded-lg bg-rose-50 border border-rose-300 text-rose-800 text-sm px-4 py-2">
+                      ✗ El email no es válido. Revisalo e intentá de nuevo.
+                    </div>
+                  )}
+                  <form className="mt-6 flex gap-2 max-w-md mx-auto" action={`/api/newsletter/${tenantId}`} method="POST">
+                    <input type="hidden" name="_anchor" value={key} />
+                    <input type="email" name="email" required placeholder="tu@email.com"
                       className="flex-1 rounded-md border border-black/15 px-4 py-2.5 bg-white" />
                     <button type="submit"
                       className="rounded-md px-5 py-2.5 font-semibold text-white whitespace-nowrap"
@@ -1101,7 +1113,9 @@ export default async function StorefrontHome({
                       {n.cta_label || 'Suscribirme'}
                     </button>
                   </form>
-                  <p className="text-xs text-black/40 mt-2">Integración con email marketing próximamente.</p>
+                  <p className="text-xs text-black/40 mt-2">
+                    Las suscripciones aparecen en <strong>Formularios → Newsletter</strong> del panel. Exportá para Mailchimp / Brevo cuando quieras.
+                  </p>
                 </div>
               </section>
             );
