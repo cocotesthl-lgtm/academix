@@ -16,6 +16,36 @@ type FormRow = {
 export default async function FormsListPage() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
+
+  // Backfill del form implícito de la sección "Contacto" del editor.
+  // Si el tenant tiene esa sección activa en site_config Y todavía no
+  // existe el form `_contact_section`, lo creamos acá para que aparezca
+  // en el listado de una — sin esperar al primer envío. Idempotente.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: tRow } = await (svc.from('tenants') as any)
+      .select('site_config').eq('id', tenant.id).maybeSingle();
+    const contactCfg = tRow?.site_config?.sections?.contact ?? {};
+    const contactEnabled = contactCfg?.enabled === true;
+    if (contactEnabled) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existing } = await (svc.from('forms') as any)
+        .select('id').eq('tenant_id', tenant.id).eq('slug', '_contact_section')
+        .maybeSingle();
+      if (!existing) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (svc.from('forms') as any).insert({
+          tenant_id: tenant.id,
+          slug: '_contact_section',
+          title: 'Contacto (sección del sitio)',
+          description: 'Form auto-generado desde la sección "Contacto" del editor. Los envíos que llegan por ese form aparecen acá.',
+          submit_label: 'Enviar',
+          notify_email: typeof contactCfg.email === 'string' && contactCfg.email ? contactCfg.email : null
+        });
+      }
+    }
+  } catch { /* silencio — no romper la page por el backfill */ }
+
   let forms: FormRow[] = [];
   let migrationMissing = false;
   try {
