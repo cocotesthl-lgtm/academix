@@ -16,7 +16,9 @@ const ITEMS: Item[] = [
   { label: 'Comisiones',        href: '/commissions' },
   { label: 'Soporte',           href: '/tickets' },
   { label: 'Revenue',           href: '/revenue' },
-  { label: '💰 Wallets',        href: '/wallets' }
+  { label: '💰 Wallets',        href: '/wallets' },
+  { label: '👥 Leads (CRM)',    href: '/leads' },
+  { label: '📝 Form submissions', href: '/submissions' }
 ];
 
 function matches(href: string, pathname: string): boolean {
