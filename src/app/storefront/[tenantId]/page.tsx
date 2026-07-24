@@ -55,10 +55,11 @@ export default async function StorefrontHome({
   searchParams
 }: {
   params: Promise<{ tenantId: string }>;
-  searchParams: Promise<{ cat?: string }>;
+  searchParams: Promise<{ cat?: string; contact?: string }>;
 }) {
   const { tenantId } = await params;
-  const { cat: selectedCatSlug } = await searchParams;
+  const sp = await searchParams;
+  const selectedCatSlug = sp.cat;
 
   const tenant = await getTenantById(tenantId);
   const primary = tenant?.brand?.primary_color ?? '#0a0a0a';
@@ -1152,7 +1153,11 @@ export default async function StorefrontHome({
 
           case 'contact': {
             const ct = cfg.sections.contact;
-            const formAction = ct.email ? `mailto:${ct.email}` : undefined;
+            // POST a /api/contact/{tenantId} — persiste submission en
+            // form_submissions (auto-materializa un form '_contact_section')
+            // y aparece en /owner/forms + /owner/submissions +
+            // /founder/submissions. Antes era mailto: que se perdía.
+            const contactStatus = (sp.contact === 'sent' || sp.contact === 'error') ? sp.contact : null;
             return (
               <section key={key} {...dt} id="contacto" className="px-6 py-20" style={{ background: bg ?? '#fafafa' }}>
                 <span id="contact" aria-hidden="true" />
@@ -1164,7 +1169,17 @@ export default async function StorefrontHome({
                         dangerouslySetInnerHTML={richHtml(ct.title)} />
                       {ct.subtitle && <p className="mt-3 text-black/60">{ct.subtitle}</p>}
                     </div>
-                    <form action={formAction} method="POST" encType="text/plain" className="bg-white rounded-2xl p-8 shadow-sm border border-black/5 space-y-4">
+                    {contactStatus === 'sent' && (
+                      <div className="mb-4 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        ✓ ¡Mensaje enviado! Te vamos a responder a la brevedad.
+                      </div>
+                    )}
+                    {contactStatus === 'error' && (
+                      <div className="mb-4 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                        ✗ No pudimos enviar tu mensaje. Revisá los datos e intentá otra vez.
+                      </div>
+                    )}
+                    <form action={`/api/contact/${tenantId}`} method="POST" className="bg-white rounded-2xl p-8 shadow-sm border border-black/5 space-y-4">
                       <div>
                         <label className="block text-sm font-medium mb-1.5">{ct.name_label}</label>
                         <input name="Nombre" required className="w-full rounded-md border border-black/15 px-4 py-2.5 focus:outline-none focus:border-black/40" />
@@ -1182,7 +1197,9 @@ export default async function StorefrontHome({
                         style={{ background: `var(--brand-bg, ${primary})` }}>
                         {ct.submit_label}
                       </button>
-                      {!ct.email && <p className="text-xs text-center text-black/40">⚠ Configurá el email destino en el editor.</p>}
+                      <p className="text-xs text-center text-black/40">
+                        Tus envíos aparecen en <strong>Formularios → Contacto</strong> del panel del sitio.
+                      </p>
                     </form>
                     {ct.whatsapp && (
                       <div className="text-center mt-5">
