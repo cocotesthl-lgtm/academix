@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { tenantOrigin } from '@/lib/env';
+import { ensureLeadFromSubmission } from '@/lib/crm/ensure-lead';
 
 /**
  * POST /api/contact/[tenantId]
@@ -77,20 +78,34 @@ export async function POST(
     return NextResponse.redirect(`${referer}?contact=sent`, { status: 303 });
   }
 
-  // Insert submission
+  // Insert submission (necesitamos el id para linkear al lead después)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: subErr } = await (svc.from('form_submissions') as any).insert({
+  const { data: sub, error: subErr } = await (svc.from('form_submissions') as any).insert({
     form_id: existingForm.id,
     tenant_id: tenant.id,
     data: { Nombre: nombre, Email: email, Mensaje: mensaje },
     submitter_name: nombre,
     submitter_email: email,
     source_url: referer.slice(0, 500)
-  });
-  if (subErr) {
+  }).select('id').single();
+  if (subErr || !sub) {
     console.warn('[contact] insert submission failed', subErr);
     return NextResponse.redirect(`${referer}?contact=error`, { status: 303 });
   }
+
+  // Crear lead en el CRM — fallback al primer pipeline/stage del tenant
+  // (o crea uno "Ventas" default si no hay ninguno). Best-effort — no
+  // rompemos el envío si el CRM falla.
+  await ensureLeadFromSubmission({
+    tenantId: tenant.id,
+    submissionId: sub.id,
+    formId: existingForm.id,
+    submitterName: nombre,
+    submitterEmail: email,
+    submitterPhone: null,
+    data: { Nombre: nombre, Email: email, Mensaje: mensaje },
+    formTitle: 'Contacto (sección del sitio)'
+  }).catch((e) => { console.warn('[contact] ensureLead failed:', e); });
 
   return NextResponse.redirect(`${referer}?contact=sent#contact`, { status: 303 });
 }

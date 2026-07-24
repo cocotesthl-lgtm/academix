@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { tenantOrigin } from '@/lib/env';
+import { ensureLeadFromSubmission } from '@/lib/crm/ensure-lead';
 
 /**
  * POST /api/newsletter/[tenantId]
@@ -73,13 +74,27 @@ export async function POST(
 
   if (!dup) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (svc.from('form_submissions') as any).insert({
+    const { data: sub } = await (svc.from('form_submissions') as any).insert({
       form_id: existingForm.id,
       tenant_id: tenant.id,
       data: { email },
       submitter_email: email,
       source_url: referer.slice(0, 500)
-    });
+    }).select('id').single();
+
+    // Crear lead — best-effort
+    if (sub?.id) {
+      await ensureLeadFromSubmission({
+        tenantId: tenant.id,
+        submissionId: sub.id,
+        formId: existingForm.id,
+        submitterName: null,
+        submitterEmail: email,
+        submitterPhone: null,
+        data: { email },
+        formTitle: 'Newsletter (sección del sitio)'
+      }).catch((e) => { console.warn('[newsletter] ensureLead failed:', e); });
+    }
   }
 
   return NextResponse.redirect(`${referer}?newsletter=sent#${form.get('_anchor') ?? 'newsletter'}`, { status: 303 });

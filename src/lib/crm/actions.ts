@@ -342,6 +342,66 @@ export async function addLeadCommentAction(formData: FormData): Promise<void> {
 }
 
 /**
+ * Mover UN lead a otro pipeline (+ opcionalmente stage). Usado desde el
+ * Buzón (/owner/crm/inbox) para triar leads entre pipelines.
+ *
+ * Si `stage_id` no viene o no matchea el pipeline, cae al primer stage
+ * del pipeline destino. Respeta el enforcement de aprobadores del stage
+ * destino (canApproveStage).
+ */
+export async function movePipelineAction(formData: FormData): Promise<void> {
+  const { tenant, userId } = await requireOwner();
+  const leadId = String(formData.get('lead_id') ?? '');
+  const targetPipelineId = String(formData.get('pipeline_id') ?? '');
+  if (!leadId || !targetPipelineId) return;
+
+  const svc = getServiceClient();
+  // Resolver stage destino — si vino y es válido, usarlo; sino primer stage del pipeline
+  const rawStageId = String(formData.get('stage_id') ?? '').trim() || null;
+  let targetStageId: string | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: stages } = await (svc.from('crm_stages') as any)
+    .select('id, position').eq('pipeline_id', targetPipelineId).order('position');
+  const stageList = (stages ?? []) as Array<{ id: string; position: number }>;
+  if (rawStageId && stageList.find((s) => s.id === rawStageId)) {
+    targetStageId = rawStageId;
+  } else {
+    targetStageId = stageList[0]?.id ?? null;
+  }
+  if (!targetStageId) return;
+
+  // Enforcement de aprobadores en el stage destino
+  if (!(await canApproveStage(targetStageId, userId, tenant.id))) {
+    throw new Error('La etapa destino requiere aprobación de otro miembro.');
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: current } = await (svc.from('crm_leads') as any)
+    .select('pipeline_id, stage_id').eq('id', leadId).eq('tenant_id', tenant.id).maybeSingle();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (svc.from('crm_leads') as any).update({
+    pipeline_id: targetPipelineId,
+    stage_id: targetStageId,
+    updated_at: new Date().toISOString()
+  }).eq('id', leadId).eq('tenant_id', tenant.id);
+
+  if (current) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('crm_lead_activity') as any).insert({
+      lead_id: leadId,
+      activity_type: 'pipeline_changed',
+      payload: {
+        from_pipeline: current.pipeline_id, from_stage: current.stage_id,
+        to_pipeline: targetPipelineId, to_stage: targetStageId
+      }
+    });
+  }
+  revalidatePath('/owner/crm');
+  revalidatePath('/owner/crm/inbox');
+}
+
+/**
  * Conexión form → pipeline: setea default_pipeline_id + default_stage_id en el form.
  * Cuando llegue una submission a ese form, automáticamente crea un lead en ese stage.
  */

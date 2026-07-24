@@ -74,6 +74,7 @@ export const SALES_TABS = [
 
 /** Preset: pestañas del módulo Contactos (F5). */
 export const CONTACTS_TABS = [
-  { label: 'Clientes', href: '/clientes', icon: '👤' },
-  { label: 'Pipeline', href: '/crm', icon: '📋' }
+  { label: 'Clientes',    href: '/clientes',  icon: '👤' },
+  { label: 'Buzón',       href: '/crm/inbox', icon: '📥' },
+  { label: 'Pipeline',    href: '/crm',       icon: '📋' }
 ];
