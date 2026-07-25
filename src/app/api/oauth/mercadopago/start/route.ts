@@ -16,15 +16,37 @@ export async function GET(req: NextRequest) {
   }
 
   const svc = getServiceClient();
-  const { data: membership } = await svc
-    .from('memberships')
-    .select('tenant_id')
-    .eq('user_id', user.id)
-    .eq('role', 'owner')
-    .eq('status', 'active')
-    .limit(1)
-    .maybeSingle<{ tenant_id: string }>();
-  if (!membership) return NextResponse.redirect(new URL('/onboarding', req.url));
+
+  // Resolver el tenant activo respetando el workspace switcher.
+  // Antes tomábamos el "primer tenant" que devolvía la query — resultado:
+  // si el owner tenía varios sitios, MP se conectaba al equivocado y en
+  // el checkout del sitio activo salía "Checkout no disponible" aunque
+  // el panel dijera "conectado correctamente".
+  const cookieStore = await cookies();
+  const preferredTenantId = cookieStore.get('owner_tenant_id')?.value;
+  let tenantId: string | null = null;
+
+  if (preferredTenantId) {
+    const { data: preferred } = await svc
+      .from('memberships').select('tenant_id')
+      .eq('user_id', user.id).eq('tenant_id', preferredTenantId)
+      .eq('role', 'owner').eq('status', 'active')
+      .maybeSingle<{ tenant_id: string }>();
+    if (preferred?.tenant_id) tenantId = preferred.tenant_id;
+  }
+
+  if (!tenantId) {
+    // Fallback al primer tenant del user (comportamiento viejo — sólo
+    // aplica si no hay cookie de workspace activo).
+    const { data: first } = await svc
+      .from('memberships').select('tenant_id')
+      .eq('user_id', user.id).eq('role', 'owner').eq('status', 'active')
+      .limit(1).maybeSingle<{ tenant_id: string }>();
+    tenantId = first?.tenant_id ?? null;
+  }
+
+  if (!tenantId) return NextResponse.redirect(new URL('/onboarding', req.url));
+  const membership = { tenant_id: tenantId };
 
   // Pre-check: si faltan las env vars, no crasheamos en 500. Redirigimos a
   // /integrations con un mensaje claro para que el owner sepa qué pasa.
