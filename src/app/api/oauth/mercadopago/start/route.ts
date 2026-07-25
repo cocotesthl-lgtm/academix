@@ -59,7 +59,6 @@ export async function GET(req: NextRequest) {
   // CSRF state cookie
   const nonce = randomBytes(16).toString('hex');
   const state = `${membership.tenant_id}.${nonce}`;
-  const cookieStore = await cookies();
   cookieStore.set('mp_oauth_state', state, {
     httpOnly: true,
     sameSite: 'lax',
