@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { GoogleOneTapButton } from "@/components/auth/GoogleOneTapButton";
 import { DomainChecker } from "@/components/marketing/DomainChecker";
 import { LastSalePopup } from "@/components/marketing/LastSalePopup";
+import { MarketingAuthNav } from "@/components/marketing/MarketingAuthNav";
 
 export const dynamic = "force-dynamic";
 
@@ -38,15 +39,7 @@ export default async function MarketingHome() {
             <a href="#precio" className="hover:text-neutral-900 transition">Precio</a>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/buscar" className="text-sm text-neutral-700 hover:text-neutral-900 font-medium">
-              Acceder
-            </Link>
-            <Link
-              href="/signup"
-              className="text-sm rounded-full bg-orange-500 text-white px-5 py-2 font-semibold hover:bg-orange-600 transition"
-            >
-              Empezar gratis
-            </Link>
+            <MarketingAuthNav variant="light" loginLabel="Acceder" signupLabel="Empezar gratis" />
           </div>
         </div>
       </nav>

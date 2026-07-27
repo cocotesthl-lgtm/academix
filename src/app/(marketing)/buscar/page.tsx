@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { AcademiaSearch, type AcademiaCard } from "@/components/marketing/AcademiaSearch";
+import { MarketingAuthNav } from "@/components/marketing/MarketingAuthNav";
 
 export const dynamic = "force-dynamic";
 
@@ -52,12 +53,7 @@ export default async function BuscarAcademiasPage() {
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
           <Link href="/" className="text-xl font-bold tracking-tight">OfferNow</Link>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-white/80 hover:text-white">
-              Iniciar sesión
-            </Link>
-            <Link href="/signup" className="text-sm rounded-md bg-white text-black px-4 py-2 font-medium hover:bg-white/90">
-              Crear cuenta
-            </Link>
+            <MarketingAuthNav variant="dark" />
           </div>
         </div>
       </nav>
