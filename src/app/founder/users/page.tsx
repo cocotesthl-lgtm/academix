@@ -19,16 +19,21 @@ export default async function FounderUsersPage() {
   const { data: { user: me } } = await supabase.auth.getUser();
   const myId = me?.id ?? null;
 
-  // Defensivo: si migration 0086 no corrió, reintentamos sin moderation_status
+  // Defensivo: si la query falla porque moderation_status no está en el
+  // schema cache de PostgREST (típicamente 10 min después de la migration
+  // o hasta que se recargue el cache manualmente), retryamos sin la columna
+  // y flageamos el banner. Nota: "unknown to PostgREST" ≠ "no existe en DB"
+  // — la migration puede estar aplicada pero el cache viejo. Por eso el
+  // banner apunta al reload del schema, no al SQL.
   let profilesRaw: Profile[] | null = null;
-  let migrationMissing = false;
+  let schemaCacheStale = false;
   {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await (svc.from('profiles') as any)
       .select('id, email, display_name, is_super_admin, moderation_status, created_at')
       .order('created_at', { ascending: false });
-    if (res.error?.message?.includes('moderation_status')) {
-      migrationMissing = true;
+    if (res.error) {
+      schemaCacheStale = true;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const retry = await (svc.from('profiles') as any)
         .select('id, email, display_name, is_super_admin, created_at')
@@ -91,9 +96,18 @@ export default async function FounderUsersPage() {
         </p>
       </div>
 
-      {migrationMissing && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
-          ⚠️ Migration <code>0086_moderation_status.sql</code> pendiente — sin eso, los usuarios se ven como "activo" y las acciones bulk de estado no funcionan.
+      {schemaCacheStale && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200 space-y-1">
+          <p>⚠️ <strong>La columna <code>moderation_status</code> no está en el schema cache de PostgREST.</strong></p>
+          <p className="text-amber-200/80 text-xs">
+            Si ya corriste la migration <code>0086_moderation_status.sql</code>, el cache está stale.
+            Andá a <strong>Supabase Dashboard → Project Settings → API</strong> y clickeá "Reload schema cache",
+            o esperá ~10 min. Alternativamente, corré esto en el SQL Editor:
+          </p>
+          <pre className="bg-black/40 text-amber-100 text-[11px] px-2 py-1 rounded mt-1 font-mono">NOTIFY pgrst, 'reload schema';</pre>
+          <p className="text-amber-200/60 text-[11px]">
+            Si NO corriste la migration todavía, pegá el contenido de <code>src/db/migrations/0086_moderation_status.sql</code> en el SQL Editor.
+          </p>
         </div>
       )}
 
