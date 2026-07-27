@@ -1,6 +1,6 @@
 import { getServiceClient } from "@/lib/supabase/service";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { UserRowActions } from "@/components/founder/UserRowActions";
+import { FounderUsersTable } from "@/components/founder/FounderUsersTable";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +9,7 @@ type Profile = {
   email: string | null;
   display_name: string | null;
   is_super_admin: boolean;
+  moderation_status?: 'active' | 'under_review' | 'suspended';
   created_at: string;
 };
 
@@ -18,24 +19,63 @@ export default async function FounderUsersPage() {
   const { data: { user: me } } = await supabase.auth.getUser();
   const myId = me?.id ?? null;
 
-  const [{ data: profilesRaw }, { data: memberships }, { data: enrollments }] = await Promise.all([
-    svc.from('profiles')
-      .select('id, email, display_name, is_super_admin, created_at')
-      .order('created_at', { ascending: false }),
+  // Defensivo: si migration 0086 no corrió, reintentamos sin moderation_status
+  let profilesRaw: Profile[] | null = null;
+  let migrationMissing = false;
+  {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await (svc.from('profiles') as any)
+      .select('id, email, display_name, is_super_admin, moderation_status, created_at')
+      .order('created_at', { ascending: false });
+    if (res.error?.message?.includes('moderation_status')) {
+      migrationMissing = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const retry = await (svc.from('profiles') as any)
+        .select('id, email, display_name, is_super_admin, created_at')
+        .order('created_at', { ascending: false });
+      profilesRaw = (retry.data ?? []) as Profile[];
+    } else {
+      profilesRaw = (res.data ?? []) as Profile[];
+    }
+  }
+
+  const [{ data: memberships }, { data: enrollments }, { data: ownerMembers }] = await Promise.all([
     svc.from('memberships').select('user_id, role').eq('status', 'active'),
-    svc.from('enrollments').select('user_id').eq('status', 'active')
+    svc.from('enrollments').select('user_id').eq('status', 'active'),
+    // Owners con slug del tenant — para el botón "Editar publicaciones"
+    svc.from('memberships')
+      .select('user_id, tenants ( slug )')
+      .eq('role', 'owner').eq('status', 'active')
   ]);
 
-  const profiles = (profilesRaw ?? []) as Profile[];
-
+  const profiles = profilesRaw ?? [];
   const ownersByUser = new Map<string, number>();
   const enrollByUser = new Map<string, number>();
+  const firstOwnedSlug = new Map<string, string>();
   for (const m of ((memberships ?? []) as Array<{ user_id: string; role: string }>)) {
     if (m.role === 'owner') ownersByUser.set(m.user_id, (ownersByUser.get(m.user_id) ?? 0) + 1);
   }
   for (const e of ((enrollments ?? []) as Array<{ user_id: string }>)) {
     enrollByUser.set(e.user_id, (enrollByUser.get(e.user_id) ?? 0) + 1);
   }
+  for (const om of ((ownerMembers ?? []) as Array<{ user_id: string; tenants: { slug: string } | null }>)) {
+    if (om.tenants?.slug && !firstOwnedSlug.has(om.user_id)) {
+      firstOwnedSlug.set(om.user_id, om.tenants.slug);
+    }
+  }
+
+  // Enriquecer para la tabla client
+  const rows = profiles.map((p) => ({
+    id: p.id,
+    email: p.email,
+    display_name: p.display_name,
+    is_super_admin: p.is_super_admin,
+    moderation_status: (p.moderation_status ?? 'active') as 'active' | 'under_review' | 'suspended',
+    created_at: p.created_at,
+    ownerCount: ownersByUser.get(p.id) ?? 0,
+    enrollCount: enrollByUser.get(p.id) ?? 0,
+    ownedTenantSlug: firstOwnedSlug.get(p.id) ?? null
+  }));
 
   const totalUsers = profiles.length;
   const totalAdmins = profiles.filter((p) => p.is_super_admin).length;
@@ -47,9 +87,15 @@ export default async function FounderUsersPage() {
       <div>
         <h1 className="text-2xl font-bold">Usuarios</h1>
         <p className="text-white/60 text-sm mt-1">
-          Todos los usuarios registrados en la plataforma. Podés renombrarlos, hacerlos admin o borrarlos.
+          Todos los usuarios registrados. Buscá, seleccioná varios para acciones bulk (reactivar, bajo revisión, suspender, eliminar), o usá las acciones por-row (impersonar, editar publicaciones).
         </p>
       </div>
+
+      {migrationMissing && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+          ⚠️ Migration <code>0086_moderation_status.sql</code> pendiente — sin eso, los usuarios se ven como "activo" y las acciones bulk de estado no funcionan.
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat label="Usuarios totales" value={totalUsers} />
@@ -58,58 +104,7 @@ export default async function FounderUsersPage() {
         <Stat label="Alumnos activos" value={totalStudents} />
       </div>
 
-      <div className="rounded-xl border border-white/10 overflow-hidden">
-        {profiles.length === 0 ? (
-          <div className="p-10 text-center text-white/50 text-sm">Sin usuarios todavía.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-white/[0.03] text-white/50 text-xs uppercase tracking-wider">
-              <tr>
-                <th className="text-left px-4 py-2.5">Nombre</th>
-                <th className="text-left px-4 py-2.5">Email</th>
-                <th className="text-left px-4 py-2.5">Rol</th>
-                <th className="text-left px-4 py-2.5">Sitios</th>
-                <th className="text-left px-4 py-2.5">Inscripciones</th>
-                <th className="text-left px-4 py-2.5">Alta</th>
-                <th className="text-right px-4 py-2.5">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {profiles.map((p) => {
-                const ownerCount = ownersByUser.get(p.id) ?? 0;
-                const enrollCount = enrollByUser.get(p.id) ?? 0;
-                return (
-                  <tr key={p.id} className="border-t border-white/5">
-                    <td className="px-4 py-3 font-medium">{p.display_name ?? '—'}</td>
-                    <td className="px-4 py-3 text-white/60">{p.email ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      {p.is_super_admin
-                        ? <span className="text-xs px-2 py-0.5 rounded border border-orange-500/30 bg-orange-500/10 text-amber-400">super_admin</span>
-                        : ownerCount > 0
-                          ? <span className="text-xs px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">owner</span>
-                          : enrollCount > 0
-                            ? <span className="text-xs px-2 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-300">alumno</span>
-                            : <span className="text-xs text-white/40">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-white/70">{ownerCount}</td>
-                    <td className="px-4 py-3 text-white/70">{enrollCount}</td>
-                    <td className="px-4 py-3 text-white/50">{new Date(p.created_at).toLocaleDateString('es-AR')}</td>
-                    <td className="px-4 py-3 text-right">
-                      <UserRowActions
-                        profileId={p.id}
-                        email={p.email}
-                        displayName={p.display_name}
-                        isSuperAdmin={p.is_super_admin}
-                        isSelf={p.id === myId}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <FounderUsersTable rows={rows} myId={myId} />
     </div>
   );
 }

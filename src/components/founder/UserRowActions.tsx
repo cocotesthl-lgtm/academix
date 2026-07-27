@@ -4,7 +4,8 @@ import { useState, useTransition } from 'react';
 import {
   toggleSuperAdminAction,
   updateUserDisplayNameAction,
-  deleteUserAction
+  deleteUserAction,
+  impersonateTenantAction
 } from '@/lib/founder/actions';
 
 export function UserRowActions({
@@ -12,13 +13,18 @@ export function UserRowActions({
   email,
   displayName,
   isSuperAdmin,
-  isSelf
+  isSelf,
+  ownedTenantSlug
 }: {
   profileId: string;
   email: string | null;
   displayName: string | null;
   isSuperAdmin: boolean;
   isSelf: boolean;
+  /** Slug del PRIMER tenant que este user posee. Si existe, mostramos el
+   *  botón "Editar publicaciones" que impersona a ese tenant y navega
+   *  a /owner/mis-publicaciones. Sin esto, no hay a qué tenant impersonar. */
+  ownedTenantSlug?: string | null;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(displayName ?? '');
@@ -108,6 +114,18 @@ export function UserRowActions({
 
   return (
     <div className="flex items-center gap-1.5 justify-end flex-wrap">
+      {ownedTenantSlug && (
+        <form action={impersonateTenantAction} className="inline">
+          <input type="hidden" name="slug" value={ownedTenantSlug} />
+          <button
+            type="submit"
+            title={`Impersonar ${ownedTenantSlug} y abrir Mis publicaciones`}
+            className="text-xs rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-2 py-1 hover:bg-emerald-500/20"
+          >
+            📝 Editar publicaciones
+          </button>
+        </form>
+      )}
       <button
         type="button"
         onClick={() => setEditing(true)}
