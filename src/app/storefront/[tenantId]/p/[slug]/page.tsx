@@ -4,8 +4,9 @@ import { notFound } from 'next/navigation';
 import { getTenantById } from '@/lib/tenant/resolve';
 import { getServiceClient } from '@/lib/supabase/service';
 import { storefrontOrigin, truncate } from '@/lib/seo/meta';
-import { ProductBuyBox } from '@/components/storefront/products/ProductBuyBox';
-import { ProductGallery } from '@/components/storefront/products/ProductGallery';
+import { ProductDetailInteractive } from '@/components/storefront/products/ProductDetailInteractive';
+import { ProductSpecs } from '@/components/storefront/products/ProductSpecs';
+import { RelatedProducts } from '@/components/storefront/products/RelatedProducts';
 import { TrackPageView } from '@/components/storefront/TrackPageView';
 import type { PhysicalProduct, ProductVariant } from '@/lib/products/actions';
 
@@ -115,89 +116,89 @@ export default async function ProductPublicPage({
     }
   } catch { /* migration pendiente */ }
 
+  const buyBoxHeader = (
+    <>
+      <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-2">{product.title}</h1>
+
+      {typeof product.rating === 'number' && product.rating > 0 && (
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-0.5" aria-label={`Rating ${product.rating} de 5`}>
+            {starGlyphs(product.rating).map((g, i) => (
+              <svg key={i} width="16" height="16" viewBox="0 0 24 24"
+                className={g === 'empty' ? 'text-black/15' : 'text-amber-400'}
+                fill="currentColor" aria-hidden="true">
+                {g === 'half' ? (
+                  <>
+                    <defs>
+                      <linearGradient id={`half-${i}`}>
+                        <stop offset="50%" stopColor="currentColor" />
+                        <stop offset="50%" stopColor="rgba(0,0,0,0.15)" />
+                      </linearGradient>
+                    </defs>
+                    <polygon fill={`url(#half-${i})`}
+                      points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </>
+                ) : (
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                )}
+              </svg>
+            ))}
+          </div>
+          <span className="text-sm font-semibold text-black">{product.rating.toFixed(1)}</span>
+          {product.reviews_count > 0 && (
+            <span className="text-sm text-black/50">
+              ({product.reviews_count.toLocaleString('es-AR')})
+            </span>
+          )}
+        </div>
+      )}
+
+      {!inStock && (
+        <div className="inline-block bg-rose-100 text-rose-700 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded mb-3">
+          Sin stock
+        </div>
+      )}
+    </>
+  );
+
   return (
     <article className="max-w-6xl mx-auto px-6 py-10">
       <TrackPageView tenantId={tenantId} eventType="product_view" productId={product.id} />
       <Link href="/" className="text-sm text-black/55 hover:text-black">← Volver al inicio</Link>
 
-      <div className="mt-6 grid md:grid-cols-2 gap-10">
-        {/* Galería (client): mini vertical + zoom en hover */}
-        <ProductGallery
-          cover={product.cover_url}
-          gallery={product.gallery ?? []}
-          title={product.title}
-        />
+      <ProductDetailInteractive
+        tenantId={tenantId}
+        product={product}
+        variants={variants}
+        walletBonus={walletBonus}
+        extras={buyBoxHeader}
+      />
 
-        {/* Buy box derecha */}
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-2">{product.title}</h1>
+      {/* Descripción larga + SKU debajo de la sección visual */}
+      {product.description && (
+        <section className="mt-10 border-t border-black/10 pt-8 max-w-3xl">
+          <h2 className="text-xl font-bold mb-3">Descripción</h2>
+          <p className="text-sm text-black/75 whitespace-pre-wrap leading-relaxed">
+            {product.description}
+          </p>
+        </section>
+      )}
 
-          {/* Rating manual (si el owner lo cargó desde el editor). Estilo ML:
-              estrellas amarillas + puntuación numérica + (cantidad reseñas). */}
-          {typeof product.rating === 'number' && product.rating > 0 && (
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex items-center gap-0.5" aria-label={`Rating ${product.rating} de 5`}>
-                {starGlyphs(product.rating).map((g, i) => (
-                  <svg key={i} width="16" height="16" viewBox="0 0 24 24"
-                    className={g === 'empty' ? 'text-black/15' : 'text-amber-400'}
-                    fill="currentColor" aria-hidden="true">
-                    {g === 'half' ? (
-                      <>
-                        <defs>
-                          <linearGradient id={`half-${i}`}>
-                            <stop offset="50%" stopColor="currentColor" />
-                            <stop offset="50%" stopColor="rgba(0,0,0,0.15)" />
-                          </linearGradient>
-                        </defs>
-                        <polygon fill={`url(#half-${i})`}
-                          points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </>
-                    ) : (
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    )}
-                  </svg>
-                ))}
-              </div>
-              <span className="text-sm font-semibold text-black">{product.rating.toFixed(1)}</span>
-              {product.reviews_count > 0 && (
-                <span className="text-sm text-black/50">
-                  ({product.reviews_count.toLocaleString('es-AR')})
-                </span>
-              )}
-            </div>
-          )}
+      {/* Ficha técnica (specs) */}
+      <ProductSpecs specs={product.specs ?? []} />
 
-          {!inStock && (
-            <div className="inline-block bg-rose-100 text-rose-700 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded mb-3">
-              Sin stock
-            </div>
-          )}
-
-          <ProductBuyBox
-            tenantId={tenantId}
-            product={product}
-            variants={variants}
-            walletBonus={walletBonus}
-          />
-
-          {product.description && (
-            <div className="mt-8 pt-6 border-t border-black/10">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-black/55 mb-2">
-                Descripción
-              </h2>
-              <p className="text-sm text-black/75 whitespace-pre-wrap leading-relaxed">
-                {product.description}
-              </p>
-            </div>
-          )}
-
-          {product.sku && (
-            <div className="mt-6 text-xs text-black/40">
-              SKU: <span className="font-mono">{product.sku}</span>
-            </div>
-          )}
+      {product.sku && (
+        <div className="mt-6 text-xs text-black/40">
+          SKU: <span className="font-mono">{product.sku}</span>
         </div>
-      </div>
+      )}
+
+      {/* Productos relacionados */}
+      <RelatedProducts
+        tenantId={tenantId}
+        productId={product.id}
+        categoryId={product.category_id}
+      />
     </article>
   );
 }

@@ -29,6 +29,8 @@ export type PhysicalProduct = {
   rating: number | null;
   /** Cantidad de reseñas para mostrar al lado del rating ("(5.592 opiniones)"). */
   reviews_count: number;
+  /** Ficha técnica visible arriba del "Quienes también compraron". */
+  specs?: Array<{ label: string; value: string }>;
   created_at: string;
   updated_at: string;
 };
@@ -43,6 +45,12 @@ export type ProductVariant = {
   stock_qty: number;
   image_url: string | null;
   sort_order: number;
+  /** Color hex del chip visual estilo Amazon/ML (ej. "#e11d48"). */
+  swatch_color?: string | null;
+  /** Alternativa al color: thumbnail del chip (foto pequeña del producto en esa variante). */
+  swatch_image_url?: string | null;
+  /** Galería específica de la variante — reemplaza la del producto cuando se selecciona. */
+  gallery?: string[];
 };
 
 function slugify(raw: string): string {
@@ -149,6 +157,24 @@ export async function updateProductAction(id: string, formData: FormData): Promi
     : null;
   const reviewsCount = Math.max(0, Math.round(Number(formData.get('reviews_count') ?? 0)));
 
+  // Specs (ficha técnica): un ítem por línea, formato "Label | Value".
+  // Solo se persiste si el form incluye la clave (para no romper llamados viejos).
+  let specs: Array<{ label: string; value: string }> | null = null;
+  if (formData.has('specs')) {
+    const raw = String(formData.get('specs') ?? '');
+    specs = raw
+      .split(/\r?\n/)
+      .map((line) => {
+        const [labelRaw, ...rest] = line.split('|');
+        const label = (labelRaw ?? '').trim().slice(0, 80);
+        const value = rest.join('|').trim().slice(0, 200);
+        if (!label || !value) return null;
+        return { label, value };
+      })
+      .filter((s): s is { label: string; value: string } => s !== null)
+      .slice(0, 24);
+  }
+
   const desired = rawSlug ? slugify(rawSlug) : slugify(title);
   const finalSlug = await uniqueSlug(tenant.id, desired || 'producto', id);
 
@@ -185,6 +211,7 @@ export async function updateProductAction(id: string, formData: FormData): Promi
     ...basePayload,
     rating,
     reviews_count: reviewsCount,
+    ...(specs !== null ? { specs } : {}),
     ...(walletBonusCents != null ? { wallet_bonus_cents: walletBonusCents } : {}),
     ...(formData.has('paypal_price') ? { paypal_price_cents: paypalPriceCents } : {})
   };
@@ -192,6 +219,18 @@ export async function updateProductAction(id: string, formData: FormData): Promi
   let { error } = await (svc.from('physical_products') as any)
     .update(fullPayload)
     .eq('id', id).eq('tenant_id', tenant.id);
+  if (error && /specs/.test(error.message ?? '')) {
+    // Migration 0087 no corrió → retry sin specs
+    const retryPayload: Record<string, unknown> = {
+      ...basePayload, rating, reviews_count: reviewsCount,
+      ...(walletBonusCents != null ? { wallet_bonus_cents: walletBonusCents } : {}),
+      ...(formData.has('paypal_price') ? { paypal_price_cents: paypalPriceCents } : {})
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('physical_products') as any)
+      .update(retryPayload).eq('id', id).eq('tenant_id', tenant.id);
+    error = retry.error;
+  }
   if (error && /paypal_price_cents/.test(error.message ?? '')) {
     // Migration 0065 no corrió → retry sin paypal_price
     const retryPayload = { ...basePayload, rating, reviews_count: reviewsCount };
@@ -272,16 +311,34 @@ export async function addVariantAction(productId: string, formData: FormData): P
   const price = priceRaw > 0 ? Math.round(priceRaw) : null;
   const stock = Math.max(0, Math.round(Number(formData.get('stock_qty') ?? 0)));
   const image = safeUrl(String(formData.get('image_url') ?? ''));
+  const swatchColor = String(formData.get('swatch_color') ?? '').trim().match(/^#[0-9a-fA-F]{3,8}$/)?.[0] ?? null;
+  const swatchImage = safeUrl(String(formData.get('swatch_image_url') ?? ''));
+  const galleryRaw = String(formData.get('gallery') ?? '').trim();
+  const gallery = galleryRaw
+    ? galleryRaw.split(/\r?\n/).map((s) => safeUrl(s)).filter((s): s is string => !!s).slice(0, 12)
+    : [];
 
   // Contamos existentes para sort_order
   const { count } = await svc.from('product_variants')
     .select('id', { count: 'exact', head: true }).eq('product_id', productId);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (svc.from('product_variants') as any).insert({
+  const fullPayload: Record<string, unknown> = {
     product_id: productId, name, sku, price_cents: price,
-    stock_qty: stock, image_url: image, sort_order: count ?? 0
-  });
+    stock_qty: stock, image_url: image, sort_order: count ?? 0,
+    swatch_color: swatchColor, swatch_image_url: swatchImage, gallery
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let { error } = await (svc.from('product_variants') as any).insert(fullPayload);
+  if (error && /swatch_color|swatch_image_url|gallery/.test(error.message ?? '')) {
+    // Migration 0087 no corrió → insert sin nuevos campos
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('product_variants') as any).insert({
+      product_id: productId, name, sku, price_cents: price,
+      stock_qty: stock, image_url: image, sort_order: count ?? 0
+    });
+  } else if (error) {
+    throw new Error(error.message);
+  }
   revalidatePath(`/products/${productId}`);
 }
 
@@ -304,11 +361,25 @@ export async function updateVariantAction(variantId: string, formData: FormData)
   const price = priceRaw > 0 ? Math.round(priceRaw) : null;
   const stock = Math.max(0, Math.round(Number(formData.get('stock_qty') ?? 0)));
   const image = safeUrl(String(formData.get('image_url') ?? ''));
+  const swatchColor = String(formData.get('swatch_color') ?? '').trim().match(/^#[0-9a-fA-F]{3,8}$/)?.[0] ?? null;
+  const swatchImage = safeUrl(String(formData.get('swatch_image_url') ?? ''));
+  const galleryRaw = String(formData.get('gallery') ?? '').trim();
+  const gallery = galleryRaw
+    ? galleryRaw.split(/\r?\n/).map((s) => safeUrl(s)).filter((s): s is string => !!s).slice(0, 12)
+    : [];
 
+  const fullPayload: Record<string, unknown> = {
+    name, sku, price_cents: price, stock_qty: stock, image_url: image,
+    swatch_color: swatchColor, swatch_image_url: swatchImage, gallery
+  };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (svc.from('product_variants') as any).update({
-    name, sku, price_cents: price, stock_qty: stock, image_url: image
-  }).eq('id', variantId);
+  const { error } = await (svc.from('product_variants') as any).update(fullPayload).eq('id', variantId);
+  if (error && /swatch_color|swatch_image_url|gallery/.test(error.message ?? '')) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (svc.from('product_variants') as any).update({
+      name, sku, price_cents: price, stock_qty: stock, image_url: image
+    }).eq('id', variantId);
+  }
   revalidatePath(`/products/${v.product_id}`);
 }
 

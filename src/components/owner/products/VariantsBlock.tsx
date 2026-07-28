@@ -86,8 +86,27 @@ export function VariantsBlock({
             />
           </div>
           <input
-            type="url" name="image_url" placeholder="Foto de esta variante (URL, opcional)"
+            type="url" name="image_url" placeholder="Foto principal de esta variante (URL, opcional)"
             className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-[120px_1fr] gap-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="color" name="swatch_color" defaultValue="#000000"
+                title="Color del chip (opcional)"
+                className="w-9 h-9 rounded border border-white/15 bg-transparent cursor-pointer"
+              />
+              <span className="text-[10px] text-white/45">chip</span>
+            </div>
+            <input
+              type="url" name="swatch_image_url" placeholder="… o URL de imagen para el chip"
+              className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40"
+            />
+          </div>
+          <textarea
+            name="gallery" rows={2}
+            placeholder="Galería específica de esta variante — una URL por línea (opcional). Reemplaza la galería del producto cuando se selecciona."
+            className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs font-mono focus:outline-none focus:border-white/40"
           />
           <div className="flex gap-2">
             <button type="submit" disabled={pending}
@@ -141,8 +160,23 @@ function VariantRow({ variant, currency }: { variant: ProductVariant; currency: 
           <input type="number" name="price_cents" defaultValue={variant.price_cents ?? ''} placeholder="Precio (opc)" min={0}
             className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
         </div>
-        <input type="url" name="image_url" defaultValue={variant.image_url ?? ''} placeholder="Foto (URL, opc)"
+        <input type="url" name="image_url" defaultValue={variant.image_url ?? ''} placeholder="Foto principal (URL, opc)"
           className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
+        <div className="grid grid-cols-1 md:grid-cols-[120px_1fr] gap-2">
+          <div className="flex items-center gap-2">
+            <input type="color" name="swatch_color"
+              defaultValue={variant.swatch_color ?? '#000000'}
+              className="w-9 h-9 rounded border border-white/15 bg-transparent cursor-pointer" />
+            <span className="text-[10px] text-white/45">chip</span>
+          </div>
+          <input type="url" name="swatch_image_url" defaultValue={variant.swatch_image_url ?? ''}
+            placeholder="… o URL de imagen para el chip"
+            className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
+        </div>
+        <textarea name="gallery" rows={2}
+          defaultValue={(variant.gallery ?? []).join('\n')}
+          placeholder="Galería específica (URL por línea, opc)"
+          className="w-full rounded bg-white/5 border border-white/15 px-2 py-1.5 text-xs font-mono focus:outline-none focus:border-white/40" />
         <div className="flex gap-2">
           <button type="submit" disabled={pending}
             className="text-xs px-3 py-1.5 rounded bg-white text-black font-semibold hover:bg-white/90 disabled:opacity-50">
@@ -159,11 +193,24 @@ function VariantRow({ variant, currency }: { variant: ProductVariant; currency: 
 
   return (
     <div className="flex items-center gap-3 py-2.5">
-      <div className="w-10 h-10 rounded bg-white/5 overflow-hidden shrink-0">
-        {variant.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={variant.image_url} alt="" className="w-full h-full object-cover" />
+      <div className="flex items-center gap-1.5 shrink-0">
+        {(variant.swatch_color || variant.swatch_image_url) && (
+          <span
+            title="Chip"
+            className="w-6 h-6 rounded-full border border-white/20 shrink-0"
+            style={{
+              background: variant.swatch_image_url
+                ? `url(${variant.swatch_image_url}) center/cover`
+                : (variant.swatch_color ?? undefined)
+            }}
+          />
         )}
+        <div className="w-10 h-10 rounded bg-white/5 overflow-hidden shrink-0">
+          {variant.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={variant.image_url} alt="" className="w-full h-full object-cover" />
+          )}
+        </div>
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{variant.name}</div>

@@ -15,17 +15,27 @@ export function ProductBuyBox({
   tenantId,
   product,
   variants,
-  walletBonus = null
+  walletBonus = null,
+  selectedVariantId,
+  onSelectVariant
 }: {
   tenantId: string;
   product: PhysicalProduct;
   variants: ProductVariant[];
   walletBonus?: { cents: number; symbol: string; label: string; logoUrl?: string | null } | null;
+  /** Estado controlado opcional (para compartir con ProductGallery). */
+  selectedVariantId?: string;
+  onSelectVariant?: (id: string) => void;
 }) {
   const hasVariants = variants.length > 0;
-  const [selectedId, setSelectedId] = useState<string>(
+  const [localId, setLocalId] = useState<string>(
     hasVariants ? (variants.find((v) => v.stock_qty > 0)?.id ?? variants[0].id) : ''
   );
+  const selectedId = selectedVariantId ?? localId;
+  const setSelectedId = (id: string) => {
+    if (onSelectVariant) onSelectVariant(id);
+    else setLocalId(id);
+  };
   const [added, setAdded] = useState(false);
 
   const currentVariant = hasVariants ? variants.find((v) => v.id === selectedId) ?? null : null;
@@ -124,34 +134,11 @@ export function ProductBuyBox({
       )}
 
       {hasVariants && (
-        <div>
-          <label className="block text-xs uppercase tracking-wider text-black/55 font-semibold mb-2">
-            Opción
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {variants.map((v) => {
-              const isSelected = v.id === selectedId;
-              const disabled = v.stock_qty <= 0;
-              return (
-                <button
-                  key={v.id}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => setSelectedId(v.id)}
-                  className={`text-sm px-3 py-2 rounded-md border transition ${
-                    disabled
-                      ? 'border-black/10 text-black/25 line-through cursor-not-allowed'
-                      : isSelected
-                        ? 'border-black bg-black text-white'
-                        : 'border-black/20 text-black/80 hover:border-black/50'
-                  }`}
-                >
-                  {v.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <VariantSwatches
+          variants={variants}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
       )}
 
       {/* Stack de CTAs estilo ML: Comprar ahora arriba (primary), Agregar al
@@ -203,6 +190,95 @@ export function ProductBuyBox({
             <circle cx="18.5" cy="18.5" r="2.5"/>
           </svg>
           Envío disponible. Costo se calcula en el checkout según tu provincia.
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Swatches de variantes estilo MercadoLibre / Amazon.
+ * Header dinámico "Color: **Nombre seleccionado**", grilla de chips debajo.
+ * Los chips muestran (en este orden de prioridad): swatch_image_url →
+ * swatch_color → image_url thumb → fallback texto. Sin stock aparecen
+ * grisados y con tachado sobre el label.
+ */
+function VariantSwatches({
+  variants,
+  selectedId,
+  onSelect
+}: {
+  variants: ProductVariant[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const selected = variants.find((v) => v.id === selectedId) ?? null;
+  // Heurística para el label del grupo: si todas las variantes tienen
+  // options.color usamos "Color", sino "Opción".
+  const groupLabel = variants.every((v) => v.options && 'color' in v.options)
+    ? 'Color'
+    : variants.every((v) => v.options && 'talle' in v.options)
+      ? 'Talle'
+      : 'Opción';
+
+  return (
+    <div>
+      <div className="text-sm text-black/75 mb-2">
+        {groupLabel}: <strong className="text-black">{selected?.name ?? '—'}</strong>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {variants.map((v) => {
+          const isSelected = v.id === selectedId;
+          const disabled = v.stock_qty <= 0;
+          const swatchBg = v.swatch_image_url
+            ? `url(${v.swatch_image_url}) center/cover no-repeat`
+            : v.image_url
+              ? `url(${v.image_url}) center/cover no-repeat`
+              : (v.swatch_color ?? undefined);
+          const hasVisual = !!(v.swatch_image_url || v.image_url || v.swatch_color);
+          return (
+            <button
+              key={v.id}
+              type="button"
+              disabled={disabled}
+              onClick={() => onSelect(v.id)}
+              title={disabled ? `${v.name} — sin stock` : v.name}
+              aria-label={v.name}
+              aria-pressed={isSelected}
+              className={`relative rounded-lg border-2 transition ${
+                isSelected
+                  ? 'border-blue-500 ring-2 ring-blue-500/30'
+                  : disabled
+                    ? 'border-black/10'
+                    : 'border-black/15 hover:border-black/50'
+              } ${hasVisual ? 'p-0.5 bg-white' : 'px-3 py-2 bg-white'}`}
+            >
+              {hasVisual ? (
+                <span
+                  className={`block w-12 h-12 rounded-md ${disabled ? 'opacity-30' : ''}`}
+                  style={{ background: swatchBg }}
+                  aria-hidden="true"
+                />
+              ) : (
+                <span className={`text-xs font-medium ${disabled ? 'text-black/30 line-through' : 'text-black/85'}`}>
+                  {v.name}
+                </span>
+              )}
+              {disabled && hasVisual && (
+                <span
+                  className="absolute inset-0 flex items-center justify-center text-[10px] text-black/50 font-semibold"
+                  aria-hidden="true"
+                >
+                  ⛌
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {selected && selected.stock_qty > 0 && selected.stock_qty <= 5 && (
+        <div className="text-[11px] text-amber-700 mt-1.5">
+          Últimas {selected.stock_qty} unidades en {selected.name}
         </div>
       )}
     </div>

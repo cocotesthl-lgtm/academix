@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type GalleryItem = {
   url: string;
@@ -53,15 +53,31 @@ export function ProductGallery({
   gallery: string[];
   title: string;
 }) {
-  const items: GalleryItem[] = [];
-  if (cover) items.push(detectGalleryItem(cover));
-  for (const g of gallery) {
-    if (g && g !== cover) items.push(detectGalleryItem(g));
-  }
+  // Memoizamos por contenido (no por identidad) para que al cambiar de variante
+  // (nueva instancia de array con URLs iguales) NO se re-cree y NO se resetee
+  // el active — pero cuando cambian las URLs sí. La clave es serializar.
+  const items: GalleryItem[] = useMemo(() => {
+    const list: GalleryItem[] = [];
+    if (cover) list.push(detectGalleryItem(cover));
+    for (const g of gallery) {
+      if (g && g !== cover) list.push(detectGalleryItem(g));
+    }
+    return list;
+  }, [cover, gallery]);
+  const galleryKey = useMemo(
+    () => items.map((i) => i.url).join('|'),
+    [items]
+  );
+
   const [activeIdx, setActiveIdx] = useState(0);
   const [lens, setLens] = useState<{ x: number; y: number } | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
+
+  // Reset al cambiar la galería (ej. selección de variante nueva)
+  useEffect(() => {
+    setActiveIdx(0);
+  }, [galleryKey]);
 
   const active = items[activeIdx];
 

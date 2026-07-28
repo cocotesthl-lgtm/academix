@@ -347,6 +347,26 @@ export function ProductEditorForm({
           </div>
         </div>
 
+        {/* Especificaciones — ficha técnica visible en la página de detalle */}
+        <div className="rounded-lg border border-white/10 p-4 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold">📋 Ficha técnica (especificaciones)</h3>
+            <p className="text-xs text-white/45 mt-0.5">
+              Grid de características estilo MercadoLibre. Un ítem por línea con formato{' '}
+              <code className="bg-black/40 px-1 rounded">Etiqueta | Valor</code>. Ejemplo:{' '}
+              <code className="bg-black/40 px-1 rounded">Tipo de tensiómetro | De brazo</code>.
+              Dejalo vacío para no mostrar el bloque.
+            </p>
+          </div>
+          <textarea
+            name="specs"
+            defaultValue={(product.specs ?? []).map((s) => `${s.label} | ${s.value}`).join('\n')}
+            rows={6}
+            placeholder="Tipo de tensiómetro | De brazo&#10;Cantidad de usuarios | 2&#10;Tipos de mediciones | Presión sistólica, diastólica, frecuencia cardíaca&#10;Tipo de inflado | Automático&#10;Cantidad total de memorias | 99"
+            className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono focus:outline-none focus:border-white/40"
+          />
+        </div>
+
         {/* SEO */}
         <div className="rounded-lg border border-white/10 p-4 space-y-3">
           <h3 className="text-sm font-semibold">SEO</h3>
