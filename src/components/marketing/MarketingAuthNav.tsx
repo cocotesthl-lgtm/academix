@@ -65,9 +65,18 @@ export async function MarketingAuthNav({
   }
 
   // Resolver panel al que redirigir según memberships
+  // En "explore" el CTA es siempre "Empezar → /buscar" (usado en la home
+  // apex). En "smart" (usado en /buscar y otras páginas) mostramos:
+  //   · owner       → "Mi panel"       → /owner
+  //   · instructor  → "Mi panel"       → /instructor
+  //   · resto/nada  → "Crear sitio"    → /onboarding
+  // Nunca linkeamos de vuelta a /buscar cuando el usuario ya está ahí.
   let panelHref = "/buscar";
   let panelLabel = "Empezar";
   if (loggedInMode === "smart") {
+    // Default para no-owners: crear sitio (convertirse en owner)
+    panelHref = "/onboarding";
+    panelLabel = "Crear sitio";
     try {
       const svc = getServiceClient();
       const { data: memberships } = await svc
@@ -80,26 +89,16 @@ export async function MarketingAuthNav({
       if (rows.some((m) => m.role === "owner")) {
         panelHref = "/owner";
         panelLabel = "Mi panel";
-      } else if (rows.some((m) => m.role === "affiliate")) {
-        panelHref = "/buscar";
-        panelLabel = "Mis sitios afiliado";
       } else if (rows.some((m) => m.role === "instructor" || m.role === "staff")) {
         panelHref = "/instructor";
         panelLabel = "Mi panel";
-      } else if (rows.length > 0) {
-        // enrolled u otros: marketplace
-        panelHref = "/buscar";
-        panelLabel = "Mis sitios";
-      } else {
-        // sin memberships → siempre /buscar donde puede afiliarse o crear sitio
-        panelHref = "/buscar";
-        panelLabel = "Empezar";
       }
+      // Afiliado, enrolled, o sin memberships: se quedan con "Crear sitio"
     } catch {
-      /* keep defaults */
+      /* keep defaults smart: crear sitio */
     }
   }
-  // loggedInMode === "explore" → mantenemos defaults (/buscar / "Empezar")
+  // loggedInMode === "explore" → mantenemos "Empezar → /buscar"
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ??
