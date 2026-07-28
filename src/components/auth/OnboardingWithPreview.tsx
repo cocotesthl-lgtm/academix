@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { OnboardingForm } from './OnboardingForm';
 import { SITE_TEMPLATES } from '@/lib/site/templates/catalog';
+import { Reveal } from '@/components/marketing/Reveal';
 
 /**
  * Wrapper client del onboarding para mostrar la preview del template
@@ -48,7 +49,7 @@ export function OnboardingWithPreview({ rootDomain }: { rootDomain: string }) {
   return (
     <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,520px)_1fr] gap-8">
       {/* Columna izquierda: form */}
-      <div className="space-y-8">
+      <Reveal dir="left" className="space-y-8">
         <div>
           <a href="/" className="text-2xl font-bold tracking-tight">
             <span className="text-neutral-900">Offer</span><span className="text-orange-500">Now</span>
@@ -64,10 +65,10 @@ export function OnboardingWithPreview({ rootDomain }: { rootDomain: string }) {
             onGradientChange={setGradient}
           />
         </div>
-      </div>
+      </Reveal>
 
       {/* Columna derecha: preview (solo desktop) */}
-      <div className="hidden lg:block sticky top-6 self-start">
+      <Reveal dir="right" delay={150} className="hidden lg:block sticky top-6 self-start">
         <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 bg-neutral-50">
             <div className="flex items-center gap-2 min-w-0">
@@ -118,7 +119,7 @@ export function OnboardingWithPreview({ rootDomain }: { rootDomain: string }) {
             )}
           </div>
         </div>
-      </div>
+      </Reveal>
     </div>
   );
 }

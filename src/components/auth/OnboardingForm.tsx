@@ -168,13 +168,13 @@ export function OnboardingForm({
           <button
             type="button"
             onClick={() => setTemplateId('')}
-            className={`text-left rounded-xl border-2 p-4 transition ${
+            className={`text-left rounded-xl border-2 p-4 transition-all duration-200 ease-out active:scale-[0.97] ${
               templateId === ''
-                ? 'border-neutral-900 bg-neutral-50'
-                : 'border-neutral-200 bg-white hover:border-neutral-400'
+                ? 'border-neutral-900 bg-neutral-50 shadow-md scale-[1.01]'
+                : 'border-neutral-200 bg-white hover:border-neutral-400 hover:-translate-y-0.5 hover:shadow-sm'
             }`}
           >
-            <div className="text-2xl mb-2">✨</div>
+            <div className={`text-2xl mb-2 transition-transform ${templateId === '' ? 'scale-110' : ''}`}>✨</div>
             <div className="font-semibold text-sm">Empezar en blanco</div>
             <div className="text-xs text-neutral-500 mt-1">
               Base neutra con hero + secciones estándar. Editás todo desde el builder.
@@ -201,15 +201,17 @@ export function OnboardingForm({
                 key={t.id}
                 type="button"
                 onClick={() => selectTemplate(t.id)}
-                className={`text-left rounded-xl border-2 p-4 transition ${
+                className={`text-left rounded-xl border-2 p-4 transition-all duration-200 ease-out active:scale-[0.97] ${
                   selected
-                    ? 'border-neutral-900 bg-neutral-50'
-                    : 'border-neutral-200 bg-white hover:border-neutral-400'
+                    ? 'border-neutral-900 bg-neutral-50 shadow-md scale-[1.01]'
+                    : 'border-neutral-200 bg-white hover:border-neutral-400 hover:-translate-y-0.5 hover:shadow-sm'
                 }`}
               >
                 <div className="flex items-start justify-between mb-2">
-                  <div className="text-2xl">{t.emoji}</div>
-                  <div className="w-6 h-6 rounded-full border-2"
+                  <div className={`text-2xl transition-transform duration-200 ${selected ? 'scale-110' : ''}`}>
+                    {t.emoji}
+                  </div>
+                  <div className={`w-6 h-6 rounded-full border-2 transition-transform duration-200 ${selected ? 'scale-110' : ''}`}
                     style={{
                       background: t.suggestedPrimary,
                       borderColor: t.suggestedPrimary
