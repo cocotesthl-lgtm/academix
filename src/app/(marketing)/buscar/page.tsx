@@ -3,6 +3,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { env } from "@/lib/env";
 import { AcademiaSearch, type AcademiaCard } from "@/components/marketing/AcademiaSearch";
 import { MarketingAuthNav } from "@/components/marketing/MarketingAuthNav";
+import { Reveal } from "@/components/marketing/Reveal";
 
 export const dynamic = "force-dynamic";
 
@@ -79,25 +80,75 @@ export default async function BuscarAcademiasPage() {
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-6 py-12 space-y-12">
+      <main className="max-w-5xl mx-auto px-6 py-12 space-y-16">
         {/* ─── Buscar sitio (alumnos) ─── */}
-        <div>
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Encontrá tu sitio
-            </h1>
-            <p className="mt-3 text-white/60">
-              ¿Sos alumno? Buscá el sitio donde te inscribiste y entrá desde ahí.
-            </p>
+        <Reveal>
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+                Encontrá tu sitio
+              </h1>
+              <p className="mt-3 text-white/60">
+                ¿Sos alumno o cliente? Buscá el sitio donde te registraste y entrá desde ahí.
+              </p>
+            </div>
+
+            <AcademiaSearch
+              sitios={sitios}
+              rootDomain={env.rootDomain}
+              isLocal={isLocal}
+            />
           </div>
+        </Reveal>
 
-          <AcademiaSearch
-            sitios={sitios}
-            rootDomain={env.rootDomain}
-            isLocal={isLocal}
-          />
+        {/* ─── Divisor "o" ─── */}
+        <Reveal delay={100}>
+          <div className="flex items-center gap-4 max-w-md mx-auto">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-xs uppercase tracking-widest text-white/40 font-semibold">o</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+        </Reveal>
+
+        {/* ─── Dos rutas: Afiliarse / Crear sitio ─── */}
+        <div className="grid md:grid-cols-2 gap-5">
+          <Reveal delay={150} className="h-full">
+            <Link
+              href="/affiliate"
+              className="block h-full rounded-2xl border border-white/10 bg-gradient-to-br from-blue-500/10 via-white/[0.02] to-transparent hover:from-blue-500/20 hover:border-blue-500/40 p-7 transition-all group"
+            >
+              <div className="text-4xl mb-4">💼</div>
+              <h2 className="text-xl font-bold mb-2">Volvete afiliado</h2>
+              <p className="text-sm text-white/60 leading-relaxed mb-5">
+                Promocioná publicaciones de los sitios en la plataforma con un link único y ganás
+                comisión por cada venta. Aprobación inmediata, sin costo.
+              </p>
+              <div className="text-sm font-semibold text-blue-300 group-hover:text-blue-200 transition inline-flex items-center gap-1">
+                Ver cómo funciona
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </Link>
+          </Reveal>
+
+          <Reveal delay={250} className="h-full">
+            <Link
+              href="/onboarding"
+              className="block h-full rounded-2xl border border-orange-500/40 bg-gradient-to-br from-orange-500/15 via-amber-500/[0.06] to-transparent hover:from-orange-500/25 hover:border-orange-400 p-7 transition-all group shadow-lg shadow-orange-500/10"
+            >
+              <div className="text-4xl mb-4">🏗️</div>
+              <h2 className="text-xl font-bold mb-2">Creá tu propio sitio</h2>
+              <p className="text-sm text-white/70 leading-relaxed mb-5">
+                Empezá con tu subdominio gratis en <strong>tunombre.bzseguridad.store</strong>.
+                Todos los módulos incluidos: cursos, ecommerce, entradas, blog y más.
+                Solo pagás cuando vendés.
+              </p>
+              <div className="text-sm font-semibold text-orange-300 group-hover:text-orange-200 transition inline-flex items-center gap-1">
+                Empezar ahora
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </Link>
+          </Reveal>
         </div>
-
       </main>
     </div>
   );
