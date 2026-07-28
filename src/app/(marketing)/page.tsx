@@ -39,7 +39,7 @@ export default async function MarketingHome() {
             <a href="#precio" className="hover:text-neutral-900 transition">Precio</a>
           </div>
           <div className="flex items-center gap-3">
-            <MarketingAuthNav variant="light" loginLabel="Acceder" signupLabel="Empezar gratis" />
+            <MarketingAuthNav variant="light" loginLabel="Acceder" signupLabel="Empezar gratis" loggedInMode="explore" />
           </div>
         </div>
       </nav>

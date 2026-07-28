@@ -4,6 +4,7 @@ import { getServiceClient } from "@/lib/supabase/service";
 import { SignoutButton } from "@/components/auth/SignoutButton";
 
 type Variant = "light" | "dark";
+type LoggedInMode = "smart" | "explore";
 
 /**
  * Header CTA para páginas de marketing públicas (/, /buscar, /affiliate, etc).
@@ -19,11 +20,18 @@ export async function MarketingAuthNav({
   signupHref = "/signup",
   signupLabel = "Crear cuenta",
   loginLabel = "Iniciar sesión",
+  loggedInMode = "smart",
 }: {
   variant?: Variant;
   signupHref?: string;
   signupLabel?: string;
   loginLabel?: string;
+  /**
+   * "smart"   → CTA cambia según rol (owner→/owner, afiliado→/buscar, etc)
+   * "explore" → CTA siempre "Empezar → /buscar", útil para landing home
+   *              donde /buscar es el hub que ofrece afiliarse o crear sitio.
+   */
+  loggedInMode?: LoggedInMode;
 }) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -32,7 +40,7 @@ export async function MarketingAuthNav({
     if (variant === "light") {
       return (
         <>
-          <Link href="/buscar" className="text-sm text-neutral-700 hover:text-neutral-900 font-medium">
+          <Link href="/login" className="text-sm text-neutral-700 hover:text-neutral-900 font-medium">
             {loginLabel}
           </Link>
           <Link
@@ -57,35 +65,41 @@ export async function MarketingAuthNav({
   }
 
   // Resolver panel al que redirigir según memberships
-  let panelHref = "/onboarding";
-  let panelLabel = "Crear mi sitio";
-  try {
-    const svc = getServiceClient();
-    const { data: memberships } = await svc
-      .from("memberships")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .limit(5);
-    const rows = (memberships ?? []) as Array<{ role: string }>;
-    if (rows.some((m) => m.role === "owner")) {
-      panelHref = "/owner";
-      panelLabel = "Mi panel";
-    } else if (rows.some((m) => m.role === "affiliate")) {
-      panelHref = "/buscar";
-      panelLabel = "Mis sitios afiliado";
-    } else if (rows.some((m) => m.role === "instructor" || m.role === "staff")) {
-      panelHref = "/instructor";
-      panelLabel = "Mi panel";
-    } else if (rows.length > 0) {
-      // enrolled u otros: marketplace
-      panelHref = "/buscar";
-      panelLabel = "Mis sitios";
+  let panelHref = "/buscar";
+  let panelLabel = "Empezar";
+  if (loggedInMode === "smart") {
+    try {
+      const svc = getServiceClient();
+      const { data: memberships } = await svc
+        .from("memberships")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .limit(5);
+      const rows = (memberships ?? []) as Array<{ role: string }>;
+      if (rows.some((m) => m.role === "owner")) {
+        panelHref = "/owner";
+        panelLabel = "Mi panel";
+      } else if (rows.some((m) => m.role === "affiliate")) {
+        panelHref = "/buscar";
+        panelLabel = "Mis sitios afiliado";
+      } else if (rows.some((m) => m.role === "instructor" || m.role === "staff")) {
+        panelHref = "/instructor";
+        panelLabel = "Mi panel";
+      } else if (rows.length > 0) {
+        // enrolled u otros: marketplace
+        panelHref = "/buscar";
+        panelLabel = "Mis sitios";
+      } else {
+        // sin memberships → siempre /buscar donde puede afiliarse o crear sitio
+        panelHref = "/buscar";
+        panelLabel = "Empezar";
+      }
+    } catch {
+      /* keep defaults */
     }
-    // Si no tiene memberships: fallback ya está en "Crear mi sitio" → /onboarding
-  } catch {
-    /* keep defaults */
   }
+  // loggedInMode === "explore" → mantenemos defaults (/buscar / "Empezar")
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ??
