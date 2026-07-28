@@ -24,6 +24,7 @@ export function FounderTenantsTable({ rows }: { rows: Row[] }) {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'under_review' | 'suspended' | 'closed'>('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, start] = useTransition();
+  const [toast, setToast] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -51,12 +52,15 @@ export function FounderTenantsTable({ rows }: { rows: Row[] }) {
     if (ids.length === 0) return;
     const label = action === 'delete' ? 'Eliminar' : action === 'suspend' ? 'Suspender' : action === 'under_review' ? 'Marcar bajo revisión' : 'Reactivar';
     if (!confirm(`${label} ${ids.length} sitio${ids.length === 1 ? '' : 's'}?${action === 'delete' ? ' Esto borra TODO su contenido y no se puede deshacer.' : ''}`)) return;
+    setToast(null);
     start(async () => {
       const fd = new FormData();
       fd.set('action', action);
       fd.set('ids', ids.join(','));
-      await bulkUpdateTenantsAction(fd);
+      const res = await bulkUpdateTenantsAction(fd);
       clearSel();
+      setToast({ ok: res.ok, msg: res.message ?? (res.ok ? 'Listo' : 'Error') });
+      setTimeout(() => setToast(null), 6000);
     });
   }
 
@@ -85,6 +89,19 @@ export function FounderTenantsTable({ rows }: { rows: Row[] }) {
           {filtered.length} de {rows.length}
         </span>
       </div>
+
+      {/* Toast de resultado del bulk action */}
+      {toast && (
+        <div className={`rounded-lg px-4 py-3 text-sm border flex items-start gap-2 ${
+          toast.ok
+            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100'
+            : 'border-rose-500/40 bg-rose-500/10 text-rose-100'
+        }`}>
+          <span>{toast.ok ? '✓' : '✗'}</span>
+          <div className="flex-1">{toast.msg}</div>
+          <button onClick={() => setToast(null)} className="text-xs opacity-60 hover:opacity-100">×</button>
+        </div>
+      )}
 
       {/* Bulk actions */}
       {selected.size > 0 && (

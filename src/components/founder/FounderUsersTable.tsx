@@ -31,6 +31,7 @@ export function FounderUsersTable({
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'under_review' | 'suspended'>('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, start] = useTransition();
+  const [toast, setToast] = useState<{ ok: boolean; msg: string; details?: string[] } | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -57,13 +58,21 @@ export function FounderUsersTable({
     const ids = Array.from(selected).filter((id) => id !== myId);
     if (ids.length === 0) return;
     const label = action === 'delete' ? 'Eliminar' : action === 'suspend' ? 'Suspender' : action === 'under_review' ? 'Marcar bajo revisión' : 'Reactivar';
-    if (!confirm(`${label} ${ids.length} usuario${ids.length === 1 ? '' : 's'}?${action === 'delete' ? ' Esta acción no se puede deshacer.' : ''}`)) return;
+    if (!confirm(`${label} ${ids.length} usuario${ids.length === 1 ? '' : 's'}?${action === 'delete' ? ' Esto borra sus sitios y todo su contenido. No se puede deshacer.' : ''}`)) return;
+    setToast(null);
     start(async () => {
       const fd = new FormData();
       fd.set('action', action);
       fd.set('ids', ids.join(','));
-      await bulkUpdateUsersAction(fd);
+      const res = await bulkUpdateUsersAction(fd);
       clearSel();
+      setToast({
+        ok: res.ok,
+        msg: res.message ?? (res.ok ? 'Listo' : 'Error'),
+        details: res.failures?.map((f) => `${f.id.slice(0, 8)}… — ${f.reason}`)
+      });
+      // Auto-hide después de 8s
+      setTimeout(() => setToast(null), 8000);
     });
   }
 
@@ -91,6 +100,28 @@ export function FounderUsersTable({
           {filtered.length} de {rows.length}
         </span>
       </div>
+
+      {/* Toast de resultado del bulk action */}
+      {toast && (
+        <div className={`rounded-lg px-4 py-3 text-sm border ${
+          toast.ok
+            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100'
+            : 'border-rose-500/40 bg-rose-500/10 text-rose-100'
+        }`}>
+          <div className="flex items-start gap-2">
+            <span className="shrink-0">{toast.ok ? '✓' : '✗'}</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium">{toast.msg}</div>
+              {toast.details && toast.details.length > 0 && (
+                <ul className="mt-1 text-xs opacity-80 space-y-0.5">
+                  {toast.details.map((d, i) => <li key={i} className="font-mono truncate">• {d}</li>)}
+                </ul>
+              )}
+            </div>
+            <button onClick={() => setToast(null)} className="text-xs opacity-60 hover:opacity-100">×</button>
+          </div>
+        </div>
+      )}
 
       {/* Bulk action bar */}
       {selected.size > 0 && (
