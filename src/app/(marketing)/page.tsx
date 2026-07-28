@@ -4,6 +4,7 @@ import { GoogleOneTapButton } from "@/components/auth/GoogleOneTapButton";
 import { DomainChecker } from "@/components/marketing/DomainChecker";
 import { LastSalePopup } from "@/components/marketing/LastSalePopup";
 import { MarketingAuthNav } from "@/components/marketing/MarketingAuthNav";
+import { Reveal } from "@/components/marketing/Reveal";
 
 export const dynamic = "force-dynamic";
 
@@ -131,7 +132,7 @@ export default async function MarketingHome() {
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* Sistema completo — 4 cards con ícono circular estilo WordPress */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section id="features" className="relative border-t border-neutral-200 py-24 bg-[#f5f5f5]">
+      <Reveal as="section" id="features" className="relative border-t border-neutral-200 py-24 bg-[#f5f5f5]">
         {/* Patrón de líneas sutil (como en el WP hero) */}
         <div className="absolute inset-0 opacity-[0.06] pointer-events-none" aria-hidden
           style={{
@@ -206,12 +207,12 @@ export default async function MarketingHome() {
             ))}
           </div>
         </div>
-      </section>
+      </Reveal>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* Dominio propio */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section className="border-t border-neutral-200 py-24 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
+      <Reveal as="section" className="border-t border-neutral-200 py-24 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <p className="text-sm uppercase tracking-widest text-orange-600 mb-3 font-semibold">Tu dominio</p>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
@@ -223,12 +224,12 @@ export default async function MarketingHome() {
           </p>
           <DomainChecker />
         </div>
-      </section>
+      </Reveal>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* Plantillas — grilla estilo WP themes */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section id="plantillas" className="border-t border-neutral-200 py-24 bg-[#fafafa]">
+      <Reveal as="section" id="plantillas" className="border-t border-neutral-200 py-24 bg-[#fafafa]">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
             <p className="text-sm uppercase tracking-widest text-orange-500 mb-3 font-semibold">Plantillas</p>
@@ -282,12 +283,12 @@ export default async function MarketingHome() {
             </Link>
           </div>
         </div>
-      </section>
+      </Reveal>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* Tu hogar en internet — 3 features cards con imagen */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section className="border-t border-neutral-200 py-24 bg-white">
+      <Reveal as="section" className="border-t border-neutral-200 py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <p className="text-sm uppercase tracking-widest text-orange-500 mb-3 font-semibold">Todo en un lugar</p>
@@ -337,12 +338,12 @@ export default async function MarketingHome() {
             ))}
           </div>
         </div>
-      </section>
+      </Reveal>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* Casos de uso / verticales */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section id="negocios" className="border-t border-neutral-200 py-24 bg-[#fafafa]">
+      <Reveal as="section" id="negocios" className="border-t border-neutral-200 py-24 bg-[#fafafa]">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-16">
             <p className="text-sm uppercase tracking-widest text-orange-500 mb-3 font-semibold">Casos de uso</p>
@@ -368,12 +369,12 @@ export default async function MarketingHome() {
             ))}
           </div>
         </div>
-      </section>
+      </Reveal>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* Enterprise / grandes negocios */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section className="border-t border-neutral-200 py-24 bg-neutral-900 text-white">
+      <Reveal as="section" className="border-t border-neutral-200 py-24 bg-neutral-900 text-white">
         <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-[2fr_3fr] gap-12 items-center">
           <div>
             <p className="text-sm uppercase tracking-widest text-orange-400 mb-3 font-semibold">Enterprise</p>
@@ -407,12 +408,12 @@ export default async function MarketingHome() {
             ))}
           </div>
         </div>
-      </section>
+      </Reveal>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* Precio */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section id="precio" className="border-t border-neutral-200 py-24 bg-white">
+      <Reveal as="section" id="precio" className="border-t border-neutral-200 py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <p className="text-sm uppercase tracking-widest text-emerald-600 mb-3 font-semibold">Precio honesto</p>
@@ -472,12 +473,12 @@ export default async function MarketingHome() {
             </div>
           </div>
         </div>
-      </section>
+      </Reveal>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* CTA final grande */}
       {/* ═══════════════════════════════════════════════════════════════ */}
-      <section className="border-t border-neutral-200 py-24 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
+      <Reveal as="section" className="border-t border-neutral-200 py-24 bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">
             Empezá tu sitio <br />
@@ -493,7 +494,7 @@ export default async function MarketingHome() {
             Crear mi sitio gratis
           </Link>
         </div>
-      </section>
+      </Reveal>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* Footer denso multi-columna */}
