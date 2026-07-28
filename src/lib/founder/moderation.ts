@@ -74,7 +74,15 @@ export async function bulkUpdateUsersAction(formData: FormData): Promise<BulkRes
         // 2) Ahora sí borramos auth.users — el profile cascadea por el FK
         //    profiles.id → auth.users.id (con ON DELETE CASCADE en Supabase).
         const { error: authErr } = await svc.auth.admin.deleteUser(id);
-        if (authErr) throw new Error(`auth: ${authErr.message}`);
+        if (authErr) {
+          // Este error genérico ("Database error deleting user") suele venir
+          // de FKs a profiles.id que no tienen ON DELETE CASCADE / SET NULL.
+          // Fix: correr migration 0088_fix_user_delete_cascades.sql
+          const hint = /database error deleting/i.test(authErr.message)
+            ? ' — falta correr migration 0088_fix_user_delete_cascades.sql en Supabase'
+            : '';
+          throw new Error(`auth: ${authErr.message}${hint}`);
+        }
 
         processed++;
       } catch (e) {
