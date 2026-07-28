@@ -1,4 +1,5 @@
 import { requireOwner, getCurrentUser } from "@/lib/auth/guards";
+import { getUserModerationStatus } from "@/lib/moderation/user-status";
 import { stopImpersonatingAction } from "@/lib/founder/actions";
 import { tenantOrigin, env } from "@/lib/env";
 import { getServiceClient } from "@/lib/supabase/service";
@@ -30,6 +31,9 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   const { tenant, impersonating } = await requireOwner();
   const user = await getCurrentUser();
   const email = user?.email ?? '';
+  // Moderación: si el user está 'under_review', mostramos banner amarillo
+  // arriba del panel. 'suspended' ya fue interceptado por requireOwner.
+  const userModStatus = user ? await getUserModerationStatus(user.id) : 'active';
   const modules = await getTenantModules(tenant.id);
   // Si el user llegó a /owner via requireOwner(), es owner del tenant →
   // permissions serán las de owner (full). Se pasa igual para que el
@@ -143,6 +147,13 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
               Salir del modo admin
             </button>
           </form>
+        </div>
+      )}
+      {userModStatus === 'under_review' && (
+        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          🔍 <strong>Tu cuenta está bajo revisión</strong> por nuestro equipo.
+          Podés seguir usando la plataforma con normalidad — te avisamos en breve. Si tenés dudas,
+          escribinos a <a href="mailto:soporte@bzseguridad.store" className="underline">soporte@bzseguridad.store</a>.
         </div>
       )}
       {matchingBanner && (

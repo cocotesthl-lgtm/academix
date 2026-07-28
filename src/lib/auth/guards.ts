@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getServiceClient } from '@/lib/supabase/service';
 import { IMPERSONATE_COOKIE } from '@/lib/founder/constants';
+import { getUserModerationStatus } from '@/lib/moderation/user-status';
 
 /**
  * Devuelve los roles activos de un user en un tenant.
@@ -68,6 +69,11 @@ export type OwnerContext = {
 export async function requireOwner(): Promise<OwnerContext> {
   const user = await requireUser();
   const svc = getServiceClient();
+
+  // Bloqueo de moderación: 'suspended' pierde acceso al panel entero.
+  // 'under_review' entra pero el layout muestra banner de advertencia.
+  const modStatus = await getUserModerationStatus(user.id);
+  if (modStatus === 'suspended') redirect('/suspendido');
 
   // Si user es super_admin Y tiene cookie de impersonación, abrir ese tenant
   const { data: profile } = await svc
@@ -137,6 +143,8 @@ export type InstructorContext = {
  */
 export async function requireInstructor(): Promise<InstructorContext> {
   const user = await requireUser();
+  const modStatus = await getUserModerationStatus(user.id);
+  if (modStatus === 'suspended') redirect('/suspendido');
   const svc = getServiceClient();
   const { data } = await svc
     .from('memberships')

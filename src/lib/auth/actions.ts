@@ -43,6 +43,18 @@ export async function resolvePostAuthRedirect(userId: string): Promise<string> {
 
 async function postAuthRedirect(userId: string): Promise<string> {
   const svc = getServiceClient();
+
+  // Moderación: 'suspended' → /suspendido con explicación. super_admin nunca
+  // se suspende a sí mismo, así que el check va antes del branch admin.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: modRow } = await (svc.from('profiles') as any)
+    .select('moderation_status')
+    .eq('id', userId)
+    .maybeSingle();
+  if ((modRow as { moderation_status?: string } | null)?.moderation_status === 'suspended') {
+    return '/suspendido';
+  }
+
   const { data: profile } = await svc
     .from('profiles')
     .select('is_super_admin')
