@@ -72,7 +72,8 @@ export function ProductBuyBox({
     });
     trackEvent(tenantId, 'add_to_cart', {
       product_id: product.id,
-      amount_cents: displayPrice
+      amount_cents: displayPrice,
+      content_kind: 'physical'
     });
   }
 

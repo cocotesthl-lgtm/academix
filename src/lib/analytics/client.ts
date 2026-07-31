@@ -41,7 +41,16 @@ export type AnalyticsEventType =
   | 'product_view'
   | 'add_to_cart'
   | 'checkout_start'
-  | 'purchase';
+  | 'purchase'
+  | 'click'
+  | 'course_view'
+  | 'event_view'
+  | 'vip_view'
+  | 'article_view'
+  | 'paylink_view';
+
+/** Tipo de contenido cuando el evento se refiere a un item del catálogo. */
+export type ContentKind = 'physical' | 'course' | 'event' | 'vip' | 'article' | 'paylink';
 
 export function trackEvent(
   tenantId: string,
@@ -51,6 +60,8 @@ export function trackEvent(
     order_id?: string;
     amount_cents?: number;
     path?: string;
+    label?: string;
+    content_kind?: ContentKind;
   } = {}
 ): void {
   if (typeof window === 'undefined') return;
@@ -73,4 +84,19 @@ export function trackEvent(
       keepalive: true
     }).catch(() => { /* fire-and-forget */ });
   } catch { /* window sin fetch/beacon (raro) */ }
+}
+
+/**
+ * Track de click genérico. `label` es el nombre human que vas a ver en
+ * el panel de analytics. Usá algo estable ("hero-cta-primary", "footer-whatsapp",
+ * "buy-course-abc") — cambiarlo rompe el histórico agregado.
+ */
+export function trackClick(
+  tenantId: string,
+  label: string,
+  extra: { product_id?: string; content_kind?: ContentKind } = {}
+): void {
+  const clean = (label ?? '').trim().slice(0, 120);
+  if (!clean) return;
+  trackEvent(tenantId, 'click', { label: clean, ...extra });
 }

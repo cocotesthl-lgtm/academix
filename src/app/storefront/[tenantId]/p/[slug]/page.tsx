@@ -163,7 +163,7 @@ export default async function ProductPublicPage({
 
   return (
     <article className="max-w-6xl mx-auto px-6 py-10">
-      <TrackPageView tenantId={tenantId} eventType="product_view" productId={product.id} />
+      <TrackPageView tenantId={tenantId} eventType="product_view" productId={product.id} contentKind="physical" />
       <Link href="/" className="text-sm text-black/55 hover:text-black">← Volver al inicio</Link>
 
       <ProductDetailInteractive

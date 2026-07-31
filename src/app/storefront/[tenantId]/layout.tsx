@@ -13,6 +13,7 @@ import { WhatsAppFloat } from "@/components/storefront/WhatsAppFloat";
 import { CategoriesMegaMenu, type MegaCategory } from "@/components/storefront/CategoriesMegaMenu";
 import { MastheadScrollBehavior } from "@/components/storefront/MastheadScrollBehavior";
 import { MastheadCategoryNav } from "@/components/storefront/MastheadCategoryNav";
+import { AutoClickTracker } from "@/components/storefront/AutoClickTracker";
 
 /**
  * Metadata default para TODO el storefront. Cada page individual puede
@@ -451,6 +452,7 @@ export default async function StorefrontLayout({
         </header>
       )}
 
+      <AutoClickTracker tenantId={tenantId} />
       <main>{children}</main>
 
       {/* Botón flotante del carrito (si la posición elegida lo incluye) */}

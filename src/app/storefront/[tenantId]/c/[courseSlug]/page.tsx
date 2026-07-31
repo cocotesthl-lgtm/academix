@@ -17,6 +17,7 @@ import { TicketPicker } from "@/components/storefront/TicketPicker";
 import { VipPackLanding, type VipMediaItem } from "@/components/storefront/VipPackLanding";
 import { ReservationWidget } from "@/components/storefront/ReservationWidget";
 import { PayPalCheckoutButton } from "@/components/storefront/PayPalCheckoutButton";
+import { TrackPageView } from "@/components/storefront/TrackPageView";
 
 export const dynamic = "force-dynamic";
 
@@ -719,6 +720,7 @@ export default async function CourseDetailPage({
   // Default: classic landing (la histórica de OfferNow).
   return (
     <article className="max-w-5xl mx-auto px-6 py-10">
+      <TrackPageView tenantId={tenantId} eventType="course_view" productId={course.id} contentKind="course" />
       <div className="grid md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-6">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{course.title}</h1>

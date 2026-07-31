@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getServiceClient } from '@/lib/supabase/service';
 import { cookies } from 'next/headers';
 import { trackPayLinkViewAction } from '@/lib/pay-links/actions';
+import { TrackPageView } from '@/components/storefront/TrackPageView';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,6 +84,7 @@ export default async function PayLinkPublicPage({
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 py-8 px-4">
+      <TrackPageView tenantId={tenantId} eventType="paylink_view" productId={l.id} contentKind="paylink" amountCents={l.amount_cents} />
       <div className="max-w-md mx-auto">
         {/* Header con branding del tenant */}
         <div className="flex items-center gap-3 mb-6">

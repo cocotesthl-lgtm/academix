@@ -14,6 +14,7 @@ import { splitBodyAtParagraph } from '@/lib/paywall/split-body';
 import { isUserSubscribedToTenant } from '@/lib/paywall/check';
 import { mergeConfig } from '@/lib/site/types';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { TrackPageView } from '@/components/storefront/TrackPageView';
 
 export const dynamic = 'force-dynamic';
 
@@ -250,6 +251,7 @@ export default async function ArticlePublicPage({
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
+      <TrackPageView tenantId={tenantId} eventType="article_view" productId={article.id} contentKind="article" />
       {/* Layout 2 columnas: contenido (article + últimas noticias) a la
           izquierda, sidebar a la derecha. Al meter Últimas Noticias
           DENTRO del grid, la aside crece más y el sticky de
