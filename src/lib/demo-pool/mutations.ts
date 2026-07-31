@@ -152,16 +152,31 @@ export async function materializeDemoPhysicalProduct(tenantId: string, demoSlug:
     .select('id').eq('tenant_id', tenantId).eq('demo_ref', demoSlug).maybeSingle();
   if (existing) return (existing as { id: string }).id;
 
+  // Traemos también los campos "ricos" (migration 0090). Si no existen en
+  // este entorno, el select falla y reintentamos con el subset básico.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: demo } = await (svc.from('demo_physical_products') as any)
-    .select('slug, title, description, cover_url, gallery, price_cents, compare_at_price_cents, stock_qty, category_slug')
+  let { data: demo } = await (svc.from('demo_physical_products') as any)
+    .select('slug, title, description, cover_url, gallery, price_cents, compare_at_price_cents, stock_qty, category_slug, condition, installments_max, installments_interest_free, reviews_breakdown, qty_selector_enabled, specs')
     .eq('slug', demoSlug).maybeSingle();
+  if (!demo) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('demo_physical_products') as any)
+      .select('slug, title, description, cover_url, gallery, price_cents, compare_at_price_cents, stock_qty, category_slug')
+      .eq('slug', demoSlug).maybeSingle();
+    demo = retry.data;
+  }
   if (!demo) return null;
   const d = demo as {
     slug: string; title: string; description: string | null;
     cover_url: string | null; gallery: unknown;
     price_cents: number; compare_at_price_cents: number | null;
     stock_qty: number; category_slug: string | null;
+    condition?: string | null;
+    installments_max?: number | null;
+    installments_interest_free?: number | null;
+    reviews_breakdown?: number[] | null;
+    qty_selector_enabled?: boolean | null;
+    specs?: Array<{ label: string; value: string }> | null;
   };
 
   let slug = d.slug;
@@ -170,8 +185,7 @@ export async function materializeDemoPhysicalProduct(tenantId: string, demoSlug:
     .select('id').eq('tenant_id', tenantId).eq('slug', slug).maybeSingle();
   if (dup) slug = `${d.slug}-custom-${Date.now().toString(36).slice(-6)}`;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: inserted, error } = await (svc.from('physical_products') as any).insert({
+  const base: Record<string, unknown> = {
     tenant_id: tenantId, slug, title: d.title,
     description: d.description, cover_url: d.cover_url,
     gallery: d.gallery ?? [],
@@ -180,7 +194,26 @@ export async function materializeDemoPhysicalProduct(tenantId: string, demoSlug:
     stock_qty: d.stock_qty,
     status: 'published',
     demo_ref: d.slug
-  }).select('id').single();
+  };
+  const withRich: Record<string, unknown> = { ...base };
+  if (d.condition) withRich.condition = d.condition;
+  if (d.installments_max != null) withRich.installments_max = d.installments_max;
+  if (d.installments_interest_free != null) withRich.installments_interest_free = d.installments_interest_free;
+  if (Array.isArray(d.reviews_breakdown) && d.reviews_breakdown.length > 0) withRich.reviews_breakdown = d.reviews_breakdown;
+  if (typeof d.qty_selector_enabled === 'boolean') withRich.qty_selector_enabled = d.qty_selector_enabled;
+  if (Array.isArray(d.specs) && d.specs.length > 0) withRich.specs = d.specs;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let { data: inserted, error } = await (svc.from('physical_products') as any)
+    .insert(withRich).select('id').single();
+  if (error && /condition|installments|reviews_breakdown|qty_selector_enabled|specs/.test(error.message ?? '')) {
+    // Migration 0090 no corrió en physical_products → retry con base
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('physical_products') as any)
+      .insert(base).select('id').single();
+    inserted = retry.data;
+    error = retry.error;
+  }
   if (error) {
     console.warn('[materializeDemoPhysicalProduct] insert falló:', error.message);
     return null;

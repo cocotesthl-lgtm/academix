@@ -37,6 +37,7 @@ export function ProductBuyBox({
     else setLocalId(id);
   };
   const [added, setAdded] = useState(false);
+  const [qty, setQty] = useState<number>(1);
 
   const currentVariant = hasVariants ? variants.find((v) => v.id === selectedId) ?? null : null;
   const displayPrice = currentVariant?.price_cents ?? product.price_cents;
@@ -53,26 +54,31 @@ export function ProductBuyBox({
     const cartId = hasVariants
       ? `phys:${product.id}:${selectedId}`
       : `phys:${product.id}:default`;
-    addToCart(tenantId, {
-      id: cartId,
-      slug: product.slug,
-      title: hasVariants && currentVariant
-        ? `${product.title} · ${currentVariant.name}`
-        : product.title,
-      price_cents: displayPrice,
-      currency: product.currency,
-      cover_url: displayImage,
-      kind: 'physical',
-      product_id: product.id,
-      variant_id: currentVariant?.id ?? null,
-      variant_label: currentVariant?.name ?? null,
-      max_stock: product.track_stock ? displayStock : undefined,
-      requires_shipping: product.requires_shipping,
-      weight_g: product.weight_g ?? undefined
-    });
+    // Repetir el add N veces respetando la qty seleccionada (el carrito
+    // agrupa por cartId y suma quantity internamente).
+    const n = Math.max(1, Math.min(qty, product.track_stock ? displayStock : 99));
+    for (let i = 0; i < n; i++) {
+      addToCart(tenantId, {
+        id: cartId,
+        slug: product.slug,
+        title: hasVariants && currentVariant
+          ? `${product.title} · ${currentVariant.name}`
+          : product.title,
+        price_cents: displayPrice,
+        currency: product.currency,
+        cover_url: displayImage,
+        kind: 'physical',
+        product_id: product.id,
+        variant_id: currentVariant?.id ?? null,
+        variant_label: currentVariant?.name ?? null,
+        max_stock: product.track_stock ? displayStock : undefined,
+        requires_shipping: product.requires_shipping,
+        weight_g: product.weight_g ?? undefined
+      });
+    }
     trackEvent(tenantId, 'add_to_cart', {
       product_id: product.id,
-      amount_cents: displayPrice,
+      amount_cents: displayPrice * n,
       content_kind: 'physical'
     });
   }
@@ -94,6 +100,17 @@ export function ProductBuyBox({
 
   return (
     <div className="space-y-5">
+      {/* Condition + rating hints — arriba del precio, estilo ML */}
+      {product.condition && (
+        <div className="text-xs text-black/55">
+          {product.condition === 'new' ? 'Nuevo' : 'Usado'}
+          {typeof product.rating === 'number' && product.rating > 0 && (
+            <> · <span className="text-blue-600 hover:underline cursor-pointer">
+              {product.reviews_count.toLocaleString('es-AR')} opiniones
+            </span></>
+          )}
+        </div>
+      )}
       <div className="flex items-baseline gap-3">
         <div className="text-3xl font-bold">{formatMoney(displayPrice, product.currency)}</div>
         {product.compare_at_price_cents && product.compare_at_price_cents > displayPrice && (
@@ -109,6 +126,16 @@ export function ProductBuyBox({
           </>
         )}
       </div>
+
+      {/* Cuotas — debajo del precio, estilo ML */}
+      {product.installments_max && product.installments_max > 0 && (
+        <InstallmentsInfo
+          price={displayPrice}
+          currency={product.currency}
+          max={product.installments_max}
+          interestFree={product.installments_interest_free ?? null}
+        />
+      )}
 
       {product.track_stock && !outOfStock && displayStock <= 5 && (
         <div className="text-xs text-amber-700 font-medium">
@@ -139,6 +166,15 @@ export function ProductBuyBox({
           variants={variants}
           selectedId={selectedId}
           onSelect={setSelectedId}
+        />
+      )}
+
+      {/* Selector de cantidad — estilo ML: "Cantidad: 1 ˅ (+10 disponibles)" */}
+      {product.qty_selector_enabled !== false && product.track_stock && displayStock > 0 && (
+        <QtySelector
+          value={qty}
+          max={displayStock}
+          onChange={setQty}
         />
       )}
 
@@ -214,13 +250,16 @@ function VariantSwatches({
   onSelect: (id: string) => void;
 }) {
   const selected = variants.find((v) => v.id === selectedId) ?? null;
-  // Heurística para el label del grupo: si todas las variantes tienen
-  // options.color usamos "Color", sino "Opción".
-  const groupLabel = variants.every((v) => v.options && 'color' in v.options)
-    ? 'Color'
-    : variants.every((v) => v.options && 'talle' in v.options)
-      ? 'Talle'
-      : 'Opción';
+  // option_key explícito gana (ej. 'color', 'talle', 'sabor'). Si no está,
+  // fallback a la heurística vieja sobre options.<key>. Sino "Opción".
+  const firstKey = variants.find((v) => v.option_key)?.option_key ?? null;
+  const groupLabel = firstKey
+    ? capitalize(firstKey)
+    : (variants.every((v) => v.options && 'color' in v.options)
+        ? 'Color'
+        : variants.every((v) => v.options && 'talle' in v.options)
+          ? 'Talle'
+          : 'Opción');
 
   return (
     <div>
@@ -281,6 +320,77 @@ function VariantSwatches({
         <div className="text-[11px] text-amber-700 mt-1.5">
           Últimas {selected.stock_qty} unidades en {selected.name}
         </div>
+      )}
+    </div>
+  );
+}
+
+function capitalize(s: string): string {
+  return s.length === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Info de cuotas debajo del precio. Estilo ML.
+ * Prioriza el mensaje de "sin interés" si lo hay, sino muestra el máximo.
+ */
+function InstallmentsInfo({
+  price, currency, max, interestFree
+}: {
+  price: number; currency: string; max: number; interestFree: number | null;
+}) {
+  const perInstallment = (n: number) => {
+    const cents = Math.round(price / n);
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency', currency, maximumFractionDigits: 0
+    }).format(cents / 100);
+  };
+
+  // "Sin interés" es más atractivo comercialmente — priorizar
+  if (interestFree && interestFree > 0) {
+    return (
+      <div className="text-sm text-emerald-700">
+        En <strong>{interestFree} cuotas de {perInstallment(interestFree)} sin interés</strong>
+      </div>
+    );
+  }
+  return (
+    <div className="text-sm text-black/70">
+      Hasta <strong>{max} cuotas</strong> de {perInstallment(max)}
+    </div>
+  );
+}
+
+/**
+ * Selector de cantidad estilo ML: pill "Cantidad: N ˅" con dropdown
+ * de opciones (1..min(stock,10)) y hint "(+X disponibles)" cuando hay más.
+ */
+function QtySelector({
+  value, max, onChange
+}: {
+  value: number; max: number; onChange: (n: number) => void;
+}) {
+  const shownMax = Math.min(max, 10);
+  const remaining = Math.max(0, max - shownMax);
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="text-black/60">Cantidad:</span>
+      <div className="relative inline-block">
+        <select
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="appearance-none bg-white border border-black/25 rounded pl-3 pr-7 py-1.5 font-semibold text-sm hover:border-black cursor-pointer focus:outline-none focus:border-blue-500"
+        >
+          {Array.from({ length: shownMax }, (_, i) => i + 1).map((n) => (
+            <option key={n} value={n}>{n} unidad{n === 1 ? '' : 'es'}</option>
+          ))}
+        </select>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-black/50 pointer-events-none">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </div>
+      {remaining > 0 && (
+        <span className="text-xs text-black/50">(+{remaining} disponibles)</span>
       )}
     </div>
   );

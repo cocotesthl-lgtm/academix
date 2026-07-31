@@ -132,6 +132,28 @@ export function ProductEditorForm({
           />
         </div>
 
+        {/* Condición del producto (nuevo/usado/no especificar) */}
+        <div>
+          <label className="block text-sm mb-1.5 text-white/70">
+            Condición <span className="text-white/40">(opcional — estilo MercadoLibre)</span>
+          </label>
+          <div className="flex gap-2">
+            {(['', 'new', 'used'] as const).map((v) => {
+              const current = product.condition ?? '';
+              const isSel = current === v;
+              const label = v === '' ? 'No especificar' : v === 'new' ? 'Nuevo' : 'Usado';
+              return (
+                <label key={v} className={`cursor-pointer text-sm px-3 py-2 rounded-md border transition ${
+                  isSel ? 'border-white bg-white/10' : 'border-white/15 hover:border-white/40'
+                }`}>
+                  <input type="radio" name="condition" value={v} defaultChecked={isSel} className="hidden" />
+                  {label}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Precio + SKU */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -309,6 +331,54 @@ export function ProductEditorForm({
           </div>
         )}
 
+        {/* Cuotas / pago a plazos */}
+        <div className="rounded-lg border border-white/10 p-4 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold">💳 Cuotas / pago a plazos</h3>
+            <p className="text-xs text-white/45 mt-0.5">
+              Se muestra debajo del precio ("Hasta 12 cuotas de $X"). Dejalo en 0 para no mostrar.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm mb-1.5 text-white/70">
+                Máximo de cuotas
+              </label>
+              <input
+                type="number" name="installments_max" min="0" max="60"
+                defaultValue={product.installments_max ?? ''}
+                placeholder="12"
+                className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1.5 text-white/70">
+                Cuotas sin interés <span className="text-white/40">(opcional)</span>
+              </label>
+              <input
+                type="number" name="installments_interest_free" min="0" max="60"
+                defaultValue={product.installments_interest_free ?? ''}
+                placeholder="6"
+                className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Toggle: selector de cantidad */}
+        <div className="rounded-lg border border-white/10 p-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" name="qty_selector_enabled"
+              defaultChecked={product.qty_selector_enabled !== false} />
+            <div>
+              <div className="text-sm font-semibold">Mostrar selector de cantidad</div>
+              <div className="text-xs text-white/50">
+                Estilo ML: "Cantidad: 1 ˅ (+10 disponibles)". Sin esto, siempre agrega 1 al carrito.
+              </div>
+            </div>
+          </label>
+        </div>
+
         {/* Rating / Reseñas (manual — no hay reviews reales) */}
         <div className="rounded-lg border border-white/10 p-4 space-y-3">
           <h3 className="text-sm font-semibold">⭐ Rating y reseñas</h3>
@@ -344,6 +414,20 @@ export function ProductEditorForm({
                 className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm focus:outline-none focus:border-white/40"
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm mb-1.5 text-white/70">
+              Distribución de reseñas <span className="text-white/40">(opcional — 5 números: 5⭐,4⭐,3⭐,2⭐,1⭐)</span>
+            </label>
+            <input
+              name="reviews_breakdown"
+              defaultValue={(product.reviews_breakdown ?? []).join(',')}
+              placeholder="240,92,38,16,7"
+              className="w-full rounded-md bg-white/5 border border-white/15 px-3 py-2 text-sm font-mono focus:outline-none focus:border-white/40"
+            />
+            <p className="text-xs text-white/45 mt-1">
+              Muestra las barras estilo Amazon debajo del producto. Vacío = no mostrar barras.
+            </p>
           </div>
         </div>
 

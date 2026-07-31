@@ -31,6 +31,16 @@ export type PhysicalProduct = {
   reviews_count: number;
   /** Ficha técnica visible arriba del "Quienes también compraron". */
   specs?: Array<{ label: string; value: string }>;
+  /** Condición: 'new' | 'used' | null (sin especificar). */
+  condition?: 'new' | 'used' | null;
+  /** Cuotas máximas ("hasta 12 cuotas"). */
+  installments_max?: number | null;
+  /** Cuotas sin interés ("hasta 6 sin interés"). null = no aplica. */
+  installments_interest_free?: number | null;
+  /** Distribución de reviews: [c5, c4, c3, c2, c1]. Vacío = no mostrar barras. */
+  reviews_breakdown?: number[];
+  /** Toggle del selector de cantidad estilo ML ("Cantidad: 1 ˅"). */
+  qty_selector_enabled?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -51,6 +61,8 @@ export type ProductVariant = {
   swatch_image_url?: string | null;
   /** Galería específica de la variante — reemplaza la del producto cuando se selecciona. */
   gallery?: string[];
+  /** Nombre del eje de la variante ('color' | 'talle' | 'sabor' | custom...). Header dinámico. */
+  option_key?: string | null;
 };
 
 function slugify(raw: string): string {
@@ -157,6 +169,33 @@ export async function updateProductAction(id: string, formData: FormData): Promi
     : null;
   const reviewsCount = Math.max(0, Math.round(Number(formData.get('reviews_count') ?? 0)));
 
+  // Condición
+  const conditionRaw = String(formData.get('condition') ?? '').trim();
+  const condition = conditionRaw === 'new' || conditionRaw === 'used' ? conditionRaw : null;
+
+  // Cuotas
+  const instMaxRaw = Number(formData.get('installments_max') ?? 0);
+  const installments_max = Number.isFinite(instMaxRaw) && instMaxRaw > 0 && instMaxRaw <= 60
+    ? Math.round(instMaxRaw) : null;
+  const instIfRaw = Number(formData.get('installments_interest_free') ?? 0);
+  const installments_interest_free = Number.isFinite(instIfRaw) && instIfRaw >= 0 && instIfRaw <= 60
+    ? Math.round(instIfRaw) : null;
+
+  // Selector de cantidad
+  const qtySelectorEnabled = formData.get('qty_selector_enabled') !== 'off';
+
+  // Reviews breakdown: 5 números "c5,c4,c3,c2,c1"
+  let reviews_breakdown: number[] | null = null;
+  if (formData.has('reviews_breakdown')) {
+    const raw = String(formData.get('reviews_breakdown') ?? '').trim();
+    if (raw) {
+      const parts = raw.split(',').map((s) => Math.max(0, Math.round(Number(s.trim()) || 0)));
+      if (parts.length === 5) reviews_breakdown = parts;
+    } else {
+      reviews_breakdown = [];
+    }
+  }
+
   // Specs (ficha técnica): un ítem por línea, formato "Label | Value".
   // Solo se persiste si el form incluye la clave (para no romper llamados viejos).
   let specs: Array<{ label: string; value: string }> | null = null;
@@ -212,6 +251,11 @@ export async function updateProductAction(id: string, formData: FormData): Promi
     rating,
     reviews_count: reviewsCount,
     ...(specs !== null ? { specs } : {}),
+    condition,
+    installments_max,
+    installments_interest_free,
+    qty_selector_enabled: qtySelectorEnabled,
+    ...(reviews_breakdown !== null ? { reviews_breakdown } : {}),
     ...(walletBonusCents != null ? { wallet_bonus_cents: walletBonusCents } : {}),
     ...(formData.has('paypal_price') ? { paypal_price_cents: paypalPriceCents } : {})
   };
@@ -219,6 +263,22 @@ export async function updateProductAction(id: string, formData: FormData): Promi
   let { error } = await (svc.from('physical_products') as any)
     .update(fullPayload)
     .eq('id', id).eq('tenant_id', tenant.id);
+  if (error && /condition|installments|reviews_breakdown|qty_selector_enabled/.test(error.message ?? '')) {
+    // Migration 0090 no corrió → retry sin nuevos campos
+    const {
+      condition: _cond,
+      installments_max: _im,
+      installments_interest_free: _iif,
+      qty_selector_enabled: _qse,
+      reviews_breakdown: _rb,
+      ...retryPayload
+    } = fullPayload;
+    void _cond; void _im; void _iif; void _qse; void _rb;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('physical_products') as any)
+      .update(retryPayload).eq('id', id).eq('tenant_id', tenant.id);
+    error = retry.error;
+  }
   if (error && /specs/.test(error.message ?? '')) {
     // Migration 0087 no corrió → retry sin specs
     const retryPayload: Record<string, unknown> = {
@@ -317,6 +377,7 @@ export async function addVariantAction(productId: string, formData: FormData): P
   const gallery = galleryRaw
     ? galleryRaw.split(/\r?\n/).map((s) => safeUrl(s)).filter((s): s is string => !!s).slice(0, 12)
     : [];
+  const optionKey = String(formData.get('option_key') ?? '').trim().slice(0, 40) || null;
 
   // Contamos existentes para sort_order
   const { count } = await svc.from('product_variants')
@@ -325,10 +386,19 @@ export async function addVariantAction(productId: string, formData: FormData): P
   const fullPayload: Record<string, unknown> = {
     product_id: productId, name, sku, price_cents: price,
     stock_qty: stock, image_url: image, sort_order: count ?? 0,
-    swatch_color: swatchColor, swatch_image_url: swatchImage, gallery
+    swatch_color: swatchColor, swatch_image_url: swatchImage, gallery,
+    option_key: optionKey
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let { error } = await (svc.from('product_variants') as any).insert(fullPayload);
+  if (error && /option_key/.test(error.message ?? '')) {
+    // Migration 0090 no corrió → retry sin option_key
+    const { option_key: _ok, ...noOptKey } = fullPayload;
+    void _ok;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('product_variants') as any).insert(noOptKey);
+    error = retry.error;
+  }
   if (error && /swatch_color|swatch_image_url|gallery/.test(error.message ?? '')) {
     // Migration 0087 no corrió → insert sin nuevos campos
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -367,13 +437,22 @@ export async function updateVariantAction(variantId: string, formData: FormData)
   const gallery = galleryRaw
     ? galleryRaw.split(/\r?\n/).map((s) => safeUrl(s)).filter((s): s is string => !!s).slice(0, 12)
     : [];
+  const optionKey = String(formData.get('option_key') ?? '').trim().slice(0, 40) || null;
 
   const fullPayload: Record<string, unknown> = {
     name, sku, price_cents: price, stock_qty: stock, image_url: image,
-    swatch_color: swatchColor, swatch_image_url: swatchImage, gallery
+    swatch_color: swatchColor, swatch_image_url: swatchImage, gallery,
+    option_key: optionKey
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (svc.from('product_variants') as any).update(fullPayload).eq('id', variantId);
+  let { error } = await (svc.from('product_variants') as any).update(fullPayload).eq('id', variantId);
+  if (error && /option_key/.test(error.message ?? '')) {
+    const { option_key: _ok, ...noOptKey } = fullPayload;
+    void _ok;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const retry = await (svc.from('product_variants') as any).update(noOptKey).eq('id', variantId);
+    error = retry.error;
+  }
   if (error && /swatch_color|swatch_image_url|gallery/.test(error.message ?? '')) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (svc.from('product_variants') as any).update({

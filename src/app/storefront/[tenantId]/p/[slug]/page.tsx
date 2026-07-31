@@ -6,6 +6,7 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { storefrontOrigin, truncate } from '@/lib/seo/meta';
 import { ProductDetailInteractive } from '@/components/storefront/products/ProductDetailInteractive';
 import { ProductSpecs } from '@/components/storefront/products/ProductSpecs';
+import { ProductReviews } from '@/components/storefront/products/ProductReviews';
 import { RelatedProducts } from '@/components/storefront/products/RelatedProducts';
 import { TrackPageView } from '@/components/storefront/TrackPageView';
 import type { PhysicalProduct, ProductVariant } from '@/lib/products/actions';
@@ -186,6 +187,13 @@ export default async function ProductPublicPage({
 
       {/* Ficha técnica (specs) */}
       <ProductSpecs specs={product.specs ?? []} />
+
+      {/* Opiniones — solo si el owner cargó rating + breakdown */}
+      <ProductReviews
+        rating={product.rating}
+        reviewsCount={product.reviews_count}
+        breakdown={product.reviews_breakdown}
+      />
 
       {product.sku && (
         <div className="mt-6 text-xs text-black/40">

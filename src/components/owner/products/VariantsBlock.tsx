@@ -67,9 +67,34 @@ export function VariantsBlock({
 
       {showAdd && (
         <form action={handleAdd} className="rounded border border-white/15 bg-white/[0.02] p-3 space-y-2">
+          {/* Axis de la variante: color/talle/sabor/custom — determina el header
+              en el buy box ("Color:", "Talle:", "Sabor:", etc). */}
+          <div>
+            <label className="block text-[10px] uppercase tracking-wider text-white/50 mb-1">
+              Tipo de variante
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { v: 'color', label: 'Color' },
+                { v: 'talle', label: 'Talle' },
+                { v: 'sabor', label: 'Sabor' },
+                { v: 'material', label: 'Material' },
+                { v: '', label: 'Otra (personalizada)' }
+              ].map((opt) => (
+                <label key={opt.v} className="text-xs cursor-pointer px-2.5 py-1 rounded border border-white/15 has-[:checked]:border-white has-[:checked]:bg-white/10">
+                  <input type="radio" name="option_key" value={opt.v} defaultChecked={opt.v === 'color'} className="hidden peer" />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+            <p className="text-[10px] text-white/40 mt-1">
+              Determina el header en el buy box ("Color:", "Talle:", "Sabor:", etc.).
+              "Otra" te deja escribir el label como texto libre en el input de abajo.
+            </p>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <input
-              name="name" placeholder="Nombre (ej. Talle M / Rojo)" required
+              name="name" placeholder="Valor (ej. Rojo, XL, Chocolate)" required
               className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40"
             />
             <input
@@ -150,8 +175,27 @@ function VariantRow({ variant, currency }: { variant: ProductVariant; currency: 
   if (editing) {
     return (
       <form action={handleUpdate} className="py-3 space-y-2">
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            { v: 'color', label: 'Color' },
+            { v: 'talle', label: 'Talle' },
+            { v: 'sabor', label: 'Sabor' },
+            { v: 'material', label: 'Material' },
+            { v: '', label: 'Otra' }
+          ].map((opt) => {
+            const current = variant.option_key ?? 'color';
+            return (
+              <label key={opt.v} className="text-xs cursor-pointer px-2.5 py-1 rounded border border-white/15 has-[:checked]:border-white has-[:checked]:bg-white/10">
+                <input type="radio" name="option_key" value={opt.v}
+                  defaultChecked={opt.v === current} className="hidden peer" />
+                {opt.label}
+              </label>
+            );
+          })}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <input name="name" defaultValue={variant.name} required
+            placeholder="Valor (Rojo, XL, Chocolate)"
             className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm focus:outline-none focus:border-white/40" />
           <input name="sku" defaultValue={variant.sku ?? ''} placeholder="SKU"
             className="rounded bg-white/5 border border-white/15 px-2 py-1.5 text-sm font-mono focus:outline-none focus:border-white/40" />
