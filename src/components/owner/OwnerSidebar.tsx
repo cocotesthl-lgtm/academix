@@ -64,7 +64,17 @@ const NAV: NavEntry[] = [
   // Mis publicaciones: hub central donde el owner ve TODAS sus apps agrupadas
   // y las puede activar. Siempre visible como baseline — sino el owner
   // sin apps activas no tiene entrada al hub para activar ninguna.
-  { kind: 'item', icon: 'shopping-bag', item: { label: 'Mis publicaciones', href: '/mis-publicaciones' } },
+  // Se subdivide en "Todas" (el hub) + "Categorías" para clasificar.
+  {
+    kind: 'group',
+    group: {
+      label: 'Mis publicaciones', icon: 'shopping-bag',
+      items: [
+        { label: 'Todas', href: '/mis-publicaciones' },
+        { label: 'Categorías', href: '/categories' }
+      ]
+    }
+  },
   // Apps (App Market) también baseline — es el segundo lugar clave para
   // el owner y tenerlo escondido bajo "Mi sitio > Apps" (un grupo
   // colapsable) generaba fricción para activar/desactivar features.
@@ -141,7 +151,7 @@ const NAV: NavEntry[] = [
         { label: 'Dropshipping', href: '/dropship', moduleKey: 'dropshipping' },
         { label: 'Planes / Cuentas', href: '/cuentas', moduleKey: 'plans' },
         { label: 'Saldos', href: '/wallets', moduleKey: 'wallets' },
-        { label: 'Categorías', href: '/categories' },
+        // "Categorías" ahora vive bajo "Mis publicaciones" como subitem.
         { label: 'Envíos', href: '/shipping', moduleKey: 'ecommerce' },
         { label: 'Gift cards', href: '/giftcards' },
         { label: 'Checkout', href: '/checkout' }
