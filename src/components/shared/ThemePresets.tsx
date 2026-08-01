@@ -123,6 +123,7 @@ export function ThemePresets({
             onPick(isGrad ? (brandHex ?? '#000000') : v, isGrad ? v : undefined);
           }}
           filterKind={mode === 'solids' ? 'solid' : mode === 'gradients' ? 'gradient' : undefined}
+          theme={theme}
         />
       )}
 
@@ -188,8 +189,10 @@ export function ThemePresets({
 
       {/* Custom solid: HexInput visible con eyedropper */}
       {activeTab === 'sólidos' && showCustomSolid && (
-        <div className="p-2 rounded border border-white/10 bg-black/20 flex items-center gap-2">
-          <HexInput value={customSolid} onChange={(v) => { setCustomSolid(v); onPick(v); }} />
+        <div className={`p-2 rounded border flex items-center gap-2 ${
+          isDark ? 'border-white/10 bg-black/20' : 'border-neutral-200 bg-neutral-50'
+        }`}>
+          <HexInput value={customSolid} onChange={(v) => { setCustomSolid(v); onPick(v); }} theme={theme} />
           <button
             type="button"
             onClick={() => setShowCustomSolid(false)}
@@ -205,6 +208,7 @@ export function ThemePresets({
         <GradientBuilder
           initial={typeof currentValue === 'string' && /^(linear|radial|conic)-gradient/.test(currentValue) ? currentValue : undefined}
           brandSwatches={brandSwatches}
+          theme={theme}
           onApply={(gradient, primary) => {
             onPick(primary, gradient);
             setShowGradientBuilder(false);

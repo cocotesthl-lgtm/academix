@@ -16,14 +16,23 @@ export function BrandSwatchesStrip({
   initialSwatches,
   currentValue,
   onPick,
-  filterKind
+  filterKind,
+  theme = 'dark'
 }: {
   initialSwatches: BrandSwatch[];
   currentValue?: string;
   onPick: (value: string) => void;
   /** Si se pasa, solo muestra swatches de este tipo. */
   filterKind?: 'solid' | 'gradient';
+  /** Palette del panel — auto en dark, cambia labels/borders en light. */
+  theme?: 'dark' | 'light';
 }) {
+  const isDark = theme === 'dark';
+  const labelCls = isDark ? 'text-white/50' : 'text-neutral-500';
+  const borderIdle = isDark ? 'border-white/20 hover:border-white/60' : 'border-neutral-300 hover:border-neutral-500';
+  const pinBtnCls = isDark
+    ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
+    : 'border-emerald-600 bg-emerald-50 text-emerald-700 hover:bg-emerald-100';
   const [swatches, setSwatches] = useState<BrandSwatch[]>(initialSwatches);
   const [pending, start] = useTransition();
 
@@ -58,7 +67,7 @@ export function BrandSwatchesStrip({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-wider text-white/50 font-semibold">
+        <span className={`text-[10px] uppercase tracking-wider font-semibold ${labelCls}`}>
           Colores de mi sitio
         </span>
         {canPinCurrent && (
@@ -67,7 +76,7 @@ export function BrandSwatchesStrip({
             onClick={handlePin}
             disabled={pending}
             title="Guardar color/gradient actual como swatch"
-            className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-40"
+            className={`text-[10px] px-1.5 py-0.5 rounded border disabled:opacity-40 ${pinBtnCls}`}
           >
             + Guardar actual
           </button>
@@ -84,7 +93,7 @@ export function BrandSwatchesStrip({
                   onClick={() => onPick(s.value)}
                   title={s.value}
                   className={`block w-8 h-8 rounded border-2 transition ${
-                    isActive ? 'border-blue-400 ring-2 ring-blue-400/40' : 'border-white/20 hover:border-white/60'
+                    isActive ? 'border-blue-500 ring-2 ring-blue-500/40' : borderIdle
                   }`}
                   style={{ background: s.value }}
                 />

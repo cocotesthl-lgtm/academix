@@ -15,11 +15,14 @@ import { useEffect, useState } from 'react';
 export function HexInput({
   value,
   onChange,
-  className = ''
+  className = '',
+  theme = 'dark'
 }: {
   value: string;
   onChange: (hex: string) => void;
   className?: string;
+  /** 'dark' para paneles con fondo negro/oscuro; 'light' para fondos blancos (onboarding). */
+  theme?: 'dark' | 'light';
 }) {
   const [text, setText] = useState(value);
   const [hasEyeDropper, setHasEyeDropper] = useState(false);
@@ -62,13 +65,22 @@ export function HexInput({
     }
   }
 
+  const isDark = theme === 'dark';
+  const swatchBorder = isDark ? 'border-white/15' : 'border-neutral-300';
+  const textCls = isDark
+    ? 'border-white/15 bg-white/5 text-white/85 focus:border-white/40'
+    : 'border-neutral-300 bg-white text-neutral-900 focus:border-neutral-500';
+  const btnCls = isDark
+    ? 'border-white/15 hover:bg-white/10 text-white/70'
+    : 'border-neutral-300 hover:bg-neutral-100 text-neutral-700';
+
   return (
     <div className={`flex items-center gap-1.5 ${className}`}>
       <input
         type="color"
         value={isValidHex(value) ? value : '#000000'}
         onChange={(e) => { setText(e.target.value); onChange(e.target.value); }}
-        className="w-7 h-7 rounded border border-white/15 bg-transparent cursor-pointer shrink-0"
+        className={`w-7 h-7 rounded border bg-transparent cursor-pointer shrink-0 ${swatchBorder}`}
         aria-label="Color picker"
       />
       <input
@@ -81,14 +93,14 @@ export function HexInput({
         }}
         placeholder="#000000"
         maxLength={7}
-        className="w-[74px] px-1.5 py-1 text-[11px] font-mono rounded border border-white/15 bg-white/5 text-white/85 focus:outline-none focus:border-white/40"
+        className={`w-[74px] px-1.5 py-1 text-[11px] font-mono rounded border focus:outline-none ${textCls}`}
       />
       {hasEyeDropper && (
         <button
           type="button"
           onClick={pickWithEyeDropper}
           title="Elegir color de la pantalla (gotero)"
-          className="text-[11px] px-1.5 py-1 rounded border border-white/15 hover:bg-white/10 text-white/70"
+          className={`text-[11px] px-1.5 py-1 rounded border ${btnCls}`}
           aria-label="Eyedropper"
         >
           🎯
