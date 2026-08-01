@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { THEME_PRESETS, type ThemePreset } from '@/lib/theme/presets';
 import { GradientBuilder } from './GradientBuilder';
+import { BrandSwatchesStrip } from './BrandSwatchesStrip';
+import { HexInput } from './HexInput';
+import type { BrandSwatch } from '@/lib/theme/swatches';
 
 /**
  * Grid de swatches clickeables agrupados por categoría. Se muestra
@@ -25,7 +28,8 @@ export function ThemePresets({
   compact = false,
   theme = 'dark',
   showBrandSwatch = false,
-  brandHex
+  brandHex,
+  brandSwatches = []
 }: {
   onPick: (color: string, gradient?: string) => void;
   mode?: 'all' | 'solids' | 'gradients';
@@ -44,12 +48,19 @@ export function ThemePresets({
   /** Hex del brand actual — se usa como preview del swatch y como
    *  fallback en el CSS var. Requerido si showBrandSwatch=true. */
   brandHex?: string;
+  /** Swatches guardados del sitio — persistidos en tenants.brand_swatches.
+   *  Se muestran arriba de los presets como "Colores de mi sitio" y
+   *  también dentro del GradientBuilder cuando hay algún gradient guardado. */
+  brandSwatches?: BrandSwatch[];
 }) {
   const [activeTab, setActiveTab] = useState<ThemePreset['category']>(
     mode === 'gradients' ? 'gradientes' : 'sólidos'
   );
   const [showGradientBuilder, setShowGradientBuilder] = useState(false);
-  const customColorRef = useRef<HTMLInputElement>(null);
+  const [showCustomSolid, setShowCustomSolid] = useState(false);
+  const [customSolid, setCustomSolid] = useState(
+    typeof currentValue === 'string' && /^#/.test(currentValue) ? currentValue : '#f97316'
+  );
 
   const availableCats: ThemePreset['category'][] =
     mode === 'solids' ? ['sólidos'] :
@@ -101,6 +112,20 @@ export function ThemePresets({
         </button>
       )}
 
+      {/* Swatches guardados: click reusa el color/gradient sin adivinar hex.
+          Auto-persistidos cuando el owner aplica un valor + botón "+ guardar". */}
+      {brandSwatches.length > 0 && (
+        <BrandSwatchesStrip
+          initialSwatches={brandSwatches}
+          currentValue={typeof currentValue === 'string' ? currentValue : undefined}
+          onPick={(v) => {
+            const isGrad = /gradient\(/i.test(v);
+            onPick(isGrad ? (brandHex ?? '#000000') : v, isGrad ? v : undefined);
+          }}
+          filterKind={mode === 'solids' ? 'solid' : mode === 'gradients' ? 'gradient' : undefined}
+        />
+      )}
+
       {/* Tabs de categorías (solo si hay >1) */}
       {availableCats.length > 1 && (
         <div className="flex gap-1 text-xs">
@@ -137,23 +162,16 @@ export function ThemePresets({
 
         {/* Tarjeta "+" custom — visible en dark + light theme */}
         {activeTab === 'sólidos' ? (
-          <>
-            <button
-              type="button"
-              title="Color custom"
-              onClick={() => customColorRef.current?.click()}
-              className={`aspect-square rounded border-2 border-dashed flex items-center justify-center text-xl font-light transition ${plusIdle}`}
-            >
-              +
-            </button>
-            <input
-              ref={customColorRef}
-              type="color"
-              className="sr-only"
-              defaultValue={typeof currentValue === 'string' && /^#/.test(currentValue) ? currentValue : '#f97316'}
-              onChange={(e) => onPick(e.target.value)}
-            />
-          </>
+          <button
+            type="button"
+            title="Color custom (hex + gotero)"
+            onClick={() => setShowCustomSolid((v) => !v)}
+            className={`aspect-square rounded border-2 border-dashed flex items-center justify-center text-xl font-light transition ${
+              showCustomSolid ? plusActive : plusIdle
+            }`}
+          >
+            +
+          </button>
         ) : (
           <button
             type="button"
@@ -168,10 +186,25 @@ export function ThemePresets({
         )}
       </div>
 
+      {/* Custom solid: HexInput visible con eyedropper */}
+      {activeTab === 'sólidos' && showCustomSolid && (
+        <div className="p-2 rounded border border-white/10 bg-black/20 flex items-center gap-2">
+          <HexInput value={customSolid} onChange={(v) => { setCustomSolid(v); onPick(v); }} />
+          <button
+            type="button"
+            onClick={() => setShowCustomSolid(false)}
+            className={`text-[10px] ml-auto px-2 py-0.5 rounded ${isDark ? 'text-white/50 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'}`}
+          >
+            Listo
+          </button>
+        </div>
+      )}
+
       {/* Gradient builder inline (solo cuando + está activo en tab gradientes) */}
       {activeTab === 'gradientes' && showGradientBuilder && (
         <GradientBuilder
           initial={typeof currentValue === 'string' && /^(linear|radial|conic)-gradient/.test(currentValue) ? currentValue : undefined}
+          brandSwatches={brandSwatches}
           onApply={(gradient, primary) => {
             onPick(primary, gradient);
             setShowGradientBuilder(false);

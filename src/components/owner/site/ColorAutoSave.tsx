@@ -3,6 +3,7 @@
 import { useTransition, useState, useEffect, useRef } from 'react';
 import { ThemePresets } from '@/components/shared/ThemePresets';
 import { isGradient } from '@/lib/theme/presets';
+import { pinBrandSwatchAction, type BrandSwatch } from '@/lib/theme/swatches';
 
 /**
  * Color picker que auto-aplica al elegir, con DEBOUNCE.
@@ -23,7 +24,8 @@ export function ColorAutoSave({
   sectionKey,
   initial,
   action,
-  brandHex
+  brandHex,
+  brandSwatches = []
 }: {
   label: string;
   fieldName: 'bg_color' | 'text_color';
@@ -33,6 +35,8 @@ export function ColorAutoSave({
   /** Hex del brand color del tenant. Se usa para mostrar el swatch
    *  "Usar el color/gradient de mi sitio" arriba de los presets. */
   brandHex?: string;
+  /** Swatches persistidos del sitio — se pasan al ThemePresets. */
+  brandSwatches?: BrandSwatch[];
 }) {
   const [value, setValue] = useState(initial ?? defaultForField(fieldName));
   const [pending, start] = useTransition();
@@ -67,6 +71,12 @@ export function ColorAutoSave({
         await action(fd);
         setSaved(true);
         setTimeout(() => setSaved(false), 1500);
+        // Auto-pin al brand swatches — así el owner puede reusar este
+        // color en otras secciones sin adivinar el hex. Silencioso si
+        // ya está guardado. Skip para valores especiales tipo var().
+        if (newColor && !newColor.includes('var(') && !/^(inherit|transparent|currentcolor|initial)$/i.test(newColor)) {
+          pinBrandSwatchAction(newColor).catch(() => {});
+        }
       });
     }, 400);
   }
@@ -131,6 +141,7 @@ export function ColorAutoSave({
             compact
             showBrandSwatch={!!brandHex && supportsGradient}
             brandHex={brandHex}
+            brandSwatches={brandSwatches}
             onPick={(hex, grad) => {
               const applied = supportsGradient && grad ? grad : hex;
               handlePick(applied);

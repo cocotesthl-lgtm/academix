@@ -138,6 +138,11 @@ export default async function SiteBuilderPage({
   const waPosition = (tr?.whatsapp_position === 'left' ? 'left' : 'right') as 'left' | 'right';
   const cfg = mergeConfig(tr?.site_config);
   const primary = tr?.brand?.primary_color ?? '#f97316';
+
+  // Swatches guardados del tenant — se pasan a los ColorAutoSave para que
+  // el owner pueda reusar colores/gradients del template sin adivinar hex.
+  const { getBrandSwatches } = await import('@/lib/theme/swatches');
+  const brandSwatches = await getBrandSwatches(tenant.id);
   // ¿Hay cambios sin publicar? Comparo la serialización de ambos objetos.
   // No hashing sofisticado — el jsonb ya es determinístico y esto corre
   // 1× por page load, no en un loop.
@@ -335,6 +340,7 @@ export default async function SiteBuilderPage({
             position={idx + 1}
             total={cfg.order.length}
             brandHex={primary}
+            brandSwatches={brandSwatches}
           >
             {key === 'hero' && (
               <HeroEditor
@@ -801,7 +807,7 @@ function PaywallEditor({ cfg }: { cfg: import('@/lib/site/types').SiteConfig['pa
 }
 
 function Section({
-  title, desc, enabled, sectionKey, requiresModule, bgColor, textColor, styles, children, isFirst, isLast, position, total, brandHex
+  title, desc, enabled, sectionKey, requiresModule, bgColor, textColor, styles, children, isFirst, isLast, position, total, brandHex, brandSwatches
 }: {
   title: string; desc: string; enabled: boolean; sectionKey: string;
   /** Si la sección depende de una app off, se pasa este objeto y la sección aparece bloqueada. */
@@ -817,6 +823,9 @@ function Section({
    *  a ThemePresets para mostrar el swatch "Usar el color/gradient de
    *  mi sitio". */
   brandHex?: string;
+  /** Swatches persistidos del tenant — biblioteca de colores del sitio. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  brandSwatches?: any[];
 }) {
   const locked = !!requiresModule;
   return (
@@ -863,6 +872,7 @@ function Section({
               initial={bgColor}
               action={setSectionBgColorAction}
               brandHex={brandHex}
+              brandSwatches={brandSwatches}
             />
             <SectionStyleEditor sectionKey={sectionKey} initial={styles} />
             <form action={toggleSectionAction}>
