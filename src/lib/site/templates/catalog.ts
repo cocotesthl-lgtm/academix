@@ -1179,6 +1179,148 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
       config: c,
       modules: ['catalog', 'ecommerce', 'dropshipping', 'promotions', 'crm']
     };
+  })(),
+
+  /* 2.c Steakhouse — parrilla premium estilo Las Lilas (Puerto Madero).
+        Paleta dark oxidado + dorado + rojo profundo. Hero cinemático con
+        foto de bife jugoso, historia con foco en tradición/parrilla,
+        gallery grande de cortes, menú por experiencias (menú del chef,
+        degustación de vinos, corporate), testimonios editorializados,
+        mapa y reserva. Todo 100% con secciones del motor. */
+  (() => {
+    const c = clone();
+    enableOnly(c, [
+      'hero', 'about', 'features', 'stats', 'gallery', 'pricing',
+      'video', 'testimonials', 'faq', 'map', 'contact', 'cta_final'
+    ]);
+
+    // Hero split cinematográfico
+    c.sections.hero.layout = 'split';
+    c.sections.hero.eyebrow = 'Parrilla · Buenos Aires · Desde 1996';
+    c.sections.hero.title = 'La mejor carne argentina, servida como se debe';
+    c.sections.hero.subtitle = 'Cortes de novillo pastoril seleccionados, parrilla a leña y una carta de vinos con más de 300 etiquetas. Reservá tu mesa online.';
+    c.sections.hero.cta_label = 'Reservar mesa';
+    c.sections.hero.cta_href = '#contact';
+    c.sections.hero.cta_label_2 = 'Ver la carta';
+    c.sections.hero.cta_href_2 = '#pricing';
+    c.sections.hero.image_url = 'https://images.unsplash.com/photo-1544025162-d76694265947?w=1600&auto=format&fit=crop&q=80';
+
+    c.sections.about.title = 'Casi 30 años de parrilla';
+    c.sections.about.body = 'Abrimos en 1996 en Puerto Madero con una convicción simple: la mejor carne del mundo merece la mejor parrilla. Trabajamos exclusivamente con novillos pastoriles de la pampa húmeda, madurados en cámara propia durante 21 días. Nuestro asador tiene 25 años trabajando con nosotros — cada corte pasa por sus manos. Servimos a presidentes, artistas y familias por igual. Bienvenidos.';
+    c.sections.about.image_url = 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=1200&auto=format&fit=crop&q=80';
+
+    c.sections.stats.title = '';
+    c.sections.stats.items = [
+      { id: 'st1', number: '28', label: 'Años de historia' },
+      { id: 'st2', number: '21', label: 'Días de maduración' },
+      { id: 'st3', number: '300+', label: 'Etiquetas de vino' },
+      { id: 'st4', number: '4.9', label: 'Rating comensales' }
+    ];
+
+    c.sections.features.title = 'La experiencia';
+    c.sections.features.items = [
+      { id: 'f1', icon: '🥩', title: 'Carne pastoril seleccionada', body: 'Novillos criados a pasto en la pampa húmeda. Madurados en cámara propia por 21 días para máxima terneza.' },
+      { id: 'f2', icon: '🔥', title: 'Parrilla a leña', body: 'Quebracho blanco y espinillo argentino. Nunca gas, nunca carbón industrial. El sabor lo hace la brasa.' },
+      { id: 'f3', icon: '🍷', title: 'Cava con 300+ etiquetas', body: 'Nuestro sommelier armó una carta única: grandes bodegas de Mendoza, joyas de Salta y clásicos italianos y franceses.' },
+      { id: 'f4', icon: '👨‍🍳', title: 'Asador con 25 años', body: 'Don Ramón trabaja con nosotros desde 1999. Cada corte pasa por sus manos. Podés verlo trabajar desde el salón.' }
+    ];
+
+    c.sections.gallery.title = 'Nuestros cortes';
+    c.sections.gallery.subtitle = 'Del ojo de bife al vacío, cada corte servido en su punto exacto.';
+    c.sections.gallery.columns = 3;
+    c.sections.gallery.items = [
+      { id: 'g1', image_url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80', caption: 'Ojo de bife 500g · madurado 21 días' },
+      { id: 'g2', image_url: 'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80', caption: 'Bife de chorizo con hueso' },
+      { id: 'g3', image_url: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=900&auto=format&fit=crop&q=80', caption: 'Asado de tira certificado' },
+      { id: 'g4', image_url: 'https://images.unsplash.com/photo-1607250282061-c976f4e5a670?w=900&auto=format&fit=crop&q=80', caption: 'Provoleta con orégano y ají molido' },
+      { id: 'g5', image_url: 'https://images.unsplash.com/photo-1547424450-c6d2a3a95a48?w=900&auto=format&fit=crop&q=80', caption: 'Vacío al asador · corte insignia' },
+      { id: 'g6', image_url: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80', caption: 'Chorizo criollo casero' }
+    ];
+
+    c.sections.pricing.title = 'Menús cerrados';
+    c.sections.pricing.subtitle = 'Diseñados por el chef con los mejores cortes de la semana. Todo incluye entrada, principal, postre y bebida sin alcohol.';
+    c.sections.pricing.tiers = [
+      {
+        id: 'p1', name: 'Menú del asador',
+        price: '$ 28.900',
+        description: 'De martes a viernes al mediodía',
+        features: ['Tabla de fiambres para compartir', 'Elegí entre 4 cortes principales', 'Postre casero + café', 'Vino de la casa (copa)', 'Ideal para almuerzos de trabajo'],
+        cta_label: 'Reservar',
+        cta_href: '#contact'
+      },
+      {
+        id: 'p2', name: 'Degustación de la parrilla',
+        price: '$ 58.000',
+        description: 'La experiencia completa · 7 pasos',
+        features: ['Tabla del asador (achuras + chorizo)', 'Provoleta al horno de leña', 'Trio de cortes + guarniciones', 'Cheesecake de dulce de leche', 'Maridaje con 3 vinos (+$ 22.000)', 'Duración aprox. 2:30hs'],
+        cta_label: 'Reservar experiencia',
+        cta_href: '#contact',
+        highlighted: true
+      },
+      {
+        id: 'p3', name: 'Eventos privados',
+        price: 'Desde $ 45.000/persona',
+        description: 'Cumpleaños, corporativos, casamientos',
+        features: ['Salón privado (hasta 60 personas)', 'Menú custom con el chef', 'Sommelier a disposición', 'Servicio de valet parking', 'Coordinador dedicado del evento'],
+        cta_label: 'Consultar disponibilidad',
+        cta_href: '#contact'
+      }
+    ];
+
+    c.sections.video.title = 'Un vistazo al lugar';
+    c.sections.video.subtitle = 'Nuestro salón, la parrilla en acción y el equipo que hace todo posible.';
+    c.sections.video.provider = 'youtube';
+    c.sections.video.video_id = 'dQw4w9WgXcQ'; // placeholder, cambiar en editor
+
+    c.sections.testimonials.title = 'Lo que dicen nuestros comensales';
+    c.sections.testimonials.items = [
+      { id: 't1', name: 'Marcelo B.', role: 'Cliente desde 2005', rating: 5, photo_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&auto=format&fit=crop&q=80', text: 'Vengo cada mes desde hace casi 20 años. El nivel se mantiene siempre. El ojo de bife madurado es lo mejor que probé en Buenos Aires.' },
+      { id: 't2', name: 'Sofía L.', role: 'Comensal recurrente', rating: 5, photo_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&auto=format&fit=crop&q=80', text: 'Traje a clientes internacionales y quedaron sorprendidos. La combinación de carne, servicio y ambiente es imbatible. Nuestro lugar de siempre.' },
+      { id: 't3', name: 'Julián M.', role: 'Foodie', rating: 5, photo_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&auto=format&fit=crop&q=80', text: 'La degustación 7 pasos vale cada peso. El maridaje con Malbec de altura es una experiencia sensorial. Volveré para el cumpleaños.' }
+    ];
+
+    c.sections.faq.title = 'Antes de venir';
+    c.sections.faq.items = [
+      { id: 'q1', q: '¿Necesito reservar?', a: 'Sí, especialmente los fines de semana y noches. Reservá desde el botón "Reservar mesa" arriba o por WhatsApp. Confirmamos en el día.' },
+      { id: 'q2', q: '¿Cómo eligen la carne?', a: 'Trabajamos con novillos pastoriles seleccionados en la Cuenca del Salado. Los recibimos enteros y los maduramos en nuestra cámara durante 21 días antes de servirlos.' },
+      { id: 'q3', q: '¿Tienen opciones vegetarianas o sin TACC?', a: 'Sí. Ofrecemos entradas y principales vegetarianos, y toda la carta indica claramente lo apto celíaco. Consultanos por opciones veganas.' },
+      { id: 'q4', q: '¿Aceptan grupos grandes?', a: 'Sí. Para más de 8 personas usamos nuestro salón principal; para más de 15, reservamos el salón privado. Todo con al menos 48hs de anticipación.' },
+      { id: 'q5', q: '¿Hasta qué hora atienden?', a: 'Mediodía: 12 a 15:30hs. Noche: 20 a 24:30hs. Cerramos los lunes. Sábados y domingos hacemos también sobremesa hasta las 17hs.' },
+      { id: 'q6', q: '¿Tienen valet parking?', a: 'Sí, en la puerta del restaurante. Sin cargo para comensales. También estamos a 3 cuadras de la estación Puerto Madero.' }
+    ];
+
+    c.sections.contact.title = 'Consultas y eventos privados';
+    c.sections.contact.subtitle = 'Para reservas de mesa clickeá "Reservar mesa" arriba. Este formulario es para eventos privados, prensa o consultas específicas.';
+
+    c.sections.cta_final.title = '¿Qué esperás?';
+    c.sections.cta_final.body = 'Reservá tu mesa online o llamanos al +54 11 4315-9999. Estamos abiertos de martes a domingo.';
+    c.sections.cta_final.cta_label = 'Reservar mi mesa';
+    c.sections.cta_final.cta_href = '#contact';
+
+    c.nav.links = [
+      { id: '00000000-0000-0000-0000-000000000e01', label: 'La carta', href: '#pricing' },
+      { id: '00000000-0000-0000-0000-000000000e02', label: 'Historia', href: '#about' },
+      { id: '00000000-0000-0000-0000-000000000e03', label: 'Cómo llegar', href: '#map' },
+      { id: '00000000-0000-0000-0000-000000000e04', label: 'Reservar', href: '#contact' }
+    ];
+    c.nav.show_my_courses = false;
+    c.nav.show_affiliates = false;
+
+    c.footer.text = 'Puerto Madero, Buenos Aires · Martes a Domingo · Reservas: +54 11 4315-9999';
+
+    return {
+      id: 'steakhouse',
+      name: 'Parrilla premium (steakhouse)',
+      category: 'Gastronomía',
+      emoji: '🥩',
+      shortDesc: 'Parrilla upscale estilo Las Lilas: hero cinemático + historia + galería de cortes + menús + reserva + mapa. 100% builder.',
+      longDesc: 'Template inspirado en steakhouses argentinos premium (Las Lilas, La Cabrera, Don Julio). Paleta oxidado + rojo profundo, historia con foco en la tradición y el asador, galería de 6 cortes con captions, pricing por menús cerrados (del asador / degustación 7 pasos / eventos privados), testimonios de clientes de larga data, FAQ enfocado en carne y reservas, mapa y form de eventos. Todo construido con las secciones del motor — vos editás cualquier texto, foto o color desde el builder.',
+      suggestedPrimary: '#7c2d12',
+      config: c,
+      // Reservas de mesa: cuando el owner activa "calendar+reservations",
+      // el catálogo aparece con el widget de reserva integrado (fecha+hora).
+      modules: ['calendar', 'reservations']
+    };
   })()
 ];
 
