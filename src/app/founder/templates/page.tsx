@@ -2,7 +2,7 @@ import { loadSiteTemplateRows } from '@/lib/site/templates/loader';
 import {
   updateSiteTemplateAction, toggleSiteTemplateActiveAction,
   createSiteTemplateAction, deleteSiteTemplateAction,
-  resetSystemTemplatesAction
+  resetSystemTemplatesAction, enterTemplateEditModeAction
 } from '@/lib/site/templates/founder-actions';
 
 export const dynamic = 'force-dynamic';
@@ -141,10 +141,10 @@ export default async function FounderTemplatesPage() {
                 }`}>
                 {t.is_active ? '✓ Activo' : '⏸ Inactivo'}
               </button>
-              <button type="button"
-                disabled title="Próximamente: editar diseño visual con el builder"
-                className="text-xs rounded px-3 py-1.5 border border-white/10 text-white/30 cursor-not-allowed">
-                🎨 Editar diseño (soon)
+              <button type="submit" formAction={enterTemplateEditModeAction}
+                title="Editar diseño con el mismo builder que usan los tenants (impersona preview tenant + carga config del template)"
+                className="text-xs rounded px-3 py-1.5 border border-orange-500/40 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20 font-semibold">
+                🎨 Editar diseño (builder)
               </button>
               <button type="submit" formAction={deleteSiteTemplateAction}
                 className="text-xs rounded px-3 py-1.5 border border-rose-500/30 text-rose-300 hover:bg-rose-500/10">

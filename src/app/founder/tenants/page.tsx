@@ -22,7 +22,9 @@ export default async function FounderTenants() {
     .select("id, slug, name, status, created_at, commission_rate_override, owner_user_id")
     .order("created_at", { ascending: false });
 
-  const tenants = (data ?? []) as TenantRow[];
+  // Excluir preview tenants (slug '_tpl-*') que son sandboxes del founder
+  // para editar templates — no son sitios reales que deban aparecer acá.
+  const tenants = ((data ?? []) as TenantRow[]).filter((t) => !t.slug.startsWith('_tpl-'));
 
   const ownerIds = Array.from(new Set(tenants.map((t) => t.owner_user_id)));
   let ownersById = new Map<string, OwnerProfile>();

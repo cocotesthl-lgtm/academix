@@ -58,7 +58,9 @@ export async function getUserWorkspaces(userId: string): Promise<Workspace[]> {
       tenant_id: string;
       role: Workspace['role'];
       tenants: { name: string; slug: string; brand: { primary_color?: string; logo_url?: string } | null } | null;
-    }>).filter((m) => m.tenants);
+    }>).filter((m) => m.tenants)
+      // Ocultar preview tenants del founder (usados para editar templates)
+      .filter((m) => !m.tenants!.slug.startsWith('_tpl-'));
 
     const byTenant = new Map<string, Workspace>();
     for (const m of raw) {

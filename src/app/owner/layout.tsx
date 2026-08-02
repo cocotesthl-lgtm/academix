@@ -1,6 +1,11 @@
 import { requireOwner, getCurrentUser } from "@/lib/auth/guards";
 import { getUserModerationStatus } from "@/lib/moderation/user-status";
 import { stopImpersonatingAction } from "@/lib/founder/actions";
+import {
+  getTemplateEditContext,
+  saveTemplateFromPreviewAction,
+  exitTemplateEditModeAction
+} from "@/lib/site/templates/founder-actions";
 import { tenantOrigin, env } from "@/lib/env";
 import { getServiceClient } from "@/lib/supabase/service";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
@@ -34,6 +39,10 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   // Moderación: si el user está 'under_review', mostramos banner amarillo
   // arriba del panel. 'suspended' ya fue interceptado por requireOwner.
   const userModStatus = user ? await getUserModerationStatus(user.id) : 'active';
+  // Modo "editar template": el founder impersonó su preview tenant con
+  // el config de un template. Mostramos banner especial + botón para
+  // guardar los cambios de vuelta al site_templates.
+  const templateEdit = await getTemplateEditContext();
   const modules = await getTenantModules(tenant.id);
   // Si el user llegó a /owner via requireOwner(), es owner del tenant →
   // permissions serán las de owner (full). Se pasa igual para que el
@@ -137,7 +146,26 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
         __html: `:root{--cp-brand-primary:${brandPrimaryHex};--cp-brand-secondary:${brandPrimaryHex};}`
       }} />
     <OwnerShell brandName={tenant.name} storefrontUrl={storefrontUrl} sidebar={sidebar}>
-      {impersonating && (
+      {templateEdit ? (
+        <div className="mb-4 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 text-orange-950 px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-sm font-medium">
+          <span className="flex items-center gap-2">
+            🎨 Estás editando el template <strong>{templateEdit.name}</strong>.
+            Los cambios los ves acá pero <strong>NO se aplican</strong> hasta que le des "Guardar como template".
+          </span>
+          <div className="flex gap-2">
+            <form action={saveTemplateFromPreviewAction}>
+              <button className="rounded bg-orange-950 text-orange-100 px-3 py-1.5 text-xs font-semibold hover:bg-black">
+                💾 Guardar como template
+              </button>
+            </form>
+            <form action={exitTemplateEditModeAction}>
+              <button className="rounded border border-orange-950/40 bg-white/40 text-orange-950 px-3 py-1.5 text-xs font-semibold hover:bg-white/60">
+                ✖ Salir sin guardar
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : impersonating && (
         <div className="mb-4 rounded-lg bg-amber-500 text-amber-950 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-sm font-medium">
           <span>
             ⚠️ Estás viendo <strong>{tenant.name}</strong> como admin. Tus acciones quedan en el audit log.

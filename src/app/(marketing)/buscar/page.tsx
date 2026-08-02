@@ -55,7 +55,11 @@ export default async function BuscarAcademiasPage() {
       }
     } catch { /* silent */ }
   }
-  const filtered = rawTenants.filter((t) => !t.owner_user_id || !suspendedOwners.has(t.owner_user_id));
+  const filtered = rawTenants
+    // Ocultar preview tenants del founder (slug prefix `_tpl-`) — sandboxes
+    // internos, no son sitios reales que quieran aparecer en el marketplace.
+    .filter((t) => !t.slug.startsWith('_tpl-'))
+    .filter((t) => !t.owner_user_id || !suspendedOwners.has(t.owner_user_id));
 
   const sitios: AcademiaCard[] = filtered.map((t) => ({
     id: t.id,
