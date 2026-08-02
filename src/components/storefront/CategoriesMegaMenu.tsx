@@ -111,7 +111,7 @@ export function CategoriesMegaMenu({
 
       {open && (
         <div
-          className="absolute left-0 top-full mt-2 z-50 rounded-lg bg-white border border-black/10 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2"
+          className="absolute left-0 top-full mt-2 z-50 cp-radius bg-white border border-black/10 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2"
           style={{ width: 'min(920px, 90vw)' }}
         >
           <div className="grid grid-cols-[220px_1fr] min-h-[380px]">

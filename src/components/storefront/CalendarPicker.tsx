@@ -84,7 +84,7 @@ function SlotPicker({
 
   if (slots.length === 0) {
     return (
-      <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+      <div className="cp-radius border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
         ⚠️ Por ahora no hay slots disponibles para reservar.
         {required && <div className="mt-1">La publicación requiere reserva — pediles a los compradores que vuelvan más tarde o avisale al instructor.</div>}
       </div>
@@ -147,7 +147,7 @@ function ListView({
 }) {
   const [openDay, setOpenDay] = useState<string | null>(groups[0]?.[0] ?? null);
   return (
-    <div className="rounded-lg border border-black/15 bg-white max-h-[280px] overflow-y-auto">
+    <div className="cp-radius border border-black/15 bg-white max-h-[280px] overflow-y-auto">
       {groups.map(([day, daySlots]) => {
         const isOpen = openDay === day;
         const dateObj = new Date(day + 'T12:00:00');
@@ -252,7 +252,7 @@ function MonthView({
     : [];
 
   return (
-    <div className="rounded-lg border border-black/15 bg-white p-3 space-y-3">
+    <div className="cp-radius border border-black/15 bg-white p-3 space-y-3">
       {/* Header con navegación */}
       <div className="flex items-center justify-between">
         <button type="button" onClick={prevMonth}

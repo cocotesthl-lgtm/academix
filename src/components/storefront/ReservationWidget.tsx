@@ -96,7 +96,7 @@ export function ReservationWidget({
 
   if (done) {
     return (
-      <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-5 text-center">
+      <div className="cp-radius border border-emerald-500/40 bg-emerald-500/10 p-5 text-center">
         <div className="text-3xl mb-2">✅</div>
         <div className="font-semibold text-black">¡Reserva enviada!</div>
         <p className="text-sm text-black/60 mt-1">
@@ -117,7 +117,7 @@ export function ReservationWidget({
                 key={v.id}
                 type="button"
                 onClick={() => setSelectedVenue(v.id)}
-                className={`text-left rounded-lg border px-3 py-2 transition text-sm ${
+                className={`text-left cp-radius border px-3 py-2 transition text-sm ${
                   selectedVenue === v.id ? 'border-black bg-black/5' : 'border-black/15 hover:border-black/40'
                 }`}
               >
@@ -202,7 +202,7 @@ export function ReservationWidget({
 
       {/* ── Selector de pago (solo si payment_mode='choice') ── */}
       {paymentMode === 'choice' && priceCents > 0 && (
-        <div className="rounded-lg border border-black/15 p-3 space-y-2 bg-black/[0.02]">
+        <div className="cp-radius border border-black/15 p-3 space-y-2 bg-black/[0.02]">
           <div className="text-xs font-semibold text-black/70 mb-1">¿Cómo querés pagar?</div>
           <label className={`flex items-start gap-2.5 rounded-md border p-2.5 cursor-pointer transition ${
             paymentChoice === 'full' ? 'border-black bg-white' : 'border-black/10 hover:border-black/30'
@@ -227,7 +227,7 @@ export function ReservationWidget({
 
       {/* ── Pago obligatorio (deposit/full fijo) — mostrar cuánto se va a cobrar ── */}
       {(paymentMode === 'deposit' || paymentMode === 'full') && priceCents > 0 && (
-        <div className="rounded-lg border border-black/15 bg-black/[0.02] p-3 text-sm">
+        <div className="cp-radius border border-black/15 bg-black/[0.02] p-3 text-sm">
           {paymentMode === 'full' ? (
             <>
               <div className="font-semibold">Pago total: {fmt(priceCents)}</div>
@@ -247,7 +247,7 @@ export function ReservationWidget({
       )}
 
       <button type="submit" disabled={submitting || (slots !== null && slots.length === 0 && !!date)}
-        className="w-full rounded-lg text-white font-semibold py-3 disabled:opacity-50"
+        className="w-full cp-radius text-white font-semibold py-3 disabled:opacity-50"
         style={{ background: `var(--brand-bg, ${primary})` }}>
         {submitting ? 'Procesando…' : paymentMode === 'none' ? ctaText : `${ctaText} y pagar`}
       </button>

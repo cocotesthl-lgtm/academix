@@ -60,7 +60,7 @@ export function GiftCardRedeemPanel({
   return (
     <div className="mt-6 space-y-3">
       {saved ? (
-        <div className="rounded-lg bg-white border border-emerald-300 p-4 text-center">
+        <div className="cp-radius bg-white border border-emerald-300 p-4 text-center">
           <div className="text-emerald-700 font-semibold mb-1">
             {justSaved ? '✓ Guardada' : '✓ Ya está guardada'}
           </div>
@@ -80,7 +80,7 @@ export function GiftCardRedeemPanel({
         </div>
       ) : (
         <button type="button" onClick={save}
-          className="w-full rounded-lg bg-emerald-600 text-white py-3.5 font-semibold hover:bg-emerald-700 transition">
+          className="w-full cp-radius bg-emerald-600 text-white py-3.5 font-semibold hover:bg-emerald-700 transition">
           🎁 Guardar para mi próxima compra
         </button>
       )}

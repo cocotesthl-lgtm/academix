@@ -613,14 +613,14 @@ export default async function StorefrontHome({
                   <FadeIn>
                     {a.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={a.image_url} alt="" className="rounded-2xl w-full max-h-96 shadow-lg"
+                      <img src={a.image_url} alt="" className="cp-radius w-full max-h-96 shadow-lg"
                         style={{
                           objectFit: a.image_fit ?? 'cover',
                           objectPosition: a.image_position ?? 'center',
                           height: a.image_fit === 'contain' ? 'auto' : undefined
                         }} />
                     ) : (
-                      <div className="rounded-2xl w-full h-80 flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, ${primary}20, ${primary}05)` }}>
+                      <div className="cp-radius w-full h-80 flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(135deg, ${primary}20, ${primary}05)` }}>
                         <span className="text-7xl">👋</span>
                       </div>
                     )}
@@ -689,7 +689,7 @@ export default async function StorefrontHome({
                   <div className={`max-w-5xl mx-auto grid gap-8 ${arr.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
                     {arr.map((p, idx) => (
                       <FadeIn key={p.id} delay={idx * 120}>
-                        <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition border border-black/5">
+                        <div className="bg-white cp-radius p-6 shadow-sm hover:shadow-md transition border border-black/5">
                           {renderCard(p, { compact: true })}
                         </div>
                       </FadeIn>
@@ -703,7 +703,7 @@ export default async function StorefrontHome({
                     <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none" style={{ background: `linear-gradient(-90deg, ${bg ?? 'white'}, transparent)` }} />
                     <div className="flex gap-6 animate-marquee-slow items-stretch" style={{ width: 'max-content' }}>
                       {[...arr, ...arr].map((p, idx) => (
-                        <div key={`${p.id}-${idx}`} className="flex-shrink-0 w-64 bg-white rounded-2xl p-6 shadow-sm border border-black/5">
+                        <div key={`${p.id}-${idx}`} className="flex-shrink-0 w-64 bg-white cp-radius p-6 shadow-sm border border-black/5">
                           {renderCard(p, { compact: true })}
                         </div>
                       ))}
@@ -728,7 +728,7 @@ export default async function StorefrontHome({
                   <div className={`grid gap-4 grid-cols-2 md:grid-cols-${cols}`}>
                     {st.items.map((s, idx) => (
                       <FadeIn key={s.id} delay={idx * 80}>
-                        <div className="text-center p-6 rounded-2xl border border-black/10 bg-white shadow-sm">
+                        <div className="text-center p-6 cp-radius border border-black/10 bg-white shadow-sm">
                           <AnimatedCounter value={s.number} color={primary} />
                           <div className="text-sm text-black/60 mt-2">{s.label}</div>
                         </div>
@@ -757,7 +757,7 @@ export default async function StorefrontHome({
                   <div className="grid md:grid-cols-2 gap-4">
                     {lp.items.map((p, idx) => (
                       <FadeIn key={p.id} delay={idx * 60}>
-                        <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-black/5 hover:border-black/15 transition">
+                        <div className="flex items-start gap-3 p-4 cp-radius bg-white border border-black/5 hover:border-black/15 transition">
                           <span className="w-7 h-7 rounded-full flex items-center justify-center text-white text-sm shrink-0 font-bold" style={{ background: primary }}>✓</span>
                           <span className="text-black/80 pt-0.5">{p.text}</span>
                         </div>
@@ -785,7 +785,7 @@ export default async function StorefrontHome({
                   <div className={`grid gap-6 ${ft.items.length === 1 ? 'grid-cols-1' : ft.items.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
                     {ft.items.map((f, idx) => (
                       <FadeIn key={f.id} delay={idx * 100}>
-                        <div className="text-center p-8 rounded-2xl bg-white border border-black/10 hover:shadow-xl hover:-translate-y-1 transition">
+                        <div className="text-center p-8 cp-radius bg-white border border-black/10 hover:shadow-xl hover:-translate-y-1 transition">
                           <div className="text-5xl mb-4">{f.icon}</div>
                           <h3 className="font-bold text-lg" style={{ color: primary }}>{f.title}</h3>
                           <p className="text-sm text-black/60 mt-2 leading-relaxed">{f.body}</p>
@@ -873,7 +873,7 @@ export default async function StorefrontHome({
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {ts.items.map((t, idx) => (
                       <FadeIn key={t.id} delay={idx * 100}>
-                        <div className="rounded-2xl bg-white border border-black/10 p-6 shadow-sm hover:shadow-md transition h-full">
+                        <div className="cp-radius bg-white border border-black/10 p-6 shadow-sm hover:shadow-md transition h-full">
                           <div className="text-yellow-500 mb-3">{'★'.repeat(t.rating ?? 5)}</div>
                           <p className="text-black/80 italic leading-relaxed">"{t.text}"</p>
                           <div className="mt-5 pt-5 border-t border-black/5 flex items-center gap-3">
@@ -949,7 +949,7 @@ export default async function StorefrontHome({
                   <div className="space-y-3">
                     {fq.items.map((f, idx) => (
                       <FadeIn key={f.id} delay={idx * 60}>
-                        <details className="group rounded-xl border border-black/10 bg-white overflow-hidden hover:shadow-sm transition">
+                        <details className="group cp-radius border border-black/10 bg-white overflow-hidden hover:shadow-sm transition">
                           <summary className="cursor-pointer px-6 py-4 font-medium hover:bg-black/[0.02] flex items-center justify-between gap-4 list-none">
                             <span>{f.q}</span>
                             <span className="text-2xl text-black/30 group-open:rotate-45 transition-transform" style={{ color: primary }}>+</span>
@@ -968,7 +968,7 @@ export default async function StorefrontHome({
             const o = cfg.sections.offer;
             return (
               <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
-                <div className="max-w-3xl mx-auto rounded-2xl text-center text-white p-10"
+                <div className="max-w-3xl mx-auto cp-radius text-center text-white p-10"
                   style={{ background: `var(--brand-bg, linear-gradient(135deg, ${primary}, ${primary}cc))` }}>
                   <h2 className="text-2xl md:text-3xl font-bold"
                     dangerouslySetInnerHTML={richHtml(o.title)} />
@@ -1000,7 +1000,7 @@ export default async function StorefrontHome({
                     {pr.tiers.map((t) => (
                       <div
                         key={t.id}
-                        className={`rounded-xl p-6 bg-white ${t.highlighted ? 'border-2 shadow-lg scale-105' : 'border border-black/10'}`}
+                        className={`cp-radius p-6 bg-white ${t.highlighted ? 'border-2 shadow-lg scale-105' : 'border border-black/10'}`}
                         style={t.highlighted ? { borderColor: primary } : undefined}
                       >
                         {t.highlighted && (
@@ -1046,7 +1046,7 @@ export default async function StorefrontHome({
                   <h2 className="text-2xl md:text-3xl font-bold text-center"
                     dangerouslySetInnerHTML={richHtml(vd.title)} />
                   {vd.subtitle && <p className="text-center text-black/60 mt-2">{vd.subtitle}</p>}
-                  <div className="mt-8 aspect-video rounded-2xl overflow-hidden border border-black/10 bg-black shadow-xl">
+                  <div className="mt-8 aspect-video cp-radius overflow-hidden border border-black/10 bg-black shadow-xl">
                     <iframe
                       src={src}
                       className="w-full h-full"
@@ -1117,12 +1117,12 @@ export default async function StorefrontHome({
                     dangerouslySetInnerHTML={richHtml(n.title)} />
                   {n.subtitle && <p className="text-black/60 mt-2">{n.subtitle}</p>}
                   {nlStatus === 'sent' && (
-                    <div className="mt-4 mx-auto max-w-md rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm px-4 py-2">
+                    <div className="mt-4 mx-auto max-w-md cp-radius bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm px-4 py-2">
                       ✓ Suscripción confirmada. Vas a recibir novedades pronto.
                     </div>
                   )}
                   {nlStatus === 'error' && (
-                    <div className="mt-4 mx-auto max-w-md rounded-lg bg-rose-50 border border-rose-300 text-rose-800 text-sm px-4 py-2">
+                    <div className="mt-4 mx-auto max-w-md cp-radius bg-rose-50 border border-rose-300 text-rose-800 text-sm px-4 py-2">
                       ✗ El email no es válido. Revisalo e intentá de nuevo.
                     </div>
                   )}
@@ -1154,14 +1154,14 @@ export default async function StorefrontHome({
                   {pos === 'top' && hasImage && (
                     <FadeIn>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={cb.image_url!} alt="" className="w-full max-h-96 object-cover rounded-2xl shadow-lg mb-10" />
+                      <img src={cb.image_url!} alt="" className="w-full max-h-96 object-cover cp-radius shadow-lg mb-10" />
                     </FadeIn>
                   )}
                   <div className={`flex gap-12 items-center ${pos === 'left' ? 'md:flex-row flex-col' : pos === 'right' ? 'md:flex-row-reverse flex-col' : 'flex-col text-center'}`}>
                     {(pos === 'left' || pos === 'right') && hasImage && (
                       <FadeIn delay={100}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={cb.image_url!} alt="" className="w-full md:w-1/2 max-h-80 object-cover rounded-2xl shadow-lg" />
+                        <img src={cb.image_url!} alt="" className="w-full md:w-1/2 max-h-80 object-cover cp-radius shadow-lg" />
                       </FadeIn>
                     )}
                     <FadeIn delay={200}>
@@ -1207,16 +1207,16 @@ export default async function StorefrontHome({
                       {ct.subtitle && <p className="mt-3 text-black/60">{ct.subtitle}</p>}
                     </div>
                     {contactStatus === 'sent' && (
-                      <div className="mb-4 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                      <div className="mb-4 cp-radius border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                         ✓ ¡Mensaje enviado! Te vamos a responder a la brevedad.
                       </div>
                     )}
                     {contactStatus === 'error' && (
-                      <div className="mb-4 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                      <div className="mb-4 cp-radius border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800">
                         ✗ No pudimos enviar tu mensaje. Revisá los datos e intentá otra vez.
                       </div>
                     )}
-                    <form action={`/api/contact/${tenantId}`} method="POST" className="bg-white rounded-2xl p-8 shadow-sm border border-black/5 space-y-4">
+                    <form action={`/api/contact/${tenantId}`} method="POST" className="bg-white cp-radius p-8 shadow-sm border border-black/5 space-y-4">
                       <div>
                         <label className="block text-sm font-medium mb-1.5">{ct.name_label}</label>
                         <input name="Nombre" required className="w-full rounded-md border border-black/15 px-4 py-2.5 focus:outline-none focus:border-black/40" />
@@ -1274,7 +1274,7 @@ export default async function StorefrontHome({
                       </div>
                     </FadeIn>
                   )}
-                  <div className="rounded-2xl overflow-hidden border border-black/10 shadow-lg" style={{ height: `${heightPx}px` }}>
+                  <div className="cp-radius overflow-hidden border border-black/10 shadow-lg" style={{ height: `${heightPx}px` }}>
                     <iframe
                       src={embedSrc}
                       width="100%"
@@ -1414,7 +1414,7 @@ export default async function StorefrontHome({
                   <div className={`grid ${gridCols} gap-6`}>
                     {blogPreviewArticles.map((a) => (
                       <Link key={a.id} href={`/blog/${a.slug}`}
-                        className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
+                        className="block cp-radius border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
                         {a.cover_url && (
                           <div className="aspect-[16/9] bg-zinc-100 overflow-hidden">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1752,7 +1752,7 @@ export default async function StorefrontHome({
                         : null;
                       return (
                         <Link key={p.id} href={`/p/${p.slug}`}
-                          className="group block rounded-xl border border-black/10 overflow-hidden bg-white hover:shadow-lg transition">
+                          className="group block cp-radius border border-black/10 overflow-hidden bg-white hover:shadow-lg transition">
                           <div className="aspect-square bg-zinc-100 overflow-hidden relative">
                             {p.cover_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
@@ -1858,7 +1858,7 @@ export default async function StorefrontHome({
                         const textColor = it.text_color ?? '#ffffff';
                         return (
                           <Link key={it.id} href={it.cta_href || '#'}
-                            className="relative overflow-hidden rounded-lg group aspect-square">
+                            className="relative overflow-hidden cp-radius group aspect-square">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={it.image_url} alt={it.label}
                               className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500" />
@@ -1888,7 +1888,7 @@ export default async function StorefrontHome({
                     <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
                       {c.items.slice(0, 4).map((it) => (
                         <Link key={it.id} href={it.cta_href || '#'}
-                          className="group rounded-xl bg-white overflow-hidden shadow-sm hover:shadow-lg transition flex flex-row min-h-[180px] md:min-h-[220px]">
+                          className="group cp-radius bg-white overflow-hidden shadow-sm hover:shadow-lg transition flex flex-row min-h-[180px] md:min-h-[220px]">
                           {/* Texto a la izquierda */}
                           <div className="flex-1 p-5 md:p-7 flex flex-col justify-center">
                             {it.eyebrow && (
@@ -1942,7 +1942,7 @@ export default async function StorefrontHome({
                       const span = it.span === 2 ? 'md:col-span-2' : '';
                       return (
                         <Link key={it.id} href={it.cta_href || '#'}
-                          className={`relative overflow-hidden rounded-xl group aspect-[16/10] md:aspect-auto md:h-full ${span}`}>
+                          className={`relative overflow-hidden cp-radius group aspect-[16/10] md:aspect-auto md:h-full ${span}`}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={it.image_url} alt={it.label}
                             className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
@@ -2048,7 +2048,7 @@ export default async function StorefrontHome({
                   {c.benefits.length > 0 && (
                     <div className="grid md:grid-cols-3 gap-4 mb-10">
                       {c.benefits.map((b) => (
-                        <div key={b.id} className="rounded-xl bg-white/5 border border-white/10 p-5">
+                        <div key={b.id} className="cp-radius bg-white/5 border border-white/10 p-5">
                           <div className="text-3xl mb-2">{b.icon}</div>
                           <h3 className="font-semibold mb-1">{b.title}</h3>
                           <p className="text-sm text-white/60">{b.body}</p>
@@ -2057,7 +2057,7 @@ export default async function StorefrontHome({
                     </div>
                   )}
                   {c.show_terms && affiliateTerms && (
-                    <div className="rounded-lg bg-white/5 border border-white/10 p-4 mb-8 text-sm text-white/70 whitespace-pre-wrap max-w-3xl mx-auto">
+                    <div className="cp-radius bg-white/5 border border-white/10 p-4 mb-8 text-sm text-white/70 whitespace-pre-wrap max-w-3xl mx-auto">
                       {affiliateTerms}
                     </div>
                   )}
@@ -2093,7 +2093,7 @@ function CourseCard({
   c: PublicCourse; primary: string; category?: Category | null;
 }) {
   return (
-    <Link href={`/c/${c.slug}`} className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
+    <Link href={`/c/${c.slug}`} className="block cp-radius border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
       <div className="h-40 relative" style={{ background: `var(--brand-bg, linear-gradient(135deg, ${primary}, ${primary}88))` }}>
         {c.cover_url && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -2138,7 +2138,7 @@ function CountdownDisplay({ endsAt }: { endsAt: string }) {
   return (
     <div className="flex justify-center gap-3 my-6">
       {[{ n: d, l: 'días' }, { n: h, l: 'h' }, { n: m, l: 'min' }, { n: s, l: 'seg' }].map((b, i) => (
-        <div key={i} className="bg-white/15 rounded-lg px-4 py-3 min-w-[70px]">
+        <div key={i} className="bg-white/15 cp-radius px-4 py-3 min-w-[70px]">
           <div className="text-3xl font-bold leading-none">{String(b.n).padStart(2, '0')}</div>
           <div className="text-xs opacity-70 mt-1">{b.l}</div>
         </div>
@@ -2168,7 +2168,7 @@ function HeroMedia({ h, primary, heroForm }: { h: HeroData; primary: string; her
       : drv ? `https://drive.google.com/file/d/${drv[1]}/preview`
       : h.video_url;
     return (
-      <div className="rounded-2xl overflow-hidden shadow-2xl aspect-video">
+      <div className="cp-radius overflow-hidden shadow-2xl aspect-video">
         <iframe src={src} className="w-full h-full" allowFullScreen title="Hero video" />
       </div>
     );
@@ -2176,7 +2176,7 @@ function HeroMedia({ h, primary, heroForm }: { h: HeroData; primary: string; her
 
   if (mt === 'carousel' && Array.isArray(h.carousel_urls) && h.carousel_urls.length > 0) {
     return (
-      <div className="rounded-2xl overflow-hidden shadow-2xl relative aspect-[4/3] bg-gray-100">
+      <div className="cp-radius overflow-hidden shadow-2xl relative aspect-[4/3] bg-gray-100">
         <div className="absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth">
           {h.carousel_urls.map((url, i) => (
             // eslint-disable-next-line @next/next/no-img-element
@@ -2200,11 +2200,11 @@ function HeroMedia({ h, primary, heroForm }: { h: HeroData; primary: string; her
   if (h.image_url) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={h.image_url} alt="" className="rounded-2xl w-full max-h-[480px] object-cover shadow-2xl" />
+      <img src={h.image_url} alt="" className="cp-radius w-full max-h-[480px] object-cover shadow-2xl" />
     );
   }
   return (
-    <div className="rounded-2xl w-full aspect-[4/3] flex items-center justify-center border-2 border-dashed border-black/15 bg-black/5">
+    <div className="cp-radius w-full aspect-[4/3] flex items-center justify-center border-2 border-dashed border-black/15 bg-black/5">
       <div className="text-center px-6">
         <div className="text-5xl opacity-30">🖼️</div>
         <p className="mt-3 text-sm text-black/40">Pegá la URL de tu imagen hero en el builder</p>
@@ -2264,7 +2264,7 @@ function StandardCard({ card, primary }: { card: StoreCard; primary: string }) {
   const href = hasButton ? (card.cta_href?.trim() || '#') : null;
 
   return (
-    <CardLinkWrap href={href} className="block rounded-xl border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
+    <CardLinkWrap href={href} className="block cp-radius border border-black/10 overflow-hidden hover:shadow-lg transition bg-white">
       <div className="h-40 relative" style={{ background: `var(--brand-bg, linear-gradient(135deg, ${primary}, ${primary}88))` }}>
         {card.image_url && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -2311,7 +2311,7 @@ function BannerHCard({ card, primary }: { card: StoreCard; primary: string }) {
   const textColor = card.text_color ?? '#ffffff';
 
   return (
-    <CardLinkWrap href={href} className="col-span-full block rounded-xl overflow-hidden hover:shadow-xl transition relative aspect-[16/5] bg-gray-200">
+    <CardLinkWrap href={href} className="col-span-full block cp-radius overflow-hidden hover:shadow-xl transition relative aspect-[16/5] bg-gray-200">
       {card.image_url && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={card.image_url} alt={card.title} className="absolute inset-0 w-full h-full object-cover" />
@@ -2344,7 +2344,7 @@ function BannerVCard({ card, primary }: { card: StoreCard; primary: string }) {
   const textColor = card.text_color ?? '#ffffff';
 
   return (
-    <CardLinkWrap href={href} className="block rounded-xl overflow-hidden hover:shadow-xl transition relative aspect-[3/4] bg-gray-200">
+    <CardLinkWrap href={href} className="block cp-radius overflow-hidden hover:shadow-xl transition relative aspect-[3/4] bg-gray-200">
       {card.image_url && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={card.image_url} alt={card.title} className="absolute inset-0 w-full h-full object-cover" />

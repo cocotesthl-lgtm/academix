@@ -160,7 +160,7 @@ export function ProductGallery({
         {/* Imagen principal */}
         <div
           ref={mainRef}
-          className="order-1 lg:order-2 relative aspect-square rounded-2xl bg-zinc-100 overflow-hidden flex-1"
+          className="order-1 lg:order-2 relative aspect-square cp-radius bg-zinc-100 overflow-hidden flex-1"
           onMouseEnter={handleMove}
           onMouseMove={handleMove}
           onMouseLeave={() => setLens(null)}
@@ -212,7 +212,7 @@ export function ProductGallery({
             Se posiciona absolute sobre el buy box para no empujar layout. */}
         {hasZoom && lens && active?.kind === 'image' && (
           <div
-            className="hidden lg:block absolute top-0 left-full ml-4 w-[440px] h-[440px] rounded-2xl overflow-hidden border border-black/10 bg-white shadow-2xl z-30 pointer-events-none"
+            className="hidden lg:block absolute top-0 left-full ml-4 w-[440px] h-[440px] cp-radius overflow-hidden border border-black/10 bg-white shadow-2xl z-30 pointer-events-none"
             aria-hidden="true"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -162,7 +162,7 @@ export function PayPalCartCheckout({
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-black/10 bg-white p-12 text-center text-black/45">
+      <div className="cp-radius border border-black/10 bg-white p-12 text-center text-black/45">
         <div className="text-4xl mb-3">🛒</div>
         <div className="text-lg font-medium text-black/65">Tu carrito está vacío</div>
         <a href="/" className="mt-4 inline-block text-sm text-blue-600 hover:underline">
@@ -175,7 +175,7 @@ export function PayPalCartCheckout({
   return (
     <div className="grid md:grid-cols-3 gap-6">
       <div className="md:col-span-2 space-y-6">
-        <section className="rounded-xl border border-black/10 bg-white p-5">
+        <section className="cp-radius border border-black/10 bg-white p-5">
           <h2 className="text-lg font-semibold mb-4">Tus datos</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input type="email" required placeholder="Email *"
@@ -191,7 +191,7 @@ export function PayPalCartCheckout({
         </section>
 
         {requiresShipping && (
-          <section className="rounded-xl border border-black/10 bg-white p-5">
+          <section className="cp-radius border border-black/10 bg-white p-5">
             <h2 className="text-lg font-semibold mb-1">Dirección de envío</h2>
             <p className="text-xs text-black/55 mb-4">
               El vendedor te contactará al email que dejaste para coordinar el envío y su costo.
@@ -223,7 +223,7 @@ export function PayPalCartCheckout({
       </div>
 
       <aside className="md:col-span-1">
-        <div className="sticky top-24 rounded-xl border border-black/10 bg-white p-5 space-y-4">
+        <div className="sticky top-24 cp-radius border border-black/10 bg-white p-5 space-y-4">
           <div className="text-xs uppercase tracking-wider text-black/45 font-semibold">Resumen</div>
           <ul className="space-y-2 text-sm">
             {items.map((i) => (

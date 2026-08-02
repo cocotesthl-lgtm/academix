@@ -112,13 +112,13 @@ export function StoreFiltersBar({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar productos…"
-            className="w-full rounded-lg border border-black/15 pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:border-black/50 bg-white"
+            className="w-full cp-radius border border-black/15 pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:border-black/50 bg-white"
           />
         </div>
         <select
           value={initialSort}
           onChange={(e) => pushWith({ sort: e.target.value })}
-          className="rounded-lg border border-black/15 px-3 py-2.5 text-sm focus:outline-none focus:border-black/50 bg-white"
+          className="cp-radius border border-black/15 px-3 py-2.5 text-sm focus:outline-none focus:border-black/50 bg-white"
         >
           {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
             <option key={k} value={k}>{SORT_LABELS[k]}</option>

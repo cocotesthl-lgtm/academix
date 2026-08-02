@@ -79,7 +79,7 @@ export async function RelatedProducts({
             <Link
               key={r.id}
               href={`/p/${r.slug}`}
-              className="snap-start shrink-0 w-56 rounded-xl border border-black/10 bg-white hover:border-black/30 hover:shadow-md transition group"
+              className="snap-start shrink-0 w-56 cp-radius border border-black/10 bg-white hover:border-black/30 hover:shadow-md transition group"
             >
               <div className="aspect-square rounded-t-xl bg-zinc-100 overflow-hidden">
                 {r.cover_url ? (

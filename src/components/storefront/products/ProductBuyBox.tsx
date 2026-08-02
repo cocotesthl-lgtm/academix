@@ -186,7 +186,7 @@ export function ProductBuyBox({
           type="button"
           onClick={handleBuyNow}
           disabled={outOfStock}
-          className={`w-full py-3.5 rounded-lg text-base font-semibold transition ${
+          className={`w-full py-3.5 cp-radius text-base font-semibold transition ${
             outOfStock
               ? 'bg-black/10 text-black/40 cursor-not-allowed'
               : 'bg-black text-white hover:bg-black/85'
@@ -198,7 +198,7 @@ export function ProductBuyBox({
           type="button"
           onClick={handleAdd}
           disabled={outOfStock}
-          className={`w-full py-3.5 rounded-lg text-base font-semibold transition border ${
+          className={`w-full py-3.5 cp-radius text-base font-semibold transition border ${
             outOfStock
               ? 'border-black/10 text-black/30 cursor-not-allowed'
               : added
@@ -285,7 +285,7 @@ function VariantSwatches({
               title={disabled ? `${v.name} — sin stock` : v.name}
               aria-label={v.name}
               aria-pressed={isSelected}
-              className={`relative rounded-lg border-2 transition ${
+              className={`relative cp-radius border-2 transition ${
                 isSelected
                   ? 'border-blue-500 ring-2 ring-blue-500/30'
                   : disabled

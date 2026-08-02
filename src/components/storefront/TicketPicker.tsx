@@ -118,7 +118,7 @@ export function TicketPicker({
                   type="button"
                   disabled={isSold}
                   onClick={() => pickDate(e.id)}
-                  className={`w-full text-left rounded-lg border p-3 transition ${
+                  className={`w-full text-left cp-radius border p-3 transition ${
                     isSel
                       ? 'border-transparent text-white'
                       : isSold
@@ -148,7 +148,7 @@ export function TicketPicker({
 
       {/* ─── Selector de tickets / asientos ─── */}
       {event && (
-        <div className="rounded-lg border border-black/15 bg-black/[0.02] p-4 space-y-3">
+        <div className="cp-radius border border-black/15 bg-black/[0.02] p-4 space-y-3">
           {event.seat_mode === 'none' && (
             <>
               <label className="block text-xs text-black/60 mb-1">Cantidad de tickets</label>
@@ -231,7 +231,7 @@ export function TicketPicker({
           {/* Total + submit. Look estilo recibo: currency al frente,
               número compacto sin parsing de "$ X ARS" en columnas. */}
           <div className="pt-3 border-t border-black/10 space-y-3">
-            <div className="rounded-lg bg-black/[0.04] px-4 py-3">
+            <div className="cp-radius bg-black/[0.04] px-4 py-3">
               <div className="flex items-baseline justify-between gap-2 mb-1">
                 <span className="text-[11px] text-black/55 uppercase tracking-wider font-medium">Total</span>
                 {totalTickets > 0 && !isFree && (
@@ -298,7 +298,7 @@ function SeatGrid({
       <label className="block text-xs text-black/60 mb-2">
         Elegí tus asientos ({selected.length} {selected.length === 1 ? 'asiento seleccionado' : 'asientos seleccionados'})
       </label>
-      <div className="rounded-lg bg-black/[0.04] p-3 overflow-x-auto">
+      <div className="cp-radius bg-black/[0.04] p-3 overflow-x-auto">
         {/* "ESCENARIO" indicator */}
         <div className="text-center text-[10px] uppercase tracking-widest text-black/40 mb-2 border-b border-black/15 pb-1">
           escenario / frente
@@ -370,7 +370,7 @@ function ZonesView({
         const zoneSelected = selected.filter((s) => s.startsWith(`${z.id}:`)).length;
         const zonePrice = Math.round(priceCents * z.price_multiplier);
         return (
-          <div key={z.id} className="rounded-lg p-3" style={{ background: `${z.color ?? '#999'}10` }}>
+          <div key={z.id} className="cp-radius p-3" style={{ background: `${z.color ?? '#999'}10` }}>
             <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded" style={{ background: z.color ?? '#999' }} />

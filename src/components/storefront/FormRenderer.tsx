@@ -37,7 +37,7 @@ export function FormRenderer({ form, primary = '#f97316', compact = false }: {
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   return (
-    <div className={`rounded-2xl border border-black/10 bg-white p-6 ${compact ? '' : 'md:p-8'} shadow-lg`}>
+    <div className={`cp-radius border border-black/10 bg-white p-6 ${compact ? '' : 'md:p-8'} shadow-lg`}>
       {!compact && (form.title || form.description) && (
         <div className="mb-5">
           {form.title && <h3 className="text-xl font-bold text-black">{form.title}</h3>}

@@ -100,7 +100,7 @@ export function ProductsStrip({
   return (
     <section className="px-4 md:px-6 py-10 md:py-14">
       <div className="max-w-7xl mx-auto">
-        <div className="rounded-2xl border border-black/10 bg-white p-4 md:p-6 shadow-sm">
+        <div className="cp-radius border border-black/10 bg-white p-4 md:p-6 shadow-sm">
           <div className="flex items-start justify-between mb-4 gap-3">
             <div>
               <h2 className="text-lg md:text-2xl font-bold text-black">{title}</h2>
@@ -198,7 +198,7 @@ export function ProductsStrip({
                     data-product-card
                     className="snap-start shrink-0 w-[42vw] sm:w-[240px] md:w-[220px] group relative"
                   >
-                    <div className="aspect-square rounded-lg bg-zinc-100 overflow-hidden relative">
+                    <div className="aspect-square cp-radius bg-zinc-100 overflow-hidden relative">
                       {p.cover_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img

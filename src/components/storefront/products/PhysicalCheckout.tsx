@@ -220,7 +220,7 @@ export function PhysicalCheckout({
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-black/10 bg-white p-12 text-center text-black/45">
+      <div className="cp-radius border border-black/10 bg-white p-12 text-center text-black/45">
         <div className="text-4xl mb-3">🛒</div>
         <div className="text-lg font-medium text-black/65">Tu carrito está vacío</div>
         <a href="/tienda" className="mt-4 inline-block text-sm text-blue-600 hover:underline">
@@ -234,7 +234,7 @@ export function PhysicalCheckout({
     <div className="grid md:grid-cols-3 gap-6">
       {/* Formulario */}
       <div className="md:col-span-2 space-y-6">
-        <section className="rounded-xl border border-black/10 bg-white p-5">
+        <section className="cp-radius border border-black/10 bg-white p-5">
           <h2 className="text-lg font-semibold mb-4">Tus datos</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input type="email" required placeholder="Email *"
@@ -250,7 +250,7 @@ export function PhysicalCheckout({
         </section>
 
         {requiresShipping && (
-          <section className="rounded-xl border border-black/10 bg-white p-5">
+          <section className="cp-radius border border-black/10 bg-white p-5">
             <h2 className="text-lg font-semibold mb-4">Envío</h2>
             <div>
               <label className="block text-xs text-black/60 mb-1">Provincia *</label>
@@ -281,7 +281,7 @@ export function PhysicalCheckout({
                   const sel = selectedRate === o.rate_id;
                   return (
                   <label key={o.rate_id}
-                    className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition hover:border-black/30"
+                    className="flex items-start gap-3 p-3 cp-radius border cursor-pointer transition hover:border-black/30"
                     style={sel
                       ? { borderColor: accentColor, background: `${accentColor}0F` }
                       : undefined}>
@@ -334,7 +334,7 @@ export function PhysicalCheckout({
 
       {/* Resumen */}
       <aside>
-        <div className="sticky top-24 rounded-xl border border-black/10 bg-white p-5 space-y-4">
+        <div className="sticky top-24 cp-radius border border-black/10 bg-white p-5 space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-black/60">Resumen</h2>
 
           <ul className="space-y-3">
@@ -370,7 +370,7 @@ export function PhysicalCheckout({
           </ul>
 
           {giftCard && (
-            <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs">
+            <div className="cp-radius border border-emerald-300 bg-emerald-50 p-3 text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-emerald-800">🎁 Gift card aplicada</span>
                 <button type="button"

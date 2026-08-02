@@ -69,7 +69,7 @@ export function CategoryMegamenu({
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
             ref={panelRef}
-            className="absolute left-0 top-full mt-1 z-50 flex bg-white rounded-lg shadow-2xl border border-black/10 overflow-hidden"
+            className="absolute left-0 top-full mt-1 z-50 flex bg-white cp-radius shadow-2xl border border-black/10 overflow-hidden"
             style={{ minWidth: 720, maxWidth: '90vw' }}
             onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}
           >
