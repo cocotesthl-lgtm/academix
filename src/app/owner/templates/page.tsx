@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
-import { SITE_TEMPLATES, TEMPLATE_CATEGORIES, type SiteTemplate } from '@/lib/site/templates/catalog';
+import { type SiteTemplate } from '@/lib/site/templates/catalog';
+import { loadSiteTemplates } from '@/lib/site/templates/loader';
 import { applySiteTemplateAction } from '@/lib/site/templates/actions';
 import { MODULE_META, type ModuleKey } from '@/lib/modules/types';
 
@@ -22,6 +23,9 @@ export default async function TemplatesPage({
 }) {
   const { tenant } = await requireOwner();
   const { cat } = await searchParams;
+  // Templates desde DB (con auto-seed en primera lectura, fallback a hardcoded).
+  const SITE_TEMPLATES = await loadSiteTemplates();
+  const TEMPLATE_CATEGORIES = Array.from(new Set(SITE_TEMPLATES.map((t) => t.category)));
 
   // Snapshot del sitio actual — se muestra en el warning al aplicar
   let currentSectionsCount = 0;

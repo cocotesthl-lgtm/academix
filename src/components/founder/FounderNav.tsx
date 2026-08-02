@@ -9,6 +9,7 @@ const ITEMS: Item[] = [
   { label: 'Dashboard',         href: '/dashboard' },
   { label: 'Sitios',            href: '/tenants' },
   { label: 'Usuarios',          href: '/users' },
+  { label: '🎨 Templates',      href: '/templates' },
   { label: 'Planes',            href: '/plans' },
   { label: '→ Códigos promo',   href: '/plans/promos',  sub: true },
   { label: '→ Banner',          href: '/plans/banner',  sub: true },

@@ -6,6 +6,7 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { env, RESERVED_SLUGS } from '@/lib/env';
 import { DEFAULT_SITE_CONFIG } from '@/lib/site/types';
 import { SITE_TEMPLATES } from '@/lib/site/templates/catalog';
+import { loadSiteTemplates } from '@/lib/site/templates/loader';
 import { seedEcommerceDemoData } from '@/lib/site/templates/seed-ecommerce';
 import { defaultsForTemplate } from '@/lib/courses/landing';
 import { MODULE_PRESETS, ALL_MODULES_ON, type Modules } from '@/lib/modules/types';
@@ -50,7 +51,10 @@ export async function createTenantAction(
 
   // Insert tenant via service-role (RLS would otherwise require a custom INSERT policy)
   // Si el owner eligió un template, aplicamos su config; si no, DEFAULT_SITE_CONFIG.
-  const chosenTemplate = templateId ? SITE_TEMPLATES.find((t) => t.id === templateId) : null;
+  // Priorizamos DB (permite al founder editar templates sin deploy). Fallback al hardcoded.
+  const dbTemplates = await loadSiteTemplates();
+  const templatePool = dbTemplates.length > 0 ? dbTemplates : SITE_TEMPLATES;
+  const chosenTemplate = templateId ? templatePool.find((t) => t.id === templateId) : null;
   const siteConfig = chosenTemplate ? chosenTemplate.config : DEFAULT_SITE_CONFIG;
   // Si el template sugiere un color y el owner no cambió el default, usamos el del template.
   const effectivePrimary = (primaryColor === '#0a0a0a' && chosenTemplate?.suggestedPrimary)
