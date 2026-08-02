@@ -17,7 +17,37 @@
   --cp-brand-secondary: #fbbf24;      /* ámbar gradiente endpoint */
   --cp-brand-gradient: linear-gradient(135deg, #f97316 0%, #fbbf24 100%);
   --cp-brand-gradient-soft: linear-gradient(135deg, rgba(249,115,22,0.12) 0%, rgba(251,191,36,0.12) 100%);
+  /* Radius global — el storefront layout sobrescribe con el valor del site_config.
+     Default 8px = 'md'. Componentes que quieren opt-in usan
+     class .cp-radius o style borderRadius:'var(--cp-radius, 8px)'. */
+  --cp-radius: 8px;
 }
+
+/* Utility para opt-in del border-radius global — usalo en botones, cards,
+   imágenes, hero, media containers del storefront. */
+.cp-radius { border-radius: var(--cp-radius, 8px) !important; }
+.cp-radius-l { border-top-left-radius: var(--cp-radius, 8px) !important;
+               border-bottom-left-radius: var(--cp-radius, 8px) !important; }
+.cp-radius-r { border-top-right-radius: var(--cp-radius, 8px) !important;
+               border-bottom-right-radius: var(--cp-radius, 8px) !important; }
+.cp-radius-t { border-top-left-radius: var(--cp-radius, 8px) !important;
+               border-top-right-radius: var(--cp-radius, 8px) !important; }
+.cp-radius-b { border-bottom-left-radius: var(--cp-radius, 8px) !important;
+               border-bottom-right-radius: var(--cp-radius, 8px) !important; }
+
+/* Marquee track — traducción X del -50% para loop infinito.
+   Duplicá el contenido para que no se vea el "salto" al reset. */
+@keyframes cp-marquee-loop {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.cp-marquee-track {
+  animation: cp-marquee-loop linear infinite;
+  animation-duration: 40s;
+  width: max-content;
+}
+.cp-marquee-track:hover { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .cp-marquee-track { animation: none; } }
 
 @media (prefers-color-scheme: dark) {
   :root {

@@ -1064,22 +1064,45 @@ export default async function StorefrontHome({
             const g = cfg.sections.gallery;
             if (g.items.length === 0) return null;
             const colsClass = g.columns === 2 ? 'md:grid-cols-2' : g.columns === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3';
+            const isMarquee = g.layout === 'marquee';
+            const speed = Math.max(10, Math.min(120, g.marquee_speed ?? 40));
             return (
-              <section key={key} {...dt} id={key} className="px-6 py-16" style={bg ? { background: bg } : undefined}>
+              <section key={key} {...dt} id={key} className="px-6 py-16 overflow-hidden" style={bg ? { background: bg } : undefined}>
                 <div className="max-w-6xl mx-auto">
                   <h2 className="text-2xl md:text-3xl font-bold text-center"
                     dangerouslySetInnerHTML={richHtml(g.title)} />
                   {g.subtitle && <p className="text-center text-black/60 mt-2">{g.subtitle}</p>}
-                  <div className={`mt-8 grid grid-cols-2 ${colsClass} gap-3`}>
+                </div>
+                {isMarquee ? (
+                  <div className="mt-8 relative">
+                    {/* Doblamos los items para loop sin salto — el keyframe
+                        translada -50% que es exactamente 1 set. */}
+                    <div className="flex gap-4 cp-marquee-track" style={{ animationDuration: `${speed}s` }}>
+                      {[...g.items, ...g.items].map((it, idx) => (
+                        <figure key={`${it.id}-${idx}`} className="shrink-0 w-72 overflow-hidden border border-black/10 cp-radius">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={it.image_url} alt={it.caption ?? ''} className="w-full h-56 object-cover" />
+                          {it.caption && <figcaption className="text-xs text-black/60 px-3 py-2">{it.caption}</figcaption>}
+                        </figure>
+                      ))}
+                    </div>
+                    {/* Fade lateral para prolijidad */}
+                    <div className="pointer-events-none absolute inset-y-0 left-0 w-16"
+                      style={{ background: `linear-gradient(to right, ${bg || '#ffffff'} 0%, transparent 100%)` }} />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 w-16"
+                      style={{ background: `linear-gradient(to left, ${bg || '#ffffff'} 0%, transparent 100%)` }} />
+                  </div>
+                ) : (
+                  <div className={`mt-8 grid grid-cols-2 ${colsClass} gap-3 max-w-6xl mx-auto`}>
                     {g.items.map((it) => (
-                      <figure key={it.id} className="overflow-hidden rounded-xl border border-black/10">
+                      <figure key={it.id} className="overflow-hidden border border-black/10 cp-radius">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={it.image_url} alt={it.caption ?? ''} className="w-full h-48 object-cover hover:scale-105 transition" />
                         {it.caption && <figcaption className="text-xs text-black/60 px-3 py-2">{it.caption}</figcaption>}
                       </figure>
                     ))}
                   </div>
-                </div>
+                )}
               </section>
             );
           }

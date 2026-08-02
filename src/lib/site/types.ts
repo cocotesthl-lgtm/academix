@@ -272,7 +272,18 @@ export type SiteConfig = {
     offer:        SectionBase & { title: string; subtitle: string; ends_at: string | null; cta_label: string; cta_href: string };
     pricing:      SectionBase & { title: string; subtitle: string; tiers: PricingTier[] };
     video:        SectionBase & { title: string; subtitle: string; provider: 'drive' | 'youtube'; video_id: string };
-    gallery:      SectionBase & { title: string; subtitle: string; items: GalleryItem[]; columns: 2 | 3 | 4 };
+    gallery:      SectionBase & { title: string; subtitle: string; items: GalleryItem[]; columns: 2 | 3 | 4;
+      /**
+       * Layout de la galería:
+       *   - 'grid'    : grilla estática (default histórico)
+       *   - 'marquee' : cinta horizontal auto-scrolleante con las imágenes,
+       *                 similar al marquee de logos. Ideal para muestras de
+       *                 platos, obras, portfolio.
+       */
+      layout?: 'grid' | 'marquee';
+      /** Segundos por loop del marquee (default 40s). Ignora si layout='grid'. */
+      marquee_speed?: number;
+    };
     newsletter:   SectionBase & { title: string; subtitle: string; cta_label: string };
     custom:       SectionBase & { title: string; subtitle: string; body: string; image_url: string | null; image_pos: CustomImagePos; cta_label: string; cta_href: string };
     contact:      SectionBase & { title: string; subtitle: string; email: string; whatsapp: string; name_label: string; email_label: string; message_label: string; submit_label: string };
@@ -408,6 +419,18 @@ export type SiteConfig = {
     style?: 'default' | 'masthead';
   };
   footer: { text: string; socials: SocialLink[]; links: NavLink[] };
+  /**
+   * Redondeo global del sitio: se aplica a botones, cards, hero, media
+   * containers, inputs, etc. — vía CSS var --cp-radius.
+   *
+   *  - 'none':   0px (angular, look luxury/editorial)
+   *  - 'sm':     4px (sutil, default previous)
+   *  - 'md':     8px (moderno)
+   *  - 'lg':     14px (soft)
+   *  - 'xl':     22px (pill/friendly)
+   *  - 'full':   9999px (super round, look playful)
+   */
+  border_radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
   /**
    * Paywall del blog/news. Controla cuánto ve un visitante NO suscripto
    * al abrir una nota. Los suscriptores activos (buyers con plan
@@ -769,6 +792,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
     socials: [],
     links: []
   },
+  // Redondeo por defecto: 'md' (8px) — modern-friendly, coincide con el
+  // valor histórico hardcoded del rounded-lg de Tailwind en muchos lados.
+  border_radius: 'md',
   // Default paywall off para no romper sitios existentes. El template
   // news lo enciende en 'soft' (recomendación con opción de cerrar).
   paywall: {

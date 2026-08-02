@@ -1182,17 +1182,31 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
   })(),
 
   /* 2.c Steakhouse — parrilla premium estilo Las Lilas (Puerto Madero).
-        Paleta dark oxidado + dorado + rojo profundo. Hero cinemático con
-        foto de bife jugoso, historia con foco en tradición/parrilla,
-        gallery grande de cortes, menú por experiencias (menú del chef,
-        degustación de vinos, corporate), testimonios editorializados,
-        mapa y reserva. Todo 100% con secciones del motor. */
+        Full luxury: fondo negro, tipografía dorada, esquinas angulares
+        (border_radius=none), gallery en cinta scrolleante con muestras
+        de cortes. Hero cinemático + historia + menú + testimonios + mapa. */
   (() => {
     const c = clone();
     enableOnly(c, [
       'hero', 'about', 'features', 'stats', 'gallery', 'pricing',
       'video', 'testimonials', 'faq', 'map', 'contact', 'cta_final'
     ]);
+
+    // Redondeo cero — look angular / luxury
+    c.border_radius = 'none';
+
+    // Paleta luxury: todo negro con acento dorado
+    const BLACK = '#0a0a0a';
+    const GOLD = '#d4af37';
+    // Bg negro en todas las secciones (herencia visual del sitio de Las Lilas)
+    (['hero', 'about', 'features', 'stats', 'gallery', 'pricing',
+      'video', 'testimonials', 'faq', 'map', 'contact', 'cta_final'] as const)
+      .forEach((k) => {
+        c.sections[k].bg_color = BLACK;
+        c.sections[k].text_color = '#f5f5f5';
+        c.sections[k].accent_color = GOLD;
+        c.sections[k].title_color = GOLD;
+      });
 
     // Hero split cinematográfico
     c.sections.hero.layout = 'split';
@@ -1228,13 +1242,17 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
     c.sections.gallery.title = 'Nuestros cortes';
     c.sections.gallery.subtitle = 'Del ojo de bife al vacío, cada corte servido en su punto exacto.';
     c.sections.gallery.columns = 3;
+    c.sections.gallery.layout = 'marquee';        // cinta scrolleante estilo Las Lilas
+    c.sections.gallery.marquee_speed = 45;        // 45s por loop
     c.sections.gallery.items = [
       { id: 'g1', image_url: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=900&auto=format&fit=crop&q=80', caption: 'Ojo de bife 500g · madurado 21 días' },
       { id: 'g2', image_url: 'https://images.unsplash.com/photo-1558030006-450675393462?w=900&auto=format&fit=crop&q=80', caption: 'Bife de chorizo con hueso' },
       { id: 'g3', image_url: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=900&auto=format&fit=crop&q=80', caption: 'Asado de tira certificado' },
       { id: 'g4', image_url: 'https://images.unsplash.com/photo-1607250282061-c976f4e5a670?w=900&auto=format&fit=crop&q=80', caption: 'Provoleta con orégano y ají molido' },
       { id: 'g5', image_url: 'https://images.unsplash.com/photo-1547424450-c6d2a3a95a48?w=900&auto=format&fit=crop&q=80', caption: 'Vacío al asador · corte insignia' },
-      { id: 'g6', image_url: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80', caption: 'Chorizo criollo casero' }
+      { id: 'g6', image_url: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=900&auto=format&fit=crop&q=80', caption: 'Chorizo criollo casero' },
+      { id: 'g7', image_url: 'https://images.unsplash.com/photo-1615937722923-67f6deaf2cc9?w=900&auto=format&fit=crop&q=80', caption: 'Molleja crocante · entrada estrella' },
+      { id: 'g8', image_url: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=900&auto=format&fit=crop&q=80', caption: 'Cava con más de 300 etiquetas' }
     ];
 
     c.sections.pricing.title = 'Menús cerrados';
@@ -1310,12 +1328,12 @@ export const SITE_TEMPLATES: SiteTemplate[] = [
 
     return {
       id: 'steakhouse',
-      name: 'Parrilla premium (steakhouse)',
+      name: 'Parrilla premium (steakhouse luxury)',
       category: 'Gastronomía',
       emoji: '🥩',
-      shortDesc: 'Parrilla upscale estilo Las Lilas: hero cinemático + historia + galería de cortes + menús + reserva + mapa. 100% builder.',
-      longDesc: 'Template inspirado en steakhouses argentinos premium (Las Lilas, La Cabrera, Don Julio). Paleta oxidado + rojo profundo, historia con foco en la tradición y el asador, galería de 6 cortes con captions, pricing por menús cerrados (del asador / degustación 7 pasos / eventos privados), testimonios de clientes de larga data, FAQ enfocado en carne y reservas, mapa y form de eventos. Todo construido con las secciones del motor — vos editás cualquier texto, foto o color desde el builder.',
-      suggestedPrimary: '#7c2d12',
+      shortDesc: 'Full black + dorado, esquinas angulares, cinta scroll de cortes. Estilo Las Lilas / Fogón. 100% builder.',
+      longDesc: 'Template luxury inspirado en steakhouses argentinos premium (Las Lilas, La Cabrera, Fogón). Fondo negro en todas las secciones, tipografía dorada (#d4af37), border-radius en 0 para look angular/editorial. Galería en cinta scrolleante horizontal con 8 muestras de cortes. Todo editable desde el builder — cambiás cualquier texto, foto, color o redondeo sin tocar código.',
+      suggestedPrimary: '#d4af37',
       config: c,
       // Reservas de mesa: cuando el owner activa "calendar+reservations",
       // el catálogo aparece con el widget de reserva integrado (fecha+hora).

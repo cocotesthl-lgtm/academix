@@ -1334,3 +1334,30 @@ export async function setHeroSlideIntervalAction(formData: FormData): Promise<vo
   await saveConfig(tenant.id, cfg);
   revalidatePath('/site');
 }
+
+/**
+ * Setea el border_radius global del sitio ('none' | 'sm' | 'md' | 'lg' | 'xl' | 'full').
+ * Aplica a botones, cards, hero, media containers via CSS var --cp-radius.
+ */
+export async function setSiteBorderRadiusAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const raw = String(formData.get('radius') ?? '').trim();
+  const allowed = new Set(['none', 'sm', 'md', 'lg', 'xl', 'full']);
+  if (!allowed.has(raw)) return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.border_radius = raw as 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/owner/site');
+  revalidatePath('/', 'layout');
+}
+
+/** Setea gallery.layout ('grid' | 'marquee'). */
+export async function setGalleryLayoutAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const raw = String(formData.get('layout') ?? '').trim();
+  if (raw !== 'grid' && raw !== 'marquee') return;
+  const cfg = await loadConfig(tenant.id);
+  cfg.sections.gallery.layout = raw;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/owner/site');
+}

@@ -10,7 +10,9 @@ import {
   moveSectionAction,
   setSectionBgColorAction,
   setSectionTextColorAction,
-  updatePaywallAction
+  updatePaywallAction,
+  setSiteBorderRadiusAction,
+  setGalleryLayoutAction
 } from "@/lib/site/actions";
 import {
   HeroEditor,
@@ -230,11 +232,8 @@ export default async function SiteBuilderPage({
         que aparezca en tu sitio. Podés descartar cambios sin publicar en cualquier momento.
       </p>
 
-      {/* Filtro de secciones — link-based (server-side, sin JS). "Todas"
-          muestra tal cual; "Solo activas" oculta las que tienen toggle
-          off o app requerida desactivada — reduce el ruido cuando el
-          owner ya sabe qué secciones tiene armadas. */}
-      <div className="flex items-center gap-2 text-xs">
+      {/* Filtro de secciones + control global de border-radius */}
+      <div className="flex items-center gap-2 text-xs flex-wrap">
         <span className="text-white/50 uppercase tracking-wider font-semibold">Filtro:</span>
         <Link
           href="/owner/site"
@@ -246,6 +245,21 @@ export default async function SiteBuilderPage({
           className={`px-3 py-1 rounded transition ${filterMode === 'active' ? 'bg-white text-black font-semibold' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
           Solo activas
         </Link>
+        <span className="text-white/30 mx-1">·</span>
+        <span className="text-white/50 uppercase tracking-wider font-semibold">Redondeo:</span>
+        <form action={setSiteBorderRadiusAction} className="inline-flex gap-1">
+          {(['none', 'sm', 'md', 'lg', 'xl', 'full'] as const).map((r) => {
+            const isSel = (cfg.border_radius ?? 'md') === r;
+            const label = r === 'none' ? '⬜ 0' : r === 'sm' ? '4' : r === 'md' ? '8' : r === 'lg' ? '14' : r === 'xl' ? '22' : '● full';
+            return (
+              <button key={r} type="submit" name="radius" value={r}
+                className={`px-2 py-1 rounded transition text-[11px] ${isSel ? 'bg-white text-black font-semibold' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                title={`Border radius: ${r}`}>
+                {label}
+              </button>
+            );
+          })}
+        </form>
       </div>
 
       {/* Las plantillas pre-armadas se movieron a la sección Templates
@@ -529,12 +543,28 @@ export default async function SiteBuilderPage({
               />
             )}
             {key === 'gallery' && (
-              <GalleryEditor
-                initialTitle={cfg.sections.gallery.title}
-                initialSubtitle={cfg.sections.gallery.subtitle}
-                items={cfg.sections.gallery.items}
-                columns={cfg.sections.gallery.columns}
-              />
+              <>
+                <div className="flex items-center gap-2 text-xs mb-3">
+                  <span className="text-white/50 uppercase tracking-wider font-semibold">Layout:</span>
+                  <form action={setGalleryLayoutAction} className="inline-flex gap-1">
+                    {(['grid', 'marquee'] as const).map((l) => {
+                      const isSel = (cfg.sections.gallery.layout ?? 'grid') === l;
+                      return (
+                        <button key={l} type="submit" name="layout" value={l}
+                          className={`px-2.5 py-1 rounded ${isSel ? 'bg-white text-black font-semibold' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
+                          {l === 'grid' ? '▦ Grilla' : '↔ Cinta scroll'}
+                        </button>
+                      );
+                    })}
+                  </form>
+                </div>
+                <GalleryEditor
+                  initialTitle={cfg.sections.gallery.title}
+                  initialSubtitle={cfg.sections.gallery.subtitle}
+                  items={cfg.sections.gallery.items}
+                  columns={cfg.sections.gallery.columns}
+                />
+              </>
             )}
             {key === 'newsletter' && (
               <NewsletterEditor

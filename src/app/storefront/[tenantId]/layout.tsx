@@ -102,6 +102,12 @@ export default async function StorefrontLayout({
   const row = tenantRow as { site_config?: unknown; site_config_published?: unknown } | null;
   const cfg = mergeConfig(row?.site_config_published ?? row?.site_config);
 
+  // Border radius global del sitio → CSS var --cp-radius. Mapeo:
+  const radiusMap: Record<string, string> = {
+    none: '0px', sm: '4px', md: '8px', lg: '14px', xl: '22px', full: '9999px'
+  };
+  const radiusPx = radiusMap[cfg.border_radius ?? 'md'] ?? '8px';
+
   // ¿El user logueado es afiliado PLATFORM-LEVEL (de OfferNow)?
   // Si sí, mostramos la barra superior — puede afiliarse a este tenant
   // generando un link (la membership se autocrea ahí).
@@ -219,7 +225,7 @@ export default async function StorefrontLayout({
           div), y CSS vars solo cascadean hacia ABAJO. Sin este style
           tag el bar y el spinner quedaban naranjas fijos. */}
       <style dangerouslySetInnerHTML={{
-        __html: `:root{--cp-brand-primary:${primary};--cp-brand-secondary:${accent};--brand-bg:${primaryGradient};}`
+        __html: `:root{--cp-brand-primary:${primary};--cp-brand-secondary:${accent};--brand-bg:${primaryGradient};--cp-radius:${radiusPx};}`
       }} />
     <div
       className="min-h-screen bg-white text-black"
@@ -232,7 +238,12 @@ export default async function StorefrontLayout({
         // como fallback. Los consumers grandes (botones CTA, ribbons)
         // usan `background: var(--brand-bg)` y automáticamente
         // funcionan con ambos casos.
-        ['--brand-bg' as string]: primaryGradient
+        ['--brand-bg' as string]: primaryGradient,
+        // --cp-radius: valor global del border-radius del sitio, editable
+        // desde /owner/site (config.border_radius). Los componentes lo
+        // consumen vía style={{ borderRadius: 'var(--cp-radius, 0.5rem)' }}
+        // o class utility custom en el CSS global.
+        ['--cp-radius' as string]: radiusPx
       }}
     >
       {isAffiliate && !affBarHidden && (
