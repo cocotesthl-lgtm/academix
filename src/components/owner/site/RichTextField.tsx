@@ -129,7 +129,11 @@ export function RichTextField({
           focused ? 'border-white/40' : 'border-white/15'
         }`}
       >
-        {focused && <RichToolbar editor={editor} />}
+        {focused && (
+          <div className={multiline ? 'sticky top-0 z-30 bg-neutral-900 rounded-t-md' : ''}>
+            <RichToolbar editor={editor} multiline={multiline} />
+          </div>
+        )}
         <EditorContent editor={editor} />
         {!value && placeholder && !focused && (
           <div className="absolute pointer-events-none px-3 py-2 text-sm text-white/30 -mt-9">
@@ -159,10 +163,35 @@ export function RichTextField({
 
 type EditorLike = NonNullable<ReturnType<typeof useEditor>>;
 
-function RichToolbar({ editor }: { editor: EditorLike }) {
+function RichToolbar({ editor, multiline = false }: { editor: EditorLike; multiline?: boolean }) {
   const [color, setColor] = useState('#000000');
   const [fontSize, setFontSize] = useState('');
   const [spacing, setSpacing] = useState('');
+  const [showImg, setShowImg] = useState(false);
+  const [imgUrl, setImgUrl] = useState('');
+  const [imgAlign, setImgAlign] = useState<'left' | 'center' | 'right'>('center');
+  const [imgWidth, setImgWidth] = useState<'33%' | '50%' | '75%' | '100%'>('75%');
+
+  function insertImage() {
+    const url = imgUrl.trim();
+    if (!url || !/^https?:\/\//i.test(url)) return;
+    // Insertamos como HTML directo — así en el storefront queda tal cual
+    // sin dependencias de extensiones custom de TipTap Image.
+    const floatCss = imgAlign === 'left'
+      ? `float:left; margin: 0.25rem 1rem 0.75rem 0;`
+      : imgAlign === 'right'
+        ? `float:right; margin: 0.25rem 0 0.75rem 1rem;`
+        : '';
+    const displayCss = imgAlign === 'center'
+      ? 'display:block; margin: 0.75rem auto;'
+      : '';
+    const html = imgAlign === 'center'
+      ? `<p style="text-align:center"><img src="${url.replace(/"/g, '&quot;')}" alt="" style="${displayCss} width:${imgWidth}; max-width:100%; height:auto;" /></p><p></p>`
+      : `<img src="${url.replace(/"/g, '&quot;')}" alt="" style="${floatCss} width:${imgWidth}; max-width:100%; height:auto;" /><p></p>`;
+    editor.chain().focus().insertContent(html).run();
+    setImgUrl('');
+    setShowImg(false);
+  }
 
   function applyColor(hex: string) {
     setColor(hex);
@@ -197,6 +226,7 @@ function RichToolbar({ editor }: { editor: EditorLike }) {
     }`;
 
   return (
+    <>
     <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-white/10 bg-white/[0.03] rounded-t-md">
       <button type="button" onClick={() => editor.chain().focus().toggleBold().run()}
         className={btn(editor.isActive('bold'))} title="Negrita (Ctrl+B)">
@@ -279,6 +309,69 @@ function RichToolbar({ editor }: { editor: EditorLike }) {
           className="w-14 rounded bg-white/5 border border-white/15 px-1.5 py-0.5 text-xs"
         />
       </div>
+
+      {multiline && (
+        <>
+          <span className="w-px h-5 bg-white/15 mx-1" />
+          <button type="button"
+            onClick={() => setShowImg((v) => !v)}
+            className={`text-xs px-2 h-7 rounded border transition ${
+              showImg
+                ? 'border-white bg-white text-black font-semibold'
+                : 'border-white/15 text-white/70 hover:bg-white/10 hover:text-white'
+            }`}
+            title="Insertar imagen desde URL"
+          >
+            🖼️ Imagen
+          </button>
+        </>
+      )}
     </div>
+    {multiline && showImg && (
+      <div className="flex flex-wrap items-end gap-2 px-2 py-2 border-b border-white/10 bg-black/20">
+        <div className="flex-1 min-w-[220px]">
+          <label className="block text-[10px] text-white/50 mb-0.5">URL de la imagen</label>
+          <input
+            type="url"
+            value={imgUrl}
+            onChange={(e) => setImgUrl(e.target.value)}
+            placeholder="https://…/foto.jpg"
+            className="w-full rounded bg-white/5 border border-white/15 px-2 py-1 text-xs text-white font-mono"
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); insertImage(); } }}
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] text-white/50 mb-0.5">Alineación</label>
+          <div className="flex gap-0.5">
+            {(['left', 'center', 'right'] as const).map((a) => (
+              <button key={a} type="button" onClick={() => setImgAlign(a)}
+                className={`text-xs w-8 h-7 rounded ${imgAlign === a ? 'bg-white text-black font-semibold' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+                title={a === 'left' ? 'Izquierda (texto envuelve a la derecha)' : a === 'right' ? 'Derecha (texto envuelve a la izquierda)' : 'Centrada'}
+              >
+                {a === 'left' ? '⇤' : a === 'center' ? '↔' : '⇥'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-[10px] text-white/50 mb-0.5">Tamaño</label>
+          <div className="flex gap-0.5">
+            {(['33%', '50%', '75%', '100%'] as const).map((w) => (
+              <button key={w} type="button" onClick={() => setImgWidth(w)}
+                className={`text-[10px] px-1.5 h-7 rounded ${imgWidth === w ? 'bg-white text-black font-semibold' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}
+              >
+                {w}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button type="button" onClick={insertImage}
+          disabled={!imgUrl.trim()}
+          className="text-xs px-3 h-7 rounded bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed">
+          + Insertar
+        </button>
+      </div>
+    )}
+    </>
   );
 }

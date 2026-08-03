@@ -432,6 +432,12 @@ export type SiteConfig = {
    */
   border_radius?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
   /**
+   * Toggle de anuncios en artículos del blog. Cuando false, todos los
+   * AdSlot (banner inline, rectangle, sidebar) se ocultan. Default true
+   * para mantener el comportamiento existente.
+   */
+  blog_ads_enabled?: boolean;
+  /**
    * Paywall del blog/news. Controla cuánto ve un visitante NO suscripto
    * al abrir una nota. Los suscriptores activos (buyers con plan
    * pagado) siempre ven todo, no importa el modo.
@@ -795,6 +801,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   // Redondeo por defecto: 'md' (8px) — modern-friendly, coincide con el
   // valor histórico hardcoded del rounded-lg de Tailwind en muchos lados.
   border_radius: 'md',
+  // Ads del blog: por default ON — comportamiento previo (aparecen los
+  // placeholders "Anuncio banner/rectangle" para que el owner vea los slots).
+  blog_ads_enabled: true,
   // Default paywall off para no romper sitios existentes. El template
   // news lo enciende en 'soft' (recomendación con opción de cerrar).
   paywall: {

@@ -1361,3 +1361,18 @@ export async function setGalleryLayoutAction(formData: FormData): Promise<void> 
   await saveConfig(tenant.id, cfg);
   revalidatePath('/owner/site');
 }
+
+/**
+ * Toggle de anuncios del blog (site_config.blog_ads_enabled).
+ * Cuando false, todos los AdSlot del blog se ocultan.
+ */
+export async function setBlogAdsEnabledAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const raw = String(formData.get('enabled') ?? '').trim().toLowerCase();
+  const enabled = raw === 'true' || raw === 'on' || raw === '1';
+  const cfg = await loadConfig(tenant.id);
+  cfg.blog_ads_enabled = enabled;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/owner/blog');
+  revalidatePath('/blog', 'layout');
+}

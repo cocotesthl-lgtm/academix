@@ -213,13 +213,31 @@ export default async function ArticlePublicPage({
   // Se insertan en orden inverso (últimos primero) para que las
   // posiciones de los primeros no se corran al agregar los siguientes.
   let bodyWithExtras = article.body_html;
-  const inlineRectAd = inlineAdHtml('rectangle');
-  const inlineBannerAd = inlineAdHtml('banner');
-  bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, inlineRectAd, 5);
-  if (interestCardHtml) {
+  // Blog ads: se puede apagar globalmente desde site_config.blog_ads_enabled.
+  // Cuando está apagado, no inyectamos los inline ads en el body y el
+  // sidebar salta los AdSquaresPair.
+  const adsCfgEnabled = (await (async () => {
+    try {
+      const svcAds = getServiceClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (svcAds.from('tenants') as any)
+        .select('site_config_published, site_config').eq('id', tenantId).maybeSingle();
+      const c = mergeConfig(data?.site_config_published ?? data?.site_config);
+      return c.blog_ads_enabled !== false;
+    } catch { return true; }
+  })());
+  if (adsCfgEnabled) {
+    const inlineRectAd = inlineAdHtml('rectangle');
+    const inlineBannerAd = inlineAdHtml('banner');
+    bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, inlineRectAd, 5);
+    if (interestCardHtml) {
+      bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, interestCardHtml, 3);
+    }
+    bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, inlineBannerAd, 2);
+  } else if (interestCardHtml) {
+    // Aún queremos mostrar "Te puede interesar" (no es un ad)
     bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, interestCardHtml, 3);
   }
-  bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, inlineBannerAd, 2);
 
   // ── Paywall ──────────────────────────────────────────────────────
   // Cargamos site_config para leer el modo. Owner del tenant y
@@ -326,8 +344,9 @@ export default async function ArticlePublicPage({
             <ShareLink kind="twitter" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(`${storefrontOrigin(tenant.slug)}/blog/${slug}`)}&text=${encodeURIComponent(article.title)}`} />
           </div>
 
-          {/* Par de squares de ads — típico ubicación post-share */}
-          <AdSquaresPair />
+          {/* Par de squares de ads — típico ubicación post-share.
+              Respeta el toggle blog_ads_enabled del site_config. */}
+          {adsCfgEnabled && <AdSquaresPair />}
 
           {/* Seguir leyendo */}
           {seguirLeyendo.length > 0 && (
