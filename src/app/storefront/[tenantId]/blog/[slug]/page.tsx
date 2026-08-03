@@ -229,7 +229,19 @@ export default async function ArticlePublicPage({
   const { data: tRow } = await (svcCfg.from('tenants') as any)
     .select('site_config_published, site_config').eq('id', tenantId).single();
   const cfg = mergeConfig(tRow?.site_config_published ?? tRow?.site_config);
-  const paywallCfg = cfg.paywall || { mode: 'off' };
+  let paywallCfg = cfg.paywall || { mode: 'off' };
+
+  // App gate: si el módulo `plans` (Suscripciones) está apagado, forzamos
+  // paywall.mode='off'. Sin esto, apagar la app dejaba el paywall visible
+  // porque la config sigue en site_config con mode='soft'/'hard' del
+  // template. Ahora el toggle de la app manda.
+  try {
+    const { getTenantModules } = await import('@/lib/modules/queries');
+    const mods = await getTenantModules(tenantId);
+    if (mods.plans === false) {
+      paywallCfg = { ...paywallCfg, mode: 'off' };
+    }
+  } catch { /* si falla, respetamos la config del site */ }
 
   let userId: string | null = null;
   if (paywallCfg.mode !== 'off') {
