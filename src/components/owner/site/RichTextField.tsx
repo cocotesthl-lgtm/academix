@@ -2,6 +2,7 @@
 
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
@@ -81,7 +82,29 @@ export function RichTextField({
       Underline,
       TextStyleWithCustom,
       Color,
-      TextAlign.configure({ types: ['paragraph', 'heading'] })
+      TextAlign.configure({ types: ['paragraph', 'heading'] }),
+      // Image extension — preserva <img> insertados por el usuario
+      // (botón 🖼️ Imagen del toolbar). Extendemos para que el attr `style`
+      // se serialice en getHTML() y sobreviva al render en el storefront
+      // (float/margin/width que setea insertImage).
+      Image.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            style: {
+              default: null,
+              parseHTML: (el: HTMLElement) => el.getAttribute('style'),
+              renderHTML: (attrs: { style?: string | null }) => {
+                if (!attrs.style) return {};
+                return { style: attrs.style };
+              }
+            }
+          };
+        }
+      }).configure({
+        inline: false,
+        allowBase64: false
+      })
     ],
     content: value || '',
     immediatelyRender: false, // SSR-safe
@@ -130,7 +153,7 @@ export function RichTextField({
         }`}
       >
         {focused && (
-          <div className={multiline ? 'sticky top-0 z-30 bg-neutral-900 rounded-t-md' : ''}>
+          <div className={multiline ? 'sticky top-14 z-20 bg-neutral-900 rounded-t-md shadow-lg' : ''}>
             <RichToolbar editor={editor} multiline={multiline} />
           </div>
         )}
@@ -175,20 +198,25 @@ function RichToolbar({ editor, multiline = false }: { editor: EditorLike; multil
   function insertImage() {
     const url = imgUrl.trim();
     if (!url || !/^https?:\/\//i.test(url)) return;
-    // Insertamos como HTML directo — así en el storefront queda tal cual
-    // sin dependencias de extensiones custom de TipTap Image.
-    const floatCss = imgAlign === 'left'
-      ? `float:left; margin: 0.25rem 1rem 0.75rem 0;`
-      : imgAlign === 'right'
-        ? `float:right; margin: 0.25rem 0 0.75rem 1rem;`
-        : '';
-    const displayCss = imgAlign === 'center'
-      ? 'display:block; margin: 0.75rem auto;'
-      : '';
-    const html = imgAlign === 'center'
-      ? `<p style="text-align:center"><img src="${url.replace(/"/g, '&quot;')}" alt="" style="${displayCss} width:${imgWidth}; max-width:100%; height:auto;" /></p><p></p>`
-      : `<img src="${url.replace(/"/g, '&quot;')}" alt="" style="${floatCss} width:${imgWidth}; max-width:100%; height:auto;" /><p></p>`;
-    editor.chain().focus().insertContent(html).run();
+    // Con TipTap Image extension, insertamos como node img con style attr.
+    // El HTML final que sale por getHTML() tiene el <img> con style
+    // preservado — se renderiza igual en el storefront.
+    const alignStyle =
+      imgAlign === 'left'
+        ? `float:left; margin: 0.25rem 1rem 0.75rem 0; width:${imgWidth}; max-width:100%; height:auto;`
+        : imgAlign === 'right'
+          ? `float:right; margin: 0.25rem 0 0.75rem 1rem; width:${imgWidth}; max-width:100%; height:auto;`
+          : `display:block; margin: 0.75rem auto; width:${imgWidth}; max-width:100%; height:auto;`;
+    editor.chain().focus().setImage({
+      src: url,
+      alt: ''
+    }).run();
+    // TipTap setImage no acepta style directamente — parcheamos con
+    // updateAttributes en el node recién insertado.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (editor as any).chain().focus().updateAttributes('image', { style: alignStyle }).run();
+    // Cursor a párrafo nuevo debajo
+    editor.chain().focus().createParagraphNear().run();
     setImgUrl('');
     setShowImg(false);
   }

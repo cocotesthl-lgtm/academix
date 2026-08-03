@@ -319,7 +319,7 @@ export default async function ArticlePublicPage({
           {/* Cuerpo del artículo con paywall opcional. Bypass si owner
               o suscriptor activo. Modo 'off' == bypass. */}
           <div
-            className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:underline"
+            className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:underline cp-article-body"
             dangerouslySetInnerHTML={{ __html: bodyFree }}
           />
           {!bypass && paywallCfg.mode === 'soft' && bodyRest && (

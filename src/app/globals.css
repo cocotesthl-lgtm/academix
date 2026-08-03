@@ -35,6 +35,21 @@
 .cp-radius-b { border-bottom-left-radius: var(--cp-radius, 8px) !important;
                border-bottom-right-radius: var(--cp-radius, 8px) !important; }
 
+/* Article body — preservar párrafos vacíos como espacios reales.
+   TipTap serializa doble-Enter como <p></p><p>...</p>, y `.prose` de
+   Tailwind Typography colapsa `p:empty` visualmente. Este selector
+   fuerza altura mínima e inyecta un espacio &nbsp; para que se vea. */
+.cp-article-body p:empty { min-height: 1em; }
+.cp-article-body p:empty::before {
+  content: '\00a0';
+  display: inline-block;
+}
+/* También respetar <br> dentro de párrafos con saltos duros */
+.cp-article-body p br { display: block; content: ''; margin-top: 0.5em; }
+/* Imágenes editoriales insertadas via toolbar: preservar float/margin */
+.cp-article-body img { max-width: 100%; height: auto; }
+.cp-article-body p::after { content: ''; display: block; clear: both; }
+
 /* Marquee track — traducción X del -50% para loop infinito.
    Duplicá el contenido para que no se vea el "salto" al reset. */
 @keyframes cp-marquee-loop {
