@@ -8,9 +8,7 @@ import { getServiceClient } from '@/lib/supabase/service';
 import { DEFAULT_SITE_CONFIG } from '@/lib/site/types';
 import { IMPERSONATE_COOKIE } from '@/lib/founder/constants';
 import { env } from '@/lib/env';
-
-/** Cookie que marca "el owner panel está editando template X". */
-const TEMPLATE_EDIT_COOKIE = 'cp_template_edit';
+import { TEMPLATE_EDIT_COOKIE } from './template-edit-context';
 
 function slugify(input: string): string {
   return input.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -270,23 +268,6 @@ export async function exitTemplateEditModeAction(): Promise<void> {
     ? `admin.localhost${appUrl.port ? ':' + appUrl.port : ''}`
     : `admin.${rootDomain}`;
   redirect(`${appUrl.protocol}//${host}/templates`);
-}
-
-/**
- * Helper server-side para leer el TEMPLATE_EDIT_COOKIE desde el owner layout.
- * Devuelve null si no hay cookie válida.
- */
-export async function getTemplateEditContext(): Promise<{ id: string; slug: string; name: string } | null> {
-  const cookieStore = await cookies();
-  const raw = cookieStore.get(TEMPLATE_EDIT_COOKIE)?.value;
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as { id: string; slug: string; name: string };
-    if (parsed?.id) return parsed;
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 /** Reset — reinserta los hardcoded como is_system=true, upsert por slug. */

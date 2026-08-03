@@ -2,10 +2,10 @@ import { requireOwner, getCurrentUser } from "@/lib/auth/guards";
 import { getUserModerationStatus } from "@/lib/moderation/user-status";
 import { stopImpersonatingAction } from "@/lib/founder/actions";
 import {
-  getTemplateEditContext,
   saveTemplateFromPreviewAction,
   exitTemplateEditModeAction
 } from "@/lib/site/templates/founder-actions";
+import { getTemplateEditContext } from "@/lib/site/templates/template-edit-context";
 import { tenantOrigin, env } from "@/lib/env";
 import { getServiceClient } from "@/lib/supabase/service";
 import { OwnerSidebar } from "@/components/owner/OwnerSidebar";
