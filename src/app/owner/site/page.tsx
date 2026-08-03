@@ -635,7 +635,11 @@ export default async function SiteBuilderPage({
             )}
             {key === 'article_list' && (
               <ArticleListEditor
-                initial={{ columns: cfg.sections.article_list?.columns ?? [] }}
+                initial={{
+                  columns: Array.isArray(cfg.sections.article_list?.columns)
+                    ? cfg.sections.article_list.columns
+                    : []
+                }}
               />
             )}
             {key === 'category_showcase' && (
