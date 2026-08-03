@@ -1376,3 +1376,45 @@ export async function setBlogAdsEnabledAction(formData: FormData): Promise<void>
   revalidatePath('/owner/blog');
   revalidatePath('/blog', 'layout');
 }
+
+/**
+ * Actualiza UN slot de anuncio del blog (banner/rectangle/square_1/square_2).
+ * FormData:
+ *   slot         → 'banner' | 'rectangle' | 'square_1' | 'square_2'
+ *   image_url    → URL de la imagen del anuncio (vacío = placeholder)
+ *   link_url     → URL a donde clickea el anuncio (opcional)
+ *   alt          → alt text (opcional)
+ *   expires_at   → YYYY-MM-DD (vacío = indefinido)
+ */
+export async function updateBlogAdSlotAction(formData: FormData): Promise<void> {
+  const { tenant } = await requireOwner();
+  const slot = String(formData.get('slot') ?? '');
+  const ALLOWED = ['banner', 'rectangle', 'square_1', 'square_2'] as const;
+  type SlotKey = typeof ALLOWED[number];
+  if (!ALLOWED.includes(slot as SlotKey)) return;
+  const key = slot as SlotKey;
+
+  const image_url = safeAdUrl(String(formData.get('image_url') ?? ''));
+  const link_url = safeAdUrl(String(formData.get('link_url') ?? ''));
+  const alt = String(formData.get('alt') ?? '').trim().slice(0, 120) || null;
+  const expiresRaw = String(formData.get('expires_at') ?? '').trim();
+  const expires_at = /^\d{4}-\d{2}-\d{2}$/.test(expiresRaw) ? expiresRaw : null;
+
+  const cfg = await loadConfig(tenant.id);
+  const ads = cfg.blog_ads ?? {};
+  ads[key] = { image_url, link_url, alt, expires_at };
+  cfg.blog_ads = ads;
+  await saveConfig(tenant.id, cfg);
+  revalidatePath('/owner/blog');
+  revalidatePath('/blog', 'layout');
+}
+
+function safeAdUrl(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  if (v.length > 2048) return null;
+  try {
+    const u = new URL(v);
+    return u.protocol === 'http:' || u.protocol === 'https:' ? v : null;
+  } catch { return null; }
+}

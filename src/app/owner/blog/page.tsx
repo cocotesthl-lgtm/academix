@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { createArticleAction } from '@/lib/articles/actions';
-import { setBlogAdsEnabledAction } from '@/lib/site/actions';
+import { BlogAdsPanel } from '@/components/owner/blog/BlogAdsPanel';
 import { PageHeader } from '@/components/owner/PageHeader';
 import { fetchArticlesForTenant } from '@/lib/demo-pool/queries';
 import { AppSectionList } from '@/components/owner/courses/AppSectionList';
@@ -34,6 +34,9 @@ export default async function BlogListPage() {
   const plansEnabled = modules.plans !== false;
   let paywallMode: 'off' | 'soft' | 'hard' = 'off';
   let adsEnabled = true;
+  let adSlots: Record<'banner' | 'rectangle' | 'square_1' | 'square_2', import('@/lib/site/types').BlogAdSlot | undefined> = {
+    banner: undefined, rectangle: undefined, square_1: undefined, square_2: undefined
+  };
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: tCfg } = await (svc.from('tenants') as any)
@@ -44,6 +47,13 @@ export default async function BlogListPage() {
       if (raw === 'soft' || raw === 'hard') paywallMode = raw;
     }
     adsEnabled = cfg.blog_ads_enabled !== false;
+    const ads = cfg.blog_ads ?? {};
+    adSlots = {
+      banner: ads.banner,
+      rectangle: ads.rectangle,
+      square_1: ads.square_1,
+      square_2: ads.square_2
+    };
   } catch { /* respetamos defaults */ }
 
   // Reales del tenant + demos visibles del pool. Los demos tienen id
@@ -115,34 +125,10 @@ export default async function BlogListPage() {
         </div>
       )}
 
-      {/* Card de publicidad — toggle rápido on/off para ads del blog. */}
-      <div className={`rounded-xl border p-4 flex items-start gap-3 flex-wrap ${
-        adsEnabled ? 'border-blue-500/40 bg-blue-500/10' : 'border-white/15 bg-white/[0.02]'
-      }`}>
-        <div className="text-2xl leading-none">{adsEnabled ? '📢' : '🚫'}</div>
-        <div className="flex-1 min-w-[220px]">
-          <div className="font-semibold text-sm">
-            Publicidad del blog · {adsEnabled ? 'activada' : 'oculta'}
-          </div>
-          <p className="text-xs text-white/60 mt-0.5">
-            {adsEnabled
-              ? 'Se muestran los slots de anuncios: banner después del 2do párrafo, rectangle después del 5to, y square-pair al final. Apagalo para un look más editorial sin ruido.'
-              : 'Los slots de anuncios están ocultos en todos los artículos. Ideal para blogs premium o sitios editoriales sin monetización.'}
-          </p>
-        </div>
-        <form action={setBlogAdsEnabledAction} className="self-center">
-          <input type="hidden" name="enabled" value={adsEnabled ? 'false' : 'true'} />
-          <button
-            className={`text-xs px-3 py-1.5 rounded border whitespace-nowrap ${
-              adsEnabled
-                ? 'border-white/20 bg-white/[0.05] hover:bg-white/10'
-                : 'border-blue-500/40 bg-blue-500/10 text-blue-200 hover:bg-blue-500/20 font-semibold'
-            }`}
-          >
-            {adsEnabled ? '🚫 Ocultar ads' : '📢 Mostrar ads'}
-          </button>
-        </form>
-      </div>
+      {/* Panel de publicidad — toggle on/off + editor expandible con 4 slots
+          (banner, rectangle, 2 squares) editables: URL imagen, URL click,
+          alt, fecha de expiración opcional (default indefinida). */}
+      <BlogAdsPanel enabled={adsEnabled} slots={adSlots} />
 
       {rows.length === 0 ? (
         <div className="rounded-xl border border-dashed border-white/15 p-10 text-center">

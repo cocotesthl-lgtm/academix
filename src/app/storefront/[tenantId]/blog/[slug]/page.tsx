@@ -216,19 +216,26 @@ export default async function ArticlePublicPage({
   // Blog ads: se puede apagar globalmente desde site_config.blog_ads_enabled.
   // Cuando está apagado, no inyectamos los inline ads en el body y el
   // sidebar salta los AdSquaresPair.
-  const adsCfgEnabled = (await (async () => {
+  // Cargamos también el config de cada slot para pasar image/link/expires_at.
+  const { adsCfgEnabled, blogAds } = await (async () => {
     try {
       const svcAds = getServiceClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data } = await (svcAds.from('tenants') as any)
         .select('site_config_published, site_config').eq('id', tenantId).maybeSingle();
       const c = mergeConfig(data?.site_config_published ?? data?.site_config);
-      return c.blog_ads_enabled !== false;
-    } catch { return true; }
-  })());
+      return {
+        adsCfgEnabled: c.blog_ads_enabled !== false,
+        blogAds: c.blog_ads ?? {}
+      };
+    } catch {
+      return { adsCfgEnabled: true, blogAds: {} };
+    }
+  })();
+
   if (adsCfgEnabled) {
-    const inlineRectAd = inlineAdHtml('rectangle');
-    const inlineBannerAd = inlineAdHtml('banner');
+    const inlineRectAd = inlineAdHtml('rectangle', blogAds.rectangle);
+    const inlineBannerAd = inlineAdHtml('banner', blogAds.banner);
     bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, inlineRectAd, 5);
     if (interestCardHtml) {
       bodyWithExtras = insertAfterNthParagraph(bodyWithExtras, interestCardHtml, 3);
@@ -346,7 +353,9 @@ export default async function ArticlePublicPage({
 
           {/* Par de squares de ads — típico ubicación post-share.
               Respeta el toggle blog_ads_enabled del site_config. */}
-          {adsCfgEnabled && <AdSquaresPair />}
+          {adsCfgEnabled && (
+            <AdSquaresPair square1={blogAds.square_1} square2={blogAds.square_2} />
+          )}
 
           {/* Seguir leyendo */}
           {seguirLeyendo.length > 0 && (

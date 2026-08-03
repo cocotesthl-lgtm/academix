@@ -13,6 +13,14 @@ export type LearnItem = { id: string; text: string };
 export type FeatureItem = { id: string; icon: string; title: string; body: string };
 export type LogoItem = { id: string; name: string; logo_url: string | null; href?: string | null };
 
+export type BlogAdSlot = {
+  image_url?: string | null;
+  link_url?: string | null;
+  alt?: string | null;
+  /** ISO date (YYYY-MM-DD) o null/undefined = anuncio indefinido. */
+  expires_at?: string | null;
+};
+
 export type NavLink = { id: string; label: string; href: string };
 export type SocialLink = {
   id: string;
@@ -438,6 +446,23 @@ export type SiteConfig = {
    */
   blog_ads_enabled?: boolean;
   /**
+   * Slots de anuncios del blog editables por el owner. 4 slots fijos:
+   *   · banner     → después del 2do párrafo (728x90)
+   *   · rectangle  → después del 5to párrafo (300x250)
+   *   · square_1   → sidebar/pair, izquierda (1:1)
+   *   · square_2   → sidebar/pair, derecha (1:1)
+   *
+   * Cuando un slot no tiene `image_url`, se renderiza el placeholder.
+   * Cuando tiene `expires_at` y ya pasó, también se muestra el placeholder
+   * (owner ve que expiró en el panel). Fecha vacía = anuncio indefinido.
+   */
+  blog_ads?: {
+    banner?: BlogAdSlot;
+    rectangle?: BlogAdSlot;
+    square_1?: BlogAdSlot;
+    square_2?: BlogAdSlot;
+  };
+  /**
    * Paywall del blog/news. Controla cuánto ve un visitante NO suscripto
    * al abrir una nota. Los suscriptores activos (buyers con plan
    * pagado) siempre ven todo, no importa el modo.
@@ -804,6 +829,12 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   // Ads del blog: por default ON — comportamiento previo (aparecen los
   // placeholders "Anuncio banner/rectangle" para que el owner vea los slots).
   blog_ads_enabled: true,
+  blog_ads: {
+    banner: { image_url: null, link_url: null, alt: null, expires_at: null },
+    rectangle: { image_url: null, link_url: null, alt: null, expires_at: null },
+    square_1: { image_url: null, link_url: null, alt: null, expires_at: null },
+    square_2: { image_url: null, link_url: null, alt: null, expires_at: null }
+  },
   // Default paywall off para no romper sitios existentes. El template
   // news lo enciende en 'soft' (recomendación con opción de cerrar).
   paywall: {
