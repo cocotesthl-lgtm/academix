@@ -55,6 +55,7 @@ import { HrefTargetsProvider } from "@/components/owner/site/HrefSelect";
 import { buildCourseTargets } from "@/components/owner/site/href-targets";
 import { SiteBuilderToolbar } from "@/components/owner/site/SiteBuilderToolbar";
 import { setWhatsAppConfigAction } from "@/lib/whatsapp/actions";
+import { getBrandSwatches } from "@/lib/theme/swatches";
 
 export const dynamic = "force-dynamic";
 
@@ -143,7 +144,6 @@ export default async function SiteBuilderPage({
 
   // Swatches guardados del tenant — se pasan a los ColorAutoSave para que
   // el owner pueda reusar colores/gradients del template sin adivinar hex.
-  const { getBrandSwatches } = await import('@/lib/theme/swatches');
   const brandSwatches = await getBrandSwatches(tenant.id);
   // ¿Hay cambios sin publicar? Comparo la serialización de ambos objetos.
   // No hashing sofisticado — el jsonb ya es determinístico y esto corre
