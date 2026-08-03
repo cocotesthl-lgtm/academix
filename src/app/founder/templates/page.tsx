@@ -8,7 +8,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function FounderTemplatesPage() {
-  const rows = await loadSiteTemplateRows();
+  const { rows, missingMigration, error } = await loadSiteTemplateRows();
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -54,6 +54,17 @@ export default async function FounderTemplatesPage() {
           </form>
         </div>
       </div>
+
+      {missingMigration && (
+        <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-100 space-y-1">
+          <p>⚠️ <strong>Falta correr la migration <code>0092_site_templates.sql</code></strong> en Supabase.</p>
+          <p className="text-xs text-rose-200/80">
+            Andá al Dashboard → SQL Editor y pegá el contenido del archivo. Después recargá esta página —
+            los templates hardcoded se auto-siembran en la DB en el primer load.
+          </p>
+          {error && <p className="text-[10px] text-rose-200/60 font-mono mt-2">{error}</p>}
+        </div>
+      )}
 
       <div className="grid gap-3">
         {rows.map((t) => (

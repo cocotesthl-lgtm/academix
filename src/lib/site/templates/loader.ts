@@ -89,11 +89,23 @@ export async function loadSiteTemplates(includeInactive = false): Promise<SiteTe
 }
 
 /** Fetch para el panel del founder — incluye inactivos + rows crudos con ids DB. */
-export async function loadSiteTemplateRows(): Promise<SiteTemplateRow[]> {
-  const svc = getServiceClient();
-  await autoSeed();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (svc.from('site_templates') as any)
-    .select('*').order('sort_order', { ascending: true }).order('name');
-  return (data ?? []) as SiteTemplateRow[];
+export async function loadSiteTemplateRows(): Promise<{
+  rows: SiteTemplateRow[];
+  missingMigration: boolean;
+  error?: string;
+}> {
+  try {
+    const svc = getServiceClient();
+    await autoSeed();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (svc.from('site_templates') as any)
+      .select('*').order('sort_order', { ascending: true }).order('name');
+    if (error) throw error;
+    return { rows: (data ?? []) as SiteTemplateRow[], missingMigration: false };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    // Signature típica cuando la tabla no existe: "relation ... does not exist"
+    const isMissing = /site_templates|does not exist|schema cache/i.test(msg);
+    return { rows: [], missingMigration: isMissing, error: msg };
+  }
 }

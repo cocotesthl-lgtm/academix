@@ -78,7 +78,18 @@ const NAV: NavEntry[] = [
   // Apps (App Market) también baseline — es el segundo lugar clave para
   // el owner y tenerlo escondido bajo "Mi sitio > Apps" (un grupo
   // colapsable) generaba fricción para activar/desactivar features.
-  { kind: 'item', icon: 'settings', item: { label: 'Apps', href: '/modulos' } },
+  // Se subdivide en "Todas" (el marketplace completo) + "Instaladas" para
+  // acceso rápido a las que el owner ya tiene activas.
+  {
+    kind: 'group',
+    group: {
+      label: 'Apps', icon: 'settings',
+      items: [
+        { label: 'App market', href: '/modulos' },
+        { label: 'Instaladas', href: '/modulos?filter=active' }
+      ]
+    }
+  },
   // ── BASELINE (siempre visibles cuando su macro está prendido) ────
   // Estos grupos no tienen apps instalables — son features estructurales
   // del panel. No van bajo la sección "APPS".
