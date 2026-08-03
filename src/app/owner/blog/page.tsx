@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { requireOwner } from '@/lib/auth/guards';
 import { getServiceClient } from '@/lib/supabase/service';
 import { createArticleAction } from '@/lib/articles/actions';
@@ -5,6 +6,8 @@ import { PageHeader } from '@/components/owner/PageHeader';
 import { fetchArticlesForTenant } from '@/lib/demo-pool/queries';
 import { AppSectionList } from '@/components/owner/courses/AppSectionList';
 import { tenantOrigin } from '@/lib/env';
+import { getTenantModules } from '@/lib/modules/queries';
+import { mergeConfig } from '@/lib/site/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +26,22 @@ export default async function BlogListPage() {
   const { tenant } = await requireOwner();
   const svc = getServiceClient();
   const origin = tenantOrigin(tenant.slug);
+
+  // Módulos activos + config del paywall — para mostrar el card de
+  // "Configurar paywall" solo si la app de Suscripciones está prendida.
+  const modules = await getTenantModules(tenant.id);
+  const plansEnabled = modules.plans !== false;
+  let paywallMode: 'off' | 'soft' | 'hard' = 'off';
+  if (plansEnabled) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: tCfg } = await (svc.from('tenants') as any)
+        .select('site_config_published, site_config').eq('id', tenant.id).maybeSingle();
+      const cfg = mergeConfig(tCfg?.site_config_published ?? tCfg?.site_config);
+      const raw = cfg.paywall?.mode ?? 'off';
+      if (raw === 'soft' || raw === 'hard') paywallMode = raw;
+    } catch { /* respetamos off */ }
+  }
 
   // Reales del tenant + demos visibles del pool. Los demos tienen id
   // sintético "demo:{slug}" y aparecen con badge "Demo".
@@ -59,6 +78,39 @@ export default async function BlogListPage() {
           </form>
         }
       />
+
+      {/* Card de paywall — sólo si la app Suscripciones (plans) está activa. */}
+      {plansEnabled && (
+        <div className={`rounded-xl border p-4 flex items-start gap-3 flex-wrap ${
+          paywallMode === 'off'
+            ? 'border-white/15 bg-white/[0.02]'
+            : paywallMode === 'soft'
+              ? 'border-amber-500/40 bg-amber-500/10'
+              : 'border-emerald-500/40 bg-emerald-500/10'
+        }`}>
+          <div className="text-2xl leading-none">
+            {paywallMode === 'off' ? '🔓' : paywallMode === 'soft' ? '💡' : '🔒'}
+          </div>
+          <div className="flex-1 min-w-[220px]">
+            <div className="font-semibold text-sm">
+              Paywall del blog · {paywallMode === 'off' ? 'sin paywall' : paywallMode === 'soft' ? 'opcional' : 'obligatorio'}
+            </div>
+            <p className="text-xs text-white/60 mt-0.5">
+              {paywallMode === 'off'
+                ? 'Todas las notas se leen completas. Prendé el paywall para monetizar contenido exclusivo.'
+                : paywallMode === 'soft'
+                  ? 'Los visitantes ven los primeros párrafos + banner recomendando suscribirse (pueden cerrarlo y seguir leyendo).'
+                  : 'Los visitantes ven los primeros párrafos y después un gate bloqueante — necesitan suscripción para leer el resto.'}
+            </p>
+          </div>
+          <Link
+            href="/site#paywall-editor"
+            className="text-xs px-3 py-1.5 rounded border border-white/20 bg-white/[0.05] hover:bg-white/10 whitespace-nowrap self-center"
+          >
+            ⚙️ Configurar paywall →
+          </Link>
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <div className="rounded-xl border border-dashed border-white/15 p-10 text-center">

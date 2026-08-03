@@ -727,7 +727,7 @@ export default async function SiteBuilderPage({
         </div>
       </div>
 
-      <div className="pt-6 border-t border-white/10">
+      <div id="paywall-editor" className="pt-6 border-t border-white/10 scroll-mt-24">
         <h2 className="text-xl font-bold mb-2">🔒 Paywall del blog</h2>
         <div className="rounded-xl border border-white/15 bg-white/[0.02] p-5">
           <PaywallEditor cfg={cfg.paywall} />
